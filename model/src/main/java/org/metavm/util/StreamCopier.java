@@ -66,7 +66,7 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitEntityMessage() {
-        output.writeLong(readLong());
+        visitVersion(readLong());
         output.writeLong(readTreeId());
         output.writeLong(readLong());
         visitEntity();

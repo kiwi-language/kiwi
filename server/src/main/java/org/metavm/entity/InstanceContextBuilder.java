@@ -5,7 +5,7 @@ import org.metavm.object.instance.*;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.InstanceContext;
-import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.persistence.MapperRegistry;
 import org.metavm.object.type.ActiveCommitProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.Utils;
@@ -20,12 +20,13 @@ public class InstanceContextBuilder {
 
 
     public static InstanceContextBuilder newBuilder(long appId,
-                                                    IInstanceStore instanceStore,
+                                                    MapperRegistry mapperRegistry,
                                                     IdInitializer idProvider) {
-        return new InstanceContextBuilder(appId, instanceStore, idProvider);
+        return new InstanceContextBuilder(appId, mapperRegistry, idProvider);
     }
 
     private final long appId;
+    private final MapperRegistry mapperRegistry;
     private IInstanceStore instanceStore;
     private IdInitializer idInitializer;
     private Executor executor;
@@ -37,19 +38,24 @@ public class InstanceContextBuilder {
     private Cache cache;
     private EventQueue eventQueue;
     private boolean readonly;
-    private @Nullable WAL readWAL;
-    private @Nullable WAL writeWAL;
     private boolean skipPostprocessing;
     private boolean relocationEnabled;
     private long timeout;
     private boolean changeLogDisabled;
+    private boolean migrating;
 
     public InstanceContextBuilder(long appId,
-                                  IInstanceStore instanceStore,
+                                  MapperRegistry mapperRegistry,
                                   IdInitializer idInitializer) {
         this.appId = appId;
-        this.instanceStore = instanceStore;
+        this.mapperRegistry = mapperRegistry;
         this.idInitializer = idInitializer;
+    }
+
+    private IInstanceStore getInstanceStore() {
+        if (instanceStore == null)
+            instanceStore = new InstanceStore(mapperRegistry);
+        return instanceStore;
     }
 
     public InstanceContextBuilder plugins(ContextPlugin...plugins) {
@@ -57,7 +63,7 @@ public class InstanceContextBuilder {
     }
 
     public InstanceContextBuilder plugins(Function<IInstanceStore, List<ContextPlugin>> pluginsSupplier) {
-       return plugins(pluginsSupplier.apply(instanceStore));
+       return plugins(pluginsSupplier.apply(getInstanceStore()));
     }
 
     public InstanceContextBuilder plugins(List<ContextPlugin> plugins) {
@@ -70,8 +76,9 @@ public class InstanceContextBuilder {
         return this;
     }
 
-    public InstanceContextBuilder instanceStore(IInstanceStore instanceStore) {
-        this.instanceStore = instanceStore;
+    public InstanceContextBuilder instanceStore(Function<MapperRegistry, IInstanceStore> instanceStoreSupplier) {
+        Utils.require(instanceStore == null, () -> "InstanceStore is already set");
+        this.instanceStore = instanceStoreSupplier.apply(mapperRegistry);
         return this;
     }
 
@@ -102,22 +109,6 @@ public class InstanceContextBuilder {
 
     public InstanceContextBuilder cache(Cache cache) {
         this.cache = cache;
-        return this;
-    }
-
-    public InstanceContextBuilder readWAL(WAL wal) {
-        readWAL = wal;
-        if(wal != null)
-            instanceStore = new CachingInstanceStore(instanceStore, wal);
-        return this;
-    }
-
-    public InstanceContextBuilder writeWAL(WAL wal) {
-        writeWAL = wal;
-        if(wal != null) {
-            instanceStore = new BufferedInstanceStore(instanceStore, wal);
-            skipPostprocessing = true;
-        }
         return this;
     }
 
@@ -153,7 +144,8 @@ public class InstanceContextBuilder {
 
     public InstanceContextBuilder migrating(boolean migrating) {
         if (migrating)
-            instanceStore = new MigrationInstanceStore(instanceStore);
+            instanceStore = new MigrationInstanceStore(getInstanceStore());
+        this.migrating = migrating;
         return this;
     }
 
@@ -164,10 +156,10 @@ public class InstanceContextBuilder {
             plugins = Utils.exclude(plugins, p -> p instanceof ChangeLogPlugin);
         var idInitializer = this.idInitializer;
         return new InstanceContext(
-                appId, instanceStore, idInitializer, executor,
+                appId, getInstanceStore(), idInitializer, executor,
                 plugins, parent,
                 childLazyLoading, cache,
-                eventQueue, readonly, skipPostprocessing, relocationEnabled, timeout);
+                eventQueue, readonly, skipPostprocessing, relocationEnabled, migrating, timeout);
     }
 
 }

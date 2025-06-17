@@ -5,17 +5,16 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.ddl.Commit;
+import org.metavm.object.instance.InstanceStore;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.WAL;
 import org.metavm.util.ContextUtil;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
 import org.metavm.util.ParameterizedStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Nullable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,12 +44,12 @@ public class MetaContextCache extends EntityContextFactoryAware {
     }
 
     public IInstanceContext get(long appId) {
-        return get(appId, null);
+        return get(appId, false);
     }
 
-    public IInstanceContext get(long appId, @Nullable Id walId) {
+    public IInstanceContext get(long appId, boolean migrating) {
         try {
-            var context = cache.get(new CacheKey(appId, walId));
+            var context = cache.get(new CacheKey(appId, migrating));
             ParameterizedStore.setMap(context.getParameterizedMap());
             return context;
         } catch (ExecutionException e) {
@@ -58,31 +57,34 @@ public class MetaContextCache extends EntityContextFactoryAware {
         }
     }
 
-    public void invalidate(long appId, @Nullable Id walId) {
-        cache.invalidate(new CacheKey(appId, walId));
+    public void invalidate(long appId, boolean migrating) {
+        cache.invalidate(new CacheKey(appId, migrating));
     }
 
     private IInstanceContext createMetaContext(CacheKey key) {
         try(var ignored = ContextUtil.getProfiler().enter("createMetaContext")) {
             IInstanceContext context;
-            if (key.walId != null) {
-                try (var outerContext = newContext(key.appId)) {
-                    var wal = outerContext.getEntity(WAL.class, key.walId);
-                    context = newContext(key.appId, builder -> builder.readWAL(wal));
-                }
+            if (key.migrating) {
+                context = newContext(key.appId, builder -> builder.instanceStore(
+                        mapperReg -> new InstanceStore(mapperReg, "instance_tmp", "index_entry_tmp"))
+                );
             } else
                 context = newContext(key.appId);
-            if (key.walId != null)
-                context.setDescription("MetaContext (WAL: " + key.walId + ")");
+            if (key.migrating)
+                context.setDescription("MigratingMetaContext");
             else
                 context.setDescription("MetaContext");
             context.loadKlasses();
             context.setParameterizedMap(ParameterizedStore.getMap());
+            if (DebugEnv.dumpMetaContext) {
+                logger.trace("MetaContext Dump");
+                context.dumpContext();
+            }
             return context;
         }
     }
 
-    private record CacheKey(long appId, @Nullable Id walId) {
+    private record CacheKey(long appId, boolean migrating) {
     }
 
 }

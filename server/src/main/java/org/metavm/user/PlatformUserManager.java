@@ -67,7 +67,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     public Page<UserDTO> list(int page, int pageSize, String searchText) {
         try (var context = newPlatformContext()) {
             var query = EntityQueryBuilder.newBuilder(User.class)
-                    .addEqFieldIfNotNull(User.esName, Utils.safeCall(searchText, Instances::stringInstance))
+                    .addFieldMatchIfNotNull(User.esName, Utils.safeCall(searchText, Instances::stringInstance))
                     .page(page)
                     .pageSize(pageSize)
                     .build();
@@ -229,8 +229,8 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         var app = Utils.safeCall(query.appId(), appId -> context.getEntity(Application.class, appId));
         return entityQueryService.query(
                 EntityQueryBuilder.newBuilder(PlatformUser.class)
-                        .addEqFieldIfNotNull(User.esName, Utils.safeCall(query.searchText(), Instances::stringInstance))
-                        .addEqFieldIfNotNull(User.esLoginName, Instances.stringInstance(query.loginName()))
+                        .addFieldMatchIfNotNull(User.esName, Utils.safeCall(query.searchText(), Instances::stringInstance))
+                        .addFieldMatchIfNotNull(User.esLoginName, Instances.stringInstance(query.loginName()))
                         .page(query.page())
                         .excluded(query.excluded())
                         .pageSize(query.pageSize())

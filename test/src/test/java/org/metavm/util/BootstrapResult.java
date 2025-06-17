@@ -15,7 +15,6 @@ public record BootstrapResult(
         DefContext defContext,
         EntityContextFactory entityContextFactory,
         EntityIdProvider idProvider,
-        MemInstanceStore instanceStore,
         MemInstanceSearchServiceV2 instanceSearchService,
         MemAllocatorStore allocatorStore,
         MemColumnStore columnStore,

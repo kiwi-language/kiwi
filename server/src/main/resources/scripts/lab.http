@@ -69,6 +69,34 @@ Content-Type: application/json
 
 
 ###
+POST https://metavm.tech/object/invoke
+Accept: application/json
+Content-Type: application/json
+X-App-ID: 1000000010
+
+{
+  "receiver": {
+    "name": "productService"
+  },
+  "method": "batchCreate",
+  "arguments": {
+    "namePrefix": "测试",
+    "count": 20
+  }
+}
+
+###
+POST https://metavm.tech/object/search
+Content-Type: application/json
+X-App-ID: 1000000010
+
+{
+  "type": "Product",
+  "page": 2,
+  "pageSize": 10
+}
+
+###
 GET https://metavm.tech/app?page=1&pageSize=5&searchText=root
 X-App-ID: 2
 
@@ -83,11 +111,11 @@ Content-Type: application/json
 X-App-ID: 2
 
 {
-  "name": "liyang-test"
+  "name": "liyang@test"
 }
 
 ###
-GET http://localhost:8080/app?pageSize=5&page=1&searchText=shopping
+GET http://localhost:8080/app?pageSize=5&page=1&searchText=liyang-test
 X-App-ID: 2
 
 ###
@@ -103,16 +131,6 @@ Content-Type: application/json
   "appId": 2,
   "loginName": "demo",
   "password": "123456"
-}
-
-###
-POST http://localhost:8080/chat
-Content-Type: application/json
-X-App-ID: 2
-
-{
-  "appId": 1000017000,
-  "content": "A todo list app"
 }
 
 ###
@@ -1398,3 +1416,31 @@ X-App-ID: 1000000011
     "quantity": 1
   }
 }
+
+###
+POST https://metavm.tech/object/invoke
+X-App-ID: 1000000010
+Content-Type: application/json
+Accept: */*
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: zh-CN,zh;q=0.9
+Cache-Control: no-cache
+Connection: keep-alive
+Content-Type: application/json;charset=UTF-8
+Cookie: __token_2__=e6f912b7-ca61-4afb-a175-3c31578e15d3
+DNT: 1
+Host: metavm.tech
+Origin: http://localhost:5173
+Pragma: no-cache
+Referer: http://localhost:5173/
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: cross-site
+Sec-Fetch-Storage-Access: active
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+X-App-ID: 1000000010
+sec-ch-ua: "Chromium";v="137", "Not/A)Brand";v="24"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+
+{"receiver":{"id":"01e4b4d7b90700"},"method":"reduceStock","arguments":{}}

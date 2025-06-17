@@ -100,6 +100,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     IInstanceContext createSame(long appId, TypeDefProvider typeDefProvider);
 
+    boolean isMigrating();
+
     List<Reference> selectByKey(IndexKeyRT indexKey);
 
     List<Reference> query(InstanceIndexQuery query);
@@ -226,8 +228,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
         return getEntity(Field.class, id);
     }
 
-    default void loadKlasses() {
-        Klasses.loadKlasses(this);
+    default List<Klass> loadKlasses() {
+        return Klasses.loadKlasses(this);
     }
 
     void setParameterizedMap(ParameterizedMap map);
@@ -265,4 +267,5 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
         return InstanceRepository.super.allocateRootId();
     }
 
+    void dumpContext();
 }

@@ -72,12 +72,6 @@ public class ClearInvitationTask extends Task {
         map.put("lastRunTimestamp", this.getLastRunTimestamp());
         map.put("startAt", this.getStartAt());
         map.put("timeout", this.getTimeout());
-        var wAL = this.getWAL();
-        if (wAL != null) map.put("wAL", wAL.getStringId());
-        var metaWAL = this.getMetaWAL();
-        if (metaWAL != null) map.put("metaWAL", metaWAL.getStringId());
-        var defWalId = this.getDefWalId();
-        if (defWalId != null) map.put("defWalId", defWalId);
         map.put("extraStdKlassIds", this.getExtraStdKlassIds());
         map.put("relocationEnabled", this.isRelocationEnabled());
     }

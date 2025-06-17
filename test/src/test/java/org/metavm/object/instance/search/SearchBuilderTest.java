@@ -2,6 +2,7 @@ package org.metavm.object.instance.search;
 
 import junit.framework.TestCase;
 import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.object.instance.core.StringReference;
 import org.metavm.util.Constants;
 import org.metavm.util.MockUtils;
 import org.slf4j.Logger;
@@ -26,9 +27,9 @@ public class SearchBuilderTest extends TestCase {
 
         var condition = new AndSearchCondition(
                 List.of(
-                    new StartsWithSearchCondition(
+                    new PrefixSearchCondition(
                             fooTypes.fooNameField().getColumn().name(),
-                            foo.getField(fooTypes.fooNameField())
+                            (StringReference) foo.getField(fooTypes.fooNameField())
                     ),
                     new MatchSearchCondition(
                             fooTypes.fooQuxField().getColumn().name(), qux.getReference()

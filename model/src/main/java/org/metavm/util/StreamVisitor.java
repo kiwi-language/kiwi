@@ -282,7 +282,7 @@ public class StreamVisitor {
     }
 
     public void visitEntityMessage() {
-        readLong();
+        visitVersion(readLong());
         readTreeId();
         visitNextNodeId(input.readLong());
         visitEntity();

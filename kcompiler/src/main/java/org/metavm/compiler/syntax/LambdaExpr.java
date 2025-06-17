@@ -79,6 +79,11 @@ public final class LambdaExpr extends Expr {
         return returnType;
     }
 
+    @Override
+    public FuncType getType() {
+        return (FuncType) super.getType();
+    }
+
     public void setTargetType(FuncType targetType) {
         var lambda = getElement();
         if (returnType == null) {

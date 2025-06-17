@@ -4,6 +4,7 @@ import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ColumnKind;
@@ -244,6 +245,11 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testNew() {
         deploy("kiwi/new.kiwi");
+        try (var context = newContext()) {
+            var klasses = context.loadKlasses();
+            assertEquals(1, klasses.size());
+            assertEquals("Foo", klasses.getFirst().getName());
+        }
         var id = (Id) callMethod("Foo", "test", List.of());
         var r = callMethod(id, "getValue", List.of());
         assertEquals(1, r);
@@ -538,6 +544,98 @@ public class KiwiTest extends KiwiTestBase {
         var product = getObject(id);
         var price = product.get("price");
         MatcherAssert.assertThat(price, CoreMatchers.instanceOf(ApiObject.class));
+    }
+
+    public void testInvalidSummaryType() {
+        try {
+            deploy("kiwi/error/invalid_summary_type.kiwi");
+            fail("Should have failed");
+        }
+        catch (CompilationException ignored) {}
+    }
+
+    public void testWideningToNullable() {
+        deploy("kiwi/widening/nullable.kiwi");
+        var id = (Id) callMethod(
+                ApiNamedObject.of("fooService"),
+                "create",
+                List.of(1)
+        );
+        assertEquals(1.0, getObject(id).getFloat("rate"), 0.01);
+    }
+
+    public void testFrozen() {
+        deploy("kiwi/ident/semi_keyword.kiwi");
+    }
+
+    public void testIndexEntryRemoval() {
+        deploy("kiwi/index/remove.kiwi");
+        var id = saveInstance("index.Foo", Map.of("name", "foo"));
+        var fooService = ApiNamedObject.of("fooService");
+        var found = callMethod(fooService, "findFooByName", List.of("foo"));
+        assertEquals(id, found);
+        deleteObject(id);
+        try {
+            getObject(id);
+            fail("Should have failed");
+        } catch (BusinessException e) {
+            assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+        var found1 = callMethod(fooService, "findFooByName", List.of("foo"));
+        assertNull(found1);
+    }
+
+    public void testChildIndexEntryRemoval() {
+        deploy("kiwi/index/remove_child.kiwi");
+        var id = saveInstance("index.Foo", Map.of(
+                "Child", List.of(
+                        Map.of(
+                        "name", "child"
+                        )
+                ))
+        );
+        var childId = getObject(id).getChildren("Child").getFirst().id();
+        logger.debug("Child ID: {}", childId);
+        var childService = ApiNamedObject.of("childService");
+        var found = callMethod(childService, "findChildByName", List.of("child"));
+        assertEquals(childId, found);
+        deleteObject(childId);
+        try {
+            getObject(childId);
+            fail("Should have failed");
+        } catch (BusinessException e) {
+            assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+        var found1 = callMethod(childService, "findChildByName", List.of("child"));
+        assertNull(found1);
+    }
+
+    public void testUniqueIndex() {
+        deploy("kiwi/index/unique.kiwi");
+        var className = "unique.Foo";
+        var id1 = saveInstance(className, Map.of("name", "foo1"));
+        var bean = ApiNamedObject.of("fooService");
+        var found = callMethod(bean, "findByName", List.of("foo1"));
+        assertEquals(id1, found);
+
+        try {
+            saveInstance(className, Map.of("name", "foo1"));
+            fail("Creation of duplicate index entries is not prevented");
+        }
+        catch (BusinessException e) {
+            assertSame(ErrorCode.CONSTRAINT_CHECK_FAILED, e.getErrorCode());
+        }
+
+        var id2 = saveInstance(className, Map.of("name", "foo2"));
+        callMethod(bean, "swapNames", List.of(id1, id2));
+        var foo1 = getObject(id1);
+        var foo2 = getObject(id2);
+        assertEquals("foo2", foo1.getString("name"));
+        assertEquals("foo1", foo2.getString("name"));
+
+        var id3 = (Id) callMethod(bean, "deleteAndNew", List.of(id1));
+        var foo3 = getObject(id3);
+        assertEquals("foo2", foo3.getString("name"));
     }
 
 }

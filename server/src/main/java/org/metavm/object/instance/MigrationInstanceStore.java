@@ -1,6 +1,7 @@
 package org.metavm.object.instance;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.entity.StoreLoadRequest;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -15,15 +16,14 @@ import org.metavm.util.ContextUtil;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.Utils;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 public class MigrationInstanceStore implements IInstanceStore {
 
     private final IInstanceStore wrapped;
 
-    public MigrationInstanceStore(IInstanceStore wrapped) {
+    public MigrationInstanceStore(@NotNull IInstanceStore wrapped) {
         this.wrapped = wrapped;
     }
 
@@ -100,7 +100,57 @@ public class MigrationInstanceStore implements IInstanceStore {
 
     @Override
     public List<InstancePO> loadForest(Collection<Long> ids, IInstanceContext context) {
-        return wrapped.loadForest(ids, context);
+        if (ids.isEmpty())
+            return List.of();
+        var mapper = getInstanceMapper(context.getAppId(), "instance_tmp");
+        var migrated = mapper.selectByIds(context.getAppId(), ids);
+        var removedIds = new HashSet<>(mapper.filterDeletedIds(ids));
+        var unmigratedIds = Utils.exclude(ids, removedIds::contains);
+        var unmigrated = wrapped.loadForest(unmigratedIds, context);
+        return mergeResults(migrated, unmigrated);
+    }
+
+    private List<InstancePO> mergeResults(List<InstancePO> list1, List<InstancePO> list2) {
+        list1.sort(Comparator.comparingLong(InstancePO::getId));
+        list2.sort(Comparator.comparingLong(InstancePO::getId));
+        var it1 = list1.iterator();
+        var it2 = list2.iterator();
+        var result = new ArrayList<InstancePO>();
+        InstancePO i1 = null;
+        InstancePO i2 = null;
+        for (;;) {
+            if (i1 == null && it1.hasNext())
+                i1 = it1.next();
+            if (i2 == null && it2.hasNext())
+                i2 = it2.next();
+            if (i1 == null || i2 == null)
+                break;
+            if (i1.getId() < i2.getId()) {
+                result.add(i1);
+                i1 = null;
+            } else if (i1.getId() > i2.getId()) {
+                result.add(i2);
+                i2 = null;
+            } else {
+                if (i1.getVersion() >= i2.getVersion())
+                    result.add(i1);
+                else
+                    result.add(i2);
+                i1 = null;
+                i2 = null;
+            }
+        }
+        if (i1 != null) {
+            result.add(i1);
+            while (it1.hasNext())
+                result.add(it1.next());
+        }
+        else if (i2 != null) {
+            result.add(i2);
+            while (it2.hasNext())
+                result.add(it2.next());
+        }
+        return result;
     }
 
     @Override
@@ -120,8 +170,7 @@ public class MigrationInstanceStore implements IInstanceStore {
 
     @Override
     public List<IndexEntryPO> getIndexEntriesByInstanceIds(Collection<Id> instanceIds, IInstanceContext context) {
-        var mapper = getIndexEntryMapper(context.getAppId(), "index_entry_tmp");
-        return mapper.selectByInstanceIds(context.getAppId(), Utils.map(instanceIds, Id::toBytes));
+        return wrapped.getIndexEntriesByInstanceIds(instanceIds, context);
     }
 
     @Override

@@ -234,6 +234,14 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
         return Utils.map(getKlass().getMethods(), m -> new MethodRef(this, m, List.of()));
     }
 
+    public MethodRef getConstructor() {
+        for (Method method : getKlass().getMethods()) {
+            if (method.isConstructor())
+                return new MethodRef(this, method, List.of());
+        }
+        throw new IllegalStateException("Missing constructor in " + getTypeDesc());
+    }
+
     public List<ClassType> getInnerClassTypes() {
         return Utils.map(getKlass().getKlasses(), k -> KlassType.create(
                 this, k, k.getDefaultTypeArguments()

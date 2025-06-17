@@ -1,6 +1,7 @@
 package org.metavm.compiler.analyze;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.ClassType;
@@ -18,9 +19,9 @@ public class Lower extends AbstractNodeVisitor<Node> {
     private final Project project;
     private final Env env;
 
-    public Lower(Project project) {
+    public Lower(Project project, Log log) {
         this.project = project;
-        env = new Env(project);
+        env = new Env(project, log);
     }
 
     @Override

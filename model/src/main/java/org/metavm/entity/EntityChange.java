@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.util.ChangeList;
-import org.metavm.util.DebugEnv;
+import org.metavm.util.Utils;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -12,8 +12,8 @@ import java.util.function.Consumer;
 @Slf4j
 public class EntityChange<T> implements Comparable<EntityChange<?>> {
 
-    public static  <T> EntityChange<T> create(Class<T> entityType, Collection<T> inserts, Collection<T> updates, Collection<T> deletes) {
-        var change = new EntityChange<>(entityType);
+    public static  <T> EntityChange<T> of(Class<T> cls, Collection<T> inserts, Collection<T> updates, Collection<T> deletes) {
+        var change = new EntityChange<>(cls);
         inserts.forEach(change::addInsert);
         updates.forEach(change::addUpdate);
         deletes.forEach(change::addDelete);
@@ -106,5 +106,14 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
 
     public Map<DifferenceAttributeKey<?>, Object> getAttributes() {
         return Collections.unmodifiableMap(attributes);
+    }
+
+    @Override
+    public String toString() {
+        return "EntityChange {" +
+                "inserts: " + Utils.join(inserts, Objects::toString) + "," +
+                "updates: " + Utils.join(updates, Objects::toString) + "," +
+                "deletes: " + Utils.join(deletes, Objects::toString) + "," +
+                "}";
     }
 }

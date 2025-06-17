@@ -66,8 +66,8 @@ public class EntityQueryServiceTest extends TestCase {
             var qux = context.getEntity(Qux.class, Objects.requireNonNull(foo.getQux()).getId());
             Page<Foo> page = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Foo.class)
-                            .addEqField(Foo.esName, Instances.stringInstance(foo.getName()))
-                            .addEqField(Foo.esQux, qux.getReference())
+                            .addFieldMatch(Foo.esName, Instances.stringInstance(foo.getName()))
+                            .addFieldMatch(Foo.esQux, qux.getReference())
                             .build(),
                     context
             );
@@ -85,7 +85,7 @@ public class EntityQueryServiceTest extends TestCase {
             foo = context.getEntity(Foo.class, foo.getId());
             Page<Foo> page = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Foo.class)
-                            .addEqField(Foo.esCode, Instances.stringInstance("Foo001"))
+                            .addFieldMatch(Foo.esCode, Instances.stringInstance("Foo001"))
                             .build(),
                     context
             );

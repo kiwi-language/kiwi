@@ -47,13 +47,28 @@ public class BasicDiagFmt implements DiagFmt {
             buf.append(INDENT).append(line.line()).append('\n');
             var col = pos - line.startPos();
             if (ADD_CARET) {
+                buf.append(INDENT);
                 for (int i = 0; i < col; i++) {
-                    buf.append(line.line().charAt(i) == '\t' ? '\t' : ' ');
+                    var c = line.line().charAt(i);
+                    if (c == '\t')
+                        buf.append('\t');
+                    else if (isFullWidth(c))
+                        buf.append("　");
+                    else
+                        buf.append(" ");
                 }
-                buf.append(INDENT).append("^");
+                buf.append("^");
             }
         }
     }
 
+    private boolean isFullWidth(char c) {
+        // This heuristic is based on Unicode character blocks.
+        // It covers most common CJK characters and symbols.
+        return !(c < 256 ||                  // Basic Latin, Latin-1 Supplement (fast path)
+                (c >= 0xff61 && c <= 0xff9f) || // Half-width Katakana
+                (c >= 0xffa0 && c <= 0xffdc) || // Half-width Hangul Jamo
+                (c >= 0xffe8 && c <= 0xffee));  // Half-width symbols
+    }
 
 }

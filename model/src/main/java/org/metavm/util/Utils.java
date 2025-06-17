@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -27,10 +28,12 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.function.*;
 import java.util.regex.Pattern;
 import java.util.stream.*;
 
+@Slf4j
 public class Utils {
 
     public static final int BATCH_SIZE = 3000;
@@ -297,12 +300,15 @@ public class Utils {
     }
 
     public static void clearDirectory(String path) {
-        var rootPath = Path.of(path);
-        if (Files.exists(rootPath)) {
-            try (var files = Files.walk(rootPath)) {
+        clearDirectory(Path.of(path));
+    }
+
+    public static void clearDirectory(Path path) {
+        if (Files.exists(path)) {
+            try (var files = Files.walk(path)) {
                 //noinspection ResultOfMethodCallIgnored
                 files.sorted(Comparator.reverseOrder())
-                        .filter(p -> !p.equals(rootPath))
+                        .filter(p -> !p.equals(path))
                         .forEach(f -> f.toFile().delete());
             } catch (IOException e) {
                 System.err.println("Faileded to clear directory '" + path + "'");
@@ -815,7 +821,7 @@ public class Utils {
     }
 
     public static <T extends Comparable<T>> void forEachMerged(List<? extends T> list1, List<? extends T> list2,
-                                         Consumer<? super T> action) {
+                                                               Consumer<? super T> action) {
         forEachMerged(list1, list2, Comparable::compareTo, action);
     }
 
@@ -1850,6 +1856,51 @@ public class Utils {
         return Files.exists(Path.of(path));
     }
 
+    public static CommandResult executeCommand(Path directory, String... command) {
+        log.info("Executing command {} in working dir {}",
+                String.join(" ", command), directory.toString());
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+
+        // Set the working directory for the command
+        processBuilder.directory(directory.toFile());
+
+        // Merge the standard output and standard error streams.
+        // This makes it easier to capture all output.
+        processBuilder.redirectErrorStream(true);
+
+        Process process;
+        try {
+            process = processBuilder.start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Use a StringBuilder to capture the command's output
+        StringBuilder output = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append(System.lineSeparator());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Wait for the process to complete (with a timeout)
+        boolean finished;
+        try {
+            finished = process.waitFor(60, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        if (!finished) {
+            process.destroyForcibly();
+            throw new RuntimeException("Command timed out.");
+        }
+
+        return new CommandResult(process.exitValue(), output.toString());
+    }
+
     private static class MyObjectOutput extends ObjectOutputStream {
 
         private SerializedLambda serializedLambda;
@@ -1908,16 +1959,16 @@ public class Utils {
     }
 
     public static <T> boolean replace(List<T> list, T element, BiPredicate<T, T> equals) {
-       var it = list.listIterator();
-       while (it.hasNext()) {
-           var e = it.next();
-           if(equals.test(e, element)) {
-               it.remove();
-               it.add(element);
-               return true;
-           }
-       }
-       return false;
+        var it = list.listIterator();
+        while (it.hasNext()) {
+            var e = it.next();
+            if(equals.test(e, element)) {
+                it.remove();
+                it.add(element);
+                return true;
+            }
+        }
+        return false;
     }
 
     public static <T, V> Iterator<V> mapIterator(Iterator<T> source, Function<T, V> mapper) {
@@ -1945,4 +1996,5 @@ public class Utils {
         return s + (delimiter + s).repeat(count - 1);
     }
 
+    public record CommandResult(int exitCode, String output) {}
 }

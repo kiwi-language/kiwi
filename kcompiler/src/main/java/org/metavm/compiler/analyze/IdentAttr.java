@@ -21,7 +21,7 @@ public class IdentAttr extends StructuralNodeVisitor {
     private MatchBindings matchBindings = MatchBindings.empty;
 
     public IdentAttr(Project project, Log log) {
-        env = new Env(project);
+        env = new Env(project, log);
         this.log = log;
     }
 

@@ -31,15 +31,19 @@ public class InstanceMapperImpl implements InstanceMapper {
     private final String updateSQL;
     private final String upsertSQL;
     private final String deleteSQL;
+    private final String tryDeleteSQL;
     private final String batchPhysicalDeleteSQL;
     private final String updateSyncVersionSQL;
     private final String scanTreesSQL;
     private final String selectVersionsSQL;
+    private final String filterDeletedIdsSQL;
+    private final String selectPhysicalSQL;
 
     public InstanceMapperImpl(DataSource dataSource, long table, String name) {
         var t = String.format("%s_%d", name, table);
         this.dataSource = dataSource;
-        selectByIdSQL = String.format("select %s from %s where id = ? and deleted_at = 0", t, columns);
+        selectByIdSQL = String.format("select %s from %s where id = ? and deleted_at = 0", columns, t);
+        selectPhysicalSQL = String.format("select %s from %s where id = ?", columns, t);
         batchSelectByIdsSQL = String.format(
                 "select %s from %s where id = any(?) and app_id = ? and deleted_at = 0",
                 columns, t
@@ -61,6 +65,15 @@ public class InstanceMapperImpl implements InstanceMapper {
                 "update %s set deleted_at = ? where deleted_at = 0 and id = ? and app_id = ?",
                 t
         );
+        tryDeleteSQL = String.format(
+                """
+                INSERT INTO %s (id, app_id, data, version, sync_version, next_node_id, deleted_at)
+                VALUES (?, ?, E'\\x', 0, 0, 0, ?)
+                ON CONFLICT (id) DO UPDATE
+                  SET deleted_at = ?
+                """,
+                t
+        );
         updateSyncVersionSQL = String.format(
                 "update %s set sync_version = ? where id = ? and app_id = ? and deleted_at = 0 and sync_version < ?",
                 t
@@ -75,6 +88,10 @@ public class InstanceMapperImpl implements InstanceMapper {
         );
         batchPhysicalDeleteSQL = String.format(
                 "delete from %s where id = any(?)",
+                t
+        );
+        filterDeletedIdsSQL = String.format(
+                "select id from %s where id = any(?) and deleted_at != 0",
                 t
         );
     }
@@ -98,6 +115,24 @@ public class InstanceMapperImpl implements InstanceMapper {
     }
 
     @SneakyThrows
+    public InstancePO selectPhysicalById(long id) {
+        var connection = getConnection();
+        try {
+            var stmt = connection.prepareStatement(selectPhysicalSQL);
+            stmt.setLong(1, id);
+            try(stmt; var rs = stmt.executeQuery()) {
+                if (rs.next())
+                    return readInstance(rs);
+                else
+                    return null;
+            }
+        } finally {
+            returnConnection(connection);
+        }
+    }
+
+
+    @SneakyThrows
     @Override
     public List<InstancePO> selectByIds(long appId, Collection<Long> ids) {
         if (ids.isEmpty()) return List.of();
@@ -112,6 +147,24 @@ public class InstanceMapperImpl implements InstanceMapper {
                     results.add(readInstance(rs));
                 }
                 return results;
+            }
+        } finally {
+            returnConnection(connection);
+        }
+    }
+
+    @SneakyThrows
+    @Override
+    public List<Long> filterDeletedIds(Collection<Long> ids) {
+        var connection = getConnection();
+        try {
+            var stmt = connection.prepareStatement(filterDeletedIdsSQL);
+            stmt.setArray(1, connection.createArrayOf("bigint", ids.toArray()));
+            try(stmt; var rs = stmt.executeQuery()) {
+                var deletedIds = new ArrayList<Long>();
+                while (rs.next())
+                    deletedIds.add(rs.getLong(1));
+                return deletedIds;
             }
         } finally {
             returnConnection(connection);
@@ -195,9 +248,24 @@ public class InstanceMapperImpl implements InstanceMapper {
         }
     }
 
+    @SneakyThrows
     @Override
     public void tryBatchDelete(long appId, long timestamp, Collection<VersionPO> versions) {
         batchDelete(appId, timestamp, versions);
+        var connection = getConnection();
+        try(var ps = connection.prepareStatement(tryDeleteSQL)) {
+            for (VersionPO version : versions) {
+                ps.setLong(1, version.id());
+                ps.setLong(2, version.appId());
+                ps.setLong(3, timestamp);
+                ps.setLong(4, timestamp);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        } finally {
+            returnConnection(connection);
+        }
+
     }
 
     @SneakyThrows
@@ -311,12 +379,34 @@ public class InstanceMapperImpl implements InstanceMapper {
                 )
         ));
 
+        mapper.batchInsert(List.of(
+                new InstancePO(
+                        1,
+                        2,
+                        "bar".getBytes(StandardCharsets.UTF_8),
+                        0,
+                        0,
+                        0
+                )
+        ));
+
+
         var instances = mapper.selectByIds(1, List.of(1L));
         Utils.require(instances.size() == 1);
 
         mapper.batchDelete(1, System.currentTimeMillis(), List.of(new VersionPO(1, 1, 1)));
 
-        mapper.physicalDeleteByIds(List.of(1L));
+        mapper.tryBatchDelete(1, System.currentTimeMillis(), List.of(new VersionPO(1, 2, 1)));
+        Utils.require(mapper.selectPhysicalById(2) != null);
+        Utils.require(mapper.selectById(2) == null);
+
+        mapper.tryBatchDelete(1, System.currentTimeMillis(), List.of(new VersionPO(1, 3, 1)));
+        Utils.require(mapper.selectById(3) == null);
+        Utils.require(mapper.selectPhysicalById(3) != null);
+
+        Utils.require(mapper.filterDeletedIds(List.of(1L, 2L, 3L, 4L)).equals(List.of(1L, 2L, 3L)));
+
+        mapper.physicalDeleteByIds(List.of(1L, 2L, 3L));
 
     }
 }

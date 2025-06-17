@@ -191,7 +191,7 @@ public class Code implements Element, LocalKey, Struct {
     }
 
     public void rebuildNodes() {
-        assert nodes.isEmpty() : "Executable " + callable +  " is not reset ";
+        nodes.clear();
         new CodeInput(this).readNodes();
     }
 

@@ -41,6 +41,8 @@ public class DebugEnv {
 
     public static boolean traceInstanceLoading = false;
 
+    public static boolean traceIndexBuild = false;
+
     public static volatile boolean flag = false;
 
     public static final List<Klass> list = new CopyOnWriteArrayList<>();
@@ -130,6 +132,8 @@ public class DebugEnv {
     public static volatile boolean traceMigration = false;
 
     public static volatile boolean traceTaskExecution = false;
+
+    public static final boolean dumpMetaContext = false;
 
     public static void exitPathItem() {
         path.removeLast();

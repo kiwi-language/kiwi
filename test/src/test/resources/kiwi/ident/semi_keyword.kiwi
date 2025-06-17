@@ -1,0 +1,5 @@
+
+class Voucher(
+    var password: string,
+    var time: long
+)

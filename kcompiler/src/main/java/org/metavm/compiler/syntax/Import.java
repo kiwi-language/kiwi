@@ -1,16 +1,20 @@
 package org.metavm.compiler.syntax;
 
-import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.diag.Errors;
+import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.Element;
 import org.metavm.compiler.element.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-@Slf4j
 public class Import extends Node {
+
+    public static final Logger logger = LoggerFactory.getLogger(Import.class);
 
     private SelectorExpr name;
 
@@ -28,9 +32,16 @@ public class Import extends Node {
         this.name = name;
     }
 
-    public void resolve(Project project) {
+    public void resolve(Project project, Log log) {
         var pkg = project.getPackage(name.x());
-        elements = List.of(pkg.getClass(name.sel()));
+        var cls = pkg.findClass(name.sel());
+        if (cls != null)
+            elements = List.of(cls);
+        else {
+            elements = List.of();
+            log.error(name, Errors.symbolNotFound);
+        }
+
     }
 
     public List<Element> getElements() {

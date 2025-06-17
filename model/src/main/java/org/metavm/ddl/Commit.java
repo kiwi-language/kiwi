@@ -8,22 +8,18 @@ import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.RedirectStatus;
-import org.metavm.util.*;
+import org.metavm.util.Instances;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.LongConsumer;
 
 @NativeEntity(13)
 @Entity
@@ -33,14 +29,14 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     public static final IndexDef<Commit> IDX_RUNNING = IndexDef.create(Commit.class,
             1, commit -> List.of(Instances.booleanInstance(commit.running)));
 
-    public static BiConsumer<Long, Id> META_CONTEXT_INVALIDATE_HOOK;
+    public static BiConsumer<Long, Boolean> META_CONTEXT_INVALIDATE_HOOK;
     public static BiConsumer<Long, Id> tableSwitchHook;
     public static BiConsumer<Long, Id> dropTmpTableHook;
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
     private Date time = new Date();
-    private Reference walReference;
+    private long appId;
     private List<String> newFieldIds = new ArrayList<>();
     private List<String> convertingFieldIds = new ArrayList<>();
     private List<String> toChildFieldIds = new ArrayList<>();
@@ -64,7 +60,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     private boolean submitted;
 
     public Commit(@NotNull Id id,
-                  WAL wal,
+                  long appId,
                   List<String> newFieldIds,
                   List<String> convertingFieldIds,
                   List<String> toChildFieldIds,
@@ -81,7 +77,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
                   List<String> changedEnumConstantIds,
                   List<FieldChange> fieldChanges) {
         super(id);
-        this.walReference = wal.getReference();
+        this.appId = appId;
         this.newFieldIds.addAll(newFieldIds);
         this.convertingFieldIds.addAll(convertingFieldIds);
         this.toChildFieldIds.addAll(toChildFieldIds);
@@ -102,7 +98,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         visitor.visitLong();
-        visitor.visitValue();
+        visitor.visitLong();
         visitor.visitList(visitor::visitUTF);
         visitor.visitList(visitor::visitUTF);
         visitor.visitList(visitor::visitUTF);
@@ -129,13 +125,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         if(submitted)
             throw new IllegalStateException("Commit is already submitted");
         this.submitted = true;
-        var wal = getWal();
-        wal.commit();
-        tableSwitchHook.accept(wal.getAppId(), getId());
-        if(META_CONTEXT_INVALIDATE_HOOK != null) {
-            META_CONTEXT_INVALIDATE_HOOK.accept(wal.getAppId(), null);
-            META_CONTEXT_INVALIDATE_HOOK.accept(wal.getAppId(), wal.getId());
-        }
+        tableSwitchHook.accept(appId, getId());
     }
 
     public boolean hasCleanUpWorks() {
@@ -154,8 +144,12 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         this.state = state;
     }
 
-    public void setRunning(boolean running) {
-        this.running = running;
+    public void terminate() {
+        this.running = false;
+        if(META_CONTEXT_INVALIDATE_HOOK != null) {
+            META_CONTEXT_INVALIDATE_HOOK.accept(appId, false);
+            META_CONTEXT_INVALIDATE_HOOK.accept(appId, true);
+        }
     }
 
     public Date getTime() {
@@ -238,10 +232,6 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         cancelled = true;
     }
 
-    public WAL getWal() {
-        return (WAL) walReference.get();
-    }
-
     public boolean isRunning() {
         return running;
     }
@@ -290,7 +280,6 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        action.accept(walReference);
         for (var fieldChanges_ : fieldChanges) fieldChanges_.forEachReference(action);
     }
 
@@ -314,10 +303,14 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         map.put("runMethodIds", this.getRunMethodIds());
         map.put("newIndexIds", this.getNewIndexIds());
         map.put("searchEnabledKlassIds", this.getSearchEnabledKlassIds());
-        map.put("wal", this.getWal().getStringId());
+        map.put("appId", this.getAppId());
         map.put("running", this.isRunning());
         map.put("submitted", this.isSubmitted());
         map.put("cancelled", this.isCancelled());
+    }
+
+    public long getAppId() {
+        return appId;
     }
 
     @Override
@@ -343,7 +336,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     @Override
     public void readBody(MvInput input, org.metavm.entity.Entity parent) {
         this.time = input.readDate();
-        this.walReference = (Reference) input.readValue();
+        this.appId = input.readLong();
         this.newFieldIds = input.readList(input::readUTF);
         this.convertingFieldIds = input.readList(input::readUTF);
         this.toChildFieldIds = input.readList(input::readUTF);
@@ -370,7 +363,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     @Override
     public void writeBody(MvOutput output) {
         output.writeDate(time);
-        output.writeValue(walReference);
+        output.writeLong(appId);
         output.writeList(newFieldIds, output::writeUTF);
         output.writeList(convertingFieldIds, output::writeUTF);
         output.writeList(toChildFieldIds, output::writeUTF);

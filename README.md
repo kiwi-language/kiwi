@@ -1,7 +1,7 @@
 Kiwi: The Infrastructure-Free Programming Langauge
 ===========================================
 
-Welcome to Kiwi! Kiwi is an infrastructure-free programming language designed to streamline the development of cloud-native applications
+Welcome to Kiwi! Kiwi is an infrastructure-free programming language designed to streamline the development of cloud-native applications.
 
 Download Pre-built Release
 --------------------------

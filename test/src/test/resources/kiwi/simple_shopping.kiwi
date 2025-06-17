@@ -1,0 +1,12 @@
+class Product(
+    var name: string,
+    var price: double,
+    var stock: int
+) {
+
+    fn reduceStock(quantity: int) {
+        require(stock >= quantity, "Out of stock")
+        stock -= quantity
+    }
+
+}

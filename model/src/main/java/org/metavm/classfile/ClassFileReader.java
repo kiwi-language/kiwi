@@ -3,9 +3,7 @@ package org.metavm.classfile;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.*;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.IntValue;
-import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.object.instance.core.StringReference;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
@@ -250,7 +248,7 @@ public class ClassFileReader {
 
             if (existing == null) {
                 return new Index(
-                        klass.nextChildId(),
+                        klass.getRoot().nextChildId(),
                         klass,
                         name,
                         null,

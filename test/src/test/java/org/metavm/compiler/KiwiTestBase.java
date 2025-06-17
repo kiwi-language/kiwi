@@ -1,6 +1,7 @@
 package org.metavm.compiler;
 
 import junit.framework.TestCase;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.MockEnter;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.FlowSavingContext;
@@ -47,6 +48,10 @@ public abstract class KiwiTestBase extends TestCase  {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, arguments));
     }
 
+    void deleteObject(Id id) {
+        TestUtils.doInTransactionWithoutResult(() -> apiClient.delete(id));
+    }
+
     Object callMethod(Object qualifier, String methodName, List<Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
     }
@@ -69,6 +74,10 @@ public abstract class KiwiTestBase extends TestCase  {
 
     void deploy(List<String> sources) {
         sources = TestUtils.getResourcePaths(sources);
+        deployWithAbsolutePath(sources);
+    }
+
+    void deployWithAbsolutePath(List<String> sources) {
         FlowSavingContext.initConfig();
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             context.loadKlasses();
@@ -96,6 +105,8 @@ public abstract class KiwiTestBase extends TestCase  {
         task.analyze();
         if (task.getErrorCount() == 0)
             task.generate();
+        else
+            throw new CompilationException("Compilation failed");
     }
 
     protected IInstanceContext newContext() {

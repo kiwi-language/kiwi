@@ -1,0 +1,14 @@
+package wideing
+
+class Foo(
+    var rate: float?
+)
+
+@Bean
+class FooService {
+
+    fn create(rate: int) -> Foo {
+        return Foo(1)
+    }
+
+}

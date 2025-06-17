@@ -4,7 +4,6 @@ package org.metavm.task;
 
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,18 +126,15 @@ public class Worker extends EntityContextFactoryAware {
             try (var appContext = newContext(shadowTask.getAppId())) {
                 var appTask = appContext.getEntity(Task.class, shadowTask.getAppTaskId());
                 appContext.setTimeout(appTask.getTimeout());
-                logger.info("Running task {}. app ID: {}, task ID: {}, shadow task ID: {}, migrating: {}, wal: {}, meta wal: {}",
-                        appTask.getTitle(), shadowTask.getAppId(), appTask.getId(), shadowTask.getId(),
-                        appTask.isMigrating(), appTask.getWAL(), appTask.getMetaWAL());
                 boolean terminated;
                 try {
                     if (appTask.isMigrating())
                         ContextUtil.setDDL(true);
                     var parentContext = shadowTask.getAppId() != Constants.ROOT_APP_ID ?
-                                metaContextCache.get(shadowTask.getAppId(), Utils.safeCall(appTask.getMetaWAL(), Instance::getId)) :
+                                metaContextCache.get(shadowTask.getAppId(), appTask.isMigrating()/*Utils.safeCall(appTask.getMetaWAL(), Instance::getId)*/) :
                                             ModelDefRegistry.getDefContext();
                     try (var walContext = entityContextFactory.newContext(shadowTask.getAppId(), parentContext,
-                            builder -> builder.readWAL(appTask.getWAL())
+                            builder -> builder
                                     .relocationEnabled(appTask.isRelocationEnabled())
                                     .migrating(appTask.isMigrating())
                                     .timeout(appTask.getTimeout()))) {

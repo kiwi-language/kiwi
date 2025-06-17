@@ -1,6 +1,6 @@
 package org.metavm.compiler.analyze;
 
-import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.Package;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
@@ -14,21 +14,25 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-@Slf4j
 public class Env {
 
     private final Project project;
     private final Types types = Types.instance;
+    private final Log log;
     private final ElementTable table = new ElementTable();
     private Scope currentScope;
 
-    public Env(Project project) {
+    public Env(Project project, Log log) {
         this.project = project;
+        this.log = log;
     }
-
 
     public Project getProject() {
         return project;
+    }
+
+    public Log getLog() {
+        return log;
     }
 
     public Scope enterScope(Node node) {

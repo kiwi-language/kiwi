@@ -1,12 +1,14 @@
 package org.metavm.object.instance.log;
 
 import org.metavm.ddl.Commit;
-import org.metavm.entity.*;
-import org.metavm.object.instance.CachingInstanceStore;
+import org.metavm.entity.DefContext;
+import org.metavm.entity.EntityContextFactory;
+import org.metavm.entity.EntityContextFactoryAware;
+import org.metavm.entity.MetaContextCache;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.persistence.MapperRegistry;
 import org.metavm.task.SyncSearchTask;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.DebugEnv;
@@ -27,17 +29,14 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceLogServiceImpl.class);
 
-    private final IInstanceStore instanceStore;
-
     private final TransactionOperations transactionOperations;
 
     private final MetaContextCache metaContextCache;
 
     public InstanceLogServiceImpl(
             EntityContextFactory entityContextFactory,
-            IInstanceStore instanceStore, TransactionOperations transactionOperations, MetaContextCache metaContextCache) {
+            TransactionOperations transactionOperations, MetaContextCache metaContextCache) {
         super(entityContextFactory);
-        this.instanceStore = instanceStore;
         this.transactionOperations = transactionOperations;
         this.metaContextCache = metaContextCache;
     }
@@ -57,12 +56,8 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext) {
         try(var context = newContext(appId);
             var ignored = ContextUtil.getProfiler().enter("createSearchSyncTask")) {
-            WAL wal = instanceStore instanceof CachingInstanceStore cachingInstanceStore ?
-                    cachingInstanceStore.getWal().copy(context.allocateRootId()) : null;
-//            WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
-//                    DefContextUtils.getWal(reversedDefContext) : null;
             context.bind(new SyncSearchTask(
-                    context.allocateRootId(), idsToIndex, idsToRemove, wal, /*defWal != null ? defWal.getId() : null*/ null));
+                    context.allocateRootId(), idsToIndex, idsToRemove  /*defWal != null ? defWal.getId() : null*/));
 //                this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
             context.finish();
             }
@@ -82,10 +77,8 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                                     commit.getState().name(), appId, Utils.join(instanceIds, Id::toString));
                         }
                         var commitState = commit.getState();
-                        var wal = commit.getWal();
-                        try (var loadedContext = newContext(appId, metaContextCache.get(appId, wal.getId()),
+                        try (var loadedContext = newContext(appId, metaContextCache.get(appId, true),
                                 builder -> builder
-                                        .readWAL(wal)
                                         .relocationEnabled(commitState.isRelocationEnabled())
                                         .migrating(true)
                                         .skipPostProcessing(true)
@@ -93,7 +86,8 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                         )
                         ) {
                             loadedContext.setDescription("DDLHandler");
-                            Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext::get)
+                            Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext::internalGet)
+                                    .filter(i -> !i.isRemoved())
                                     .iterator();
                             Instances.migrate(instances, commit, loadedContext);
                             loadedContext.finish();

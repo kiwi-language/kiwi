@@ -17,7 +17,7 @@ public abstract class InstanceVisitor<R> {
     }
 
     public R visitEntity(Entity entity) {
-        return visitInstance(entity);
+        return visitClassInstance(entity);
     }
 
     public R visitNativeEphemeralObject(NativeEphemeralObject nativeEphemeralObject) {

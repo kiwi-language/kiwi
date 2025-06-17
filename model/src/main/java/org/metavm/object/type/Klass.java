@@ -690,9 +690,9 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     }
 
     public void setKlasses(List<Klass> klasses) {
+        klasses.forEach(k -> k.scope = this);
         this.klasses.clear();
         this.klasses.addAll(klasses);
-        klasses.forEach(k -> k.scope = this);
     }
 
     @JsonIgnore

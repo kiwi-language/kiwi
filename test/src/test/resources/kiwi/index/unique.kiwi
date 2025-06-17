@@ -1,0 +1,30 @@
+package unique
+
+import org.metavm.api.Index
+
+class Foo(var name: string) {
+
+    static var nameIdx = Index<string, Foo>(true, f -> f.name)
+
+}
+
+@Bean
+class FooService {
+
+    fn findByName(name: string) -> Foo? {
+        return Foo.nameIdx.getFirst(name)
+    }
+
+    fn swapNames(foo1: Foo, foo2: Foo) {
+        var name1 = foo1.name
+        foo1.name = foo2.name
+        foo2.name = name1
+    }
+
+    fn deleteAndNew(foo: Foo) -> Foo {
+        var f = Foo(foo.name)
+        delete foo
+        return f
+    }
+
+}
