@@ -1,4 +1,4 @@
-GET http://localhost:9200/instance/_search?routing=1000000010
+GET http://localhost:9200/instance/_search?routing=2
 Accept: application/json
 Content-Type: application/json
 Authorization: Basic elastic 85263670
@@ -6,7 +6,7 @@ Authorization: Basic elastic 85263670
 {
   "query": {
     "query_string": {
-      "query": "(appId:1000000010)"
+      "query": "appId:2 AND l0.s0: tes*"
     }
   },
   "sort": [

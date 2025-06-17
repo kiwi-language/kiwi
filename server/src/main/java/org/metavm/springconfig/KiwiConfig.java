@@ -1,15 +1,21 @@
 package org.metavm.springconfig;
 
 
+import org.metavm.api.Configuration;
+import org.metavm.chat.GeminiAgent;
+import org.metavm.util.Utils;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
+import javax.annotation.Nullable;
 import java.io.FileInputStream;
 import java.util.Map;
 import java.util.Objects;
 
 @Component
+@Configuration
 public class KiwiConfig {
 
     public static String CONFIG_PATH;
@@ -17,12 +23,22 @@ public class KiwiConfig {
     private final EsConfig esConfig;
     private final ServerConfig serverConfig;
 
+    private final @Nullable GeminiConfig geminiConfig;
+
     /** @noinspection unchecked*/
     public KiwiConfig() {
         var config = getConfig();
         dbConfig = buildDbConfig((Map<String, Object>) config.get("datasource"));
         serverConfig = buildServerConfig((Map<String, Object>) config.get("server"));
         esConfig = buildEsConfig((Map<String, Object>) config.get("es"));
+        geminiConfig = buildGeminiConfig((Map<String, Object>) config.get("gemini"));
+    }
+
+    private @Nullable GeminiConfig buildGeminiConfig(Map<String, Object> config) {
+        if (config == null)
+            return null;
+        var apiKey = (String) config.get("apikey");
+        return new GeminiConfig(apiKey);
     }
 
     private EsConfig buildEsConfig(Map<String, Object> config) {
@@ -64,6 +80,11 @@ public class KiwiConfig {
         return new DbConfig(userName, passwd, dbName, host, port);
     }
 
+    @Bean
+    public GeminiAgent geminiAgent() {
+        return new GeminiAgent(Utils.safeCall(geminiConfig, GeminiConfig::apiKey));
+    }
+
     public DbConfig getDbConfig() {
         return dbConfig;
     }
@@ -89,5 +110,6 @@ public class KiwiConfig {
     public record EsConfig(String host, int port, String user, String password) {
     }
 
+    public record GeminiConfig(String apiKey) {}
 
 }

@@ -1398,3 +1398,13 @@ X-App-ID: 1000000011
     "quantity": 1
   }
 }
+
+###
+POST http://localhost:8080/chat
+X-App-ID: 2
+Content-Type: application/json
+
+{
+  "appId": 1000028007,
+  "content": "A todo list app"
+}

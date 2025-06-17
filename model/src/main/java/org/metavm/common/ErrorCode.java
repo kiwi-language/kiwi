@@ -175,6 +175,8 @@ public enum ErrorCode {
     // schema
     UNSUPPORTED_SCHEMA(1701, "Unsupported schema: {}"),
 
+    // Chat
+    GEMINI_NOT_CONFIGURED(1801, "Gemini not configured"),
 
     // query
     ILLEGAL_QUERY(1801, "Illegal query"),

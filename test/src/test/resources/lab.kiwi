@@ -1,0 +1,221 @@
+@Label("金额")
+value class Money(
+@Label("数额")
+val amount: double,
+@Label("币种")
+val currency: Currency
+) {
+
+    @Summary
+    priv val summary = amount + " " + currency.label()
+
+    fn add(@Label("待加金额") that: Money) -> Money {
+        return Money(amount + that.getAmount(currency), currency)
+    }
+
+    fn sub(that: Money) -> Money {
+        return Money(amount - that.getAmount(currency), currency)
+    }
+
+    fn getAmount(@Label("目标币种") currency: Currency) -> double {
+        return currency.rate / this.currency.rate * amount
+    }
+
+    fn times(n: int) -> Money {
+        return Money(amount * n, currency)
+    }
+
+    fn timesDouble(n: double) -> Money {
+        return Money(amount * n, currency)
+    }
+
+}
+
+@Label("币种")
+enum Currency(
+@Label("汇率")
+val rate: double
+) {
+@Label("人民币")
+YUAN(7.2) {
+
+        fn label() -> string {
+            return "元"
+        }
+
+    },
+    @Label("美元")
+    DOLLAR(1) {
+
+        fn label() -> string {
+            return "美元"
+        }
+
+    },
+    @Label("英镑")
+    POUND(0.75) {
+
+        fn label() -> string {
+            return "英镑"
+        }
+
+    },
+;
+
+    abstract fn label() -> string
+
+    fn getRate() -> double {
+        return rate
+    }
+
+}
+
+@Label("地点")
+class Location(
+    @Summary
+    @Label("地址")
+    val address: string,
+    @Label("城市")
+    val city: string,
+    @Label("邮政编码")
+    val zipCode: string,
+    @Label("国家")
+    val country: string
+) {
+
+}
+
+@Label("包裹")
+class Package(
+    @Summary
+    @Label("描述")
+    val description: string,
+    @Label("重量(公斤)")
+    val weightKg: double,
+    @Label("宽度(厘米)")
+    val widthCm: double,
+    @Label("高度(厘米)")
+    val heightCm: double,
+    @Label("深度(厘米)")
+    val depthCm: double
+) {
+    @Label("体积(立方厘米)")
+    priv val volumeCm3 = widthCm * heightCm * depthCm
+}
+
+@Label("货运状态")
+enum ShipmentStatus {
+    @Label("待定")
+    PENDING,
+    @Label("揽收中")
+    PICKUP_IN_PROGRESS,
+    @Label("运输中")
+    IN_TRANSIT,
+    @Label("派送中")
+    OUT_FOR_DELIVERY,
+    @Label("已送达")
+    DELIVERED,
+    @Label("异常")
+    EXCEPTION
+;
+}
+
+@Label("货运订单")
+class Shipment(
+    @Summary
+    @Label("跟踪号")
+    val trackingNumber: string,
+    @Label("揽收地点")
+    val pickupLocation: Location,
+    @Label("派送地点")
+    val deliveryLocation: Location,
+    @Label("预估价格")
+    var estimatedPrice: Money,
+    @Label("当前状态")
+    var status: ShipmentStatus
+) {
+    @Label("货运项")
+    class Item(
+        @Label("包裹")
+        val pkg: Package,
+        @Label("数量")
+        val quantity: int
+    )
+
+}
+
+@Bean
+@Label("货运服务")
+class FreightService {
+
+    @Label("创建货运订单")
+    fn createShipment(
+        @Label("跟踪号") trackingNumber: string,
+        @Label("揽收地点") pickup: Location,
+        @Label("派送地点") delivery: Location,
+        @Label("包裹列表") packages: Package[]
+    ) -> Shipment {
+        require(packages.length > 0, "Missing packages for shipment")
+
+        var totalWeight = 0.0
+        var i = 0
+        while (i < packages.length) {
+            totalWeight = totalWeight + packages[i].weightKg
+            i++
+        }
+
+        val ratePerKg = Money(10.0, Currency.DOLLAR)
+        val estimatedPrice = ratePerKg.timesDouble(totalWeight)
+
+        // Add a flat surcharge for simplicity, as distance calculation is complex
+        val flatSurcharge = Money(50.0, Currency.DOLLAR)
+        val finalEstimatedPrice = estimatedPrice.add(flatSurcharge)
+
+        val newShipment = Shipment(
+            trackingNumber,
+            pickup,
+            delivery,
+            finalEstimatedPrice,
+            ShipmentStatus.PENDING
+        )
+
+        i = 0
+        while (i < packages.length) {
+            val currentPackage = packages[i]
+            newShipment.Item(currentPackage, 1)
+            i++
+        }
+
+        return newShipment
+    }
+
+    @Label("更新货运状态")
+    fn updateShipmentStatus(
+        @Label("货运订单") shipment: Shipment,
+        @Label("新状态") newStatus: ShipmentStatus
+    ) {
+        shipment.status = newStatus
+    }
+
+    @Label("计算预估费用")
+    fn calculateEstimatedCost(
+        @Label("包裹列表") packages: Package[]
+    ) -> Money {
+        require(packages.length > 0, "Missing packages to calculate cost")
+
+        var totalWeight = 0.0
+        var i = 0
+        while (i < packages.length) {
+            totalWeight = totalWeight + packages[i].weightKg
+            i++
+        }
+
+        val baseRatePerKg = Money(10.0, Currency.DOLLAR)
+        val estimatedCost = baseRatePerKg.timesDouble(totalWeight)
+
+        // Add a flat surcharge for simplicity
+        val flatSurcharge = Money(50.0, Currency.DOLLAR)
+        return estimatedCost.add(flatSurcharge)
+    }
+
+}
