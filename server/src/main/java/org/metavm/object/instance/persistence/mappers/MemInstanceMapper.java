@@ -36,6 +36,11 @@ public class MemInstanceMapper implements InstanceMapper {
     }
 
     @Override
+    public List<Long> filterDeletedIds(Collection<Long> ids) {
+        return Utils.filter(ids, removed::containsKey);
+    }
+
+    @Override
     public void batchUpdate(Collection<InstancePO> records) {
         for (InstancePO record : records) {
             var instance = Objects.requireNonNull(id2instance.get(record.getId()),
@@ -76,10 +81,9 @@ public class MemInstanceMapper implements InstanceMapper {
     public void tryBatchDelete(long appId, long timestamp, Collection<VersionPO> versions) {
         for (VersionPO version : versions) {
             var instancePO = id2instance.get(version.id());
-            if (instancePO != null) {
+            if (instancePO != null)
                 remove(version.id());
-                removed.put(version.id(), instancePO);
-            }
+            removed.put(version.id(), instancePO);
         }
     }
 

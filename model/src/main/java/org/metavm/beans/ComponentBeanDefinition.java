@@ -1,24 +1,28 @@
 package org.metavm.beans;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.*;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.Utils;
 import org.metavm.util.StreamVisitor;
+import org.metavm.util.Utils;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 
+@Slf4j
 @NativeEntity(11)
 @Entity
 public class ComponentBeanDefinition extends BeanDefinition {

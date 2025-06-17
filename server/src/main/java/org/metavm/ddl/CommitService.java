@@ -45,7 +45,7 @@ public class CommitService {
         schemaManager.dropTmpTables(appId);
         try (var context = entityContextFactory.newContext(appId, builder -> builder.skipPostProcessing(true))) {
             var commit = context.getEntity(Commit.class, commitId);
-            commit.setRunning(false);
+            commit.terminate();
             context.finish();
         }
     }
@@ -54,7 +54,7 @@ public class CommitService {
         schemaManager.switchTable(appId);
         try (var context = entityContextFactory.newContext(appId, builder -> builder.skipPostProcessing(true))) {
             var commit = context.getEntity(Commit.class, commitId);
-            commit.setRunning(false);
+            commit.terminate();
             context.finish();
         }
     }

@@ -202,11 +202,6 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.google.genai</groupId>
-            <artifactId>google-genai</artifactId>
-        </dependency>
-
     </dependencies>
 
 </project>

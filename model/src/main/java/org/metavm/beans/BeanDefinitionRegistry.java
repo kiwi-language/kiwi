@@ -9,6 +9,7 @@ import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
+import org.metavm.flow.Method;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -22,10 +23,7 @@ import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 @NativeEntity(53)
@@ -46,7 +44,8 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
     private List<BeanDefinition> beanDefinitions = new ArrayList<>();
 
     public static BeanDefinitionRegistry getInstance(IInstanceContext context) {
-        return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()), "BeanDefinitionRegistry not found");
+        return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()),
+                "BeanDefinitionRegistry not found in context " + context.getAppId());
     }
 
     public static void initialize(IInstanceContext context) {
@@ -80,8 +79,46 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
 
     private void addBeanDefinition(BeanDefinition beanDefinition) {
         beanDefinitions.add(beanDefinition);
-        if(StdKlass.interceptor.type().isAssignableFrom(beanDefinition.getBeanType()))
+        if(isInterceptor(beanDefinition.getBeanType()))
             interceptorDefinitions.add(beanDefinition);
+    }
+
+    public List<BeanDefinition> removeBeanDefByType(ClassType type) {
+        var it = beanDefinitions.iterator();
+        var removed = new ArrayList<BeanDefinition>();
+        while (it.hasNext()) {
+            var bd = it.next();
+            if (type.isAssignableFrom(bd.getBeanType())) {
+                removed.add(bd);
+                it.remove();
+            }
+        }
+        if (isInterceptor(type))
+            interceptorDefinitions.removeIf(bd -> type.isAssignableFrom(bd.getBeanType()));
+        return removed;
+    }
+
+    public List<BeanDefinition> removeBeanDefByFactoryMethod(Method method) {
+        var it = beanDefinitions.iterator();
+        var removed = new ArrayList<BeanDefinition>();
+        while (it.hasNext()) {
+            var bd = it.next();
+            if (isFactoryBeanDef(bd, method)) {
+                removed.add(bd);
+                it.remove();
+            }
+        }
+        if (method.getReturnType() instanceof ClassType ct && isInterceptor(ct))
+            interceptorDefinitions.removeIf(bd -> isFactoryBeanDef(bd, method));
+        return removed;
+    }
+
+    private boolean isFactoryBeanDef(BeanDefinition beanDef, Method method) {
+        return beanDef instanceof FactoryBeanDefinition fbd && fbd.getMethod() == method;
+    }
+
+    private boolean isInterceptor(ClassType classType) {
+        return StdKlass.interceptor.type().isAssignableFrom(classType);
     }
 
     public @Nullable BeanDefinition tryGetBeanDefinition(String name) {
@@ -124,33 +161,38 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
             var beanName = parameter.getAttribute(AttributeNames.BEAN_NAME);
             if (beanName != null) {
                 var bean = getBean(beanName);
-                if (parameter.getType().isInstance(bean.getReference()))
+                if (parameter.getType().isInstance(bean.getReference())) {
                     arguments.add(bean.getReference());
-                else
-                    throw new InternalException("Bean " + beanName + " is not of type " + parameter.getType());
+                } else {
+                    throw new InternalException("Type mismatch for named bean '" + beanName + "': expected '" + parameter.getType() + "'.");
+                }
                 continue;
             }
             if (parameter.getType().getUnderlyingType() instanceof KlassType paramType) {
                 if (paramType.isList()) {
-                    if(paramType.getFirstTypeArgument() instanceof KlassType beanType)
-                        arguments.add(Instances.createList(paramType, Utils.map(getBeansOfType(beanType), Instance::getReference)).getReference());
-                    else
-                        throw new InternalException("Unsupported list element type " + paramType.getFirstTypeArgument() + " in bean factory method " + method.getName());
+                    if (paramType.getFirstTypeArgument() instanceof KlassType beanType) {
+                        var matchingBeans = getBeansOfType(beanType);
+                        var beanReferences = Utils.map(matchingBeans, Instance::getReference);
+                        arguments.add(Instances.createList(paramType, beanReferences).getReference());
+                    } else {
+                        throw new InternalException("Cannot autowire List: unsupported element type '" + paramType.getFirstTypeArgument() + "'.");
+                    }
                 } else {
                     var beans = getBeansOfType(paramType);
-                    if (beans.isEmpty())
-                        throw new InternalException("No beans of type " + paramType + " found");
-                    if (beans.size() > 1)
-                        throw new InternalException("Multiple beans of type " + paramType + " found");
+                    if (beans.isEmpty()) {
+                        throw new InternalException("No qualifying bean of type '" + paramType + "' found.");
+                    }
+                    if (beans.size() > 1) {
+                        throw new InternalException("Expected 1 bean of type '" + paramType + "', but found " + beans.size() + ".");
+                    }
                     arguments.add(beans.getFirst().getReference());
                 }
             } else {
-                throw new InternalException("Unsupported parameter type " + parameter.getType() + " in bean factory method " + method.getName());
+                throw new InternalException("Cannot resolve parameter: unsupported type '" + parameter.getType() + "' in method '" + method.getName() + "'.");
             }
         }
         return arguments;
     }
-
     public List<ClassInstance> getInterceptors() {
         return Utils.map(interceptorDefinitions, BeanDefinition::resolveBean);
     }
@@ -227,6 +269,10 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
     public void writeBody(MvOutput output) {
         output.writeBoolean(allFlags);
         output.writeList(beanDefinitions, output::writeEntity);
+    }
+
+    public List<BeanDefinition> getBeanDefinitions() {
+        return Collections.unmodifiableList(beanDefinitions);
     }
 
     @Override

@@ -473,8 +473,6 @@ public class Instances {
         for (Instance instance : instances) {
             if (tracing)
                 log.trace("Migrating instance {}, tree ID: {}", instance, instance.tryGetTreeId());
-            if (!instance.isValue())
-                instance.incVersion();
             if (instance instanceof MvInstance mvInst/* && !mvInst.isEnum()*/) {
                 migrate(mvInst, newFields, convertingFields, changingSuperKlasses, toValueKlasses,
                         valueToEntityKlasses, toEnumKlasses, removingChildFields, runMethods, newIndexes, searchEnabledKlasses,
@@ -1149,6 +1147,21 @@ public class Instances {
 
     public static MvInput extractInput(Value value) {
         return ((MvObjectInputStream) value.resolveObject()).getInput();
+    }
+
+    /**
+     * Clear marks and return unmarked instances
+     * @return unmarked
+     */
+    public static <T extends Instance> List<T> clearMarks(List<T> instances) {
+        var marked = new ArrayList<T>();
+        for (T inst : instances) {
+            if (inst.isMarked()) {
+                inst.clearMarked();
+                marked.add(inst);
+            }
+        }
+        return marked;
     }
 
 }

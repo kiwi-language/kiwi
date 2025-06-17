@@ -81,7 +81,7 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Bin
 
     @Override
     public String toString() {
-        return String.format("%s, id: %s", getClass().getSimpleName(), state.id);
+        return String.format("%s, id: %s, version: %s", getClass().getSimpleName(), state.id, getVersion());
     }
 
     public Long getTmpId() {

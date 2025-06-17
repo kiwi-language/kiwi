@@ -1,6 +1,7 @@
 package org.metavm.compiler.analyze;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.element.Package;
 import org.metavm.compiler.syntax.*;
@@ -16,8 +17,8 @@ public class TypeResolver extends StructuralNodeVisitor {
     private final Env env;
     private Package pkg;
 
-    public TypeResolver(Project project) {
-         env = new Env(project);
+    public TypeResolver(Project project, Log log) {
+         env = new Env(project, log);
     }
 
     @Override
@@ -165,11 +166,14 @@ public class TypeResolver extends StructuralNodeVisitor {
             } else {
                 if (classDecl.getImplements().nonEmpty()) {
                     classDecl.getImplements().forEach(t -> t.accept(this));
-                    clazz.setInterfaces(classDecl.getImplements().map(t -> {
-                        var it = (ClassType) t.getType().getType();
-                        it.getClazz().getClasses().forEach(scope::add);
-                        return it;
-                    }));
+                    var superTypes = List.<ClassType>builder();
+                    for (Extend ext : classDecl.getImplements()) {
+                        if (ext.getType().getType() instanceof ClassType st) {
+                            st.getClazz().getClasses().forEach(scope::add);
+                            superTypes.append(st);
+                        }
+                    }
+                    clazz.setInterfaces(superTypes.build());
                 }
                 classDecl.getTypeParameters().forEach(tv -> tv.accept(this));
             }

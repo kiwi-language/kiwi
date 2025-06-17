@@ -2,6 +2,7 @@ package org.metavm.compiler.analyze;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.element.Attribute;
+import org.metavm.compiler.element.Name;
 import org.metavm.compiler.element.NameTable;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.util.CompilationException;
@@ -21,8 +22,11 @@ public class Meta extends StructuralNodeVisitor {
         var attrs = r.attributes;
         if (r.bean) {
             attrs = attrs.prepend(new Attribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT));
-            attrs = attrs.prepend(new Attribute(AttributeNames.BEAN_NAME,
-                    NamingUtils.firstCharToLowerCase(clazz.getName().toString())));
+            attrs = attrs.prepend(new Attribute(AttributeNames.BEAN_NAME, getBeanName(clazz.getName())));
+        }
+        else if (r.config) {
+            attrs = attrs.prepend(new Attribute(AttributeNames.BEAN_KIND, BeanKinds.CONFIGURATION));
+            attrs = attrs.prepend(new Attribute(AttributeNames.BEAN_NAME, getBeanName(clazz.getName())));
         }
         clazz.setAttributes(attrs);
         if (r.tag != null)
@@ -30,9 +34,18 @@ public class Meta extends StructuralNodeVisitor {
         return super.visitClassDecl(classDecl);
     }
 
+    private String getBeanName(Name className) {
+        return NamingUtils.firstCharToLowerCase(className.toString());
+    }
+
     @Override
     public Void visitMethodDecl(MethodDecl methodDecl) {
-        methodDecl.getElement().setAttributes(parseAnnotations(methodDecl.getAnnotations()).attributes);
+        var r = parseAnnotations(methodDecl.getAnnotations());
+        var method = methodDecl.getElement();
+        var attrs = r.attributes;
+        if (r.bean)
+            attrs = attrs.prepend(new Attribute(AttributeNames.BEAN_NAME, getBeanName(method.getName())));
+        method.setAttributes(attrs);
         return super.visitMethodDecl(methodDecl);
     }
 
@@ -75,6 +88,7 @@ public class Meta extends StructuralNodeVisitor {
         var attrs = List.<Attribute>builder();
         var summary = false;
         var bean = false;
+        var config = false;
         Integer tag = null;
         for (Annotation annotation : annotations) {
             var aName = annotation.getName();
@@ -92,14 +106,17 @@ public class Meta extends StructuralNodeVisitor {
                     throw new CompilationException("Invalid tag: " + annotation);
             } else if (aName == NameTable.instance.Bean)
                 bean = true;
+            else if (aName == NameTable.instance.Configuration)
+                config = true;
         }
-        return new ParseResult(attrs.build(), summary, bean, tag);
+        return new ParseResult(attrs.build(), summary, bean, config, tag);
     }
 
     private record ParseResult(
             List<Attribute> attributes,
             boolean summary,
             boolean bean,
+            boolean config,
             Integer tag
     ) {}
 

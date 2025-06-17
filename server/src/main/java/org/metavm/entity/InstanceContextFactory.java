@@ -1,8 +1,8 @@
 package org.metavm.entity;
 
 import org.metavm.event.EventQueue;
-import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.cache.Cache;
+import org.metavm.object.instance.persistence.MapperRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -14,7 +14,7 @@ public class InstanceContextFactory {
 
     private EntityIdProvider idService;
 
-    private final IInstanceStore instanceStore;
+    private final MapperRegistry mapperRegistry;
 
     private final EventQueue eventQueue;
 
@@ -29,8 +29,8 @@ public class InstanceContextFactory {
             }
     );
 
-    public InstanceContextFactory(IInstanceStore instanceStore, EventQueue eventQueue) {
-        this.instanceStore = instanceStore;
+    public InstanceContextFactory(MapperRegistry mapperRegistry, EventQueue eventQueue) {
+        this.mapperRegistry = mapperRegistry;
         this.eventQueue = eventQueue;
     }
 
@@ -40,7 +40,7 @@ public class InstanceContextFactory {
     }
 
     public InstanceContextBuilder newBuilder(long appId) {
-        return InstanceContextBuilder.newBuilder(appId, instanceStore, new DefaultIdInitializer(idService))
+        return InstanceContextBuilder.newBuilder(appId, mapperRegistry, new DefaultIdInitializer(idService))
                 .executor(executor)
                 .eventQueue(eventQueue)
                 .cache(cache)

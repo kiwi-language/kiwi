@@ -1,8 +1,8 @@
 package org.metavm.entity;
 
 import org.metavm.common.ErrorCode;
+import org.metavm.object.instance.core.Id;
 import org.metavm.util.BusinessException;
-import org.metavm.util.Utils;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public record EntityQuery<T extends Entity>(
         int page,
         int pageSize,
         List<EntityQueryField<? super T>> fields,
-        List<String> newlyCreated,
+        List<Id> newlyCreatedIds,
         List<String> excluded
         ) {
 
@@ -21,12 +21,6 @@ public record EntityQuery<T extends Entity>(
         public EntityQuery {
                 if (page <= 0 || pageSize <= 0)
                         throw new BusinessException(ErrorCode.ILLEGAL_QUERY);
-        }
-
-        public boolean filter(T entity) {
-                return !excluded.contains(entity.getStringId()) &&
-                        fields.stream().filter(EntityQueryField::filter)
-                                .allMatch(f -> f.matches(entity));
         }
 
 }

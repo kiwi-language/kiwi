@@ -137,7 +137,7 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         return (CapturedTypeVariable) getTypeDef(id);
     }
 
-    public Commit buildCommit(WAL wal) {
+    public Commit buildCommit() {
         checkForDDL();
         var fieldChanges = new ArrayList<FieldChange>();
         for (Field f : newFields) {
@@ -168,7 +168,7 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         }
         return new Commit(
                 PhysicalId.of(context.allocateTreeId(), 0),
-                wal,
+                context.getAppId(),
                 Utils.map(newFields, Entity::getStringId),
                 Utils.map(typeChangedFields, Entity::getStringId),
                 Utils.map(toChildFields, Entity::getStringId),
@@ -457,5 +457,11 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
             }
         }
         context.updateMemoryIndex(klass);
+    }
+
+    @Override
+    public void onKlassRemove(Klass klass) {
+        var sft = StaticFieldTable.getInstance(klass.getType(), context);
+        context.remove(sft);
     }
 }

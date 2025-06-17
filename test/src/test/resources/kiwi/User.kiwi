@@ -1,13 +1,19 @@
-class PlatformUser {
-    var loginName: string
-    var passwd: password
+class PlatformUser (
+    var loginName: string,
+    priv var password: string
+) {
+
+    fn verify(password: string) -> bool {
+        return password == this.password
+    }
+
 }
 
 @Searchable
-class Application {
-    var name: string
+class Application(
+    var name: string,
     priv var owner: PlatformUser
-
+) {
     fn getOwner() -> PlatformUser {
         return this.owner
     }

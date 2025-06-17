@@ -76,8 +76,8 @@ public class CompilationTask {
             files.forEach(f -> f.accept(meta));
             for (File file : files) {
                 log.setSourceFile(file.getSourceFile());
-                ImportResolver.resolve(file, project);
-                file.accept(new TypeResolver(project));
+                ImportResolver.resolve(file, project, log);
+                file.accept(new TypeResolver(project, log));
             }
             for (File file : files) {
                 log.setSourceFile(file.getSourceFile());
@@ -86,6 +86,10 @@ public class CompilationTask {
             for (File file : files) {
                 log.setSourceFile(file.getSourceFile());
                 file.accept(new Attr(project, log));
+            }
+            for (File file : files) {
+                log.setSourceFile(file.getSourceFile());
+                file.accept(new Check(log));
             }
             return project;
         }
@@ -98,11 +102,11 @@ public class CompilationTask {
         try {
             for (File file : files) {
                 log.setSourceFile(file.getSourceFile());
-                file.accept(new Lower(project));
+                file.accept(new Lower(project, log));
             }
             Utils.clearDirectory(buildDir);
             for (File file : files) {
-                var gen = new Gen(project);
+                var gen = new Gen(project, log);
                 file.accept(gen);
                 for (ClassDecl classDeclaration : file.getClassDeclarations()) {
                     writeClassFile(classDeclaration.getElement());

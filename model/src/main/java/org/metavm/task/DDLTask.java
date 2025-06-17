@@ -78,22 +78,9 @@ public class DDLTask extends ScanTask implements IDDLTask {
         return (Commit) commitReference.get();
     }
 
-    @Nullable
-    @Override
-    public WAL getWAL() {
-        return commitState.isMigrating() ? getCommit().getWal() : null;
-    }
-
-
     @Override
     public boolean isMigrating() {
         return commitState == CommitState.MIGRATING;
-    }
-
-    @Nullable
-    @Override
-    public WAL getMetaWAL() {
-        return getWAL();
     }
 
     @Override
@@ -116,10 +103,6 @@ public class DDLTask extends ScanTask implements IDDLTask {
     public void buildJson(Map<String, Object> map) {
         map.put("commitState", this.getCommitState().name());
         map.put("commit", this.getCommit().getStringId());
-        var wAL = this.getWAL();
-        if (wAL != null) map.put("wAL", wAL.getStringId());
-        var metaWAL = this.getMetaWAL();
-        if (metaWAL != null) map.put("metaWAL", metaWAL.getStringId());
         map.put("relocationEnabled", this.isRelocationEnabled());
         map.put("timeout", this.getTimeout());
         var group = this.getGroup();
@@ -133,8 +116,6 @@ public class DDLTask extends ScanTask implements IDDLTask {
         map.put("terminated", this.isTerminated());
         map.put("lastRunTimestamp", this.getLastRunTimestamp());
         map.put("startAt", this.getStartAt());
-        var defWalId = this.getDefWalId();
-        if (defWalId != null) map.put("defWalId", defWalId);
         map.put("extraStdKlassIds", this.getExtraStdKlassIds());
     }
 

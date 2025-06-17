@@ -1,0 +1,18 @@
+package index
+
+import org.metavm.api.Index
+
+class Foo(var name: string) {
+
+    static var nameIdx = Index<string, Foo>(true, f -> f.name)
+
+}
+
+@Bean
+class FooService {
+
+    fn findFooByName(name: string) -> Foo? {
+        return Foo.nameIdx.getFirst(name)
+    }
+
+}

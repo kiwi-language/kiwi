@@ -1,18 +1,20 @@
 package org.metavm.object.instance.search;
 
+import org.metavm.object.instance.core.StringReference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
 
 import java.util.Map;
 
-public record StartsWithSearchCondition(
+public record PrefixSearchCondition(
         String field,
-        Value value
+        StringReference value
 ) implements SearchCondition {
 
     @Override
     public String build() {
-        return field + ":" + SearchBuilder.toString(value.toSearchConditionValue()) + "*";
+        var esValue = SearchBuilder.escape(value.getValue()) + "*";
+        return field + ":" + esValue;
     }
 
     @Override

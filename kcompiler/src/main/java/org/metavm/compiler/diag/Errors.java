@@ -14,9 +14,7 @@ public class Errors {
     public static final Error MALFORMED_FLOAT_LITERAL = create("malformed.float.literal");
     public static Error illegalEscChar = create("illegal.esc.char");
 
-    public static Error symbolNotFound(String sym) {
-        return create("symbol.not.found", sym);
-    }
+    public static Error symbolNotFound = create("symbol.not.found");
 
     public static Error unexpectedChar(int c) {
         return create("unexpected.char", c);
@@ -62,6 +60,8 @@ public class Errors {
     public static Error invalidUnicodeEscape = create("invalid.unicode.escape");
 
     public static Error variableMustTypedOrInitialized = create("variable.must.typed.or.initialized");
+
+    public static Error summaryFieldMustBeString = create("summary.field.must.be.string");
 
     public static Error expected(Object a) {
         return create("expected", a);

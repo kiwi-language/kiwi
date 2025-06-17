@@ -2,6 +2,7 @@ package org.metavm.compiler.type;
 
 import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.analyze.ResolveKind;
+import org.metavm.compiler.diag.Errors;
 import org.metavm.compiler.element.Package;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.Expr;
@@ -35,15 +36,19 @@ public class Types {
     public static Type resolveType(Expr expr, Env env) {
         if (Types.resolveType0(expr, env) instanceof Type t)
             return t;
-        else
-            throw new ResolutionException("Invalid class type " + expr.getText());
+        else {
+            env.getLog().error(expr, Errors.expected("type"));
+            return ErrorType.instance;
+        }
     }
 
     private static Object resolveType0(Expr expr, Env env) {
         if (expr instanceof Ident ref) {
             var element = env.lookupFirst(ref.getName(), EnumSet.of(ResolveKind.TYPE, ResolveKind.PACKAGE));
-            if (element == null)
-                throw new ResolutionException("Symbol " + ref.getText() + " not found");
+            if (element == null) {
+                env.getLog().error(expr, Errors.symbolNotFound);
+                return ErrorType.instance;
+            }
             if (element instanceof ClassType ct)
                 return ct;
             else
@@ -58,7 +63,8 @@ public class Types {
                 var subPkg = pkg.getTable().lookupFirst(name, e -> e instanceof Package);
                 if (subPkg != null)
                     return subPkg;
-                throw new ResolutionException("Symbol " + expr.getText() + " not found");
+                env.getLog().error(expr, Errors.symbolNotFound);
+                return ErrorType.instance;
             }
             else if (scope instanceof ClassType owner) {
                 var clazz = owner.getClazz().getClass(name);
@@ -71,7 +77,8 @@ public class Types {
                     typeApply.getArgs().map(env::resolveType)
             );
         }
-        throw new ResolutionException("Invalid class name " + expr.getText() + " (class: " + expr.getClass().getName() + ")");
+        env.getLog().error(expr, Errors.expected("type"));
+        return ErrorType.instance;
     }
 
     private Clazz createStringClass() {

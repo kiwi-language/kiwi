@@ -1,7 +1,9 @@
 package org.metavm.entity;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.common.Page;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.StringReference;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.search.*;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+@Slf4j
 @Component
 public class EntityQueryService {
 
@@ -25,13 +28,25 @@ public class EntityQueryService {
         var searchQuery = buildSearchQuery(query);
         var idPage = instanceSearchService.search(searchQuery);
         var ids = idPage.items();
+        var idSet = new HashSet<>(ids);
         var aliveIds = new HashSet<>(context.filterAlive(ids));
         var items = new ArrayList<T>();
         var total = idPage.total();
+        var cond = searchQuery.condition();
+        for (Id id : query.newlyCreatedIds()) {
+            if (idSet.contains(id))
+                continue;
+            var item = context.getEntity(query.entityType(), id);
+            if (cond == null || cond.evaluate(item.buildSource())) {
+                if (items.size() < query.pageSize())
+                    items.add(item);
+                total++;
+            }
+        }
         for (Id id : ids) {
             if (aliveIds.contains(id)) {
                 var item = context.getEntity(query.entityType(), id);
-                if (query.filter(item)) {
+                if (cond == null || cond.evaluate(item.buildSource())) {
                     if (items.size() < query.pageSize())
                         items.add(item);
                 } else
@@ -68,8 +83,8 @@ public class EntityQueryService {
             var esField = queryField.searchField().getEsField();
             var value  = queryField.value();
             var cond = switch (queryField.op()) {
-                case EQ -> buildSearchCond(value, esField);
-                case NE -> new NotSearchCondition(buildSearchCond(value, esField));
+                case MATCH -> buildSearchCond(value, esField);
+                case NOT_MATCH -> new NotSearchCondition(buildSearchCond(value, esField));
             };
             conditions.add(cond);
         }
@@ -80,6 +95,8 @@ public class EntityQueryService {
     private SearchCondition buildSearchCond(Value value, String esField) {
         if (value.isArray())
             return new InSearchCondition(esField, value.resolveArray().getElements());
+        else if (value instanceof StringReference s && !SearchUtil.containsDelimiter(s.getValue()))
+            return new PrefixSearchCondition(esField, s);
         else
             return new MatchSearchCondition(esField, value);
     }

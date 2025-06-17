@@ -13,6 +13,7 @@ import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.*;
+import org.metavm.util.LinkedList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -20,10 +21,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -41,6 +39,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private final Cache cache;
     private final boolean skipPostprocessing;
     private final boolean relocationEnabled;
+    private final boolean migrating;
 
     public InstanceContext(long appId,
                            IInstanceStore instanceStore,
@@ -54,6 +53,7 @@ public class InstanceContext extends BufferingInstanceContext {
                            boolean readonly,
                            boolean skipPostprocessing,
                            boolean relocationEnabled,
+                           boolean migrating,
                            long timeout
     ) {
         super(appId,
@@ -66,11 +66,7 @@ public class InstanceContext extends BufferingInstanceContext {
         this.childrenLazyLoading = childrenLazyLoading;
         this.eventQueue = eventQueue;
         this.instanceStore = instanceStore;
-//        entityContext = new EntityContext(
-//                this,
-//                NncUtils.get(parent, IInstanceContext::getEntityContext),
-//                defContext
-//        );
+        this.migrating = migrating;
         this.cache = cache;
         this.skipPostprocessing = skipPostprocessing;
         this.relocationEnabled = relocationEnabled;
@@ -99,20 +95,20 @@ public class InstanceContext extends BufferingInstanceContext {
         if(commit != null)
             tryCancelCommit(commit);
         var patch = buildPatch();
-        if (!patch.refcountChange.isEmpty()) {
+        if (!patch.refcountChange().isEmpty()) {
             applyRcChange(patch);
             patch = buildPatch();
         }
         validateRemoval(patch);
         if (DebugEnv.traceContextFinish) {
-            logTreeChanges(patch.treeChanges);
+            logTreeChanges(patch.treeChanges());
         }
         beforeSaving(patch);
-        saveInstances(patch.treeChanges);
+        saveInstances(patch);
         afterSaving(patch);
         headContext.unfreeze();
         headContext.clear();
-        patch.trees.forEach(headContext::add);
+        patch.trees().forEach(headContext::add);
         try (var ignored = getProfiler().enter("postProcess")) {
             postProcess();
         }
@@ -120,11 +116,11 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void applyRcChange(Patch patch) {
-        for (Refcount refcount : patch.refcountChange) {
+        for (Refcount refcount : patch.refcountChange()) {
             buffer(refcount.getTarget());
         }
         unfrozen(() -> {
-            for (Refcount refcount : patch.refcountChange) {
+            for (Refcount refcount : patch.refcountChange()) {
                 if (DebugEnv.traceContextFinish)
                     log.trace("Adding {} refcount to instance {}", refcount.getCount(), refcount.getTarget());
                 var target = (ClassInstance) internalGet(refcount.getTarget());
@@ -185,17 +181,10 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    private record Patch(List<Tree> trees,
-                         EntityChange<VersionRT> entityChange,
-                         EntityChange<InstancePO> treeChanges,
-                         Collection<Refcount> refcountChange
-                         ) {
-    }
-
     private Patch beforeSaving(Patch patch) {
         for (ContextPlugin plugin : plugins) {
             try (var ignored = getProfiler().enter(plugin.getClass().getSimpleName() + ".beforeSaving")) {
-                plugin.beforeSaving(patch.entityChange, this);
+                plugin.beforeSaving(patch, this);
             }
         }
         return patch;
@@ -203,7 +192,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private void afterSaving(Patch patch) {
         try (var ignored = getProfiler().enter("InstanceContext.afterSaving")) {
-            plugins.forEach(plugin -> plugin.afterSaving(patch.entityChange, this));
+            plugins.forEach(plugin -> plugin.afterSaving(patch.entityChange(), this));
         }
     }
 
@@ -253,7 +242,7 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void validateRemoval(Patch patch) {
-        for (VersionRT delete : patch.entityChange.deletes()) {
+        for (VersionRT delete : patch.entityChange().deletes()) {
             var inst = (ClassInstance) internalGet(delete.id());
             if (inst.getRefcount() > 0 && !inst.isValue())
                 throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(inst.getReference()));
@@ -335,9 +324,23 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    private void saveInstances(EntityChange<InstancePO> change) {
+    private void saveInstances(Patch patch) {
         try (var ignored = getProfiler().enter("processEntityChangeHelper")) {
-            instanceStore.save(appId, change.toChangeList());
+            ChangeList<InstancePO> changes;
+            if (migrating) {
+                var buffered = patch.trees();
+                var upsertIds = new HashSet<Long>();
+                var inserts = new ArrayList<>(patch.treeChanges().inserts());
+                patch.treeChanges().forEachInsertOrUpdate(i -> upsertIds.add(i.getId()));
+                for (Tree tree : buffered) {
+                    if (!upsertIds.contains(tree.id()))
+                        inserts.add(tree.toInstancePO(appId));
+                }
+                changes = ChangeList.of(inserts, patch.treeChanges().updates(), patch.treeChanges().deletes());
+            }
+            else
+                changes = patch.treeChanges().toChangeList();
+            instanceStore.save(appId, changes);
         }
     }
 
@@ -385,6 +388,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 isReadonly(),
                 skipPostprocessing,
                 relocationEnabled,
+                migrating,
                 getTimeout()
         );
     }
@@ -428,6 +432,11 @@ public class InstanceContext extends BufferingInstanceContext {
         for (InstancePO delete : treeChanges.deletes()) {
             log.info("Tree ID: {}", delete.getId());
         }
+    }
+
+    @Override
+    public boolean isMigrating() {
+        return migrating;
     }
 
     private void unfrozen(Runnable action) {

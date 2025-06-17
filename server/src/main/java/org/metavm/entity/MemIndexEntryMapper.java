@@ -6,6 +6,7 @@ import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.IndexQueryPO;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.util.ContextUtil;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
@@ -104,6 +105,11 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     @Override
     public void tryBatchInsert(Collection<IndexEntryPO> items) {
         for (IndexEntryPO entry : items) {
+            if (Objects.equals(entry.getId(), Id.parse("0194a8d6b90704"))) {
+                logger.debug("Inserting index entry with instance ID: {}, mapper: {}", entry.getId(),
+                        System.identityHashCode(this));
+                DebugEnv.object = entry;
+            }
             if (this.entries.add(entry)) {
                 getItems(new GlobalKey(entry.getAppId(), entry.getKey())).add(entry);
                 getItemsByInstanceId(entry.getId()).add(entry);
@@ -114,10 +120,16 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     @Override
     public void batchDelete(Collection<IndexEntryPO> items) {
         for (IndexEntryPO item : items) {
-            if(!this.entries.remove(item))
-                throw new InternalException(item + " does not exist");
-            getItems(new GlobalKey(item.getAppId(), item.getKey())).remove(item);
-            getItemsByInstanceId(item.getId()).remove(item);
+            if (Objects.equals(item.getId(), DebugEnv.id)) {
+                logger.debug("Removing index entry with instance ID {}, mapper: {}",
+                        item.getId(), System.identityHashCode(this));
+                logger.debug("Contains to-delete: {}", this.entries.contains(item));
+                logger.debug("Entries: {}", Utils.join(entries, IndexEntryPO::toString));
+            }
+            if(this.entries.remove(item)) {
+                getItems(new GlobalKey(item.getAppId(), item.getKey())).remove(item);
+                getItemsByInstanceId(item.getId()).remove(item);
+            }
         }
     }
 

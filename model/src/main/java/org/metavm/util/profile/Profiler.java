@@ -1,11 +1,13 @@
 package org.metavm.util.profile;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
 import java.util.*;
 import java.util.function.Consumer;
 
+@Slf4j
 public class Profiler {
 
     private final Entry root = new Entry("root", false);

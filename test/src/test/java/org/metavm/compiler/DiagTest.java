@@ -16,9 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 
-public class ErrorTest extends TestCase {
+public class DiagTest extends TestCase {
 
-    public static final Logger logger = LoggerFactory.getLogger(ErrorTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(DiagTest.class);
 
     private DefaultLog log;
 
@@ -66,6 +66,36 @@ public class ErrorTest extends TestCase {
         );
     }
 
+    public void testCantResolveType() {
+        var diags = compile("""
+                class Foo: Base {
+                }
+                """);
+        assertEquals(1, diags.size());
+        assertEquals("""
+                dummy.kiwi:1: Symbol not found
+                    class Foo: Base {
+                               ^""",
+                diags.head().toString()
+        );
+    }
+
+    public void testTypeExpected() {
+        var diags = compile("""
+                package org.kiwi
+                
+                class Foo: org.kiwi {}
+                """);
+        assertEquals(1, diags.size());
+        assertEquals(
+                """
+                        dummy.kiwi:3: type expected
+                            class Foo: org.kiwi {}
+                                           ^""",
+                diags.head().toString()
+        );
+    }
+
     public void testDuplicateBindingName() {
         var diags = compile("""
                 class Foo {
@@ -95,6 +125,33 @@ public class ErrorTest extends TestCase {
         assertFalse(diags.isEmpty());
     }
 
+    public void testChineseCharacter() {
+        var diags = compile("""
+                @Label("商品")1
+                class Product {
+                }
+                """);
+        assertEquals(1, diags.size());
+        assertEquals("""
+                dummy.kiwi:1: Unexpected token: 1
+                    @Label("商品")1
+                            　　  ^""",
+                diags.head().toString()
+        );
+    }
+
+    public void testSymbolNotFoundInImport() {
+        var diags = compile("""
+                import org.imp
+                """);
+        assertEquals(1, diags.size());
+        assertEquals("""
+                dummy.kiwi:1: Symbol not found
+                    import org.imp
+                               ^""",
+                diags.head().toString());
+    }
+
     private List<Diag> compile(String text) {
         log.setSourceFile(new DummySourceFile(text));
         var parser = new Parser(
@@ -107,7 +164,8 @@ public class ErrorTest extends TestCase {
         MockEnter.enterStandard(project);
         new Enter(project, log).enter(List.of(file));
         file.accept(new Meta());
-        file.accept(new TypeResolver(project));
+        ImportResolver.resolve(file, project, log);
+        file.accept(new TypeResolver(project, log));
         file.accept(new IdentAttr(project, log));
         file.accept(new Attr(project, log));
         return log.getDiags();

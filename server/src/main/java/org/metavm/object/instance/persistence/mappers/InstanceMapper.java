@@ -14,6 +14,8 @@ public interface InstanceMapper {
 
     List<InstancePO> selectByIds(long appId, Collection<Long> ids);
 
+    List<Long> filterDeletedIds(Collection<Long> ids);
+
     void batchInsert(Collection<InstancePO> records);
 
     void batchUpdate(Collection<InstancePO> records);

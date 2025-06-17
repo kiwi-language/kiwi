@@ -187,6 +187,12 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
         return null;
     }
 
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public Long tryGetTreeId() {
+        return null;
+    }
+
     @Override
     public boolean isRemoved() {
         return false;

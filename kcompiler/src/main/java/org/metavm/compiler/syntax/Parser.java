@@ -219,8 +219,7 @@ public class Parser {
         var expr = rangeExpr();
         while (is(AND)) {
             nextToken();
-            expr = new BinaryExpr(BinOp.AND, expr, rangeExpr());
-            expr.setPos(pos);
+            expr = new BinaryExpr(BinOp.AND, expr, rangeExpr()).setPos(pos);
         }
         return expr;
     }
@@ -230,9 +229,7 @@ public class Parser {
         var expr = bitorExpr();
         if (is(ELLIPSIS)) {
             nextToken();
-            var rangeExpr = new RangeExpr(expr, bitorExpr());
-            rangeExpr.setPos(pos);
-            return rangeExpr;
+            return new RangeExpr(expr, bitorExpr()).setPos(pos);
         }
         else
             return expr;
@@ -243,8 +240,7 @@ public class Parser {
         var expr = bitxorExpr();
         while (is(BITOR)) {
             nextToken();
-            expr = new BinaryExpr(BinOp.BIT_OR, expr, bitxorExpr());
-            expr.setPos(pos);
+            expr = new BinaryExpr(BinOp.BIT_OR, expr, bitxorExpr()).setPos(pos);
         }
         return expr;
     }
@@ -254,8 +250,7 @@ public class Parser {
         var expr = bitandExpr();
         while (is(BITXOR)) {
             nextToken();
-            expr = new BinaryExpr(BinOp.BIT_XOR, expr, bitandExpr());
-            expr.setPos(pos);
+            expr = new BinaryExpr(BinOp.BIT_XOR, expr, bitandExpr()).setPos(pos);
         }
         return expr;
     }
@@ -265,8 +260,7 @@ public class Parser {
         var expr = equalityExpr();
         while (is(BITAND)) {
             nextToken();
-            expr = new BinaryExpr(BinOp.BIT_AND, expr, equalityExpr());
-            expr.setPos(pos);
+            expr = new BinaryExpr(BinOp.BIT_AND, expr, equalityExpr()).setPos(pos);
         }
         return expr;
     }
@@ -284,8 +278,7 @@ public class Parser {
                 }
             }
             nextToken();
-            expr = new BinaryExpr(op, expr, relationalExpr());
-            expr.setPos(pos);
+            expr = new BinaryExpr(op, expr, relationalExpr()).setPos(pos);
         }
     }
 
@@ -304,8 +297,7 @@ public class Parser {
                 }
             }
             nextToken();
-            expr = new BinaryExpr(op, expr, isExpr());
-            expr.setPos(pos);
+            expr = new BinaryExpr(op, expr, isExpr()).setPos(pos);
         }
     }
 
@@ -320,8 +312,7 @@ public class Parser {
                 var varPos = pos();
                 var = new LocalVarDecl(type, ident(), null).setPos(varPos);
             }
-            expr = new IsExpr(expr, type, var);
-            expr.setPos(pos);
+            expr = new IsExpr(expr, type, var).setPos(pos);
         }
         return expr;
     }
@@ -340,8 +331,7 @@ public class Parser {
                 }
             }
             nextToken();
-            expr = new BinaryExpr(op, expr, additiveExpr());
-            expr.setPos(pos);
+            expr = new BinaryExpr(op, expr, additiveExpr()).setPos(pos);
         }
     }
 
@@ -358,8 +348,7 @@ public class Parser {
                 }
             }
             nextToken();
-            expr = new BinaryExpr(op, expr, multiplicativeExpr());
-            expr.setPos(pos);
+            expr = new BinaryExpr(op, expr, multiplicativeExpr()).setPos(pos);
         }
     }
 
@@ -377,8 +366,7 @@ public class Parser {
                 }
             }
             nextToken();
-            expr = new BinaryExpr(op, expr, asExpr());
-            expr.setPos(pos);
+            expr = new BinaryExpr(op, expr, asExpr()).setPos(pos);
         }
     }
 
@@ -388,66 +376,68 @@ public class Parser {
         while (is(AS)) {
             nextToken();
             var type = type();
-            expr = new CastExpr(type, expr);
-            expr.setPos(pos);
+            expr = new CastExpr(type, expr).setPos(pos);
         }
         return expr;
     }
 
     private Expr prefixExpr() {
         var pos = pos();
-        var expr = switch (tokenKind()) {
+        Expr expr;
+        switch (tokenKind()) {
             case PLUS -> {
                 nextToken();
-                yield new PrefixExpr(PrefixOp.POS, prefixExpr());
+                expr = new PrefixExpr(PrefixOp.POS, prefixExpr());
             }
             case MINUS -> {
                 nextToken();
-                yield new PrefixExpr(PrefixOp.NEGATE, prefixExpr());
+                expr = new PrefixExpr(PrefixOp.NEGATE, prefixExpr());
             }
             case INC -> {
                 nextToken();
-                yield new PrefixExpr(PrefixOp.INC, prefixExpr());
+                expr = new PrefixExpr(PrefixOp.INC, prefixExpr());
             }
             case DEC -> {
                 nextToken();
-                yield new PrefixExpr(PrefixOp.DEC, prefixExpr());
+                expr = new PrefixExpr(PrefixOp.DEC, prefixExpr());
             }
             case NOT -> {
                 nextToken();
-                yield new PrefixExpr(PrefixOp.NOT, prefixExpr());
+                expr = new PrefixExpr(PrefixOp.NOT, prefixExpr());
             }
             case BITNOT -> {
                 nextToken();
-                yield new PrefixExpr(PrefixOp.BIT_NOT, prefixExpr());
+                expr = new PrefixExpr(PrefixOp.BIT_NOT, prefixExpr());
             }
-            default -> postfixExpr();
-        };
+            default -> {
+                return postfixExpr();
+            }
+        }
         expr.setPos(pos);
         return expr;
     }
 
     private Expr postfixExpr() {
-        var pos = pos();
         var expr = atomExpr();
         for (;;) {
             switch (tokenKind()) {
                 case INC -> {
                     nextToken();
-                    expr = new PostfixExpr(PostfixOp.INC, expr);
+                    expr = new PostfixExpr(PostfixOp.INC, expr).setPos(expr.getIntPos());
                 }
                 case DEC -> {
                     nextToken();
-                    expr = new PostfixExpr(PostfixOp.DEC, expr);
+                    expr = new PostfixExpr(PostfixOp.DEC, expr).setPos(expr.getIntPos());
                 }
                 case LBRACKET -> {
                     nextToken();
                     var index = expr();
                     accept(TokenKind.RBRACKET);
-                    expr = new IndexExpr(expr, index);
+                    expr = new IndexExpr(expr, index).setPos(expr.getIntPos());
                 }
                 case DOT -> {
                     nextToken();
+                    var pos1 = pos();
                     var name = switch (tokenKind()) {
                         case THIS -> {
                             nextToken();
@@ -459,19 +449,19 @@ public class Parser {
                         }
                         default -> ident();
                     };
-                    expr = new SelectorExpr(expr, name);
+                    expr = new SelectorExpr(expr, name).setPos(pos1);
                 }
                 case NONNULL -> {
                     nextToken();
-                    expr = new PostfixExpr(PostfixOp.NONNULL, expr);
+                    expr = new PostfixExpr(PostfixOp.NONNULL, expr).setPos(expr.getIntPos());
                 }
                 case LPAREN -> {
                     var args = arguments();
-                    expr = new Call(expr, args);
+                    expr = new Call(expr, args).setPos(expr.getIntPos());
                 }
                 case LT -> {
                     if (analyzeLt() == LtResult.TYPE_ARGS)
-                        expr = new TypeApply(expr, typeArgs());
+                        expr = new TypeApply(expr, typeArgs()).setPos(expr.getIntPos());
                     else
                         return expr;
                 }
@@ -479,14 +469,13 @@ public class Parser {
                     return expr;
                 }
             }
-            expr.setPos(pos);
         }
     }
 
     private Expr atomExpr() {
         var pos = pos();
         var atomExpr = switch (tokenKind()) {
-            case IDENT, VALUE -> {
+            case IDENT, VALUE, TIME, PASSWORD -> {
                 if (peekToken().is(ARROW))
                     yield lambdaExpr();
                 else
@@ -568,6 +557,7 @@ public class Parser {
             }
             default -> {
                 log.error(token().getStart(), Errors.illegalStartOfExpr);
+                nextToken();
                 yield new ErrorExpr();
             }
         };
@@ -1060,10 +1050,12 @@ public class Parser {
         nextToken();
         var params = List.<ClassParamDecl>builder();
         if (!isOneOf(EOF, RPAREN)) {
-            params.append(classParam());
-            while (!isOneOf(EOF, RPAREN)) {
-                accept(COMMA);
+            for (;;) {
                 params.append(classParam());
+                if (is(COMMA))
+                    nextToken();
+                else
+                    break;
             }
         }
         accept(RPAREN);
@@ -1368,10 +1360,12 @@ public class Parser {
         accept(LPAREN);
         var params = List.<ParamDecl>builder();
         if (!is(RPAREN)) {
-            params.append(param());
-            while (!is(RPAREN)) {
-                accept(COMMA);
+            for (;;) {
                 params.append(param());
+                if (is(COMMA))
+                    nextToken();
+                else
+                    break;
             }
         }
         accept(RPAREN);
@@ -1414,13 +1408,13 @@ public class Parser {
     }
 
     private FieldDecl field(List<Annotation> annotations, List<Modifier> mods) {
-        var pos = pos();
         var readonly = switch (tokenKind()) {
             case VAR -> false;
             case VAL ->  true;
             default -> throw new IllegalStateException("Not a field");
         };
         nextToken();
+        var pos = pos();
         var name = ident();
         TypeNode type = null;
         if (is(TokenKind.COLON)) {
@@ -1672,14 +1666,19 @@ public class Parser {
     }
 
     private ClassTypeNode classType() {
-        Expr expr = new Ident(ident());
+        var pos = pos();
+        Expr expr = new Ident(ident()).setPos(pos);
         for (; ; ) {
             switch (tokenKind()) {
-                case LT -> expr = new TypeApply(expr, typeArgs());
+                case LT -> {
+                    var pos1 = pos();
+                    expr = new TypeApply(expr, typeArgs()).setPos(pos1);
+                }
                 case DOT -> {
                     nextToken();
+                    var pos1 = pos();
                     var sel = ident();
-                    expr = new SelectorExpr(expr, sel);
+                    expr = new SelectorExpr(expr, sel).setPos(pos1);
                 }
                 default -> {
                     return new ClassTypeNode(expr);
@@ -1739,6 +1738,14 @@ public class Parser {
             case VALUE -> {
                 nextToken();
                 return NameTable.instance.value;
+            }
+            case PASSWORD -> {
+                nextToken();
+                return NameTable.instance.password;
+            }
+            case TIME -> {
+                nextToken();
+                return NameTable.instance.time;
             }
             default -> {
                 accept(TokenKind.IDENT);

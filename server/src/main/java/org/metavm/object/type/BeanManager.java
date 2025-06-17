@@ -7,6 +7,7 @@ import org.metavm.beans.ComponentBeanDefinition;
 import org.metavm.beans.FactoryBeanDefinition;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,29 @@ public class BeanManager {
             createBeanDefinitions(k, defs, registry, context);
         defs.forEach(registry::registerBeanDefinition);
         initializeBeanDefinitions(defs, registry, context);
+    }
+
+    public void removeBeans(Collection<Klass> klasses, BeanDefinitionRegistry registry, IInstanceContext context) {
+        var removedDefs = removeBeanDefs(klasses, registry);
+        for (var bd : removedDefs) {
+            destructBean(bd, context);
+        }
+    }
+
+    private List<BeanDefinition> removeBeanDefs(Collection<Klass> klasses, BeanDefinitionRegistry registry) {
+        var removedDefs = new ArrayList<BeanDefinition>();
+        klasses.forEach(k -> {
+            removedDefs.addAll(registry.removeBeanDefByType(k.getType()));
+            var beanKind = k.getAttribute(AttributeNames.BEAN_KIND);
+            if (BeanKinds.CONFIGURATION.equals(beanKind)) {
+                for (Method method : k.getMethods()) {
+                    if (method.getAttribute(AttributeNames.BEAN_NAME) != null) {
+                        removedDefs.addAll(registry.removeBeanDefByFactoryMethod(method));
+                    }
+                }
+            }
+        });
+        return removedDefs;
     }
 
     private void createBeanDefinitions(Klass klass, List<BeanDefinition> beanDefinitions, BeanDefinitionRegistry registry, IInstanceContext context) {
@@ -48,6 +72,14 @@ public class BeanManager {
         var sorted = sortByTopology(definitions, registry);
         for (BeanDefinition beanDef : sorted) {
             beanDef.initialize(registry, context);
+        }
+    }
+
+    private void destructBean(BeanDefinition beanDefinition, IInstanceContext context) {
+        if (beanDefinition.getBean() != null) {
+            var bean = beanDefinition.getBean().resolveObject();
+            context.remove(bean);
+            assert context.internalGet(bean.getId()).isRemoved();
         }
     }
 

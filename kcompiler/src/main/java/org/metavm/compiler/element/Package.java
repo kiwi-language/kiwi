@@ -107,7 +107,7 @@ public class Package extends ElementBase implements ClassScope, Element {
     }
 
     public  Package getPackage(Name name) {
-        return Objects.requireNonNull(packages.get(name),
+        return Objects.requireNonNull(findPackage(name),
                 () -> "Package '" + getPackageName(getQualName(), name)  + "' not found");
     }
 

@@ -2,10 +2,7 @@ package org.metavm.object.instance;
 
 import org.metavm.entity.EntityChange;
 import org.metavm.entity.ModelDefRegistry;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.VersionRT;
@@ -34,15 +31,16 @@ public class ChangeLogPlugin implements ContextPlugin {
     }
 
     @Override
-    public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
+    public boolean beforeSaving(Patch patch, IInstanceContext context) {
+        var entityChange = patch.entityChange();
         List<InstanceLog> logs = new ArrayList<>();
-        for (var instance : change.inserts()) {
+        for (var instance : entityChange.inserts()) {
             logs.add(InstanceLog.insert(instance));
         }
-        for (var instance : change.updates()) {
+        for (var instance : entityChange.updates()) {
             logs.add(InstanceLog.update(instance));
         }
-        for (var delete : change.deletes()) {
+        for (var delete : entityChange.deletes()) {
             logs.add(InstanceLog.delete(delete));
         }
         context.getAttribute(CHANGE_LOGS).addAll(logs);

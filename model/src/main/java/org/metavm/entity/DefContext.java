@@ -149,4 +149,15 @@ public abstract class DefContext implements IInstanceContext, TypeRegistry {
         return null;
     }
 
+    @Override
+    public boolean isMigrating() {
+        return false;
+    }
+
+    @Override
+    public void dumpContext() {
+        for (Entity entity : entities()) {
+            log.debug("Entity {}-{}", entity.getClass().getName(), entity.getId());
+        }
+    }
 }
