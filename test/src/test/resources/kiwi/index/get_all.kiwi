@@ -1,0 +1,18 @@
+package index
+
+import org.metavm.api.Index
+
+class Product(var name: string) {
+
+    static val nameIdx = Index<string, Product>(false, p -> p.name)
+
+}
+
+@Bean
+class ProductService {
+
+    fn findAllByName(name: string) -> Product[] {
+        return Product.nameIdx.getAll(name)
+    }
+
+}

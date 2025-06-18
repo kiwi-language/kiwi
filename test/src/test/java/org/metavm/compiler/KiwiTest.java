@@ -638,4 +638,15 @@ public class KiwiTest extends KiwiTestBase {
         assertEquals("foo2", foo3.getString("name"));
     }
 
+    public void testIndexGetAll() {
+        deploy("kiwi/index/get_all.kiwi");
+        var className = "index.Product";
+        var ids = new ArrayList<Id>();
+        for (int i = 0; i < 3; i++) {
+            ids.add(saveInstance(className, Map.of("name", "Shoes")));
+        }
+        var r = (List<?>) callMethod(ApiNamedObject.of("productService"), "findAllByName", List.of("Shoes"));
+        assertEquals(ids, r);
+    }
+
 }

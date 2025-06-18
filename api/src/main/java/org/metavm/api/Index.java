@@ -25,8 +25,9 @@ public class Index<K, V> {
         return 0L;
     }
 
-    public List<V> get(K key) {
-        return List.of();
+    public V[] getAll(K key) {
+        //noinspection unchecked
+        return (V[]) new Object[0];
     }
 
     public @Nullable V getFirst(K key) {

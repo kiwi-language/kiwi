@@ -89,8 +89,10 @@ public class LabPlatformUser extends LabUser {
             var user = LabUser.platformUserIndex.getFirst(new ApplicationAndPlatformUser(app, platformUser));
             if (user != null) {
                 user.setState(LabUserState.DETACHED);
-                var sessions = LabSession.userStateIndex.get(new LabSession.UserAndState(user, LabSessionState.ACTIVE));
-                sessions.forEach(LabSession::close);
+                var sessions = LabSession.userStateIndex.getAll(new LabSession.UserAndState(user, LabSessionState.ACTIVE));
+                for (var s : sessions) {
+                    s.close();
+                }
             }
         }
 //        var eventQueue = platformContext.getEventQueue();
@@ -133,9 +135,10 @@ public class LabPlatformUser extends LabUser {
     public static void logout() {
         var user = currentPlatformUser();
         SessionUtils.removeEntry("CurrentApp");
-        LabSession.userStateIndex.get(new LabSession.UserAndState(user, LabSessionState.ACTIVE)).forEach(s -> {
+        var sessions = LabSession.userStateIndex.getAll(new LabSession.UserAndState(user, LabSessionState.ACTIVE));
+        for (var s : sessions) {
             s.close();
             SessionUtils.removeEntry("LoggedInUser" + Lang.getId(s.getUser().getApplication()));
-        });
+        }
     }
 }
