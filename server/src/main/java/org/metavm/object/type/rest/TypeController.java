@@ -19,9 +19,9 @@ public class TypeController {
         this.typeManager = typeManager;
     }
 
-    @PostMapping("/deploy")
-    public Result<Void> deploy(HttpServletRequest servletRequest) throws IOException {
-        typeManager.deploy(servletRequest.getInputStream());
+    @PostMapping("/deploy/{appId}")
+    public Result<Void> deploy(HttpServletRequest servletRequest, @PathVariable("appId") long appId) throws IOException {
+        typeManager.deploy(appId, servletRequest.getInputStream());
         return Result.voidSuccess();
     }
 

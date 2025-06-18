@@ -50,6 +50,11 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
             Flows.execute(classInit.getRef(), null, List.of(), context);
     }
 
+    @Transactional
+    public String deploy(long appId, InputStream in) {
+        return doInApplication(appId, () -> deploy(in));
+    }
+
     @Override
     @Transactional
     public String deploy(InputStream in) {

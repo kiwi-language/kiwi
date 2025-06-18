@@ -51,7 +51,7 @@ public class VerificationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        var appId = Utils.tryParseLong(request.getHeader(Headers.APP_ID));
+        var appId = Utils.tryParseLong(request.getHeader(Headers.X_APP_ID));
         if(appId == null)
             appId = Utils.tryParseLong(request.getParameter("__app_id__"));
         if (appId != null) {

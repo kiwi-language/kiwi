@@ -14,11 +14,11 @@ Authenticates a user.
 *   `POST /login`
 *   **Request Body:**
 
-    | Field     | Type   | Description |
-    |:----------|:-------|:------------|
-    | `appId`   | `long` | Must be `2` |
-    | `loginName`| `string`| User name   |
-    | `password` | `string`| Password    |
+    | Field       | Type     | Description   |
+    |:------------|:---------|:--------------|
+    | `appId`     | `long`   | Must be `2`   |
+    | `loginName` | `string` | User name     |
+    | `password`  | `string` | Password      |
 *   **Response Data:** `LoginInfo`
 
 *   **Cookie:** Sets `token_2`
@@ -87,11 +87,12 @@ Retrieves a paginated list of applications.
 *   `GET /app`
 *   **Query Parameters:**
 
-    | Parameter  | Required | Default | Description                         |
-    |:-----------|:---------|:--------|:------------------------------------|
-    | `page`     | Yes      | `1`     | Page number                         |
-    | `pageSize` | Yes      | `20`    | Number of items per page            |
-    | `searchText`| No       |         | Filter applications by name         |
+    | Parameter        | Required | Default | Description                                                                                                            |
+    |:-----------------|:---------|:--------|:-----------------------------------------------------------------------------------------------------------------------|
+    | `page`           | Yes      | `1`     | Page number                                                                                                            |
+    | `pageSize`       | Yes      | `20`    | Number of items per page                                                                                               |
+    | `searchText`     | No       |         | Filter applications by name                                                                                            |
+    | `newlyCreatedId` | No       |         | Newly created object ID. Use for searches immediately after creation to ensure inclusion despite potential system lag. |
 *   **Response Data:** `Page<Application>`
 *   **Example:**
     ```http

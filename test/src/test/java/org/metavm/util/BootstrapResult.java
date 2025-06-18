@@ -4,6 +4,7 @@ import org.metavm.ddl.CommitService;
 import org.metavm.entity.*;
 import org.metavm.object.instance.ChangeLogManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.persistence.MemMapperRegistry;
 import org.metavm.object.instance.persistence.SchemaManager;
 import org.metavm.object.type.MemAllocatorStore;
@@ -26,7 +27,8 @@ public record BootstrapResult(
         SchedulerAndWorker schedulerAndWorker,
         MemMapperRegistry mapperRegistry,
         SchemaManager schemaManager,
-        CommitService commitService
+        CommitService commitService,
+        Id userId
 
 ) {
 }

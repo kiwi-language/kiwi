@@ -74,7 +74,7 @@ public class CompilerHttpUtils {
                     .uri(uri)
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/json")
-                    .header(Headers.APP_ID, Long.toString(appId))
+                    .header(Headers.X_APP_ID, Long.toString(appId))
                     .DELETE()
                     .build();
             var respStr = client.send(httpRequest, HttpResponse.BodyHandlers.ofString()).body();
@@ -91,7 +91,7 @@ public class CompilerHttpUtils {
                     .uri(uri)
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/json")
-                    .header(Headers.APP_ID, Long.toString(appId))
+                    .header(Headers.X_APP_ID, Long.toString(appId))
                     .POST(
                             request != null ?
                                     HttpRequest.BodyPublishers.ofString(Utils.toJSONString(request)) :
@@ -111,7 +111,7 @@ public class CompilerHttpUtils {
                     .uri(new URI(host + path))
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/octet-stream")
-                    .header(Headers.APP_ID, Long.toString(appId))
+                    .header(Headers.X_APP_ID, Long.toString(appId))
                     .POST(HttpRequest.BodyPublishers.ofFile(Paths.get(filePath)))
                     .build();
             var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
@@ -129,7 +129,7 @@ public class CompilerHttpUtils {
                     .uri(uri)
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/json")
-                    .header(Headers.APP_ID, Long.toString(appId))
+                    .header(Headers.X_APP_ID, Long.toString(appId))
                     .GET()
                     .build();
             var respStr = client.send(httpRequest, HttpResponse.BodyHandlers.ofString()).body();

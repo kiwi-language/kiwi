@@ -30,7 +30,7 @@ public class SchemaController {
     }
 
     private void verify(HttpServletRequest request) {
-        var appIdStr = request.getHeader(Headers.APP_ID);
+        var appIdStr = request.getHeader(Headers.X_APP_ID);
         if (appIdStr == null || !ValueUtils.isIntegerStr(appIdStr))
             throw new BusinessException(ErrorCode.AUTH_FAILED);
         var appId = Long.parseLong(appIdStr);

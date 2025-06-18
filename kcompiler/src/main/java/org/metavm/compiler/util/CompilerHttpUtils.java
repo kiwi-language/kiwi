@@ -19,9 +19,10 @@ import java.util.List;
 
 public class CompilerHttpUtils {
 
+    public static final String TOKEN_COOKIE_NAME = "__token_2__";
+
     private static String host = Constants.DEFAULT_HOST;
     private final static HttpClient client;
-    private static long appId;
 
     static {
         CookieManager cookieManager = new CookieManager();
@@ -31,25 +32,20 @@ public class CompilerHttpUtils {
                 .build();
     }
 
-    public static void setToken(long appId, String token) {
-        var cookie = new HttpCookie(getTokenCookieName(appId), token);
+    public static void setToken(String token) {
+        var cookie = new HttpCookie(TOKEN_COOKIE_NAME, token);
         cookie.setPath("/");
         getCookieManager().getCookieStore().add(URI.create(host), cookie);
-    }
-
-    public static String getToken() {
-        return getToken(appId);
     }
 
     public static List<HttpCookie> getCookies() {
         return getCookieManager().getCookieStore().getCookies();
     }
 
-    public static String getToken(long appId) {
-        var cookieName = getTokenCookieName(appId);
+    public static String getToken() {
         var cookieManager = getCookieManager();
         return Utils.findRequired(
-                        cookieManager.getCookieStore().getCookies(), c -> c.getName().equals(cookieName),
+                        cookieManager.getCookieStore().getCookies(), c -> c.getName().equals(TOKEN_COOKIE_NAME),
                         "Token not available"
                 )
                 .getValue();
@@ -60,14 +56,6 @@ public class CompilerHttpUtils {
         return (CookieManager) client.cookieHandler().get();
     }
 
-    private static String getTokenCookieName() {
-        return getTokenCookieName(appId);
-    }
-
-    private static String getTokenCookieName(long appId) {
-        return String.format("__token_%d__", appId);
-    }
-
     public static <R> R delete(String path, TypeReference<R> responseTypeRef) {
         try {
             var uri = new URI(host + path);
@@ -75,7 +63,7 @@ public class CompilerHttpUtils {
                     .uri(uri)
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/json")
-                    .header(Headers.APP_ID, Long.toString(appId))
+                    .header(Headers.X_APP_ID, "2")
                     .DELETE()
                     .build();
             var respStr = client.send(httpRequest, HttpResponse.BodyHandlers.ofString()).body();
@@ -92,7 +80,7 @@ public class CompilerHttpUtils {
                     .uri(uri)
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/json")
-                    .header(Headers.APP_ID, Long.toString(appId))
+                    .header(Headers.X_APP_ID, "2")
                     .POST(
                             request != null ?
                                     HttpRequest.BodyPublishers.ofString(Utils.toJSONString(request)) :
@@ -112,7 +100,7 @@ public class CompilerHttpUtils {
                     .uri(new URI(host + path))
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/octet-stream")
-                    .header(Headers.APP_ID, Long.toString(appId))
+                    .header(Headers.X_APP_ID, "2")
                     .POST(HttpRequest.BodyPublishers.ofFile(Paths.get(filePath)))
                     .build();
             var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
@@ -130,7 +118,7 @@ public class CompilerHttpUtils {
                     .uri(uri)
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/json")
-                    .header(Headers.APP_ID, Long.toString(appId))
+                    .header(Headers.X_APP_ID, "2")
                     .GET()
                     .build();
             var respStr = client.send(httpRequest, HttpResponse.BodyHandlers.ofString()).body();
@@ -157,21 +145,12 @@ public class CompilerHttpUtils {
         CompilerHttpUtils.host = host;
     }
 
-    public static void setAppId(long appId) {
-        CompilerHttpUtils.appId = appId;
-    }
-
-    public static long getAppId() {
-        return appId;
-    }
-
     public static void main(String[] args) {
         testDirectAccess();
 //        testLogin();
     }
 
     private static void testLogin() {
-        CompilerHttpUtils.setAppId(2L);
         var loginName = "15968879210@163.com";
         var password = "123456";
         CompilerHttpUtils.post("/login", new LoginRequest(Constants.PLATFORM_APP_ID, loginName, password),
@@ -180,18 +159,14 @@ public class CompilerHttpUtils {
         var appId = 1000400011L;
         CompilerHttpUtils.post("/platform-user/enter-app/" + appId, null, new TypeReference<LoginInfo>() {
         });
-        System.out.println(CompilerHttpUtils.getToken(2));
-        System.out.println(CompilerHttpUtils.getToken(appId));
-        CompilerHttpUtils.setAppId(appId);
+        System.out.println(CompilerHttpUtils.getToken());
         printCookies();
         testAccess();
     }
 
     private static void testDirectAccess() {
         var token = "06581877-42f3-43e2-8114-63f02c51a7ef";
-        var appId = 1000400011L;
-        CompilerHttpUtils.setAppId(appId);
-        CompilerHttpUtils.setToken(appId, token);
+        CompilerHttpUtils.setToken(token);
         printCookies();
         testAccess();
     }

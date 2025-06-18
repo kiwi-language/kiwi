@@ -160,8 +160,12 @@ public class Utils {
     }
 
     public static void createDirectories(String path) {
+        createDirectories(Path.of(path));
+    }
+
+    public static void createDirectories(Path path) {
         try {
-            Files.createDirectories(Paths.get(path));
+            Files.createDirectories(path);
         } catch (IOException e) {
             throw new InternalException("Failed to create directories for path " + path);
         }
@@ -184,7 +188,11 @@ public class Utils {
     }
 
     public static void ensureDirectoryExists(String path) {
-        var file = new File(path);
+        ensureDirectoryExists(Path.of(path));
+    }
+
+    public static void ensureDirectoryExists(Path path) {
+        var file = path.toFile();
         if (file.isFile())
             throw new InternalException(String.format("Expecting '%s' to be a directory but it's a file", path));
         if (!file.exists())

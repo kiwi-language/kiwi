@@ -2,13 +2,9 @@ package org.metavm.compiler;
 
 public interface TypeClient {
 
-    long getAppId();
+    void deploy(long appId, String mvaFile);
 
-    void setAppId(long appId);
-
-    void deploy(String mvaFile);
-
-    void login(long appId, String loginName, String password);
+    void login(String loginName, String password);
 
     boolean ping();
 
