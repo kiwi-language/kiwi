@@ -8,6 +8,7 @@ import org.metavm.entity.natives.StdFunction;
 import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.ChangeLogManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.log.InstanceLogServiceImpl;
 import org.metavm.object.instance.persistence.MemMapperRegistry;
 import org.metavm.object.instance.persistence.MockSchemaManager;
@@ -53,25 +54,7 @@ public class BootstrapUtils {
             var changeLogManager = new ChangeLogManager(entityContextFactory);
             var taskManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
             new MockEventQueue();
-            TestUtils.doInTransactionWithoutResult(() -> {
-                try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                    SchedulerRegistry.initialize(platformContext);
-                    var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
-                    var app = new Application(platformContext.allocateRootId(), "demo",
-                            new PlatformUser(platformContext.allocateRootId(), "demo", "123456", "demo", List.of()));
-                    platformContext.bind(app);
-                    TestConstants.APP_ID = app.getId().getTreeId();
-                    mapperRegistry.createInstanceMapper(TestConstants.APP_ID, "instance");
-                    mapperRegistry.createIndexEntryMapper(TestConstants.APP_ID, "index_entry");
-                    try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                        BeanDefinitionRegistry.initialize(context);
-                        KlassTagAssigner.initialize(context, globalTagAssigner);
-                        KlassSourceCodeTagAssigner.initialize(context);
-                        context.finish();
-                    }
-                    platformContext.finish();
-                }
-            });
+            var userId = createApp(entityContextFactory, mapperRegistry);
             var transactionOps = new MockTransactionOperations();
             var schemaManager = new MockSchemaManager(mapperRegistry);
             return new BootstrapResult(
@@ -90,7 +73,8 @@ public class BootstrapUtils {
                     new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), metaContextCache), metaContextCache, entityContextFactory),
                     mapperRegistry,
                     schemaManager,
-                    new CommitService(schemaManager, entityContextFactory)
+                    new CommitService(schemaManager, entityContextFactory),
+                    userId
             );
         } else {
             return create(true, new MemAllocatorStore(), new MemColumnStore(), new MemTypeTagStore(), Set.of(), Set.of());
@@ -142,25 +126,7 @@ public class BootstrapUtils {
                     mapperRegistry.copy()
             );
         }
-        TestUtils.doInTransactionWithoutResult(() -> {
-            try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                SchedulerRegistry.initialize(platformContext);
-                var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
-                var app = new Application(platformContext.allocateRootId(), "demo",
-                        new PlatformUser(platformContext.allocateRootId(), "demo", "123456", "demo", List.of()));
-                platformContext.bind(app);
-                TestConstants.APP_ID = app.getId().getTreeId();
-                mapperRegistry.createInstanceMapper(TestConstants.APP_ID, "instance");
-                mapperRegistry.createIndexEntryMapper(TestConstants.APP_ID, "index_entry");
-                try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                    BeanDefinitionRegistry.initialize(context);
-                    KlassTagAssigner.initialize(context, globalTagAssigner);
-                    KlassSourceCodeTagAssigner.initialize(context);
-                    context.finish();
-                }
-                platformContext.finish();
-            }
-        });
+        var userId = createApp(entityContextFactory, mapperRegistry);
         Hooks.SEARCH_BULK = instanceSearchService::bulk;
         var transactionOps = new MockTransactionOperations();
         var schemaManager = new MockSchemaManager(mapperRegistry);
@@ -179,8 +145,32 @@ public class BootstrapUtils {
                 new SchedulerAndWorker(new Scheduler(entityContextFactory, transactionOps), new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), metaContextCache), metaContextCache, entityContextFactory),
                 mapperRegistry,
                 schemaManager,
-                new CommitService(schemaManager, entityContextFactory)
+                new CommitService(schemaManager, entityContextFactory),
+                userId
         );
+    }
+
+    private static Id createApp(EntityContextFactory entityContextFactory, MemMapperRegistry mapperRegistry) {
+        return TestUtils.doInTransaction(() -> {
+            try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                SchedulerRegistry.initialize(platformContext);
+                var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
+                var user = new PlatformUser(platformContext.allocateRootId(), "demo", "123456", "demo", List.of());
+                var app = new Application(platformContext.allocateRootId(), "demo", user);
+                platformContext.bind(app);
+                TestConstants.APP_ID = app.getId().getTreeId();
+                mapperRegistry.createInstanceMapper(TestConstants.APP_ID, "instance");
+                mapperRegistry.createIndexEntryMapper(TestConstants.APP_ID, "index_entry");
+                try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                    BeanDefinitionRegistry.initialize(context);
+                    KlassTagAssigner.initialize(context, globalTagAssigner);
+                    KlassSourceCodeTagAssigner.initialize(context);
+                    context.finish();
+                }
+                platformContext.finish();
+                return user.getId();
+            }
+        });
     }
 
     private static void generateIds(AllocatorStore allocatorStore) {

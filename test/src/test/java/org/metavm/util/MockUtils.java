@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.CompilationTask;
 import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.MockEnter;
-import org.metavm.ddl.CommitState;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.*;
 import org.metavm.mocks.Bar;
@@ -15,7 +14,9 @@ import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -260,19 +261,10 @@ public class MockUtils {
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             context.loadKlasses();
-
-            var task = new CompilationTask(List.of(Path.of(TestUtils.getResourcePath(source))), TestConstants.TARGET);
-            task.parse();
-            MockEnter.enterStandard(task.getProject());
-            task.analyze();
-            if (task.getErrorCount() > 0)
-                throw new CompilationException("Compilation failed");
-            task.generate();
-
             FlowSavingContext.initConfig();
 //            var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
             var commitId = TestUtils.doInTransaction(() -> {
-                try(var input = new FileInputStream(TestConstants.TARGET + "/target.mva")) {
+                try(var input = compile(source)) {
                     return typeManager.deploy(input);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -281,6 +273,21 @@ public class MockUtils {
             if (waitForDDLDone)
                 TestUtils.waitForDDLCompleted(schedulerAndWorker);
             return commitId;
+        }
+    }
+
+    public static InputStream compile(String source) {
+        var task = new CompilationTask(List.of(Path.of(TestUtils.getResourcePath(source))), TestConstants.TARGET);
+        task.parse();
+        MockEnter.enterStandard(task.getProject());
+        task.analyze();
+        if (task.getErrorCount() > 0)
+            throw new CompilationException("Compilation failed");
+        task.generate();
+        try {
+            return new FileInputStream(TestConstants.TARGET + "/target.mva");
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 

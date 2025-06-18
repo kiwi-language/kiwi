@@ -68,7 +68,7 @@ public enum ErrorCode {
     BRANCH_NOT_FOUND(403, "Branch {} not found"),
     MISSING_END_NODE(411, "Missing end node for flow"),
     STACK_UNDERFLOW(412, "Stack underflow"),
-    ILLEGAL_ACCESS(413, "No access permission"),
+    ILLEGAL_ACCESS(413, "Illegal access"),
     FLOW_EXECUTION_FAILURE(414, "{}"),
     BRANCH_OWNER_MISMATCH(415, "Branch ({}) owner node does not match current node ({})"),
     FLOW_DECLARING_TYPE_MISMATCH(416, "Flow owner type does not match current type ({})"),

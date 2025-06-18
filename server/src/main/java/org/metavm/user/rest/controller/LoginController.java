@@ -43,7 +43,7 @@ public class LoginController {
 
     @GetMapping("/get-login-info")
     public Result<LoginInfo> getLoginInfo(HttpServletRequest request) {
-        var appId = Long.parseLong(request.getHeader(Headers.APP_ID));
+        var appId = Long.parseLong(request.getHeader(Headers.X_APP_ID));
         if(appId != -1L) {
             var token = Tokens.getToken(appId, request);
             if (token != null && loginService.verify(token).isSuccessful())

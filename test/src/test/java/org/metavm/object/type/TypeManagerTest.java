@@ -9,6 +9,7 @@ import org.metavm.entity.MetaContextCache;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceQueryService;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ public class TypeManagerTest extends TestCase {
     private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
     private MetaContextCache metaContextCache;
+    private Id userId;
 
     @Override
     protected void setUp() throws Exception {
@@ -38,6 +40,7 @@ public class TypeManagerTest extends TestCase {
         metaContextCache = bootResult.metaContextCache();
         apiClient = new ApiClient(new ApiService(entityContextFactory, metaContextCache,
                 new InstanceQueryService(bootResult.instanceSearchService())));
+        userId = bootResult.userId();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -75,6 +78,20 @@ public class TypeManagerTest extends TestCase {
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var k = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance("SynchronizeFoo"));
             Assert.assertNotNull(k);
+        }
+    }
+
+    public void testDeployWithAppId() {
+        ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
+        ContextUtil.setUserId(userId);
+        TestUtils.doInTransaction(() ->
+            typeManager.deploy(TestConstants.APP_ID, MockUtils.compile("kiwi/simple_shopping.kiwi"))
+        );
+        TestUtils.waitForDDLCompleted(schedulerAndWorker);
+        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var klasses = context.loadKlasses();
+            assertEquals(1, klasses.size());
+            assertEquals("Product", klasses.getFirst().getName());
         }
     }
 
