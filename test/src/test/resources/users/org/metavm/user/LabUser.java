@@ -78,10 +78,10 @@ public class LabUser {
         );
         if (failedCountByLoginName > MAX_ATTEMPTS_IN_15_MINUTES)
             throw new LabBusinessException(LabErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
-        var users = loginNameIndex.get(new ApplicationAndLoginName(application, loginName));
-        if (users.isEmpty())
+        var users = loginNameIndex.getAll(new ApplicationAndLoginName(application, loginName));
+        if (users.length == 0)
             throw new LabBusinessException(LabErrorCode.LOGIN_NAME_NOT_FOUND, loginName);
-        var user = users.getFirst();
+        var user = users[0];
         String token;
         if (!user.getPassword().equals(MD5Utils.md5(password)))
             token = null;

@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.StdField;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.IndexKeyRT;
+import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -36,9 +37,9 @@ public class IndexNative implements NativeBase {
         );
     }
 
-    public Value get(Value key, CallContext callContext) {
+    public Value getAll(Value key, CallContext callContext) {
         var result = callContext.instanceRepository().indexSelect(buildIndexKey(getIndex(), key));
-        return convertToList(result, callContext);
+        return convertToArray(result, callContext);
     }
 
     public Value query(Value min, Value max, CallContext callContext) {
@@ -61,6 +62,12 @@ public class IndexNative implements NativeBase {
         var listType = new KlassType(null, StdKlass.arrayList.get(), List.of(type));
         var list = Instances.newList(listType, result);
         return list.getReference();
+    }
+
+    private Value convertToArray(List<Reference> result, CallContext callContext) {
+        var type = (ClassType) instance.getInstanceType().getTypeArguments().get(1);
+        var arrayType = new ArrayType(type, ArrayKind.DEFAULT);
+        return new ArrayInstance(arrayType, result).getReference();
     }
 
     private IndexRef getIndex() {

@@ -96,6 +96,10 @@ public class MockEnter {
         new Param(Name.from("key"), Types.instance.getNullableType(keyType), getFirst);
         getFirst.setRetType(Types.instance.getNullableType(valueType));
 
+        var getAll = new Method(Name.from("getAll"), Access.PUBLIC, false, false, false, clazz);
+        new Param(Name.from("key"), Types.instance.getNullableType(keyType), getAll);
+        getAll.setRetType(Types.instance.getArrayType(valueType));
+
         var query = new Method("query", Access.PUBLIC, false, false, false, clazz);
         new Param("min", Types.instance.getNullableType(keyType), query);
         new Param("max", Types.instance.getNullableType(keyType), query);
