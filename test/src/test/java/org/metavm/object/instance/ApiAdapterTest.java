@@ -66,7 +66,7 @@ public class ApiAdapterTest extends TestCase {
         TestUtils.doInTransaction(() -> apiAdapter.handlePost(
                 "/api/platform-user",
                 Map.of(
-                        "_id", id,
+                        "id", id,
                         "loginName", "demo1"
                 ),
                 mockHttpRequest(),
@@ -89,11 +89,10 @@ public class ApiAdapterTest extends TestCase {
                 )
         )));
         var product = apiAdapter.handleGet("/api/product/" + id);
-        assertEquals(id.toString(), product.get("_id"));
-        assertEquals("Product", product.get("_type"));
+        assertEquals(id.toString(), product.get("id"));
         assertEquals("Shoes", product.get("name"));
         //noinspection unchecked
-        var skus = (List<Map<String, Object>>) product.get("SKU");
+        var skus = (List<Map<String, Object>>) product.get("skus");
         assertEquals(1, skus.size());
         var sku = skus.getFirst();
         assertEquals("40", sku.get("variant"));
@@ -107,7 +106,7 @@ public class ApiAdapterTest extends TestCase {
                 "/api/product",
                 Map.of(
                         "name", "Shoes",
-                        "SKU", List.of(
+                        "skus", List.of(
                                 Map.of(
                                         "variant", "40",
                                         "price", 100,
@@ -139,7 +138,7 @@ public class ApiAdapterTest extends TestCase {
         var r = TestUtils.doInTransaction(() -> apiAdapter.handlePost(
                 "/api/platform-user/verify",
                 Map.of(
-                        "_id", id.toString(),
+                        "platformUserId", id.toString(),
                         "password", "123456"
                 ),
                 mockHttpRequest(),
@@ -164,8 +163,7 @@ public class ApiAdapterTest extends TestCase {
         assertEquals(1, result.total());
         //noinspection unchecked
         var user = (Map<String, Object>) result.items().getFirst();
-        assertEquals(id, user.get("_id"));
-        assertEquals("Product", user.get("_type"));
+        assertEquals(id, user.get("id"));
         assertEquals("MacBook Pro", user.get("name"));
         assertNull(user.get("password"));
 
@@ -173,7 +171,7 @@ public class ApiAdapterTest extends TestCase {
                 "/api/product/_search",
                 Map.of(
                         "name", "MacBook",
-                        "_page", 2
+                        "page", 2
                 ),
                 mockHttpRequest(),
                 mockHttpResponse()

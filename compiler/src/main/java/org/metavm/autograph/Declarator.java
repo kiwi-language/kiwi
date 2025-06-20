@@ -128,7 +128,7 @@ public class Declarator extends VisitorBase {
     }
 
     private String getDefaultBeanName(Klass klass) {
-        return NamingUtils.firstCharToLowerCase(klass.getName());
+        return NamingUtils.firstCharsToLowerCase(klass.getName());
     }
 
     @Override

@@ -85,15 +85,22 @@ public class NamingUtils {
             return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
-    public static String firstCharToLowerCase(String s) {
-        if (s.isEmpty()) {
+    public static String firstCharsToLowerCase(String s) {
+        if (s.isEmpty() || Character.isLowerCase(s.charAt(0)))
             return s;
+        var buf = new StringBuilder();
+        int i = 0;
+        while (i < s.length()) {
+            var c = s.charAt(i);
+            if (Character.isUpperCase(c)) {
+                buf.append(Character.toLowerCase(c));
+                i++;
+            } else
+                break;
         }
-        if (s.length() == 1) {
-            return s.toLowerCase();
-        } else {
-            return Character.toLowerCase(s.charAt(0)) + s.substring(1);
-        }
+        for (; i< s.length(); i++)
+            buf.append(s.charAt(i));
+        return buf.toString();
     }
 
     public static String constantNameToCamelCase(String constName) {

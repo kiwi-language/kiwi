@@ -35,7 +35,7 @@ public class Meta extends StructuralNodeVisitor {
     }
 
     private String getBeanName(Name className) {
-        return NamingUtils.firstCharToLowerCase(className.toString());
+        return NamingUtils.firstCharsToLowerCase(className.toString());
     }
 
     @Override

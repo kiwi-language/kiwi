@@ -53,4 +53,9 @@ public class StringType extends KlassType {
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
     }
+
+    @Override
+    public boolean isReference() {
+        return false;
+    }
 }

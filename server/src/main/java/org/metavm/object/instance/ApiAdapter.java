@@ -18,17 +18,16 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static org.metavm.util.NamingUtils.firstCharsToLowerCase;
+
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Component
 public class ApiAdapter extends EntityContextFactoryAware {
 
-    private static final String KEY_ID = "_id";
-    private static final String KEY_NAME = "_name";
-    private static final String KEY_PAGE = "_page";
-    private static final String KEY_PAGE_SIZE = "_pageSize";
-    private static final String KEY_TYPE = "_type";
-    private static final String KEY_NEWLY_CREATED = "_newlyCreated";
-
+    private static final String KEY_ID = "id";
+    private static final String KEY_PAGE = "page";
+    private static final String KEY_PAGE_SIZE = "pageSize";
+    private static final String KEY_NEWLY_CREATED = "newlyCreated";
 
     private final ApiService apiService;
 
@@ -39,7 +38,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
 
     public Map<String, Object> handleGet(String uri) {
         var path = parsePath(uri);
-        return (Map<String, Object>) transformResultObject(apiService.getInstance(path.suffix()));
+        return (Map<String, Object>) transformResultObject(apiService.getInstance(path.suffix()), path.classType);
     }
 
     public Object handlePost(String uri, Map<String, Object> requestBody, HttpRequest httpRequest, HttpResponse httpResponse) {
@@ -58,7 +57,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
                         searchReq.newlyCreated
                 );
                 return new SearchResult(
-                        Utils.map(r.items(), this::transformResultValue),
+                        Utils.map(r.items(), i -> transformResultValue(i, path.classType)),
                         r.total()
                 );
             } else {
@@ -72,7 +71,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
                         httpRequest,
                         httpResponse
                 );
-                return transformResultValue(r);
+                return transformResultValue(r, method.getReturnType());
             }
         }
     }
@@ -96,22 +95,18 @@ public class ApiAdapter extends EntityContextFactoryAware {
 
     private InvokeRequest buildInvokeRequest(Map<String, Object> requestBody, MethodRef method) {
         Map<String, Object> receiver;
-        if (requestBody.get(KEY_ID) instanceof String id)
-            receiver = Map.of("id", id);
-        else if (requestBody.get(KEY_NAME) instanceof String name) {
-            if (requestBody.get(KEY_TYPE) instanceof String type)
-                receiver = Map.of("type", type, "name", name);
-            else
-                receiver = Map.of("name", name);
-        }
-        else if (method.getDeclaringType().isBean()) {
+        if (method.getDeclaringType().isBean()) {
             receiver = Map.of(
                     "name",
                     Objects.requireNonNull(method.getDeclaringType().getKlass().getAttribute(AttributeNames.BEAN_NAME))
             );
+        } else {
+            var idField = firstCharsToLowerCase(method.getDeclaringType().getKlass().getName()) + "Id";
+            if (requestBody.get(idField) instanceof String id)
+                receiver = Map.of("id", id);
+            else
+                throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
         }
-        else
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
         var args = new HashMap<String, Object>();
         method.getParameters().forEach(param -> {
             var arg = requestBody.get(param.getName());
@@ -121,10 +116,10 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return new InvokeRequest(receiver, args);
     }
 
-    private Object transformResultValue(Object value) {
+    private Object transformResultValue(Object value, Type type) {
         return switch (value) {
-            case Map map -> transformResultObject(map);
-            case List list -> Utils.map(list, this::transformResultValue);
+            case Map map -> transformResultObject(map, (ClassType) type);
+            case List list -> Utils.map(list, e -> transformResultValue(e, ((ArrayType) type).getElementType()));
             case null, default -> value;
         };
     }
@@ -173,7 +168,8 @@ public class ApiAdapter extends EntityContextFactoryAware {
         var fields = id == null ? transformRequestObjectArgs(map, type) : transformRequestObjectFields(map, type);
         var children = new HashMap<String, Object>();
         for (ClassType ik : type.getInnerClassTypes()) {
-            if (map.get(ik.getName()) instanceof List<?> list) {
+            var childFieldName = getChildFieldName(ik.getName());
+            if (map.get(childFieldName) instanceof List<?> list) {
                 var list1 = new ArrayList<Map<String, Object>>();
                 for (var item : list) {
                     if (item instanceof Map map1)
@@ -193,21 +189,36 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return result;
     }
 
-    private Object transformResultObject(Map<String, Object> result) {
+    private Object transformResultObject(Map<String, Object> result, ClassType type) {
         if (result.get("name") instanceof String name)
             return name;
-        var type = (String) result.get("type");
         var id = (String) result.get("id");
         var fields = (Map<String, Object>) result.get("fields");
         if (fields == null)
             return Objects.requireNonNull(id);
         var transformed = new LinkedHashMap<String, Object>();
         transformed.put(KEY_ID, id);
-        transformed.put(KEY_TYPE, type);
-        fields.forEach((fieldName, value) -> transformed.put(fieldName, transformResultValue(value)));
+        type.forEachField(f -> {
+            if (!f.isStatic() && f.isPublic()) {
+                var value = fields.get(f.getName());
+                var fName = getFieldName(f.getName(), f.getPropertyType());
+                if (value != null)
+                    transformed.put(fName, transformResultValue(value, f.getPropertyType()));
+            }
+        });
         var children = (Map<String, List<Map<String, Object>>>) result.get("children");
-        if (children != null)
-            children.forEach((childName, list) -> transformed.put(childName, Utils.map(list, this::transformResultObject)));
+        if (children != null) {
+            for (ClassType childType : type.getInnerClassTypes()) {
+                var childObjects = children.get(childType.getName());
+                if (childObjects != null) {
+                    var childFieldName = getChildFieldName(childType.getName());
+                    transformed.put(
+                            childFieldName,
+                            Utils.map(childObjects, c -> transformResultObject(c, childType))
+                    );
+                }
+            }
+        }
         return transformed;
     }
 
@@ -231,10 +242,19 @@ public class ApiAdapter extends EntityContextFactoryAware {
         var constructor = type.getConstructor();
         constructor.getParameters().forEach(param -> {
             var value = map.get(param.getName());
+            var fName = getFieldName(param.getName(), param.getType());
             if (value != null)
-                fields.put(param.getName(), transformRequestValue(value, param.getType()));
+                fields.put(fName, transformRequestValue(value, param.getType()));
         });
         return fields;
+    }
+
+    private String getFieldName(String baseName, Type type) {
+        return type.getUnderlyingType().isReference() ? baseName + "Id" : baseName;
+    }
+
+    private String getChildFieldName(String childTypeName) {
+        return firstCharsToLowerCase(childTypeName) + "s";
     }
 
     private Map<String, Object> transformRequestObjectFields(Map<String, Object> map, ClassType type) {
@@ -242,8 +262,9 @@ public class ApiAdapter extends EntityContextFactoryAware {
         type.forEachField(field -> {
             if (field.isPublic()) {
                 var value = map.get(field.getName());
+                var fName = getFieldName(field.getName(), field.getPropertyType());
                 if (value != null)
-                    fields.put(field.getName(), transformRequestValue(value, field.getPropertyType()));
+                    fields.put(fName, transformRequestValue(value, field.getPropertyType()));
             }
         });
         return fields;

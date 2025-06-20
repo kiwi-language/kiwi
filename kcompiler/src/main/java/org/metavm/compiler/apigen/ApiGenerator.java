@@ -101,10 +101,10 @@ public class ApiGenerator {
                 },
                 """,
                 getApiClass(clazz),
-                NamingUtils.firstCharToLowerCase(getApiClass(clazz)),
+                NamingUtils.firstCharsToLowerCase(getApiClass(clazz)),
                 getApiClass(clazz),
                 NamingUtils.nameToPath(clazz.getQualName().toString()),
-                NamingUtils.firstCharToLowerCase(getApiClass(clazz))
+                NamingUtils.firstCharsToLowerCase(getApiClass(clazz))
         ));
     }
 

@@ -293,10 +293,10 @@ public class Method extends Flow implements Property {
         var name = getName();
         var matcher = GETTER_PTN.matcher(name);
         if (matcher.matches())
-            return NamingUtils.firstCharToLowerCase(matcher.group(2));
+            return NamingUtils.firstCharsToLowerCase(matcher.group(2));
         matcher = SETTER_PTN.matcher(name);
         if(matcher.matches())
-            return NamingUtils.firstCharToLowerCase(matcher.group(1));
+            return NamingUtils.firstCharsToLowerCase(matcher.group(1));
         throw new IllegalStateException("Method " + getQualifiedName() + " is not a getter or setter");
     }
 

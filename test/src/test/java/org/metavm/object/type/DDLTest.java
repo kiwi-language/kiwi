@@ -821,7 +821,7 @@ public class DDLTest extends TestCase {
         try (var context = newContext()) {
             var klass = context.getKlassByQualifiedName("FooService");
             Assert.assertEquals(BeanKinds.COMPONENT, klass.getAttribute(AttributeNames.BEAN_KIND));
-            Assert.assertEquals(NamingUtils.firstCharToLowerCase(klass.getName()), klass.getAttribute(AttributeNames.BEAN_NAME));
+            Assert.assertEquals(NamingUtils.firstCharsToLowerCase(klass.getName()), klass.getAttribute(AttributeNames.BEAN_NAME));
         }
         Id fooServiceId;
         try(var context = newContext()) {

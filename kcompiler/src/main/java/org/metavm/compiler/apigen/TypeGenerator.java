@@ -10,7 +10,7 @@ import org.metavm.util.NamingUtils;
 import org.metavm.util.Utils;
 
 import static org.metavm.compiler.apigen.ApiGenUtils.*;
-import static org.metavm.util.NamingUtils.firstCharToLowerCase;
+import static org.metavm.util.NamingUtils.firstCharsToLowerCase;
 
 public class TypeGenerator {
     private final ApiWriter apiWriter = new ApiWriter();
@@ -54,7 +54,7 @@ public class TypeGenerator {
             }
             for (Clazz innerCls : cls.getClasses()) {
                 if (innerCls.isPublic() && innerCls.isEntity()) {
-                    var fieldName = firstCharToLowerCase(innerCls.getName().toString()) + "s";
+                    var fieldName = firstCharsToLowerCase(innerCls.getName().toString()) + "s";
                     apiWriter.writeln(fieldName + ": " + getApiType(innerCls) + "[]");
                 }
             }
@@ -125,7 +125,7 @@ public class TypeGenerator {
         apiWriter.writeln("export interface " + getRequestClsName(method) + " {");
         apiWriter.indent();
         if (!method.getDeclType().getClazz().isBean()) {
-            var idField = firstCharToLowerCase(getApiClass(method.getDeclClass())) + "Id";
+            var idField = firstCharsToLowerCase(getApiClass(method.getDeclClass())) + "Id";
             apiWriter.writeln(idField + ": string");
         }
         for (Param param : method.getParams()) {
