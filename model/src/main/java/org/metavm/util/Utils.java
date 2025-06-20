@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -133,18 +134,16 @@ public class Utils {
     }
 
     public static void writeFile(String path, byte[] bytes) {
-        ensureDirectoryExists(getDirectoryPath(path));
-        try (var output = new FileOutputStream(path)) {
+        writeFile(Path.of(path), bytes);
+    }
+
+    public static void writeFile(Path path, byte[] bytes) {
+        ensureDirectoryExists(path.getParent());
+        try (var output = new FileOutputStream(path.toFile())) {
             output.write(bytes);
         } catch (IOException e) {
             throw new InternalException(String.format("Failed to write file: %s", path), e);
         }
-    }
-
-    private static String getDirectoryPath(String path) {
-        var idx = path.lastIndexOf('/');
-        assert idx >= 0;
-        return path.substring(0 , idx + 1);
     }
 
     public static String readLine(String path) {
@@ -1977,6 +1976,20 @@ public class Utils {
             }
         }
         return false;
+    }
+
+    @SneakyThrows
+    public static List<Path> listFilePathsRecursively(Path start, String suffix) {
+        if (!Files.exists(start) || !Files.isDirectory(start)) {
+            throw new IllegalArgumentException("Provided path is not an existing directory: " + start);
+        }
+
+        try (Stream<Path> stream = Files.walk(start)) {
+            return stream
+                    .filter(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(suffix))
+                    .map(Path::toAbsolutePath) // Convert Path to absolute Path
+                    .collect(Collectors.toList());
+        }
     }
 
     public static <T, V> Iterator<V> mapIterator(Iterator<T> source, Function<T, V> mapper) {

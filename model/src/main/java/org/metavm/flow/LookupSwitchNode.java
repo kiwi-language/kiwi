@@ -27,14 +27,15 @@ public class LookupSwitchNode extends SwitchNode {
     }
 
     public static Node read(CodeInput input, String name) {
+        var base = input.getOffset();
         input.skipPadding();
-        var defaultTarget = input.readLabel();
+        var defaultTarget = input.getLabel(base + input.readFixedInt());
         var numMatches = input.readFixedInt();
         var matches = new ArrayList<Integer>();
         var targets = new ArrayList<LabelNode>();
         for (int i = 0; i < numMatches; i++) {
             matches.add(input.readFixedInt());
-            targets.add(input.readLabel());
+            targets.add(input.getLabel(base + input.readFixedInt()));
         }
         var node = new LookupSwitchNode(name, input.getPrev(), input.getCode(), matches);
         node.setDefaultTarget(defaultTarget);

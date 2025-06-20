@@ -1,0 +1,55 @@
+package user
+
+import org.metavm.api.Index
+import application.Application
+import util.BusinessException
+import util.ErrorCode
+import application.Application
+import application.ApplicationState
+import util.UserUtil
+
+class User(
+    val loginName: string, 
+    password: string,
+    @Summary
+    var name: string, 
+    var roles: Role[]
+) {
+
+    static val loginNameIndex = Index<string, User>(true, u -> u.loginName)
+
+    var state = UserState.ACTIVE
+
+    priv var passwordHash = secureHash(password, null)
+
+    val applications = new Application[]
+
+    fn joinApplication(application: Application) {
+        if (UserUtil.contains<Application>(applications, application))
+            throw BusinessException.of(ErrorCode.ALREADY_JOINED_APP, name)
+        applications.append(application)
+    }
+
+    fn leaveApplication(application: Application) -> bool {
+        if (application.owner == this && application.state != ApplicationState.REMOVING)
+            throw BusinessException.of(ErrorCode.CAN_NOT_EVICT_APP_OWNER)
+        if (!UserUtil.contains<Application>(applications, application))
+            throw BusinessException.of(ErrorCode.NOT_IN_APP)
+        application.removeAdminIfPresent(this)
+        return this.applications.remove(application)
+    }
+
+    fn hasJoinedApplication(application: Application) -> bool {
+        return UserUtil.contains<Application>(applications, application)
+    }
+
+    fn checkPassword(password: string) -> bool {
+        return passwordHash == secureHash(password, null)
+    }
+
+    fn changePassword(password: string) {
+        passwordHash = secureHash(password, null)
+    }
+
+}
+

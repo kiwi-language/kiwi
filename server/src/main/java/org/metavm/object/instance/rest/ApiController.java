@@ -2,7 +2,6 @@ package org.metavm.object.instance.rest;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
@@ -16,43 +15,70 @@ import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiAdapter;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 public class ApiController {
 
     private final ApiAdapter apiAdapter;
 
+    public static final String HEADER_REFRESH_POLICY = "X-Refresh-Policy";
+    public static final String REFRESH_POLICY_NONE = "none";
+
     public ApiController(ApiAdapter apiAdapter) {
         this.apiAdapter = apiAdapter;
     }
 
     @GetMapping("/api/**")
-    public Result<Map<String, Object>> handleGet(HttpServletRequest servletRequest) {
+    public Map<String, Object> handleGet(HttpServletRequest servletRequest) {
         initContextAppId(servletRequest);
-        return Result.success(apiAdapter.handleGet(servletRequest.getRequestURI()));
+        return apiAdapter.handleGet(servletRequest.getRequestURI());
     }
 
     @PostMapping("/api/**")
-    public Result<Object> handlePost(HttpServletRequest servletRequest,
-                                     HttpServletResponse servletResponse,
-                                     @RequestBody Map<String, Object> requestBody) {
-        initContextAppId(servletRequest);
-        var httpReq = buildHttpRequest(servletRequest);
-        var httpResp = new HttpResponseImpl();
-        var r =  Result.success(apiAdapter.handlePost(servletRequest.getRequestURI(), requestBody, httpReq, httpResp));
-        writeHttpResponse(httpResp, servletResponse);
-        return r;
+    public ResponseEntity<Object> handlePost(HttpServletRequest servletRequest,
+                                             @RequestBody(required = false) Map<String, Object> requestBody) {
+        try {
+            var refreshPolicy = servletRequest.getHeader(HEADER_REFRESH_POLICY);
+            if (!REFRESH_POLICY_NONE.equalsIgnoreCase(refreshPolicy))
+                ContextUtil.setWaitForSearchSync(true);
+            initContextAppId(servletRequest);
+            var httpReq = buildHttpRequest(servletRequest);
+            var httpResp = new HttpResponseImpl();
+            var r = Result.success(apiAdapter.handlePost(
+                    servletRequest.getRequestURI(),
+                    Objects.requireNonNullElse(requestBody, Map.of()),
+                    httpReq,
+                    httpResp
+            ));
+            return toResponse(r, httpResp);
+        } finally {
+            ContextUtil.setWaitForSearchSync(false);
+        }
+    }
+
+    private  <T> ResponseEntity<Object> toResponse(Result<T> result, HttpResponse response) {
+        if (result.isSuccessful()) {
+            var headers = getHeaders(response);
+            if (result.getData() == null)
+                return ResponseEntity.noContent().headers(headers).build();
+            else
+                return new ResponseEntity<>(result.getData(), headers, 200);
+        } else
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
     }
 
     @DeleteMapping("/api/**")
-    public Result<Void> handleDelete(HttpServletRequest servletRequest) {
+    public void handleDelete(HttpServletRequest servletRequest) {
         initContextAppId(servletRequest);
         apiAdapter.handleDelete(servletRequest.getRequestURI());
-        return Result.voidSuccess();
     }
 
     private HttpRequest buildHttpRequest(HttpServletRequest servletRequest) {
@@ -77,13 +103,15 @@ public class ApiController {
         );
     }
 
-    private void writeHttpResponse(HttpResponse httpResponse, HttpServletResponse servletResponse) {
+    private HttpHeaders getHeaders(HttpResponse httpResponse) {
+        var headers = new HttpHeaders();
         for (HttpHeader header : httpResponse.getHeaders()) {
-            servletResponse.setHeader(header.name(), header.value());
+            headers.add(header.name(), header.value());
         }
         for (HttpCookie cookie : httpResponse.getCookies()) {
-            servletResponse.addCookie(new Cookie(cookie.name(), cookie.value()));
+            headers.add(HttpHeaders.SET_COOKIE, ResponseCookie.from(cookie.name(), cookie.value()).toString());
         }
+        return headers;
     }
 
     private void initContextAppId(HttpServletRequest servletRequest) {

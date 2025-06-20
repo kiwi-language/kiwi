@@ -74,35 +74,24 @@ public class Parser {
     List<Modifier> mods() {
         var mods = List.<Modifier>builder();
         for (;;) {
+            // Handle the case of `value: <type>` where value is the name of a class parameter
+            if (isEof() || peekToken(token(), COLON))
+                return mods.build();
+            Modifier mod;
             switch (tokenKind()) {
-                case PUB -> mods.append(new Modifier(ModifierTag.PUB));
-                case PRIV -> mods.append(new Modifier(ModifierTag.PRIV));
-                case PROT -> mods.append(new Modifier(ModifierTag.PROT));
-                case STATIC -> mods.append(new Modifier(ModifierTag.STATIC));
-                case ABSTRACT -> mods.append(new Modifier(ModifierTag.ABSTRACT));
-                case DELETED -> mods.append(new Modifier(ModifierTag.DELETED));
-                case VALUE -> mods.append(new Modifier(ModifierTag.VALUE));
-                case TEMP -> mods.append(new Modifier(ModifierTag.TEMP));
+                case PUB -> mod = new Modifier(ModifierTag.PUB);
+                case PRIV -> mod = new Modifier(ModifierTag.PRIV);
+                case PROT -> mod = new Modifier(ModifierTag.PROT);
+                case STATIC -> mod = new Modifier(ModifierTag.STATIC);
+                case ABSTRACT -> mod = new Modifier(ModifierTag.ABSTRACT);
+                case DELETED -> mod = new Modifier(ModifierTag.DELETED);
+                case VALUE -> mod = new Modifier(ModifierTag.VALUE);
+                case TEMP -> mod = new Modifier(ModifierTag.TEMP);
                 default -> {
                     return mods.build();
                 }
             }
-            nextToken();
-        }
-    }
-
-    List<Modifier> classParamMods() {
-        var mods = List.<Modifier>builder();
-        for (;;) {
-            switch (tokenKind()) {
-                case PUB -> mods.append(new Modifier(ModifierTag.PUB));
-                case PRIV -> mods.append(new Modifier(ModifierTag.PRIV));
-                case PROT -> mods.append(new Modifier(ModifierTag.PROT));
-                case DELETED -> mods.append(new Modifier(ModifierTag.DELETED));
-                default -> {
-                    return mods.build();
-                }
-            }
+            mods.append(mod.setPos(pos()));
             nextToken();
         }
     }
@@ -594,7 +583,7 @@ public class Parser {
         var members = classMembers();
         return new AnonClassExpr(
                 ClassDeclBuilder.builder(NameTable.instance.empty)
-                        .addExtend(new Extend(classType, args))
+                        .addExtend(new Extend(new Call(classType.getExpr(), args)))
                         .members(members)
                         .build()
         );
@@ -870,12 +859,12 @@ public class Parser {
         var ext = List.<Extend>builder();
         var superType = classType();
         if (is(TokenKind.LPAREN))
-            ext.append(new Extend(superType, arguments()));
+            ext.append(new Extend(new Call(superType.getExpr(), arguments())));
         else
-            ext.append(new Extend(superType));
+            ext.append(new Extend(superType.getExpr()));
         while (is(COMMA)) {
             nextToken();
-            ext.append(new Extend(classType()));
+            ext.append(new Extend(classType().getExpr()));
         }
         return ext.build();
     }
@@ -1075,7 +1064,7 @@ public class Parser {
                     ClassTag.CLASS, List.nil(), List.nil(),
                     NameTable.instance.empty,
                     null,
-                    List.of(new Extend(new ClassTypeNode(new Ident(className)), args)),
+                    List.of(new Extend(new Call(new Ident(className), args))),
                     List.nil(),
                      List.nil(),
                     List.nil(),
@@ -1697,7 +1686,7 @@ public class Parser {
 
     private ClassParamDecl classParam() {
         var annotations = annotations();
-        var mods = classParamMods();
+        var mods = mods();
         boolean withField = false;
         boolean readonly = false;
         switch (tokenKind()) {

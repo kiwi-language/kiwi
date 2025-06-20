@@ -1,0 +1,12 @@
+
+class MyException(msg: string): Exception(msg) {
+}
+
+@Bean
+class Lab {
+
+    fn raise(msg: string) {
+        throw MyException(msg)
+    }
+
+}

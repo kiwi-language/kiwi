@@ -25,4 +25,8 @@ public class TypeTags {
     public static final int TAG_ANY = 22;
     public static final int TAG_ERROR = 23;
 
+    public static boolean isNumeric(int tag) {
+        return tag >= TAG_INT && tag <= TAG_CHAR;
+    }
+
 }

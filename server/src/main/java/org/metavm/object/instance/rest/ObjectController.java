@@ -83,7 +83,7 @@ public class ObjectController {
             var page = (int) requestBody.getOrDefault("page", 1);
             var pageSize = (int) requestBody.getOrDefault("pageSize", 20);
             var newlyCreatedId = (String) requestBody.get("newlyCreatedId");
-            return Result.success(apiService.search(type, criteria, page, pageSize, newlyCreatedId));
+            return Result.success(apiService.search(type, criteria, page, pageSize, false, newlyCreatedId));
         }
         catch (ClassCastException e) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "bad search request");

@@ -15,7 +15,7 @@ public final class ClassTypeNode extends TypeNode {
         this.expr = expr;
     }
 
-    public Node getExpr() {
+    public Expr getExpr() {
         return expr;
     }
 

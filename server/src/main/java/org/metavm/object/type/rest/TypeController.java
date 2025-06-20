@@ -3,8 +3,7 @@ package org.metavm.object.type.rest;
 import jakarta.servlet.http.HttpServletRequest;
 import org.metavm.common.Result;
 import org.metavm.object.type.TypeManager;
-import org.metavm.object.type.rest.dto.TreeResponse;
-import org.metavm.object.type.rest.dto.TypeTreeQuery;
+import org.metavm.object.type.rest.dto.GetSourceTagRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -25,11 +24,9 @@ public class TypeController {
         return Result.voidSuccess();
     }
 
-    @GetMapping("/source-tag/**")
-    public Result<Integer> getSourceTag(HttpServletRequest request) {
-        var uri = request.getRequestURI();
-        var name = uri.substring("/type/source-tag/".length()).replace('/', '.');
-        return Result.success(typeManager.getSourceTag(name));
+    @PostMapping("/source-tag")
+    public Result<Integer> getSourceTag(@RequestBody GetSourceTagRequest request) {
+        return Result.success(typeManager.getSourceTag(request.appId(), request.name()));
     }
 
 }

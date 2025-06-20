@@ -1,0 +1,85 @@
+import application.AppInvitation
+import application.AppInvitationRequest
+import application.Application
+import application.Application
+import message.Message
+import user.User
+import user.Role
+import user.Token
+import user.VerificationCode
+import user.ChangePasswordRequest
+import user.UserService
+import user.RegisterRequest
+import application.ApplicationService
+import message.MessageService
+import user.VerificationCodeService
+
+@Bean
+class UserLab(
+    priv val userService: UserService,
+    priv val applicationService: ApplicationService,
+    priv val verificationCodeService: VerificationCodeService,
+    priv val messageService: MessageService
+) {
+
+    fn createRole(name: string) -> Role {
+        return Role(name)
+    }
+
+    fn createUser(loginName: string, password: string, name: string, roles: Role[]) -> User {
+        return User(loginName, password, name, roles)
+    }
+
+    fn login(loginName: string, password: string, clientIP: string) {
+        userService.login(loginName, password, clientIP)
+    }
+
+    fn verify(token: string) {
+        userService.verify(token)
+    }
+
+    fn logout() {
+        userService.logout()
+    }
+
+    fn invite(application: Application, user: User, isAdmin: bool) {
+        applicationService.invite(AppInvitationRequest(
+                application,
+                user,
+                isAdmin
+        ))
+    }
+
+    fn acceptInvitation(invitation: AppInvitation) {
+        applicationService.acceptInvitation(invitation)
+    }
+
+    fn sendVerificationCode(receiver: string) {
+        verificationCodeService.sendVerificationCode(receiver, "MetaVM Verification Code", "127.0.0.1")
+    }
+
+    fn register(loginName: string, name: string, password: string, verificationCode: string) {
+        userService.register(RegisterRequest(loginName, name, password, verificationCode))
+    }
+
+    fn changePassword(verificationCode: string, loginName: string, password: string) {
+        userService.changePassword(ChangePasswordRequest(verificationCode, loginName, password))
+    }
+
+    fn evict(app: Application,  users: User[]) {
+        applicationService.evict(app, users)
+    }
+
+    fn promote(app: Application, user: User) {
+        applicationService.promote(app, user)
+    }
+
+    fn demote(app: Application, user: User) {
+        applicationService.demote(app, user)
+    }
+
+    fn readMessage(message: Message) {
+        messageService.read(message)
+    }
+
+}

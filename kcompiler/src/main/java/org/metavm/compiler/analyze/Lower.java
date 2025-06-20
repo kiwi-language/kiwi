@@ -170,15 +170,18 @@ public class Lower extends AbstractNodeVisitor<Node> {
                 prevParams.prepend(ordinalParam.getElement()).prepend(nameParam.getElement())
         );
 
+        var genericEnumCls = project.getRootPackage().subPackage("java").subPackage("lang")
+                .getClass("Enum").getInst(List.of(clazz));
+
         classDecl.setImplements(
                 List.of(
                         new Extend(
-                            project.getRootPackage().subPackage("java").subPackage("lang")
-                                    .getClass("Enum").getInst(List.of(clazz))
-                                    .makeNode(),
-                                List.of(
-                                        ref(nameParam.getElement()),
-                                        ref(ordinalParam.getElement())
+                                NodeMaker.callExpr(
+                                        NodeMaker.initRef(genericEnumCls.getPrimaryInit()),
+                                        List.of(
+                                                ref(nameParam.getElement()),
+                                                ref(ordinalParam.getElement())
+                                        )
                                 )
                         )
                 )
@@ -252,8 +255,9 @@ public class Lower extends AbstractNodeVisitor<Node> {
         List<Expr> args;
         if (ecd.getDecl() != null) {
             var ext = ecd.getDecl().getImplements().head();
-            ext.setArgs(
-                ext.getArgs().prepend(new Literal(ec.getOrdinal())).prepend(new Literal(ec.getName().toString()))
+            var extCall = (Call) ext.getExpr();
+            extCall.setArguments(
+                extCall.getArguments().prepend(new Literal(ec.getOrdinal())).prepend(new Literal(ec.getName().toString()))
             );
             args = List.nil();
         }

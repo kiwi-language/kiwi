@@ -12,6 +12,8 @@ import org.metavm.compiler.util.Traces;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -29,7 +31,8 @@ public class Attr extends StructuralNodeVisitor {
 
     @Override
     public Void visitExtend(Extend extend) {
-        extend.getArgs().forEach(arg -> attrExpr(arg, PrimitiveType.ANY).resolve());
+        if (extend.getExpr() instanceof Call call)
+            attrExpr(call, PrimitiveType.ANY).resolve();
         return null;
     }
 
@@ -224,7 +227,7 @@ public class Attr extends StructuralNodeVisitor {
         if (element instanceof Variable variable && variable.getType() instanceof DeferredType) {
             var templateVar = variable instanceof FieldInst fieldInst ? fieldInst.field() : variable;
             var varDecl = (VariableDecl<?>) templateVar.getNode();
-            attrExpr(Objects.requireNonNull(varDecl.getInitial()), Types.instance.getNullableAny());
+            attrExpr(Objects.requireNonNull(varDecl.getInitial()), Types.instance.getNullableAny()).resolve();
             templateVar.setType(Objects.requireNonNull(varDecl.getInitial()).getType());
         }
     }
@@ -410,19 +413,17 @@ public class Attr extends StructuralNodeVisitor {
                 }
 
                 @Override
-                Element resolve(Function<Element, Element> mapper, Function<Expr, Error> errorFunc) {
-                    return r.resolve(e -> {
+                Element resolve(Function<Element, Element> mapper, @Nullable Comparator<Element> comparator, Function<Expr, Error> errorFunc) {
+                    var resolved = r.resolve(e -> {
                         if (e instanceof GenericDecl genDecl
                                 && genDecl.getTypeParams().size() == typeApply.getArgs().size()) {
                             var inst = genDecl.getInst(typeApply.getArgs().map(TypeNode::getType));
-                            var resolved = mapper.apply(inst);
-                            if (resolved != null) {
-                                typeApply.setElement(resolved);
-                                return resolved;
-                            }
+                            return mapper.apply(inst);
                         }
                         return null;
-                    });
+                    }, comparator, errorFunc);
+                    typeApply.setElement(resolved);
+                    return resolved;
                 }
             };
         }
@@ -439,14 +440,30 @@ public class Attr extends StructuralNodeVisitor {
                             return resolveInit(ct, argTypes);
                         return null;
                     },
-                    expr -> Errors.cantResolveFunction(argTypes)
-            );
+                    this::compareCallCandidate,
+                    expr -> Errors.cantResolveFunction(argTypes));
             if (call.getFunc().getType() instanceof FuncType funcType) {
                 completeArgumentResolution(call.getArguments(), funcType.getParamTypes());
                 if (func != null)
                     call.setElement(func);
             }
             return new NullResolver();
+        }
+
+        private int compareCallCandidate(Element e1, Element e2) {
+            var funcType1 = (FuncType) ((ValueElement) e1).getType();
+            var funcType2 = (FuncType) ((ValueElement) e2).getType();
+            if (e1 instanceof MethodRef m1 && e2 instanceof MethodRef m2) {
+                if (isOverride(m1, m2))
+                    return -1;
+                if (isOverride(m2, m1))
+                    return 1;
+            }
+            if (isApplicable(funcType2.getParamTypes(), funcType1.getParamTypes()))
+                return -1;
+            if (isApplicable(funcType1.getParamTypes(), funcType2.getParamTypes()))
+                return 1;
+            return 0;
         }
 
         @Override
@@ -470,10 +487,10 @@ public class Attr extends StructuralNodeVisitor {
         abstract Element resolve();
 
         Element resolve(Function<Element, Element> mapper) {
-            return resolve(mapper, Errors::cantResolve);
+            return resolve(mapper, null, Errors::cantResolve);
         }
 
-        abstract Element resolve(Function<Element, Element> mapper, Function<Expr, Error> errorFunc);
+        abstract Element resolve(Function<Element, Element> mapper, @Nullable Comparator<Element> comparator, Function<Expr, Error> errorFunc);
 
     }
 
@@ -491,7 +508,7 @@ public class Attr extends StructuralNodeVisitor {
         }
 
         @Override
-        Element resolve(Function<Element, Element> mapper, Function<Expr, Error> errorFunc) {
+        Element resolve(Function<Element, Element> mapper, @Nullable Comparator<Element> comparator, Function<Expr, Error> errorFunc) {
             return resolved;
         }
 
@@ -506,16 +523,35 @@ public class Attr extends StructuralNodeVisitor {
             this.candidates = candidates;
         }
 
-        public Element resolve(Function<Element, Element> mapper, Function<Expr, Error> errorFunc) {
-            for (Element candidate : candidates) {
+        public Element resolve(Function<Element, Element> mapper, @Nullable Comparator<Element> comparator, Function<Expr, Error> errorFunc) {
+            var matches = List.<Element>nil();
+            out: for (Element candidate : candidates) {
                 ensureElementTyped(candidate);
                 Element resolved;
                 if ((resolved = mapper.apply(candidate)) != null) {
-                    onResolved(resolved);
-                    return resolved;
+                    if (comparator == null) {
+                        onResolved(resolved);
+                        return resolved;
+                    }
+                    var newMatches = List.<Element>nil();
+                    for (Element match : matches) {
+                        var r = comparator.compare(resolved, match);
+                        if (r > 0)
+                            continue out;
+                        if (r == 0)
+                            newMatches = newMatches.prepend(match);
+                    }
+                    matches = newMatches.prepend(resolved);
                 }
             }
-            log.error(expr, errorFunc.apply(expr));
+            if (matches.nonEmpty() && matches.tail().isEmpty()) {
+                onResolved(matches.head());
+                return matches.head();
+            }
+            if (matches.isEmpty())
+                log.error(expr, errorFunc.apply(expr));
+            else
+                log.error(expr, Errors.ambiguousReference(matches.join(", ")));
             onResolved(ErrorElement.instance);
             return ErrorElement.instance;
         }
@@ -547,7 +583,7 @@ public class Attr extends StructuralNodeVisitor {
         }
 
         @Override
-        Element resolve(Function<Element, Element> mapper, Function<Expr, Error> errorFunc) {
+        Element resolve(Function<Element, Element> mapper, @Nullable Comparator<Element> comparator, Function<Expr, Error> errorFunc) {
             return null;
         }
 
@@ -558,8 +594,7 @@ public class Attr extends StructuralNodeVisitor {
             logger.trace("Checking applicable of element {}, type: {}, with argument types: {}",
                     element.getName(),element.getType().getTypeText(), argumentTypes.map(Type::getTypeText).join(", "));
         }
-        if (element.getType() instanceof FuncType funcType &&
-            funcType.getParamTypes().matches(argumentTypes, this::isApplicable))
+        if (element.getType() instanceof FuncType funcType && isApplicable(funcType.getParamTypes(), argumentTypes))
             return element;
         else
             return null;
@@ -588,10 +623,21 @@ public class Attr extends StructuralNodeVisitor {
         return null;
     }
 
+    private boolean isApplicable(List<Type> types1, List<Type> types2) {
+        return types1.matches(types2, this::isApplicable);
+    }
+
     private boolean isApplicable(Type parameterType, Type argumentType) {
         if (parameterType.isAssignableFrom(argumentType))
             return true;
         return widensTo(argumentType, parameterType);
+    }
+
+    private boolean isOverride(MethodRef override, MethodRef overridden) {
+        return override.getName() == overridden.getName()
+                && overridden.getDeclType() != override.getDeclType()
+                && overridden.getDeclType().isAssignableFrom(override.getDeclType())
+                && override.getParamTypes().equals(overridden.getParamTypes());
     }
 
     private boolean widensTo(Type t1, Type t2) {

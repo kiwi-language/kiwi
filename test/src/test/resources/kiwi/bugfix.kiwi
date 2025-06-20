@@ -1,0 +1,116 @@
+// Todo List Application
+import org.metavm.api.Index
+
+@Label("用户")
+class User(
+    @Summary
+    @Label("用户名")
+    var username: string,
+
+    @Label("密码哈希")
+    var passwordHash: string
+) {
+
+    static val usernameIdx = Index<string, User>(true, u -> u.username)
+
+}
+
+@Label("待办事项")
+class Todo(
+    @Summary
+    @Label("任务")
+    val task: string,
+
+    @Label("已完成")
+    var completed: bool,
+
+    @Label("用户")
+    val user: User,
+
+    @Label("创建时间")
+    val createdAt: long
+) {
+
+    static val userIdx = Index<User, Todo>(false, t -> t.user)
+
+    @Label("切换状态")
+    fn toggleStatus() {
+        completed = !completed
+    }
+
+}
+
+@Bean
+@Label("用户服务")
+class UserService {
+
+    @Label("注册")
+    fn register(@Label("用户名") username: string, @Label("密码哈希") passwordHash: string) -> User {
+        require(User.usernameIdx.getFirst(username) == null, "Username already exists")
+        return new User(username, passwordHash)
+    }
+
+    @Label("登录")
+    fn login(@Label("用户名") username: string, @Label("密码哈希") passwordHash: string) -> User? {
+        val user = User.usernameIdx.getFirst(username)
+        if (user == null) {
+            return null
+        }
+        if (user!!.passwordHash == passwordHash) {
+            return user
+        }
+        return null
+    }
+
+}
+
+@Bean
+@Label("待办服务")
+class TodoService {
+
+    @Label("添加待办")
+    fn addTodo(user: User, @Label("任务") task: string) -> Todo {
+        require(task != "", "Task cannot be empty")
+        return new Todo(task, false, user, now())
+    }
+
+    @Label("切换待办状态")
+    fn toggleTodoStatus(todo: Todo) {
+        todo.toggleStatus()
+    }
+
+    @Label("删除待办")
+    fn deleteTodo(todo: Todo) {
+        delete todo
+    }
+
+    @Label("获取用户的所有待办")
+    fn getTodos(user: User) -> Todo[] {
+        return Todo.userIdx.getAll(user)
+    }
+
+    @Label("获取用户未完成的待办")
+    fn getPendingTodos(user: User) -> Todo[] {
+        val allTodos = Todo.userIdx.getAll(user)
+        val pendingTodos = new Todo[]
+        for (todo in allTodos) {
+            if (!todo.completed) {
+                pendingTodos.append(todo)
+            }
+        }
+        return pendingTodos
+    }
+
+    @Label("获取用户已完成的待办")
+    fn getCompletedTodos(user: User) -> Todo[] {
+        val allTodos = Todo.userIdx.getAll(user)
+        val completedTodos = new Todo[]
+        for (todo in allTodos) {
+            if (todo.completed) {
+                completedTodos.append(todo)
+            }
+        }
+        return completedTodos
+    }
+
+}

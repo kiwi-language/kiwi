@@ -1,0 +1,27 @@
+package util
+
+import org.metavm.api.Index
+
+@Bean
+class EmailService {
+
+    var lastSentEmail: Email?
+
+    fn send(receiver: string, title: string, content: string) {
+        lastSentEmail = Email(receiver, title, content)
+    }
+
+    fn getLastSentEmail() -> Email? {
+        return lastSentEmail
+    }
+
+}
+
+
+class Email(
+    var receiver,
+    var title,
+    var content
+) {
+
+}

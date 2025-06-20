@@ -30,4 +30,8 @@ public final class ParamDecl extends VariableDecl<Param> {
         return visitor.visitParamDecl(this);
     }
 
+    @Override
+    public List<Modifier> getMods() {
+        return List.of();
+    }
 }

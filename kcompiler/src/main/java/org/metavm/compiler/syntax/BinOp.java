@@ -3,6 +3,8 @@ package org.metavm.compiler.syntax;
 import org.metavm.compiler.generate.Code;
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Type;
+import org.metavm.compiler.type.TypeTags;
+import org.metavm.compiler.type.Types;
 
 import java.util.EnumSet;
 
@@ -25,6 +27,14 @@ public enum BinOp {
         @Override
         public void apply(Type type, Code code) {
             code.add(type);
+        }
+
+        @Override
+        public Type getType(Type firstType, Type secondType) {
+            if (TypeTags.isNumeric(firstType.getTag()) && TypeTags.isNumeric(secondType.getTag()))
+                return super.getType(firstType, secondType);
+            else
+                return Types.instance.getStringType();
         }
     },
     SUB("-", EnumSet.of(ARITHMETIC)) {

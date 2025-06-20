@@ -5,7 +5,7 @@ import org.metavm.object.instance.core.ApiObject;
 import java.util.List;
 
 public record ApiSearchResult(
-        List<ApiObject> data,
+        List<ApiObject> items,
         long total
 ) {
 }

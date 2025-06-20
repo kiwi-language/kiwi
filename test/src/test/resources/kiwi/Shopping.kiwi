@@ -151,7 +151,7 @@ class Order(
         return this.sku
     }
 
-    fn getTime() -> time {
+    fn getTime() -> long {
         return this.orderTime
     }
 

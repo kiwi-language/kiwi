@@ -3,10 +3,8 @@ package org.metavm.compiler.analyze;
 import org.metavm.compiler.diag.DummyLog;
 import org.metavm.compiler.diag.Errors;
 import org.metavm.compiler.diag.Log;
-import org.metavm.compiler.element.LocalVar;
 import org.metavm.compiler.element.Package;
-import org.metavm.compiler.element.Param;
-import org.metavm.compiler.element.Project;
+import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.util.List;
 import org.slf4j.Logger;
@@ -169,31 +167,69 @@ public class IdentAttr extends StructuralNodeVisitor {
 
     @Override
     public Void visitClassDecl(ClassDecl classDecl) {
+        var clazz = classDecl.getElement();
+
+        // Step 1: Process static members
         try (var scope = env.enterScope(classDecl)) {
+            clazz.getTypeParams().forEach(scope::add);
+            clazz.getTable().forEach(e -> {
+                if (e instanceof Method m && m.isStatic() || e instanceof Clazz c && c.isStatic()
+                        || e instanceof Field f && f.isStatic() && f.getDeclClass() != clazz)
+                    scope.add(e);
+            });
+            classDecl.enumConstants().forEach(ecd -> {
+                ecd.accept(this);
+                scope.add(ecd.getElement());
+            });
+            classDecl.getMembers().forEach(node -> {
+                if (node instanceof FieldDecl fd && fd.getElement().isStatic()) {
+                    fd.accept(this);
+                    scope.add(fd.getElement());
+                }
+            });
+            classDecl.getMembers().forEach(node -> {
+                if (node instanceof MethodDecl md && md.getElement().isStatic()
+                        || node instanceof ClassDecl cd && cd.getElement().isStatic())
+                    node.accept(this);
+            });
+        }
+
+        // Step 2: Process instance fields and init blocks
+        try (var scope = env.enterScope(classDecl)) {
+            clazz.getTypeParams().forEach(scope::add);
             for (var paramDecl : classDecl.getParams()) {
                 scope.add(paramDecl.getElement());
             }
             classDecl.getImplements().forEach(ext -> ext.accept(this));
+            clazz.getTable().forEach(e -> {
+                if (e instanceof Field field && !field.isStatic() && field.getDeclClass() == clazz)
+                    return;
+                scope.add(e);
+            });
+            classDecl.getMembers().forEach(node -> {
+                if (node instanceof FieldDecl fieldDecl && !fieldDecl.getElement().isStatic()) {
+                    node.accept(this);
+                    var e = env.lookupFirst(fieldDecl.getName());
+                    if (e instanceof Param p && p.getExecutable() instanceof Method m && m.getDeclClass() == clazz)
+                        return; // This field is shadowed by a class parameter
+                    scope.add(fieldDecl.getElement());
+                } else if (node instanceof Init)
+                    node.accept(this);
+            });
         }
+
+        // Step 3: Process instance methods and inner classes
         try (var scope = env.enterScope(classDecl)) {
-            var clazz = classDecl.getElement();
             clazz.getTypeParams().forEach(scope::add);
             scope.addAll(clazz.getTable());
-            for (Node member : classDecl.getMembers()) {
-                if (!(member instanceof FieldDecl || member instanceof Init))
-                    member.accept(this);
-            }
-            for (var paramDecl : classDecl.getParams()) {
-                var param = paramDecl.getElement();
-                if (paramDecl.getField() == null)
-                    scope.add(param);
-            }
-            for (Node member : classDecl.getMembers()) {
-                if (member instanceof FieldDecl || member instanceof Init)
-                    member.accept(this);
-            }
-            return null;
+            classDecl.getMembers().forEach(node -> {
+                if (node instanceof MethodDecl md && !md.getElement().isStatic()
+                        || node instanceof ClassDecl cd && !cd.getElement().isStatic())
+                    node.accept(this);
+            });
         }
+
+        return null;
     }
 
     @Override

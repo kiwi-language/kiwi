@@ -52,7 +52,7 @@ public final class FieldDecl extends VariableDecl<Field> {
         super.forEachChild(action);
     }
 
-    public List<Modifier> mods() {
+    public List<Modifier> getMods() {
         return mods;
     }
 

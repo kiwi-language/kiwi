@@ -1,0 +1,8 @@
+package user
+
+import application.Application
+
+value class Token(
+    application: Application,
+    token: string
+)

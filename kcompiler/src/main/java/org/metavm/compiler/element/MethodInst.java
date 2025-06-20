@@ -6,6 +6,7 @@ import org.metavm.compiler.generate.Code;
 import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.List;
 import org.metavm.util.MvOutput;
+import org.metavm.util.Utils;
 
 import java.util.function.Consumer;
 
@@ -76,7 +77,10 @@ public final class MethodInst extends ElementBase implements MethodRef, FuncInst
 
     @Override
     public String toString() {
-        return "MethodInst " + getText();
+        return method.getDeclType().getTypeText() + "."
+                + method.getName() + "<" + Utils.join(typeArgs, Type::getTypeText) + ">(" +
+                Utils.join(getParamTypes(), Type::getTypeText)
+                + ")";
     }
 
     @Override
@@ -115,7 +119,7 @@ public final class MethodInst extends ElementBase implements MethodRef, FuncInst
 
     @Override
     public void load(Code code, Env env) {
-        if (method == ArrayType.appendMethod)
+        if (method == ArrayType.appendMethod || method == ArrayType.removeMethod)
             throw new UnsupportedOperationException();
         else if (isStatic())
             code.getStaticMethod(this);
