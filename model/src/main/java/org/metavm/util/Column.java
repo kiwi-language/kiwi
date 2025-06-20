@@ -28,6 +28,7 @@ public record Column(
 ) implements GlobalKey, ValueObject {
 
     public static final Column ID = new Column(ColumnKind.INT, "id", 0);
+    public static final Column NIL = new Column(ColumnKind.UNSPECIFIED, "nil", -1);
 
     public static Column create(ColumnKind columnKind, int index) {
         return new Column(

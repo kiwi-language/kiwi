@@ -1,0 +1,86 @@
+package application
+
+import user.UserService
+import user.User
+import message.Message
+import message.MessageKind
+import util.ErrorCode
+import util.BusinessException
+import util.UserUtil
+
+@Bean
+class ApplicationService(
+    priv val userService: UserService
+) {
+
+    fn create(name: string) -> Application {
+        val owner = userService.currentUser()
+        val application = Application(name, owner)
+        userService.joinApplication(owner, application)
+        return application
+    }
+
+    fn invite(request: AppInvitationRequest) -> AppInvitation{
+        var app = request.application
+        ensureAppAdmin(app)
+        var invitee = request.user
+        if (invitee.hasJoinedApplication(app))
+            throw BusinessException.of(ErrorCode.ALREADY_JOINED_APP, invitee.loginName)
+        var currentUser = userService.currentUser()
+        var invitation = AppInvitation(app, invitee, request.isAdmin)
+        Message(
+            invitee,
+            "'" + currentUser.name + "' invited you to join application '" + app.name + "'",
+            MessageKind.INVITATION, invitation
+        )
+        return invitation
+    }
+
+    fn acceptInvitation(invitation: AppInvitation) {
+        var user = userService.currentUser()
+        if (invitation.user != user)
+            throw BusinessException.of(ErrorCode.ILLEGAL_ACCESS)
+        invitation.accept()
+        userService.joinApplication(user, invitation.application)
+    }
+
+    fn evict(app: Application, users: User[]) {
+        ensureAppAdmin(app)
+        for (user in users) {
+            if (app.isOwner(user))
+                throw BusinessException.of(ErrorCode.CAN_NOT_EVICT_APP_OWNER)
+            user.leaveApplication(app)
+        }
+    }
+
+    fn promote(app: Application, user: User) {
+        ensureAppAdmin(app)
+        app.addAdmin(user)
+        Message(
+            user,
+            "You have become admin of application '" + app.name + "'",
+            MessageKind.DEFAULT, null
+        )
+    }
+
+    fn demote(app: Application , user: User) {
+        ensureAppAdmin(app)
+        app.removeAdmin(user)
+        Message(
+            user,
+            "You are no longer admin of application '" + app.name + "'",
+            MessageKind.DEFAULT, null
+        )
+    }
+
+    priv fn ensureAppAdmin(application: Application) {
+        if (UserUtil.nonMatch<User>(application.admins, admin -> admin == userService.currentUser()))
+            throw BusinessException.of(ErrorCode.CURRENT_USER_NOT_APP_ADMIN)
+    }
+
+    priv fn ensureAppOwner(application: Application) {
+        if (application.owner != userService.currentUser())
+            throw BusinessException.of(ErrorCode.CURRENT_USER_NOT_APP_OWNER)
+    }
+
+}

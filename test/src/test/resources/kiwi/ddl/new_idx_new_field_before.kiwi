@@ -1,0 +1,7 @@
+package ddl
+
+class WorkOrder(
+    val orderNo: string
+) {
+
+}

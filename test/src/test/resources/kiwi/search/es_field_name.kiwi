@@ -1,0 +1,17 @@
+package search
+
+class Product(
+    var name: string,
+    var stock: int
+)
+
+@Bean
+class OrderService {
+
+    fn placeOrder(product: Product) {
+        if (product.stock <= 0)
+            throw Exception("Insufficient stock: " + product.name)
+        product.stock--
+    }
+
+}

@@ -1,4 +1,21 @@
 Todo
 - Remove tasks when it's terminated
-- Remove beans when the bean class is removed
 - Create a temporary search index for migration
+
+- Optimize method resolve error by including the qualifier type in the error message.
+
+Current error message:
+/Users/leen/workspace/kiwi-console/app/./src/app.kiwi:79: Cannot resolve function with given argument types: string
+            if (user != null && user!!.verify(password))
+                                       ^
+
+Optimized error message:
+/Users/leen/workspace/kiwi-console/app/./src/app.kiwi:79: Cannot resolve function with given argument types: string in type User | null
+            if (user != null && user!!.verify(password))
+                                       ^
+
+- Resolve issue of unattributed expression in array literal
+
+- Check return value matches the declared return type
+
+- Resolve issue of referencing inner class from outside

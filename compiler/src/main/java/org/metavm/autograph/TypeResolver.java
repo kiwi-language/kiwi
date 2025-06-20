@@ -23,6 +23,8 @@ public interface TypeResolver {
 
     Type resolve(PsiType psiType);
 
+    Type resolve(PsiType psiType, ResolutionStage stage);
+
     Field resolveField(PsiField field);
 
     Type resolveNullable(PsiType psiType, ResolutionStage stage);

@@ -1,10 +1,7 @@
 package org.metavm.compiler.diag;
 
 import org.metavm.compiler.element.Clazz;
-import org.metavm.compiler.syntax.Expr;
-import org.metavm.compiler.syntax.Ident;
-import org.metavm.compiler.syntax.Token;
-import org.metavm.compiler.syntax.TokenKind;
+import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.Type;
 import org.metavm.compiler.util.List;
 
@@ -15,6 +12,14 @@ public class Errors {
     public static Error illegalEscChar = create("illegal.esc.char");
 
     public static Error symbolNotFound = create("symbol.not.found");
+
+    public static Error ambiguousReference(String matches)  {
+        return create("ambiguous.reference", matches);
+    }
+
+    public static Error modifierNotAllowedHere(ModifierTag mod) {
+        return create("modifier.not.allowed.here", mod.name().toLowerCase());
+    }
 
     public static Error unexpectedChar(int c) {
         return create("unexpected.char", c);
@@ -45,6 +50,8 @@ public class Errors {
         return expr instanceof Ident ? cantResolveSymbol : cantResolveExpr;
     }
 
+    public static Error unexpectedType = create("unexpected.type");
+
     public static Error cantResolveFunction(List<Type> argTypes) {
         if (argTypes.isEmpty())
             return cantResolveFunc;
@@ -57,11 +64,13 @@ public class Errors {
     public static Error illegal(TokenKind tk) {
         return create("illegal", tk);
     }
-    public static Error invalidUnicodeEscape = create("invalid.unicode.escape");
+    public static final Error invalidUnicodeEscape = create("invalid.unicode.escape");
 
-    public static Error variableMustTypedOrInitialized = create("variable.must.typed.or.initialized");
+    public static final Error variableMustTypedOrInitialized = create("variable.must.typed.or.initialized");
 
-    public static Error summaryFieldMustBeString = create("summary.field.must.be.string");
+    public static final Error summaryFieldMustBeString = create("summary.field.must.be.string");
+
+    public static final Error cantModifyCapturedVar = create("cant.modify.captured.var");
 
     public static Error expected(Object a) {
         return create("expected", a);

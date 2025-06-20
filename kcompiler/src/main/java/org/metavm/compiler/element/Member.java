@@ -6,10 +6,15 @@ public interface Member extends Element {
 
     void setName(Name name);
 
+    default boolean isPublic() {
+        return getAccess() == Access.PUBLIC;
+    }
+
     Access getAccess();
 
     void setAccess(Access access);
 
     Clazz getDeclClass();
 
+    boolean isStatic();
 }

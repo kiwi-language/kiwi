@@ -1,0 +1,29 @@
+package user
+
+import org.metavm.api.Index
+
+class LoginAttempt(
+    val successful: bool,
+    val loginName: string,
+    val clientIP: string,
+    val time: long
+) {
+
+    static val nameIndex = Index<LoginNameSuccTimeIndex, LoginAttempt>(false, (a) -> LoginNameSuccTimeIndex(a.loginName, a.successful, a.time))
+    static val ipIndex = Index<ClientIpSuccTimeIndex, LoginAttempt>(false, (a) -> ClientIpSuccTimeIndex(a.clientIP, a.successful, a.time))
+
+}
+
+value class LoginNameSuccTimeIndex(
+    val loginName: string,
+    val successful: bool,
+    val time: long
+)
+
+value class ClientIpSuccTimeIndex(
+    val clientIP: string,
+    val successful: bool,
+    val time: long
+)
+
+

@@ -1,0 +1,30 @@
+package str
+
+class Order(
+    val customer: Customer,
+    val totalPrice: Money
+) {
+
+    @Summary
+    val summary = "Order: " + customer.name + "-" + totalPrice
+
+}
+
+class Customer(var name: string)
+
+class Money(
+    amount: double,
+    currency: Currency
+) {
+
+    @Summary
+    priv val summary = currency.sign + amount
+
+}
+
+enum Currency(val sign: string) {
+    CNY("¥"),
+    USD("$"),
+    EURO("€"),
+    ;
+}

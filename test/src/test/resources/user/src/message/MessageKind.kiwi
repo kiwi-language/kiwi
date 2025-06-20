@@ -1,0 +1,13 @@
+package message
+
+enum MessageKind(
+    val code: int
+) {
+
+    DEFAULT(0),
+    INVITATION(1),
+    LEAVE(2),
+    ;
+
+}
+

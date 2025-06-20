@@ -78,8 +78,6 @@ public class EntityQueryServiceTest extends TestCase {
 
     public void testSearchText() {
         Foo foo = addEntity(MockUtils.getFooCreator());
-        logger.info("Foo ID: {}", foo.getId());
-        DebugEnv.id = foo.getId();
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = newContext()) {
             foo = context.getEntity(Foo.class, foo.getId());
@@ -134,7 +132,6 @@ public class EntityQueryServiceTest extends TestCase {
                     context
             );
             assertEquals(2, page.items().size());
-            logger.debug("First app name: {}", page.items().getFirst().getName());
         }
     }
 

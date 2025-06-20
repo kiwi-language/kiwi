@@ -1,0 +1,5 @@
+class Product(
+    @Tag(1)
+    var title: string
+)
+

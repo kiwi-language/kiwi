@@ -1,0 +1,95 @@
+package user
+
+import util.ErrorCode
+import util.BusinessException
+import application.Application
+
+@Bean
+class UserService(
+    priv val verificationCodeService: VerificationCodeService
+) {
+
+    static val  MAX_ATTEMPTS_IN_15_MINUTES = 3
+
+    static val _15_MINUTES_IN_MILLIS = 15 * 60 * 1000
+
+    static val TOKEN_TTL = 7 * 24 * 60 * 60 * 1000
+
+    fn login(loginName: string, password: string, clientIP: string) -> LoginResult {
+        var failedCountByIP = LoginAttempt.ipIndex.count(
+                ClientIpSuccTimeIndex(clientIP, false, now() - _15_MINUTES_IN_MILLIS),
+                ClientIpSuccTimeIndex(clientIP, false, now())
+        )
+        if (failedCountByIP > MAX_ATTEMPTS_IN_15_MINUTES)
+            throw BusinessException.of(ErrorCode.TOO_MANY_LOGIN_ATTEMPTS)
+        var failedCountByLoginName = LoginAttempt.nameIndex.count(
+                LoginNameSuccTimeIndex(loginName, false, now() - _15_MINUTES_IN_MILLIS),
+                LoginNameSuccTimeIndex(loginName, false, now())
+        )
+        if (failedCountByLoginName > MAX_ATTEMPTS_IN_15_MINUTES)
+            throw BusinessException.of(ErrorCode.TOO_MANY_LOGIN_ATTEMPTS)
+        var users = User.loginNameIndex.getAll(loginName)
+        if (users.length == 0)
+            throw BusinessException.of(ErrorCode.LOGIN_NAME_NOT_FOUND, loginName)
+        var user = users[0]
+        var token: string?
+        if (user.checkPassword(password))
+            token = directLogin(user)
+        else
+            token = null
+        LoginAttempt(token != null, loginName, clientIP, now())
+        return LoginResult(token, user)
+    }
+
+    fn directLogin(user: User) -> Token {
+        var session = Session(user, now() + TOKEN_TTL)
+        print("User " + user.name + " logged in")
+        return session.token
+    }
+
+    fn currentUser() -> User {
+        return currentSession().user
+    }
+
+    fn verify(token: string) -> Session? {
+        var session = Session.tokenIndex.getFirst(token)
+        if (session != null && session!!.isActive()) {
+            return session
+        } else
+            return null
+    }
+
+    fn joinApplication(user: User, app: Application) {
+        user.joinApplication(app)
+    }
+
+    fn leaveApp(app: Application) {
+        currentUser().leaveApplication(app)
+    }
+
+    fn register(request: RegisterRequest) -> User {
+        verificationCodeService.checkVerificationCode(request.loginName, request.verificationCode)
+        return User(request.loginName, request.password, request.name, new Role[])
+    }
+
+    fn changePassword(request: ChangePasswordRequest) {
+        verificationCodeService.checkVerificationCode(request.loginName, request.verificationCode)
+        var user = User.loginNameIndex.getFirst(request.loginName)
+        if (user == null)
+            throw BusinessException.of(ErrorCode.USER_NOT_FOUND)
+        user!!.changePassword(request.password)
+    }
+
+    fn currentSession() -> Session {
+        var s = getContext("session")
+        if (s is Session)
+            return s as Session
+        else
+            throw Exception("Login required")
+    }
+
+    fn logout() {
+        delete currentSession()
+    }
+
+}

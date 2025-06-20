@@ -3,14 +3,13 @@ package org.metavm.compiler.util;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class CompilerUtils {
 
-    public static void createArchive(String buildDir) {
-        var targetDir = Paths.get(buildDir);
+    public static void createArchive(Path targetDir) {
         var zipFilePath = targetDir + "/target.mva";
         try(var zipOut = new ZipOutputStream(new FileOutputStream(zipFilePath));
             var files = Files.walk(targetDir)) {

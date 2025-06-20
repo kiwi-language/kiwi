@@ -39,6 +39,12 @@ public final class ArrayType implements Type, Comparable<ArrayType> {
     public static final Method appendMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.append)
             .addParam(NameTable.instance.t, arrayClass.getTypeParams().head())
             .build();
+
+    public static final Method removeMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.remove)
+            .addParam(NameTable.instance.t, arrayClass.getTypeParams().head())
+            .retType(PrimitiveType.BOOL)
+            .build();
+
     public static final Method forEachMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.forEach)
             .addParam(
                     NameTable.instance.action,

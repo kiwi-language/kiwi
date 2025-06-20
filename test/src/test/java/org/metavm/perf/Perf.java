@@ -23,7 +23,7 @@
 //            "{\"flowId\":1008800179,\"instanceId\":1010400209,\"arguments\":[{\"type\":1,\"value\":1,\"primitiveKind\":1}]}";
 //
 //    public static void main(String[] args) throws URISyntaxException, InterruptedException {
-//        var uri = new URI("https://metavm.tech/rest/flow/execute");
+//        var uri = new URI("https://api.metavm.tech/rest/flow/execute");
 //        client = HttpUtils.buildClient(uri);
 //        request = TestUtils.parseJson(jsonStr, FlowExecutionRequest.class);
 //        int numRuns = 500;

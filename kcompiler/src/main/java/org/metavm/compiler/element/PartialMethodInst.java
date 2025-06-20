@@ -165,6 +165,8 @@ public class PartialMethodInst extends ElementBase implements MethodRef, FuncIns
     public void invoke(Code code, Env env) {
         if (method == ArrayType.appendMethod)
             code.arrayAdd();
+        else if (method == ArrayType.removeMethod)
+            code.arrayRemove();
         else if (method == ArrayType.forEachMethod) {
             var project = env.getProject();
             var func = project.getRootPackage().getFunction(NameTable.instance.forEach);
@@ -183,4 +185,11 @@ public class PartialMethodInst extends ElementBase implements MethodRef, FuncIns
     public Method getRawMethod() {
         return method;
     }
+
+    @Override
+    public String toString() {
+        return declType.getTypeText() + "." + method.getName()
+                + "(" + getParamTypes().map(Type::getTypeText).join(",") + ")";
+    }
+
 }

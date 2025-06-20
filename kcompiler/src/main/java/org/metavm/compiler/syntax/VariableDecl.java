@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-public abstract class VariableDecl<T extends Variable> extends Decl<T> {
+public abstract class VariableDecl<T extends Variable> extends ModifiedDecl<T> {
 
     private List<Annotation> annotations;
     @Nullable

@@ -121,4 +121,9 @@ public final class UnionType implements Type, Comparable<UnionType> {
     public ElementTable getTable() {
         return getLUB().getTable();
     }
+
+    @Override
+    public boolean isNullable() {
+        return alternatives.anyMatch(Type::isNullable);
+    }
 }

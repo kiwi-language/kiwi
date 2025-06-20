@@ -34,7 +34,7 @@ public class Constants {
     public static final String CONSTANT_TMP_ID_PREFIX = "$_$";
 
     public static final int BATCH_SIZE = 3000;
-//    public static final String DEFAULT_HOST = "https://metavm.tech/rest";
+//    public static final String DEFAULT_HOST = "https://api.metavm.tech/rest";
     public static final String DEFAULT_HOST = "http://localhost:8080";
     public static EmailSender emailSender;
 

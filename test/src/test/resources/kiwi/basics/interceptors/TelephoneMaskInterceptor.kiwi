@@ -7,10 +7,10 @@ import org.metavm.api.entity.HttpResponse
 @Bean
 class TelephoneMaskInterceptor: Interceptor {
 
-    fn before(request: HttpRequest?, response: HttpResponse?) {
+    fn before(request: HttpRequest, response: HttpResponse) {
     }
 
-    fn after(request: HttpRequest?, response: HttpResponse?, result: any?) -> any? {
+    fn after(request: HttpRequest, response: HttpResponse, result: any?) -> any? {
         if (result is UserDTO) {
             var user = result!! as UserDTO
             var tel = user.telephone()

@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -31,22 +32,24 @@ public class Main {
     private final CompilationTask task;
     private final Path targetRoot;
 
-    public Main(String root) throws IOException {
-        Path sourceRoot = Path.of(root, "src");
-        this.targetRoot = Path.of(root, "target");
+    public Main(Path root) throws IOException {
+        var sourceRoot = root.resolve("src");
+        this.targetRoot = root.resolve("target");
         var sources = listFilePathsRecursively(sourceRoot);
-        task = new CompilationTask(sources, targetRoot.toString());
-        home = Path.of(root, ".metavm");
+        task = new CompilationTask(sources, targetRoot);
+        home = root.resolve(".metavm");
         envFile = home.resolve(".env");
         selectedEnv = getEnvPath("default");
     }
 
-    public boolean run() {
+    public boolean generateApi() {
+        if (!ensureSourceAvailable())
+            return false;
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();
         if (task.getErrorCount() == 0) {
-            task.generate();
+            task.generateApi();
             return true;
         }
         else
@@ -98,8 +101,9 @@ public class Main {
     }
 
     private void printSourceTag(String name) {
-        var path = String.format("/type/source-tag/%s", name.replace('.', '/'));
-        var tag = CompilerHttpUtils.get(path, new TypeReference<Integer>() {});
+        var tag = CompilerHttpUtils.post("/type/source-tag",
+                Map.of("appId", getAppId(), "name", name),
+                new TypeReference<Integer>() {});
         System.out.println(tag);
     }
 
@@ -266,7 +270,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        new Main("").run(args);
+        new Main(Path.of(".")).run(args);
     }
 
     void run(String[] args) throws IOException {
@@ -342,6 +346,7 @@ public class Main {
                     deleteEnv(args[1]);
                 }
                 case "build" -> build();
+                case "gen-api" -> generateApi();
                 case "deploy" -> {
                     ensureLoggedIn();
                     deploy();
@@ -362,14 +367,30 @@ public class Main {
     }
 
     boolean build() throws IOException {
+        if (!ensureSourceAvailable())
+            return false;
+        task.parse();
+        MockEnter.enterStandard(task.getProject());
+        task.analyze();
+        if (task.getErrorCount() == 0) {
+            task.generate();
+            return true;
+        }
+        else
+            return false;
+    }
+
+    private boolean ensureSourceAvailable() {
         var sourceRoot = "src";
         var f = new File(sourceRoot);
         if (!f.exists() || !f.isDirectory()) {
             System.err.println("Source directory '" + sourceRoot + "' does not exist.");
             return false;
         }
-        return run();
+        else
+            return true;
     }
+
 
     public List<Path> listFilePathsRecursively(Path start) throws IOException {
         if (!Files.exists(start) || !Files.isDirectory(start)) {
@@ -378,7 +399,7 @@ public class Main {
 
         try (Stream<Path> stream = Files.walk(start)) {
             return stream
-                    .filter(Files::isRegularFile)
+                    .filter(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".kiwi"))
                     .map(Path::toAbsolutePath) // Convert Path to absolute Path
                     .collect(Collectors.toList());
         }

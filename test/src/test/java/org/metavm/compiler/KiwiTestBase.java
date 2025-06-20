@@ -22,9 +22,10 @@ import java.util.Map;
 public abstract class KiwiTestBase extends TestCase  {
 
     EntityContextFactory entityContextFactory;
-    private TypeManager typeManager;
+    protected TypeManager typeManager;
     SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
+    protected  Id userId;
 
     @Override
     protected void setUp() throws Exception {
@@ -34,6 +35,7 @@ public abstract class KiwiTestBase extends TestCase  {
         schedulerAndWorker = bootResult.schedulerAndWorker();
         apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache(),
                 new InstanceQueryService(bootResult.instanceSearchService())));
+        userId = bootResult.userId();
     }
 
     @Override
@@ -99,7 +101,7 @@ public abstract class KiwiTestBase extends TestCase  {
     private void compile(List<String> sources) {
 //        assembler.assemble(sources);
 //        assembler.generateClasses(TestConstants.TARGET);
-        var task = new CompilationTask(Utils.map(sources, Path::of), TestConstants.TARGET);
+        var task = new CompilationTask(Utils.map(sources, Path::of), Path.of(TestConstants.TARGET));
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();

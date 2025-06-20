@@ -1,0 +1,66 @@
+package application
+
+import message.Message
+import message.MessageKind
+import user.User
+import util.BusinessException
+import util.ErrorCode
+import util.UserUtil
+
+class Application(
+    var name: string,
+    val owner: User
+) {
+
+    static val MAX_NUM_ADMINS = 16
+
+    val admins = new User[]
+
+    var state = ApplicationState.ACTIVE
+
+    {
+        admins.append(owner)
+    }
+
+    fn setOwner(owner: User) {
+        if (owner != this.owner) {
+            this.owner = owner
+            addAdmin(owner)
+        }
+    }
+
+    fn addAdmin(user: User) {
+        if (!UserUtil.contains<User>(admins, user)) {
+            if (this.admins.length >= MAX_NUM_ADMINS)
+                throw BusinessException.of(ErrorCode.REENTERING_APP)
+            this.admins.append(user)
+        } else
+            throw BusinessException.of(ErrorCode.ALREADY_AN_ADMIN, user.name)
+    }
+
+    fn removeAdmin(user: User) {
+        if (!removeAdminIfPresent(user))
+            throw BusinessException.of(ErrorCode.USER_NOT_ADMIN, user.name)
+    }
+
+    fn removeAdminIfPresent(user: User) -> bool {
+        return admins.remove(user)
+    }
+
+    fn isAdmin(user: User) -> bool {
+        return UserUtil.contains<User>(admins, user)
+    }
+
+    fn isOwner(user: User) -> bool {
+        return this.owner == user
+    }
+
+    fn deactivate() {
+        this.state = ApplicationState.REMOVING
+    }
+
+    fn isActive() -> bool {
+        return state == ApplicationState.ACTIVE
+    }
+
+}

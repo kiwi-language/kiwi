@@ -45,4 +45,10 @@ public class NamingUtilsTest extends TestCase {
         assertEquals("SKU", NamingUtils.nameToLabel("SKU"));
     }
 
+    public void testFirstCharsToLowerCase() {
+        assertEquals("product", NamingUtils.firstCharsToLowerCase("Product"));
+        assertEquals("sku", NamingUtils.firstCharsToLowerCase("SKU"));
+        assertEquals("skulist", NamingUtils.firstCharsToLowerCase("SKUList"));
+    }
+
 }

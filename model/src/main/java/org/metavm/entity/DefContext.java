@@ -157,7 +157,7 @@ public abstract class DefContext implements IInstanceContext, TypeRegistry {
     @Override
     public void dumpContext() {
         for (Entity entity : entities()) {
-            log.debug("Entity {}-{}", entity.getClass().getName(), entity.getId());
+            log.trace("Entity {}-{}", entity.getClass().getName(), entity.getId());
         }
     }
 }

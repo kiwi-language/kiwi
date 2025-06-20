@@ -12,6 +12,7 @@ import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 
+import javax.annotation.Nonnull;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
@@ -151,7 +152,7 @@ public class ReflectDefiner {
                         .build();
                 method.setTypeParameters(Utils.map(javaMethod.getTypeParameters(), tv -> defineTypeVariable(tv, method)));
                 method.setParameters(Utils.map(javaMethod.getParameters(), p -> parseParameter(p, method)));
-                method.setReturnType(resolveNullableType(javaMethod.getGenericReturnType()));
+                method.setReturnType(resolveType(javaMethod.getGenericReturnType(), javaMethod.isAnnotationPresent(Nonnull.class)));
                 if (!methodSignatures.add(MethodSignature.of(method))) {
                     var name = method.getName();
                     int i = 1;
@@ -206,7 +207,8 @@ public class ReflectDefiner {
     }
 
     public void defineField(Field javaField, Klass klass) {
-        var field = FieldBuilder.newBuilder(javaField.getName(), klass, resolveNullableType(javaField.getGenericType()))
+        var type = resolveType(javaField.getGenericType(), javaField.isAnnotationPresent(Nonnull.class));
+        var field = FieldBuilder.newBuilder(javaField.getName(), klass, type)
                 .id(getId.apply(javaField))
                 .isStatic(Modifier.isStatic(javaField.getModifiers()))
                 .readonly(Modifier.isFinal(javaField.getModifiers()))
@@ -238,7 +240,16 @@ public class ReflectDefiner {
     }
 
     private Parameter parseParameter(java.lang.reflect.Parameter parameter, org.metavm.flow.Method method) {
-        return new Parameter(getId.apply(parameter), parameter.getName(), resolveNullableType(parameter.getParameterizedType()), method);
+        var type = resolveType(parameter.getParameterizedType(), parameter.isAnnotationPresent(Nonnull.class));
+        return new Parameter(getId.apply(parameter), parameter.getName(), type, method);
+    }
+
+    private Type resolveType(java.lang.reflect.Type type, boolean nonnull) {
+        var mType = resolveType(type);
+        if (nonnull || ReflectionUtils.isPrimitiveType(type))
+            return mType;
+        else
+            return Types.getNullableType(mType);
     }
 
     private Type resolveNullableType(java.lang.reflect.Type type) {

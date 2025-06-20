@@ -1,0 +1,39 @@
+package util
+
+class UserUtil {
+
+    static fn nonMatch<T>(array: T[], predicate: (T) -> bool) -> bool {
+        for (item in array) {
+            if (predicate(item)) {
+                return false
+            }
+        }
+        return true
+    }
+
+    static fn formatMessage(template: string, params: any[]) -> string {
+        val len = template.length()
+        var i = 0
+        var j = 0
+        val buf = StringBuilder()
+        while (i < len) {
+            val c = template.charAt(i++)
+            if (c == '{' && i < len && template.charAt(i) == '}' && j < params.length) {
+                i++
+                buf.append(params[j++])
+            } else
+                buf.append(c)
+        }
+        return buf.toString()
+    }
+
+    static fn contains<T>(array: T[], elem: T) -> bool {
+        for (e in array) {
+            if (e == elem)
+                return true
+        }
+        return false
+    }
+
+}
+

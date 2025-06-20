@@ -21,6 +21,7 @@ public class MockEnter {
         createSerializable(rootPkg);
         createCollection(rootPkg);
         createKlass(rootPkg);
+        createStringBuilder(rootPkg);
         createList("List", ClassTag.INTERFACE, rootPkg);
         createList("ArrayList", ClassTag.CLASS, rootPkg);
         createSet("Set", ClassTag.INTERFACE, rootPkg);
@@ -62,6 +63,13 @@ public class MockEnter {
         createSumLong(rootPkg);
         createSumFloat(rootPkg);
         createSumDouble(rootPkg);
+        createSecureHashFunc(rootPkg);
+        createSecureRandomFunc(rootPkg);
+        createGetContextFunc(rootPkg);
+        createSetContextFunc(rootPkg);
+        createRandomFunc(rootPkg);
+        createRegexMatchFunc(rootPkg);
+        createFormatNumberFunc(rootPkg);
     }
 
     private static void createInteger(Package rootPkg) {
@@ -460,11 +468,11 @@ public class MockEnter {
         getRequestURIMeth.setRetType(Types.instance.getStringType());
 
         var getCookie = new Method("getCookie", Access.PUBLIC, false, false, false, cls);
-        new Param("name", Types.instance.getStringType(), getCookie);
+        new Param("name", Types.instance.getNullableString(), getCookie);
         getCookie.setRetType(Types.instance.getNullableString());
 
         var getHeader = new Method("getHeader", Access.PUBLIC, false, false, false, cls);
-        new Param("name", Types.instance.getStringType(), getHeader);
+        new Param("name", Types.instance.getNullableString(), getHeader);
         getHeader.setRetType(Types.instance.getNullableString());
     }
 
@@ -475,12 +483,12 @@ public class MockEnter {
         var headerCls = project.getClass("org.metavm.api.entity.HttpHeader");
         var cls = new Clazz(ClassTag.INTERFACE, "HttpResponse", Access.PUBLIC, pkg);
         var addCookieMeth = new Method("addCookie", Access.PUBLIC, false, false, false, cls);
-        new Param("name", Types.instance.getStringType(), addCookieMeth);
-        new Param("value", Types.instance.getStringType(), addCookieMeth);
+        new Param("name", Types.instance.getNullableString(), addCookieMeth);
+        new Param("value", Types.instance.getNullableString(), addCookieMeth);
 
         var addHeaderMeth = new Method("addHeader", Access.PUBLIC, false, false, false, cls);
-        new Param("name", Types.instance.getStringType(), addHeaderMeth);
-        new Param("value", Types.instance.getStringType(), addHeaderMeth);
+        new Param("name", Types.instance.getNullableString(), addHeaderMeth);
+        new Param("value", Types.instance.getNullableString(), addHeaderMeth);
 
         var getHeadersMeth = new Method("getHeaders", Access.PUBLIC, false, false, false, cls);
         getHeadersMeth.setRetType(listCls.getInst(List.of(headerCls)));
@@ -540,6 +548,166 @@ public class MockEnter {
         new Clazz(ClassTag.CLASS, Name.from("Klass"), Access.PUBLIC, pkg);
     }
 
+    private static void createStringBuilder(Package rootPkg) {
+        var cls = new Clazz(
+                ClassTag.CLASS,
+                Name.from("StringBuilder"),
+                Access.PUBLIC,
+                rootPkg.subPackage("java").subPackage("lang")
+        );
+
+        var init = new Method(
+                Name.init(),
+                Access.PUBLIC,
+                false,
+                false,
+                true,
+                cls
+        );
+        init.setRetType(cls);
+
+        var appendChar = new Method(
+                "append",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        new Param("c", PrimitiveType.CHAR, appendChar);
+        appendChar.setRetType(cls);
+
+        var appendString = new Method(
+                "append",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        new Param("s", Types.instance.getNullableString(), appendString);
+        appendString.setRetType(cls);
+
+        var appendByte = new Method(
+                "append",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        new Param("b", PrimitiveType.BYTE, appendByte);
+        appendByte.setRetType(cls);
+
+        var appendShort = new Method(
+                "append",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        new Param("s", PrimitiveType.SHORT, appendShort);
+        appendShort.setRetType(cls);
+
+
+        var appendInt = new Method(
+                "append",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        new Param("i", PrimitiveType.INT, appendInt);
+        appendInt.setRetType(cls);
+
+        var appendLong = new Method(
+                "append",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        new Param("l", PrimitiveType.LONG, appendLong);
+        appendLong.setRetType(cls);
+
+        var appendFloat = new Method(
+                "append",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        new Param("f", PrimitiveType.FLOAT, appendFloat);
+        appendFloat.setRetType(cls);
+
+        var appendDouble = new Method(
+                "append",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        new Param("d", PrimitiveType.DOUBLE, appendDouble);
+        appendDouble.setRetType(cls);
+
+        var appendObject = new Method(
+                "append",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        new Param("o", Types.instance.getNullableAny(), appendObject);
+        appendObject.setRetType(cls);
+
+        var appendBool = new Method(
+                "append",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        new Param("b", PrimitiveType.BOOL, appendBool);
+        appendBool.setRetType(cls);
+
+        var length = new Method(
+                "length",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        length.setRetType(PrimitiveType.INT);
+
+        var isEmpty = new Method(
+                "isEmpty",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        isEmpty.setRetType(PrimitiveType.BOOL);
+
+        var toStringMethod = new Method(
+                "toString",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        toStringMethod.setRetType(Types.instance.getStringType());
+    }
+
     private static void createObjectOutputStream(Package rootPkg) {
         var pkg = rootPkg.subPackage("java").subPackage("io");
         new Clazz(ClassTag.CLASS, Name.from("ObjectOutputStream"), Access.PUBLIC, pkg);
@@ -552,7 +720,7 @@ public class MockEnter {
 
     private static void createNowFunc(Package rootPackage) {
         var nowFunc = new FreeFunc(NameTable.instance.get("now"), rootPackage);
-        nowFunc.setRetType(PrimitiveType.TIME);
+        nowFunc.setRetType(PrimitiveType.LONG);
     }
 
     private static void createToStringFunc(Package rootPackage) {
@@ -664,6 +832,51 @@ public class MockEnter {
         new Param(Name.from("values"), Types.instance.getArrayType(typeVar), func);
         new Param(Name.from("name"), Types.instance.getStringType(), func);
         func.setRetType(Types.instance.getNullableType(typeVar));
+    }
+
+    private static void createSecureHashFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("secureHash"), rootPkg);
+        new Param(Name.from("value"), Types.instance.getStringType(), func);
+        new Param(Name.from("salt"), Types.instance.getNullableType(Types.instance.getStringType()), func);
+        func.setRetType(Types.instance.getStringType());
+    }
+
+    private static void createSecureRandomFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("secureRandom"), rootPkg);
+        new Param(Name.from("length"), PrimitiveType.INT, func);
+        func.setRetType(Types.instance.getStringType());
+    }
+
+    private static void createGetContextFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("getContext"), rootPkg);
+        new Param(Name.from("key"), Types.instance.getStringType(), func);
+        func.setRetType(Types.instance.getNullableAny());
+    }
+
+    private static void createSetContextFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("setContext"), rootPkg);
+        new Param(Name.from("key"), Types.instance.getStringType(), func);
+        new Param(Name.from("value"), PrimitiveType.ANY, func);
+    }
+
+    private static void createRandomFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("random"), rootPkg);
+        new Param(Name.from("bound"), PrimitiveType.LONG, func);
+        func.setRetType(PrimitiveType.LONG);
+    }
+
+    private static void createRegexMatchFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("regexMatch"), rootPkg);
+        new Param(Name.from("pattern"), Types.instance.getStringType(), func);
+        new Param(Name.from("str"), Types.instance.getStringType(), func);
+        func.setRetType(PrimitiveType.BOOL);
+    }
+
+    private static void createFormatNumberFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("formatNumber"), rootPkg);
+        new Param(Name.from("pattern"), Types.instance.getStringType(), func);
+        new Param(Name.from("number"), PrimitiveType.LONG, func);
+        func.setRetType(Types.instance.getStringType());
     }
 
     public static Project enter(List<File> files) {

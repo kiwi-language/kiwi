@@ -57,7 +57,6 @@ public class DiagTest extends TestCase {
                 }
                 """);
         assertEquals(1, diags.size());
-        logger.debug("{}", diags.head());
         assertEquals("""
                            dummy.kiwi:4: Cannot resolve function
                                        bar()
@@ -109,7 +108,6 @@ public class DiagTest extends TestCase {
                 }
                 """);
         assertEquals(1, diags.size());
-        logger.debug("{}", diags.head().toString());
     }
 
     public void testEqInplaceOrAssign() {
@@ -152,6 +150,44 @@ public class DiagTest extends TestCase {
                 diags.head().toString());
     }
 
+    public void testModifyCapturedVariable() {
+        compile("""
+                class Lab {
+                    
+                    fn sum(values: int[]) -> int {
+                        var sum = 0
+                        values.forEach(i -> sum += i)
+                        return sum
+                    }
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals(
+                """
+                        dummy.kiwi:5: Cannot modify a captured variable
+                                    values.forEach(i -> sum += i)
+                                                        ^""",
+                log.getDiags().head().toString()
+        );
+    }
+
+    public void testDeletedInitParam() {
+        compile("""
+                class Foo(
+                    deleted var name: string
+                )
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals(
+                """
+                        dummy.kiwi:2: Modifier 'deleted' is not allowed here
+                                deleted var name: string
+                                ^""",
+                log.getDiags().head().toString()
+        );
+    }
+
     private List<Diag> compile(String text) {
         log.setSourceFile(new DummySourceFile(text));
         var parser = new Parser(
@@ -168,6 +204,7 @@ public class DiagTest extends TestCase {
         file.accept(new TypeResolver(project, log));
         file.accept(new IdentAttr(project, log));
         file.accept(new Attr(project, log));
+        file.accept(new Check(project, log));
         return log.getDiags();
     }
 

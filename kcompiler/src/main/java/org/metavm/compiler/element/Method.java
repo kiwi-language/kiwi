@@ -76,6 +76,8 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
     public void invoke(Code code, Env env) {
         if (this == ArrayType.appendMethod)
             code.arrayAdd();
+        else if (this == ArrayType.removeMethod)
+            code.arrayRemove();
         else if (this == ArrayType.intSumMethod) {
             var proj = env.getProject();
             var func = proj.getRootPackage().getFunction(NameTable.instance.sumInt);
@@ -129,6 +131,10 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
 
     public Name getQualName() {
         return declClass.getName().concat("." + getName());
+    }
+
+    public String getSignature() {
+        return getQualName()+ "(" + getParamTypes().join(",") + ")";
     }
 
     public String getInternalName(@Nullable Func current) {
@@ -244,6 +250,6 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
 
     @Override
     public String toString() {
-        return getQualName().toString();
+        return getSignature();
     }
 }

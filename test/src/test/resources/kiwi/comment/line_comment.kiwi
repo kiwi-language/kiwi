@@ -1,0 +1,4 @@
+package comment
+
+// Foo
+class Foo(var name: string)

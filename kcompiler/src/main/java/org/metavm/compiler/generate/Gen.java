@@ -90,16 +90,22 @@ public class Gen extends StructuralNodeVisitor {
             }
             var superType = clazz.getSuper();
             if (superType != null) {
-                var call = classDecl.getImplements().head().makeCallExpr();
+                var call = (Call) classDecl.getImplements().head().makeSuperInit();
                 genExpr(call, null).drop();
             }
             for (Node member : classDecl.getMembers()) {
                 if (member instanceof FieldDecl fieldDecl) {
                     var field = fieldDecl.getElement();
-                    if (!field.isStatic() && fieldDecl.getInitial() != null) {
-                        code.loadThis(env);
-                        genExpr(fieldDecl.getInitial(), field.getType()).load();
-                        field.store(code, env);
+                    if (!field.isStatic()) {
+                        if (fieldDecl.getInitial() != null) {
+                            code.loadThis(env);
+                            genExpr(fieldDecl.getInitial(), field.getType()).load();
+                            field.store(code, env);
+                        } else if (field.getType().isNullable()) {
+                            code.loadThis(env);
+                            code.ldc(null);
+                            field.store(code, env);
+                        }
                     }
                 }
                 else if (member instanceof Init init)
@@ -1279,7 +1285,7 @@ public class Gen extends StructuralNodeVisitor {
 
         @Override
         public void store() {
-            code.store(variable.getIndex());
+            variable.store(code, env);
         }
 
         @Override

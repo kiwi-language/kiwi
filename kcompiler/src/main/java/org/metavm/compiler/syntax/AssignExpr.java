@@ -19,8 +19,9 @@ public final class AssignExpr extends Expr {
     public void write(SyntaxWriter writer) {
         writer.write(lhs);
         writer.write(" ");
-        if (op == null) writer.write("=");
-        else writer.write(op.op());
+        if (op != null)
+            writer.write(op.op());
+        writer.write("=");
         writer.write(" ");
         writer.write(rhs);
     }
