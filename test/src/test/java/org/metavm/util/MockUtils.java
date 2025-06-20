@@ -277,7 +277,7 @@ public class MockUtils {
     }
 
     public static InputStream compile(String source) {
-        var task = new CompilationTask(List.of(Path.of(TestUtils.getResourcePath(source))), TestConstants.TARGET);
+        var task = new CompilationTask(List.of(Path.of(TestUtils.getResourcePath(source))), Path.of(TestConstants.TARGET));
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();

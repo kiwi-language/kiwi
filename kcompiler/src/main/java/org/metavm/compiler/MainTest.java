@@ -8,7 +8,7 @@ public class MainTest {
         var main = new Main("/Users/leen/workspace/kiwi_test");
         main.initializeHttpClient();
         main.ensureLoggedIn();
-        main.deploy();
+        main.generateApi();
     }
 
 }

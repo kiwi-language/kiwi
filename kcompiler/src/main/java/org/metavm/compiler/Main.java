@@ -35,18 +35,20 @@ public class Main {
         Path sourceRoot = Path.of(root, "src");
         this.targetRoot = Path.of(root, "target");
         var sources = listFilePathsRecursively(sourceRoot);
-        task = new CompilationTask(sources, targetRoot.toString());
+        task = new CompilationTask(sources, targetRoot);
         home = Path.of(root, ".metavm");
         envFile = home.resolve(".env");
         selectedEnv = getEnvPath("default");
     }
 
-    public boolean run() {
+    public boolean generateApi() {
+        if (!ensureSourceAvailable())
+            return false;
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();
         if (task.getErrorCount() == 0) {
-            task.generate();
+            task.generateApi();
             return true;
         }
         else
@@ -342,6 +344,7 @@ public class Main {
                     deleteEnv(args[1]);
                 }
                 case "build" -> build();
+                case "api-gen" -> generateApi();
                 case "deploy" -> {
                     ensureLoggedIn();
                     deploy();
@@ -362,14 +365,30 @@ public class Main {
     }
 
     boolean build() throws IOException {
+        if (!ensureSourceAvailable())
+            return false;
+        task.parse();
+        MockEnter.enterStandard(task.getProject());
+        task.analyze();
+        if (task.getErrorCount() == 0) {
+            task.generate();
+            return true;
+        }
+        else
+            return false;
+    }
+
+    private boolean ensureSourceAvailable() {
         var sourceRoot = "src";
         var f = new File(sourceRoot);
         if (!f.exists() || !f.isDirectory()) {
             System.err.println("Source directory '" + sourceRoot + "' does not exist.");
             return false;
         }
-        return run();
+        else
+            return true;
     }
+
 
     public List<Path> listFilePathsRecursively(Path start) throws IOException {
         if (!Files.exists(start) || !Files.isDirectory(start)) {

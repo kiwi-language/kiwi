@@ -1,0 +1,39 @@
+{
+  "object": {
+    "id": "01f0a9d6b90700",
+    "type": "Order",
+    "fields": {
+      "price": {
+        "type": "Money",
+        "fields": {
+          "amount": 14101,
+          "currency": {
+            "type": "Currency",
+            "name": "DOLLAR"
+          }
+        }
+      }
+    },
+    "children": {
+      "Item": [
+        {
+          "fields": {
+            "product": {
+              "type": "Product",
+              "id": "01c2a9d6b90700"
+            },
+            "quantity": 1
+          }
+        },
+        {
+          "fields": {
+            "product": {
+              "type": "Product",
+              "id": "01bca9d6b90700"
+            },
+            "quantity": 3
+          }
+        }
+      ]
+    }
+  },

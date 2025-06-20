@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.List;
+import org.metavm.entity.AttributeNames;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Utils;
 
@@ -102,6 +103,10 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
 
     public ClassScope getScope() {
         return scope;
+    }
+
+    public boolean isTopLevel() {
+        return scope instanceof Package;
     }
 
     @Override
@@ -358,6 +363,10 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
         return tag == ClassTag.INTERFACE;
     }
 
+    public boolean isValue() {
+        return tag == ClassTag.VALUE;
+    }
+
     @org.jetbrains.annotations.Nullable
     @Override
     public ClassType getOwner() {
@@ -379,6 +388,10 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
 
     public boolean isEnum() {
         return tag == ClassTag.ENUM;
+    }
+
+    public boolean isEntity() {
+        return tag == ClassTag.CLASS;
     }
 
     public void setTag(ClassTag tag) {
@@ -486,4 +499,7 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
         return primaryInit;
     }
 
+    public boolean isBean() {
+        return attributes.anyMatch(attr -> attr.name().equals(AttributeNames.BEAN_NAME));
+    }
 }

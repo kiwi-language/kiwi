@@ -99,7 +99,7 @@ public abstract class KiwiTestBase extends TestCase  {
     private void compile(List<String> sources) {
 //        assembler.assemble(sources);
 //        assembler.generateClasses(TestConstants.TARGET);
-        var task = new CompilationTask(Utils.map(sources, Path::of), TestConstants.TARGET);
+        var task = new CompilationTask(Utils.map(sources, Path::of), Path.of(TestConstants.TARGET));
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();

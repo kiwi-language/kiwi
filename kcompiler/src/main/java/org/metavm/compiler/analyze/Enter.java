@@ -263,7 +263,7 @@ public class Enter {
             if (tags.contains(ModifierTag.PUB)) return Access.PUBLIC;
             if (tags.contains(ModifierTag.PROT)) return Access.PROTECTED;
             if (tags.contains(ModifierTag.PRIV)) return Access.PRIVATE;
-            return Access.PACKAGE;
+            return Access.PUBLIC;
         }
 
         private void enterElement(Element element) {
