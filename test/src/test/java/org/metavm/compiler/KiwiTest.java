@@ -649,4 +649,21 @@ public class KiwiTest extends KiwiTestBase {
         assertEquals(ids, r);
     }
 
+    public void testImplicitChildDelete() {
+        deploy("kiwi/children/implicit_child_del.kiwi");
+        var id = saveInstance("children.Parent", Map.of(
+                "Child", List.of(Map.of(
+                        "seq", 1
+                ))
+        ));
+        var parent = getObject(id);
+        assertEquals(1, parent.getChildren("Child").size());
+        saveInstance("children.Parent", Map.of(
+                "$id", id,
+                "Child", List.of()
+        ));
+        var parent1 = getObject(id);
+        assertEquals(0, parent1.getChildren("Child").size());
+    }
+
 }

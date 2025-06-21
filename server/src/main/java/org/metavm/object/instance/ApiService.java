@@ -740,14 +740,20 @@ public class ApiService extends ApplicationStatusAware {
     }
 
     private void saveChildren(Map<String, Object> children, ClassInstance instance, IInstanceContext context) {
+        var removedChildren = new HashSet<Instance>();
+        instance.forEachChild(removedChildren::add);
         instance.getInstanceType().getInnerClassTypes().forEach(t -> {
             if (children.get(t.getName()) instanceof List<?> values) {
                 for (Object value : values) {
-                    if (!(value instanceof Map<?,?> childMap && tryResolveObject(childMap, t, instance, true, context).successful))
-                        throw new InternalException("Failed to resolve inner class " + t.getName() + " for value " + value);
+                    ValueResolutionResult r;
+                    if (value instanceof Map<?,?> childMap && (r = tryResolveObject(childMap, t, instance, true, context)).successful)
+                        removedChildren.remove(r.resolved.resolveObject());
+                    else
+                        throw new InternalException("Failed to resolve child object of type " + t.getName() + " for value " + value);
                 }
             }
         });
+        instance.removeChildrenIf(removedChildren::contains);
     }
 
     private ResolutionResult resolveConstructor(ClassType klass, Map<?, ?> map, IInstanceContext context) {
