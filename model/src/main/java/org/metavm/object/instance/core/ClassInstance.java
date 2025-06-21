@@ -12,6 +12,7 @@ import org.metavm.util.Utils;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 public interface ClassInstance extends Instance {
 
@@ -53,6 +54,10 @@ public interface ClassInstance extends Instance {
         } else {
             return fieldValue;
         }
+    }
+
+    default void removeChildrenIf(Predicate<? super ClassInstance> filter) {
+        throw new UnsupportedOperationException();
     }
 
     void defaultWrite(InstanceOutput output);

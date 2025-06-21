@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 
@@ -206,8 +207,9 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         return (KlassType) super.getInstanceType();
     }
 
-    public void removeChild(ClassInstance instance) {
-        children.remove(instance);
+    @Override
+    public void removeChildrenIf(Predicate<? super ClassInstance> filter) {
+        children.removeIf(filter);
     }
 
     @Override

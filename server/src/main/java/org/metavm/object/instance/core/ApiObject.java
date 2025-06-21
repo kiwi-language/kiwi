@@ -113,7 +113,7 @@ public class ApiObject {
     }
 
     public List<ApiObject> getChildren(String className) {
-        return Objects.requireNonNull(children.get(className), () -> "Children not found for class: " + className);
+        return children.getOrDefault(className, List.of());
     }
 
     @Override
