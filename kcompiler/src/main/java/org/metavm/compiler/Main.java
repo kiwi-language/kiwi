@@ -31,12 +31,12 @@ public class Main {
     private final CompilationTask task;
     private final Path targetRoot;
 
-    public Main(String root) throws IOException {
-        Path sourceRoot = Path.of(root, "src");
-        this.targetRoot = Path.of(root, "target");
+    public Main(Path root) throws IOException {
+        var sourceRoot = root.resolve("src");
+        this.targetRoot = root.resolve("target");
         var sources = listFilePathsRecursively(sourceRoot);
         task = new CompilationTask(sources, targetRoot);
-        home = Path.of(root, ".metavm");
+        home = root.resolve(".metavm");
         envFile = home.resolve(".env");
         selectedEnv = getEnvPath("default");
     }
@@ -268,7 +268,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        new Main("").run(args);
+        new Main(Path.of(".")).run(args);
     }
 
     void run(String[] args) throws IOException {
@@ -344,7 +344,7 @@ public class Main {
                     deleteEnv(args[1]);
                 }
                 case "build" -> build();
-                case "api-gen" -> generateApi();
+                case "gen-api" -> generateApi();
                 case "deploy" -> {
                     ensureLoggedIn();
                     deploy();

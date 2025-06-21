@@ -16,7 +16,7 @@ public class ApiGeneratorTest extends TestCase {
         var text = new ApiGenerator().generate(clazz);
         log.debug("\n{}", text);
         Files.writeString(
-                Path.of("/tmp/frontworks/1/src/api.ts"),
+                Path.of("/tmp/pageworks/1/src/api.ts"),
                 text
         );
     }

@@ -104,6 +104,7 @@ public class Tokenizer {
                     while (!isEof()) {
                         if (accept('*') && accept('/'))
                             yield nextToken();
+                        next();
                     }
                     log.error(pos(), Errors.UNCLOSED_COMMENT);
                     yield Tokens.EOF;

@@ -7,6 +7,7 @@ import org.metavm.api.entity.HttpResponse;
 import org.metavm.common.ErrorCode;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
+import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.TypeManager;
@@ -188,6 +189,14 @@ public class ApiAdapterTest extends TestCase {
         )).toString();
     }
 
+    private ApiObject getObject(String id) {
+        return apiClient.getObject(Id.parse(id));
+    }
+
+    private String saveInstance(String className, Map<String, Object> object) {
+        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, object)).toString();
+    }
+
     private String saveProduct() {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance("Product",
                 Map.of(
@@ -220,6 +229,31 @@ public class ApiAdapterTest extends TestCase {
                 mockHttpResponse()
         ));
         assertEquals("Hello", msg);
+    }
+
+    public void testRefParamType() {
+        deploy("kiwi/adapter/ref_param_type.kiwi");
+        var id = saveInstance("adapter.Product", Map.of("name", "Shoes"));
+        TestUtils.doInTransaction(() -> apiAdapter.handlePost(
+                "/api/adapter/product-service/activate",
+                Map.of(
+                        "productId", id
+                ),
+                mockHttpRequest(),
+                mockHttpResponse()
+        ));
+        var product = getObject(id);
+        assertEquals("ACTIVE", ((ApiNamedObject) product.get("status")).name());
+
+        var found = TestUtils.doInTransaction(() -> apiAdapter.handlePost(
+                "/api/adapter/product-service/getFirstByStatus",
+                Map.of(
+                        "status", "ACTIVE"
+                ),
+                mockHttpRequest(),
+                mockHttpResponse()
+        ));
+        assertEquals(id, found);
     }
 
     private void deploy(String source) {

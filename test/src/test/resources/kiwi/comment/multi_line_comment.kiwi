@@ -1,0 +1,7 @@
+/*
+This is a multi-line test
+*/
+
+package comment
+
+class Foo(var name: string)

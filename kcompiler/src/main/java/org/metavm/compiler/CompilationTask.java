@@ -3,7 +3,6 @@ package org.metavm.compiler;
 import lombok.SneakyThrows;
 import org.metavm.compiler.analyze.*;
 import org.metavm.compiler.apigen.ApiGenerator;
-import org.metavm.compiler.apigen.TypeGenerator;
 import org.metavm.compiler.diag.DefaultLog;
 import org.metavm.compiler.diag.DiagFactory;
 import org.metavm.compiler.diag.DiagSource;
@@ -34,8 +33,6 @@ import java.util.Collection;
 import static java.util.Objects.requireNonNull;
 
 public class CompilationTask {
-
-    private final char[] buf = new char[1024 * 1024];
 
     private final List<Path> paths;
     private final Path buildDir;
@@ -133,10 +130,8 @@ public class CompilationTask {
             }
         });
         var c = classes.build();
-        var type = new TypeGenerator().generate(c);
         var api = new ApiGenerator().generate(c);
         var apiBuildDir = buildDir.getParent().resolve("apigen");
-        Utils.writeFile(apiBuildDir.resolve("types.ts"), type.getBytes(StandardCharsets.UTF_8));
         Utils.writeFile(apiBuildDir.resolve("api.ts"), api.getBytes(StandardCharsets.UTF_8));
     }
 

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 public class ApiController {
@@ -39,11 +40,16 @@ public class ApiController {
     @PostMapping("/api/**")
     public Result<Object> handlePost(HttpServletRequest servletRequest,
                                      HttpServletResponse servletResponse,
-                                     @RequestBody Map<String, Object> requestBody) {
+                                     @RequestBody(required = false) Map<String, Object> requestBody) {
         initContextAppId(servletRequest);
         var httpReq = buildHttpRequest(servletRequest);
         var httpResp = new HttpResponseImpl();
-        var r =  Result.success(apiAdapter.handlePost(servletRequest.getRequestURI(), requestBody, httpReq, httpResp));
+        var r =  Result.success(apiAdapter.handlePost(
+                servletRequest.getRequestURI(),
+                Objects.requireNonNullElse(requestBody, Map.of()),
+                httpReq,
+                httpResp
+        ));
         writeHttpResponse(httpResp, servletResponse);
         return r;
     }

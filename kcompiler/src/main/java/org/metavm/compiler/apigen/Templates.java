@@ -21,7 +21,7 @@ public class Templates {
             
             async function callApi<T>(endpoint: string, method: string, body?: any): Promise<T> {
                 console.log(`Calling endpoint: ${endpoint}`)
-                const headers: HeadersInit = {}
+                const headers: HeadersInit = {'X-App-ID': APP_ID + ''}
                         
                 if (body !== undefined) {
                     headers['Content-Type'] = 'application/json';

@@ -109,7 +109,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
         }
         var args = new HashMap<String, Object>();
         method.getParameters().forEach(param -> {
-            var arg = requestBody.get(param.getName());
+            var arg = requestBody.get(getFieldName(param.getName(), param.getType()));
             if (arg != null)
                 args.put(param.getName(), transformRequestValue(arg, param.getType()));
         });
@@ -118,8 +118,8 @@ public class ApiAdapter extends EntityContextFactoryAware {
 
     private Object transformResultValue(Object value, Type type) {
         return switch (value) {
-            case Map map -> transformResultObject(map, (ClassType) type);
-            case List list -> Utils.map(list, e -> transformResultValue(e, ((ArrayType) type).getElementType()));
+            case Map map -> transformResultObject(map, (ClassType) type.getUnderlyingType());
+            case List list -> Utils.map(list, e -> transformResultValue(e, ((ArrayType) type.getUnderlyingType()).getElementType()));
             case null, default -> value;
         };
     }
@@ -250,7 +250,10 @@ public class ApiAdapter extends EntityContextFactoryAware {
     }
 
     private String getFieldName(String baseName, Type type) {
-        return type.getUnderlyingType().isReference() ? baseName + "Id" : baseName;
+        if (type.getUnderlyingType() instanceof ClassType ct && !ct.isValueType() && !ct.isEnum())
+            return baseName + "Id";
+        else
+            return baseName;
     }
 
     private String getChildFieldName(String childTypeName) {

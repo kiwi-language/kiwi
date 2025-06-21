@@ -21,7 +21,7 @@ public class ApiGenUtils {
             case PrimitiveType primitiveType -> getApiPrimType(primitiveType);
             case StringType ignored -> "string";
             case ClassType classType -> {
-                var apiClsName = getApiClass(classType.getClazz());
+                var apiClsName = classType.getClazz().isEntity() ? "string" : getApiClass(classType.getClazz());
                 if (classType.getTypeArguments().isEmpty())
                     yield apiClsName;
                 else

@@ -1,13 +1,14 @@
 package org.metavm;
 
 
-import org.metavm.util.Utils;
+import java.nio.file.Path;
 
 public class Lab {
 
     public static void main(String[] args) {
 
-        Utils.clearDirectory("/Users/leen/workspace/kiwi/test/target/test-classes/target");
+        var path = Path.of(".").resolve("target");
+        System.out.println(path.getParent());
 
     }
 

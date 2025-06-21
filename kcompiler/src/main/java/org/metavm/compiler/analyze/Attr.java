@@ -224,7 +224,7 @@ public class Attr extends StructuralNodeVisitor {
         if (element instanceof Variable variable && variable.getType() instanceof DeferredType) {
             var templateVar = variable instanceof FieldInst fieldInst ? fieldInst.field() : variable;
             var varDecl = (VariableDecl<?>) templateVar.getNode();
-            attrExpr(Objects.requireNonNull(varDecl.getInitial()), Types.instance.getNullableAny());
+            attrExpr(Objects.requireNonNull(varDecl.getInitial()), Types.instance.getNullableAny()).resolve();
             templateVar.setType(Objects.requireNonNull(varDecl.getInitial()).getType());
         }
     }

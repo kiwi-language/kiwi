@@ -649,4 +649,22 @@ public class KiwiTest extends KiwiTestBase {
         assertEquals(ids, r);
     }
 
+    public void testLineComment() {
+        deploy("kiwi/comment/line_comment.kiwi");
+        var id = saveInstance("comment.Foo", Map.of("name", "foo"));
+        var foo = getObject(id);
+        assertEquals("foo", foo.get("name"));
+    }
+
+    public void testMultiLineComment() {
+        deploy("kiwi/comment/multi_line_comment.kiwi");
+        var id = saveInstance("comment.Foo", Map.of("name", "foo"));
+        var foo = getObject(id);
+        assertEquals("foo", foo.get("name"));
+    }
+
+    public void testLambdaForwardFieldRef() {
+        deploy("kiwi/lambda/forward_field_ref.kiwi");
+    }
+
 }

@@ -14,6 +14,7 @@ public class Mocks {
                 createCurrencyClass(proj),
                 createMoneyClass(proj),
                 createProductClass(proj),
+                createCouponClass(proj),
                 createOrderClass(proj),
                 createOrderService(proj)
         );
@@ -47,6 +48,21 @@ public class Mocks {
         return cls;
     }
 
+    private static void generateCanonicalInit(Clazz cls) {
+        var init = new Method(
+                Name.init(),
+                Access.PUBLIC,
+                false,
+                false,
+                true,
+                cls
+        );
+        for (Field field : cls.getFields()) {
+            if (!field.isStatic() && field.isPublic())
+                new Param(field.getName(), field.getType(), init);
+        }
+    }
+
     private static Clazz createMoneyClass(Project proj) {
         var cls = new Clazz(
                 ClassTag.VALUE,
@@ -68,6 +84,7 @@ public class Mocks {
                 false,
                 cls
         );
+        generateCanonicalInit(cls);
         return cls;
     }
 
@@ -105,35 +122,7 @@ public class Mocks {
                 false,
                 cls
         );
-
-        var init = new Method(
-                Name.init(),
-                Access.PUBLIC,
-                false,
-                false,
-                true,
-                cls
-        );
-        new Param(
-                "name",
-                Types.instance.getStringType(),
-                init
-        );
-        new Param(
-                "stock",
-                PrimitiveType.INT,
-                init
-        );
-        new Param(
-                "price",
-                proj.getClass("Money"),
-                init
-        );
-        new Param(
-                "desc",
-                Types.instance.getNullableType(Types.instance.getStringType()),
-                init
-        );
+        generateCanonicalInit(cls);
         var method = new Method(
                 Name.from("reduceStock"),
                 Access.PUBLIC,
@@ -160,6 +149,7 @@ public class Mocks {
                 false,
                 cls
         );
+        generateCanonicalInit(cls);
         var itemCls = new Clazz(
                 ClassTag.CLASS,
                 "Item",
@@ -173,14 +163,14 @@ public class Mocks {
                 false,
                 itemCls
         );
-        var productCls = proj.getRootPackage().getClass("Product");
         new Field(
                 "product",
-                productCls,
+                proj.getClass("Product"),
                 Access.PUBLIC,
                 false,
                 itemCls
         );
+        generateCanonicalInit(itemCls);
         return cls;
     }
 
@@ -206,6 +196,49 @@ public class Mocks {
                 placeOrderMeth
         );
         placeOrderMeth.setRetType(proj.getClass("Order"));
+        generateCanonicalInit(cls);
+        return cls;
+    }
+
+    private static Clazz createCouponClass(Project proj) {
+        var cls = new Clazz(
+                ClassTag.CLASS,
+                "Coupon",
+                Access.PUBLIC,
+                proj.getRootPackage()
+        );
+        new Field(
+                "title",
+                Types.instance.getStringType(),
+                Access.PUBLIC,
+                false,
+                cls
+        );
+        new Field(
+                "discount",
+                PrimitiveType.DOUBLE,
+                Access.PUBLIC,
+                false,
+                cls
+        );
+        new Field(
+                "redeemed",
+                PrimitiveType.BOOL,
+                Access.PUBLIC,
+                false,
+                cls
+        );
+        var init = new Method(
+                Name.init(),
+                Access.PUBLIC,
+                false,
+                false,
+                true,
+                cls
+        );
+        new Param("title", Types.instance.getStringType(), init);
+        new Param("discount", PrimitiveType.DOUBLE, init);
+        new Method("redeem", Access.PUBLIC, false, false, false, cls);
         return cls;
     }
 

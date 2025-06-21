@@ -1,0 +1,35 @@
+package adapter
+
+import org.metavm.api.Index
+
+class Product(
+    var name: string
+) {
+
+    var status = ProductStatus.INACTIVE
+
+    static val statusIdx = Index<ProductStatus, Product>(false, p -> p.status)
+
+}
+
+enum ProductStatus {
+    ACTIVE,
+    INACTIVE,
+
+    ;
+}
+
+
+@Bean
+class ProductService {
+
+    fn activate(product: Product) {
+        require(product.status == ProductStatus.INACTIVE, "Already activated")
+        product.status = ProductStatus.ACTIVE
+    }
+
+    fn getFirstByStatus(status: ProductStatus) -> Product? {
+        return Product.statusIdx.getFirst(status)
+    }
+
+}
