@@ -178,6 +178,26 @@ public class ApiAdapterTest extends TestCase {
                 mockHttpResponse()
         );
         assertEquals(0, result1.items().size());
+
+        var id2 = saveInstance("Product",
+                Map.of(
+                        "name", "MacBook Air",
+                        "price", 8500,
+                        "stock", 100
+                )
+        );
+
+        var result2 = (SearchResult) apiAdapter.handlePost(
+                "/api/product/_search",
+                Map.of(
+                        "name", "MacBook",
+                        "page", 1,
+                        "newlyChangedId", id2
+                ),
+                mockHttpRequest(),
+                mockHttpResponse()
+        );
+        assertEquals(2, result2.items().size());
     }
 
     private String saveUser() {
@@ -198,13 +218,13 @@ public class ApiAdapterTest extends TestCase {
     }
 
     private String saveProduct() {
-        return TestUtils.doInTransaction(() -> apiClient.saveInstance("Product",
+        return saveInstance("Product",
                 Map.of(
                         "name", "MacBook Pro",
                         "price", 14000,
                         "stock", 100
                 )
-        )).toString();
+        );
     }
 
     public void testDelete() {

@@ -3,6 +3,7 @@ package org.metavm.compiler.apigen;
 import junit.framework.TestCase;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.util.Utils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,11 +15,21 @@ public class ApiGeneratorTest extends TestCase {
     public void test() {
         var clazz = Mocks.createShoppingClasses();
         var text = new ApiGenerator().generate(clazz);
-        log.debug("\n{}", text);
+        log.debug(text);
+    }
+
+    // This test can't be written as an unit test because it's environment dependent
+    @SneakyThrows
+    public static void main(String[] args) {
+        var clazz = Mocks.createShoppingClasses();
+        var text = new ApiGenerator().generate(clazz);
         Files.writeString(
-                Path.of("/tmp/pageworks/1/src/api.ts"),
+                Path.of("/tmp/page-works/1/src/api.ts"),
                 text
         );
+        var r = Utils.executeCommand(Path.of("/tmp/page-works/1"), "npm", "run", "build");
+        System.out.println(r.output());
+        Utils.require(r.exitCode() == 0, "Build failed");
     }
 
 }

@@ -15,6 +15,7 @@ public class Mocks {
                 createMoneyClass(proj),
                 createProductClass(proj),
                 createCouponClass(proj),
+                createOrderStatusClass(proj),
                 createOrderClass(proj),
                 createOrderService(proj)
         );
@@ -48,7 +49,11 @@ public class Mocks {
         return cls;
     }
 
-    private static void generateCanonicalInit(Clazz cls) {
+    private static void createCanonicalInit(Clazz cls) {
+        createInit(cls, cls.getFields().filter(f -> f.isPublic() && !f.isStatic()));
+    }
+
+    private static void createInit(Clazz cls, List<Field> fields) {
         var init = new Method(
                 Name.init(),
                 Access.PUBLIC,
@@ -57,7 +62,7 @@ public class Mocks {
                 true,
                 cls
         );
-        for (Field field : cls.getFields()) {
+        for (Field field : fields) {
             if (!field.isStatic() && field.isPublic())
                 new Param(field.getName(), field.getType(), init);
         }
@@ -84,7 +89,7 @@ public class Mocks {
                 false,
                 cls
         );
-        generateCanonicalInit(cls);
+        createCanonicalInit(cls);
         return cls;
     }
 
@@ -122,7 +127,7 @@ public class Mocks {
                 false,
                 cls
         );
-        generateCanonicalInit(cls);
+        createCanonicalInit(cls);
         var method = new Method(
                 Name.from("reduceStock"),
                 Access.PUBLIC,
@@ -135,6 +140,19 @@ public class Mocks {
         return cls;
     }
 
+    private static Clazz createOrderStatusClass(Project proj) {
+        var cls = new Clazz(
+                ClassTag.ENUM,
+                "OrderStatus",
+                Access.PUBLIC,
+                proj.getRootPackage()
+        );
+        new EnumConst(Name.from("PENDING"), 0, cls, cls);
+        new EnumConst(Name.from("CONFIRMED"), 1, cls, cls);
+        new EnumConst(Name.from("CANCELLED"), 2, cls, cls);
+        return cls;
+    }
+
     private static Clazz createOrderClass(Project proj) {
         var cls = new Clazz(
                 ClassTag.CLASS,
@@ -142,14 +160,21 @@ public class Mocks {
                 Access.PUBLIC,
                 proj.getRootPackage()
         );
-        new Field(
+        var priceField = new Field(
                 "price",
                 proj.getClass("Money"),
                 Access.PUBLIC,
                 false,
                 cls
         );
-        generateCanonicalInit(cls);
+        new Field(
+                "status",
+                proj.getClass("OrderStatus"),
+                Access.PUBLIC,
+                false,
+                cls
+        );
+        createInit(cls, List.of(priceField));
         var itemCls = new Clazz(
                 ClassTag.CLASS,
                 "Item",
@@ -170,7 +195,7 @@ public class Mocks {
                 false,
                 itemCls
         );
-        generateCanonicalInit(itemCls);
+        createCanonicalInit(itemCls);
         return cls;
     }
 
@@ -196,7 +221,15 @@ public class Mocks {
                 placeOrderMeth
         );
         placeOrderMeth.setRetType(proj.getClass("Order"));
-        generateCanonicalInit(cls);
+        new Method(
+                "cancelAllPendingOrders",
+                Access.PUBLIC,
+                false,
+                false,
+                false,
+                cls
+        );
+        createCanonicalInit(cls);
         return cls;
     }
 
@@ -207,16 +240,23 @@ public class Mocks {
                 Access.PUBLIC,
                 proj.getRootPackage()
         );
-        new Field(
+        var title = new Field(
                 "title",
                 Types.instance.getStringType(),
                 Access.PUBLIC,
                 false,
                 cls
         );
-        new Field(
+        var discount = new Field(
                 "discount",
                 PrimitiveType.DOUBLE,
+                Access.PUBLIC,
+                false,
+                cls
+        );
+        var product = new Field(
+                "product",
+                proj.getClass("Product"),
                 Access.PUBLIC,
                 false,
                 cls
@@ -228,16 +268,7 @@ public class Mocks {
                 false,
                 cls
         );
-        var init = new Method(
-                Name.init(),
-                Access.PUBLIC,
-                false,
-                false,
-                true,
-                cls
-        );
-        new Param("title", Types.instance.getStringType(), init);
-        new Param("discount", PrimitiveType.DOUBLE, init);
+        createInit(cls, List.of(title, discount, product));
         new Method("redeem", Access.PUBLIC, false, false, false, cls);
         return cls;
     }

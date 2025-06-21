@@ -27,7 +27,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
     private static final String KEY_ID = "id";
     private static final String KEY_PAGE = "page";
     private static final String KEY_PAGE_SIZE = "pageSize";
-    private static final String KEY_NEWLY_CREATED = "newlyCreated";
+    private static final String KEY_NEWLY_CHANGED_ID = "newlyChangedId";
 
     private final ApiService apiService;
 
@@ -233,7 +233,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
         var criteria = transformRequestObjectFields(requestBody, type);
         var page = requestBody.get(KEY_PAGE) instanceof Integer p ? p : 1;
         var pageSize = requestBody.get(KEY_PAGE_SIZE) instanceof Integer p ? p : 20;
-        var newlyCreated = requestBody.get(KEY_NEWLY_CREATED) instanceof String s ? s : null;
+        var newlyCreated = requestBody.get(KEY_NEWLY_CHANGED_ID) instanceof String s ? s : null;
         return new SearchRequest(criteria, page, pageSize, newlyCreated);
     }
 

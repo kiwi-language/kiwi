@@ -130,12 +130,20 @@ public class ApiGenerator {
                     apiWriter.writeln("min" + fName + "?: number");
                     apiWriter.writeln("max" + fName + "?: number");
                 }
-                writeVariable(field);
+                writeVariable(field, true);
             }
         }
         apiWriter.writeln("// 1-based page number");
         apiWriter.writeln("page?: number");
         apiWriter.writeln("pageSize?: number");
+        apiWriter.write("""
+                /*
+                The ID of a newly created or recently changed object.
+                This is used to tackle the index lagging issue, where the newly created or changed object
+                may not be immediately available in the search results.
+                */
+                """);
+        apiWriter.writeln("newlyChangedId?: string");
         apiWriter.deIndent();
         apiWriter.writeln("}");
         apiWriter.writeln();
@@ -169,10 +177,14 @@ public class ApiGenerator {
     }
 
     private void writeVariable(Variable variable) {
+        writeVariable(variable, false);
+    }
+
+    private void writeVariable(Variable variable, boolean optional) {
         if (isEntityType(variable.getType()))
-            apiWriter.writeln(variable.getName() + "Id: string");
+            apiWriter.writeln(variable.getName() +  (optional ? "Id?: string" : "Id: string"));
         else
-            apiWriter.writeln(variable.getName() + ": " + getApiType(variable.getType()));
+            apiWriter.writeln(variable.getName() + (optional ? "?: " :  ": ") + getApiType(variable.getType()));
     }
 
     public void generateFuncs(Clazz clazz) {
@@ -269,7 +281,7 @@ public class ApiGenerator {
             apiWriter.writeln(String.format(
                     """
                             %s: (): Promise<%s> => {
-                                callApi<%s>('/api/%s', 'POST')
+                                return callApi<%s>('/api/%s', 'POST')
                             },
                             """,
                     funcName,
