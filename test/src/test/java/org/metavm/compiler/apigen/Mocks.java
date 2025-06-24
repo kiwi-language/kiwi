@@ -89,6 +89,14 @@ public class Mocks {
                 false,
                 cls
         );
+        var summaryField = new Field(
+                "summary",
+                Types.instance.getStringType(),
+                Access.PRIVATE,
+                false,
+                cls
+        );
+        cls.setSummaryField(summaryField);
         createCanonicalInit(cls);
         return cls;
     }
@@ -99,13 +107,14 @@ public class Mocks {
                 Access.PUBLIC,
                 proj.getRootPackage()
         );
-        new Field(
+        var nameField = new Field(
                 "name",
                 Types.instance.getStringType(),
                 Access.PUBLIC,
                 false,
                 cls
         );
+        cls.setSummaryField(nameField);
         new Field(
                 "stock",
                 PrimitiveType.INT,
@@ -177,25 +186,32 @@ public class Mocks {
         createInit(cls, List.of(priceField));
         var itemCls = new Clazz(
                 ClassTag.CLASS,
-                "Item",
+                "OrderItem",
                 Access.PUBLIC,
                 cls
         );
-        new Field(
+        var quntityField = new Field(
                 "quantity",
                 PrimitiveType.INT,
                 Access.PUBLIC,
                 false,
                 itemCls
         );
-        new Field(
+        var productField = new Field(
                 "product",
                 proj.getClass("Product"),
                 Access.PUBLIC,
                 false,
                 itemCls
         );
-        createCanonicalInit(itemCls);
+        new Field(
+                "productName",
+                Types.instance.getStringType(),
+                Access.PUBLIC,
+                false,
+                itemCls
+        );
+        createInit(itemCls, List.of(quntityField, productField));
         return cls;
     }
 
@@ -218,6 +234,11 @@ public class Mocks {
         new Param(
                 "products",
                 Types.instance.getArrayType(proj.getClass("Product")),
+                placeOrderMeth
+        );
+        new Param(
+                "coupon",
+                Types.instance.getNullableType(proj.getClass("Coupon")),
                 placeOrderMeth
         );
         placeOrderMeth.setRetType(proj.getClass("Order"));

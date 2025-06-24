@@ -93,10 +93,8 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         if (column != null) {
             Utils.require(declaringType.checkColumnAvailable(column));
             this.column = column;
-        } else {
-            this.column = Objects.requireNonNull(declaringType.allocateColumn(this),
-                    () -> "Fail to allocate a column for field " + name);
-        }
+        } else
+            this.column = allocteColumn();
         setDefaultValue(defaultValue);
         this.lazy = lazy;
         declaringType.addField(this);
@@ -335,11 +333,20 @@ public class Field extends AttributedElement implements Property, ITypeDef {
     public void setType(Type type) {
         this.type = type;
         resetTypeIndex();
+        if (column == Column.NIL)
+            this.column = allocteColumn();
     }
 
     public void setTypeIndex(int typeIndex) {
         this.typeIndex = typeIndex;
         this.type = declaringType.getConstantPool().getType(typeIndex);
+        if (column == Column.NIL)
+            this.column = allocteColumn();
+    }
+
+    private Column allocteColumn() {
+        return Objects.requireNonNull(declaringType.allocateColumn(this),
+                () -> "Fail to allocate a column for field " + name);
     }
 
     public void resetTypeIndex() {

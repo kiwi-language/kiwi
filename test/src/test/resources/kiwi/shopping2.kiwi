@@ -1,0 +1,52 @@
+
+class Product(
+    var name: string,
+    var price: double,
+    var stock: int
+) {
+
+    fn reduceStock(quantity: int) {
+        require(stock >= quantity, "Insuffciient stock")
+        stock -= quantity
+    }
+
+}
+
+class Coupon(
+    var discount: double
+) {
+
+    var used = false
+
+    fn redeem() {
+        require(!used, "Coupon already used")
+        used = true
+    }
+
+}
+
+class Order(var totalPrice: double) {
+
+    class Item(
+        product: Product,
+        quantity: int
+    )
+
+}
+
+@Bean
+class OrderService {
+
+    fn placeOrder(product: Product, quantity: int, coupon: Coupon?) -> Order {
+        product.reduceStock(quantity)
+        var price = product.price * quantity
+        if (coupon != null) {
+            coupon!!.redeem()
+            price -= coupon!!.discount
+        }
+        val order = Order(price)
+        order.Item(product, 1)
+        return order
+    }
+
+}

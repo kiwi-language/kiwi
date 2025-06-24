@@ -34,7 +34,7 @@ public class ApiPerf {
     private static String productId;
     private static String skuId;
 
-//    private static final String host = "https://metavm.tech/object";
+//    private static final String host = "https://api.metavm.tech/object";
 //    public static final long appId = 1000000019;
 //    public static final String defaultProductKindId = "01dea8d6b90700";
 //    public static final String yuanCurrencyId = "01d8a8d6b90700";

@@ -54,4 +54,8 @@ public interface Type extends Constant {
 
     Closure getClosure();
 
+    default boolean isNullable() {
+        return false;
+    }
+
 }

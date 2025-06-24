@@ -11,7 +11,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.compiler.apigen.ApiGenUtils.*;
-import static org.metavm.util.NamingUtils.firstCharsToLowerCase;
+import static org.metavm.util.NamingUtils.*;
 
 public class ApiGenerator {
 
@@ -76,6 +76,17 @@ public class ApiGenerator {
                     if (!initParamsNames.contains(field.getName()))
                         apiWriter.writeln("// Not needed for creation");
                     writeVariable(field);
+                    if (field.getType().getUnderlyingType() instanceof ClassType ct && isEntityType(ct)) {
+                        var nullable = field.getType() instanceof UnionType;
+                        var summaryField = ct.getClazz().getSummaryField();
+                        if (summaryField != null) {
+                            var fName = field.getName() + firstCharToUpperCase(summaryField.getName().toString());
+                            if (cls.findFieldByName(Name.from(fName)) == null) {
+                                apiWriter.writeln("// Available in response but not needed in request");
+                                apiWriter.writeln(fName + (nullable ? "?: string" : ": string"));
+                            }
+                        }
+                    }
                 }
             }
             for (Clazz innerCls : cls.getClasses()) {
@@ -90,8 +101,10 @@ public class ApiGenerator {
         }
         if (cls.isValue())
             return;
-        if (cls.isTopLevel() && !cls.isBean())
+        if (cls.isTopLevel() && !cls.isBean()) {
             generateSearchRequest(cls);
+            generateListView(cls);
+        }
         for (Method method : cls.getMethods()) {
             if (method.isPublic() && !method.isStatic() && !method.isInit())
                 generateInvokeRequest(method);
@@ -100,6 +113,29 @@ public class ApiGenerator {
             if (innerCls.isPublic())
                 generateTypes(innerCls);
         }
+    }
+
+    private void generateListView(Clazz cls) {
+        apiWriter.writeln("export interface " + getApiClass(cls) + "ListView {");
+        apiWriter.indent();
+        apiWriter.writeln("id: string");
+        for (Field field : cls.getFields()) {
+            if (field.isPublic() && !field.isStatic()) {
+                writeVariable(field);
+                if (field.getType().getUnderlyingType() instanceof ClassType ct && isEntityType(ct)) {
+                    var nullable = field.getType() instanceof UnionType;
+                    var summaryField = ct.getClazz().getSummaryField();
+                    if (summaryField != null) {
+                        var fName = field.getName() + firstCharToUpperCase(summaryField.getName().toString());
+                        if (cls.findFieldByName(Name.from(fName)) == null)
+                            apiWriter.writeln(fName + (nullable ? "?: string" : ": string"));
+                    }
+                }
+            }
+        }
+        apiWriter.deIndent();
+        apiWriter.writeln("}");
+        apiWriter.writeln();
     }
 
     private boolean isEntityType(Type type) {
@@ -126,7 +162,7 @@ public class ApiGenerator {
             if (field.isPublic() && !field.isStatic() && isSearchable(field.getType())) {
                 var ut = field.getType().getUnderlyingType();
                 if (isNumericType(ut)) {
-                    var fName = NamingUtils.firstCharToUpperCase(field.getName().toString());
+                    var fName = firstCharToUpperCase(field.getName().toString());
                     apiWriter.writeln("min" + fName + "?: number");
                     apiWriter.writeln("max" + fName + "?: number");
                 }
@@ -136,14 +172,6 @@ public class ApiGenerator {
         apiWriter.writeln("// 1-based page number");
         apiWriter.writeln("page?: number");
         apiWriter.writeln("pageSize?: number");
-        apiWriter.write("""
-                /*
-                The ID of a newly created or recently changed object.
-                This is used to tackle the index lagging issue, where the newly created or changed object
-                may not be immediately available in the search results.
-                */
-                """);
-        apiWriter.writeln("newlyChangedId?: string");
         apiWriter.deIndent();
         apiWriter.writeln("}");
         apiWriter.writeln();
@@ -182,7 +210,7 @@ public class ApiGenerator {
 
     private void writeVariable(Variable variable, boolean optional) {
         if (isEntityType(variable.getType()))
-            apiWriter.writeln(variable.getName() +  (optional ? "Id?: string" : "Id: string"));
+            apiWriter.writeln(variable.getName() +  (optional || variable.getType().isNullable() ? "Id?: string" : "Id: string"));
         else
             apiWriter.writeln(variable.getName() + (optional ? "?: " :  ": ") + getApiType(variable.getType()));
     }
@@ -212,8 +240,8 @@ public class ApiGenerator {
         if (generatedFuncs.add(funcName)) {
             apiWriter.writeln(String.format(
                     """
-                            %s: (id: string): Promise<%s> => {
-                                return callApi<%s>(`/api/%s/${id}`, 'GET')
+                            %s: (id: string): Promise<Result<%s>> => {
+                                return callApi<Result<%s>>(`/api/%s/${id}`, 'GET')
                             },
                             """,
                     funcName,
@@ -228,8 +256,8 @@ public class ApiGenerator {
         var funcName = "save" + getApiClass(clazz);
         if (generatedFuncs.add(funcName)) {
             apiWriter.writeln(String.format("""
-                            %s: (%s: %s): Promise<string> => {
-                                return callApi<string>('/api/%s', 'POST', %s)
+                            %s: (%s: %s): Promise<Result<string>> => {
+                                return callApi<Result<string>>('/api/%s', 'POST', %s)
                             },
                             """,
                     funcName,
@@ -245,8 +273,8 @@ public class ApiGenerator {
         var funcName = "delete" + getApiClass(clazz);
         if (generatedFuncs.add(funcName)) {
             apiWriter.writeln(String.format("""
-                            %s: (id: string): Promise<undefined> => {
-                                return callApi<undefined>(`/api/%s/${id}`, 'DELETE')
+                            %s: (id: string): Promise<Result<undefined>> => {
+                                return callApi<Result<undefined>>(`/api/%s/${id}`, 'DELETE')
                             },
                             """,
                     funcName,
@@ -259,8 +287,8 @@ public class ApiGenerator {
         var funcName = "search" + getApiClass(clazz);
         if (generatedFuncs.add(funcName)) {
             apiWriter.writeln(String.format("""
-                            %s: (request: Search%sRequest): Promise<SearchResult<%s>> => {
-                                return callApi<SearchResult<%s>>('/api/%s/_search', 'POST', request)
+                            %s: (request: Search%sRequest): Promise<Result<SearchResult<%sListView>>> => {
+                                return callApi<Result<SearchResult<%sListView>>>('/api/%s/_search', 'POST', request)
                             },
                             """,
                     funcName,
@@ -280,8 +308,8 @@ public class ApiGenerator {
         if (params.isEmpty() && method.getDeclClass().isBean()) {
             apiWriter.writeln(String.format(
                     """
-                            %s: (): Promise<%s> => {
-                                return callApi<%s>('/api/%s', 'POST')
+                            %s: (): Promise<Result<%s>> => {
+                                return callApi<Result<%s>>('/api/%s', 'POST')
                             },
                             """,
                     funcName,
@@ -292,8 +320,8 @@ public class ApiGenerator {
         } else {
             apiWriter.writeln(String.format(
                     """
-                            %s: (request: %s): Promise<%s> => {
-                                return callApi<%s>('/api/%s', 'POST', request)
+                            %s: (request: %s): Promise<Result<%s>> => {
+                                return callApi<Result<%s>>('/api/%s', 'POST', request)
                             },
                             """,
                     funcName,

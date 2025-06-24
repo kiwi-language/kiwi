@@ -102,4 +102,9 @@ public final class IntersectionType implements Type, Comparable<IntersectionType
         }
         return table;
     }
+
+    @Override
+    public boolean isNullable() {
+        return bounds.allMatch(Type::isNullable);
+    }
 }

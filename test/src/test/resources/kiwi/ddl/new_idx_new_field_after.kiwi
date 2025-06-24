@@ -1,0 +1,24 @@
+package ddl
+
+import org.metavm.api.Index
+
+class WorkOrder(
+    val orderNo: string,
+    val targetLocation: Location
+) {
+
+    fn __targetLocation__() -> Location {
+        val locName = "Default Location"
+        var location = Location.nameIdx.getFirst(locName)
+        if (location == null)
+            location = Location(locName)
+        return location
+    }
+
+}
+
+class Location(var name: string) {
+
+    static val nameIdx = Index<string, Location>(false, l -> l.name)
+
+}

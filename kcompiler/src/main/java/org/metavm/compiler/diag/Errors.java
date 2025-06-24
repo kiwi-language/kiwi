@@ -57,11 +57,13 @@ public class Errors {
     public static Error illegal(TokenKind tk) {
         return create("illegal", tk);
     }
-    public static Error invalidUnicodeEscape = create("invalid.unicode.escape");
+    public static final Error invalidUnicodeEscape = create("invalid.unicode.escape");
 
-    public static Error variableMustTypedOrInitialized = create("variable.must.typed.or.initialized");
+    public static final Error variableMustTypedOrInitialized = create("variable.must.typed.or.initialized");
 
-    public static Error summaryFieldMustBeString = create("summary.field.must.be.string");
+    public static final Error summaryFieldMustBeString = create("summary.field.must.be.string");
+
+    public static final Error cantModifyCapturedVar = create("cant.modify.captured.var");
 
     public static Error expected(Object a) {
         return create("expected", a);

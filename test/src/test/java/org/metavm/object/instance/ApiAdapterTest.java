@@ -77,6 +77,26 @@ public class ApiAdapterTest extends TestCase {
         assertEquals("demo1", user.get("loginName"));
     }
 
+    public void testRefSummary() {
+        deploy("kiwi/User.kiwi");
+        var uId = saveInstance("PlatformUser", Map.of("loginName", "demo", "password", "123456"));
+        var appId = saveInstance("Application", Map.of("name", "demo", "owner", Id.parse(uId)));
+        var app = apiAdapter.handleGet("/api/application/" + appId);
+        assertEquals("demo", app.get("ownerLoginName"));
+
+        var r = (SearchResult) apiAdapter.handlePost(
+                "/api/application/_search",
+                Map.of(
+                        "newlyChangedId", appId
+                ),
+                mockHttpRequest(),
+                mockHttpResponse()
+        );
+        assertEquals(1, r.items().size());
+        //noinspection rawtypes
+        assertEquals("demo", ((Map) r.items().getFirst()).get("ownerLoginName"));
+    }
+
     public void testGet() {
         deploy("kiwi/children.kiwi");
         var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
@@ -99,6 +119,25 @@ public class ApiAdapterTest extends TestCase {
         assertEquals("40", sku.get("variant"));
         assertEquals(100.0, (double) sku.get("price"), 0.01);
         assertEquals(100, sku.get("stock"));
+    }
+
+    public void testEmptyIdString() {
+        deploy("kiwi/shopping2.kiwi");
+        var productId = saveInstance("Product", Map.of(
+                "name", "Shoes", "price", 100, "stock", 100)
+        );
+        var orderId = TestUtils.doInTransaction(() -> apiAdapter.handlePost(
+                "/api/order-service/place-order",
+                Map.of(
+                        "productId", productId,
+                        "quantity", 1,
+                        "couponId", ""
+                ),
+                mockHttpRequest(),
+                mockHttpResponse()
+        ));
+        var order = getObject(orderId.toString());
+        assertEquals(100.0, order.getDouble("totalPrice"), 0.01);
     }
 
     public void testSaveWithChildren() {
@@ -200,6 +239,27 @@ public class ApiAdapterTest extends TestCase {
         assertEquals(2, result2.items().size());
     }
 
+    public void testSearchWithRef() {
+        deploy("kiwi/User.kiwi");
+        var userId = saveUser();
+        var appId = saveInstance("Application", Map.of(
+                "name", "demo",
+                "owner", Id.parse(userId)
+        ));
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r = (SearchResult) apiAdapter.handlePost(
+                "/api/application/_search",
+                Map.of(
+                        "ownerId", userId
+                ),
+                mockHttpRequest(),
+                mockHttpResponse()
+        );
+        assertEquals(1, r.total());
+        //noinspection rawtypes
+        assertEquals(appId, ((Map) r.items().getFirst()).get("id"));
+    }
+
     private String saveUser() {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance("PlatformUser",
                 Map.of(
@@ -274,6 +334,22 @@ public class ApiAdapterTest extends TestCase {
                 mockHttpResponse()
         ));
         assertEquals(id, found);
+    }
+
+    public void testRefInitArg() {
+        deploy("kiwi/User.kiwi");
+        var userId = saveUser();
+        var appId = (String) TestUtils.doInTransaction(() -> apiAdapter.handlePost(
+                "/api/application",
+                Map.of(
+                        "name", "demo",
+                        "ownerId", userId
+                ),
+                mockHttpRequest(),
+                mockHttpResponse()
+        ));
+        var app = getObject(appId);
+        assertEquals(Id.parse(userId), app.get("owner"));
     }
 
     private void deploy(String source) {

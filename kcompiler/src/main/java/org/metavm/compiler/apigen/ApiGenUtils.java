@@ -10,7 +10,7 @@ import org.metavm.util.Utils;
 public class ApiGenUtils {
 
     public static String getApiClass(Clazz clazz) {
-        if (clazz.getScope() instanceof Clazz encl)
+        if (clazz.getScope() instanceof Clazz encl && !clazz.getName().toString().startsWith(encl.getName().toString()))
             return getApiClass(encl) + clazz.getName();
         else
             return clazz.getName().toString();

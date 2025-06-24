@@ -690,6 +690,7 @@ public class Code {
 
     public void del() {
         code(DELETE);
+        state.pop();
     }
 
     public class State {

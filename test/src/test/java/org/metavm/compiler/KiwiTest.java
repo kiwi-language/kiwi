@@ -409,8 +409,8 @@ public class KiwiTest extends KiwiTestBase {
                 "status", ApiNamedObject.of("search.Status", "ENABLED")
         ));
         Assert.assertEquals(1, r.total());
-        Assert.assertEquals(id, r.data().getFirst().id());
-        assertNull(r.data().getFirst().getMap().get("children"));
+        Assert.assertEquals(id, r.items().getFirst().id());
+        assertNull(r.items().getFirst().getMap().get("children"));
 
         var id1 = saveInstance(className, Map.of("name", "kiwi", "Child", List.of(
                         Map.of(
@@ -421,7 +421,7 @@ public class KiwiTest extends KiwiTestBase {
         TestUtils.waitForEsSync(schedulerAndWorker);
         var r1 = search(className, Map.of());
         assertEquals(2, r1.total());
-        assertEquals(id1, r1.data().getFirst().id());
+        assertEquals(id1, r1.items().getFirst().id());
     }
 
     public void testBean() {
@@ -665,6 +665,60 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testLambdaForwardFieldRef() {
         deploy("kiwi/lambda/forward_field_ref.kiwi");
+    }
+
+    public void testNewIndexNewField() {
+        deploy("kiwi/ddl/new_idx_new_field_before.kiwi");
+        var id = saveInstance("ddl.WorkOrder", Map.of("orderNo", "001"));
+        deploy("kiwi/ddl/new_idx_new_field_after.kiwi");
+        var wd = getObject(id);
+        var locId = wd.getId("targetLocation");
+        var loc = getObject(locId);
+        assertEquals("Default Location", loc.get("name"));
+    }
+
+    public void testBugfix() {
+        deploy("kiwi/bugfix.kiwi");
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var cls = context.getKlassByQualifiedName("Product");
+            var field = cls.getFieldByName("name");
+            assertEquals("s0", field.getColumn().name());
+        }
+    }
+
+    public void testEsFieldName() {
+        deploy("kiwi/search/es_field_name.kiwi");
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var cls = context.getKlassByQualifiedName("search.Product");
+            var field = cls.getFieldByName("name");
+            assertEquals("s0", field.getColumn().name());
+        }
+    }
+
+    public void testDeleteInBranch() {
+        deploy("kiwi/del/del_in_branch.kiwi");
+        var id = saveInstance("del.Inventory", Map.of(
+                "quantity", 100
+        ));
+        callMethod(id, "reduceQuantity", List.of(100));
+        try {
+            getObject(id);
+            fail("Instance should have been deleted");
+        } catch (BusinessException e) {
+            assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+    }
+
+    public void testConcatValueObject() {
+        deploy("kiwi/str/concat_value_obj.kiwi");
+        var customerId = saveInstance("str.Customer", Map.of("name", "Leen"));
+        var orderId = saveInstance("str.Order", Map.of("customer", customerId, "totalPrice",
+                Map.of("amount", 100, "currency", ApiNamedObject.of("str.Currency", "CNY"))
+                ));
+        var order = getObject(orderId);
+        assertEquals("Order: Leen-¥100.0", order.get("summary"));
     }
 
 }

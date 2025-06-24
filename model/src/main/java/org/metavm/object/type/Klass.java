@@ -1065,7 +1065,7 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     }
 
     public boolean checkColumnAvailable(Column column) {
-        return Utils.find(fields, f -> f.getColumn() == column) == null;
+        return column == Column.NIL || Utils.find(fields, f -> f.getColumn() == column) == null;
     }
 
     public boolean check() {

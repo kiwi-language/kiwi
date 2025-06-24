@@ -218,7 +218,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 20
         ) ;
         Assert.assertEquals(1, queryResp.total());
-        var queriedInventory = queryResp.data().getFirst();
+        var queriedInventory = queryResp.items().getFirst();
         Assert.assertEquals(inventoryId, queriedInventory.id());
 
         // decrease the inventory by 100 and asserts that the inventory is removed

@@ -437,7 +437,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     public boolean remove(Instance instance) {
         if (instance.isRemoved())
-            throw new InternalException("Instance " + instance + " is already removed");
+            return false;
+//            throw new InternalException("Instance " + instance + " is already removed");
         batchRemove(List.of(instance));
         return true;
     }

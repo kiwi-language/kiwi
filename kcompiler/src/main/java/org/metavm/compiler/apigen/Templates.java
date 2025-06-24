@@ -39,13 +39,7 @@ public class Templates {
                     throw new Error(`API call failed: ${response.status} ${response.statusText}`);
                 }
                         
-                const result: Result<T> = await response.json();
-                        
-                if (result.code !== 0) {
-                    throw new Error(`API error: ${result.message || 'Unknown error'}`);
-                }
-                        
-                return result.data;
+                return await response.json();
             }
             """;
 

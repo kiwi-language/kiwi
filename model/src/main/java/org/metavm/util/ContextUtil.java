@@ -28,6 +28,7 @@ public class ContextUtil {
         private int contextFinishCount;
         private final List<String> finishedContexts = new ArrayList<>();
         private boolean isDDL;
+        private boolean waitForEsSync;
 
         long nextTmpId() {
             return nextTmpId++;
@@ -134,6 +135,14 @@ public class ContextUtil {
             THREAD_LOCAL.set(contextInfo);
         }
         return contextInfo;
+    }
+
+    public static void setWaitForSearchSync(boolean waitForEsSync) {
+        getContextInfo().waitForEsSync = waitForEsSync;
+    }
+
+    public static boolean isWaitForEsSync() {
+        return getContextInfo().waitForEsSync;
     }
 
     public static void enterApp(long appId, Id appUserId) {

@@ -16,7 +16,12 @@ import static org.metavm.util.WireTypes.*;
 
 public enum PrimitiveType implements Type {
 
-    NULL(NULL_TYPE, TAG_NULL),
+    NULL(NULL_TYPE, TAG_NULL) {
+        @Override
+        public boolean isNullable() {
+            return true;
+        }
+    },
     BYTE(BYTE_TYPE, TAG_BYTE) {
         @Override
         public Type toStackType() {

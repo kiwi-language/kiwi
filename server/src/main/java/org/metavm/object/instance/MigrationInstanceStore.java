@@ -17,6 +17,7 @@ import org.metavm.util.DebugEnv;
 import org.metavm.util.Utils;
 
 import java.util.*;
+import java.util.function.ToLongFunction;
 
 @Slf4j
 public class MigrationInstanceStore implements IInstanceStore {
@@ -85,7 +86,7 @@ public class MigrationInstanceStore implements IInstanceStore {
 
     @Override
     public List<Id> query(InstanceIndexQuery query, IInstanceContext context) {
-        return wrapped.query(query, context);
+        return Utils.map(queryEntries(query, context), IndexEntryPO::getId);
     }
 
     @Override
@@ -107,17 +108,15 @@ public class MigrationInstanceStore implements IInstanceStore {
         var removedIds = new HashSet<>(mapper.filterDeletedIds(ids));
         var unmigratedIds = Utils.exclude(ids, removedIds::contains);
         var unmigrated = wrapped.loadForest(unmigratedIds, context);
-        return mergeResults(migrated, unmigrated);
+        return mergeResults(migrated, unmigrated, Comparator.comparing(InstancePO::getId), InstancePO::getVersion);
     }
 
-    private List<InstancePO> mergeResults(List<InstancePO> list1, List<InstancePO> list2) {
-        list1.sort(Comparator.comparingLong(InstancePO::getId));
-        list2.sort(Comparator.comparingLong(InstancePO::getId));
-        var it1 = list1.iterator();
-        var it2 = list2.iterator();
-        var result = new ArrayList<InstancePO>();
-        InstancePO i1 = null;
-        InstancePO i2 = null;
+    private <T> List<T> mergeResults(List<T> list1, List<T> list2, Comparator<T> comparator, ToLongFunction<T> getVersion) {
+        var it1 = list1.stream().sorted(comparator).iterator();
+        var it2 = list2.stream().sorted(comparator).iterator();
+        var result = new ArrayList<T>();
+        T i1 = null;
+        T i2 = null;
         for (;;) {
             if (i1 == null && it1.hasNext())
                 i1 = it1.next();
@@ -125,14 +124,15 @@ public class MigrationInstanceStore implements IInstanceStore {
                 i2 = it2.next();
             if (i1 == null || i2 == null)
                 break;
-            if (i1.getId() < i2.getId()) {
+            var r = comparator.compare(i1, i2);
+            if (r < 0) {
                 result.add(i1);
                 i1 = null;
-            } else if (i1.getId() > i2.getId()) {
+            } else if (r > 0) {
                 result.add(i2);
                 i2 = null;
             } else {
-                if (i1.getVersion() >= i2.getVersion())
+                if (getVersion.applyAsLong(i1) >= getVersion.applyAsLong(i2))
                     result.add(i1);
                 else
                     result.add(i2);
@@ -165,12 +165,24 @@ public class MigrationInstanceStore implements IInstanceStore {
 
     @Override
     public List<IndexEntryPO> queryEntries(InstanceIndexQuery query, IInstanceContext context) {
-        return wrapped.queryEntries(query, context);
+        var mapper = getIndexEntryMapper(context.getAppId(), "index_entry_tmp");
+        var migratedEntries =  mapper.query(PersistenceUtils.toIndexQueryPO(query, context.getAppId(), context.getLockMode().code()));
+        var entries = wrapped.queryEntries(query, context);
+        var merged = mergeResults(migratedEntries, entries, IndexEntryPO::compareTo, e -> 0);
+        if (query.desc())
+            merged = merged.reversed();
+        if (query.limit() != null)
+            return merged.subList(0, Math.min(merged.size(), query.limit().intValue()));
+        else
+            return merged;
     }
 
     @Override
     public List<IndexEntryPO> getIndexEntriesByInstanceIds(Collection<Id> instanceIds, IInstanceContext context) {
-        return wrapped.getIndexEntriesByInstanceIds(instanceIds, context);
+        var mapper = getIndexEntryMapper(context.getAppId(), "index_entry_tmp");
+        var migratedEntries =  mapper.selectByInstanceIds(context.getAppId(), Utils.map(instanceIds, Id::toBytes));
+        var entries = wrapped.getIndexEntriesByInstanceIds(instanceIds, context);
+        return mergeResults(migratedEntries, entries, IndexEntryPO::compareTo, e -> 0);
     }
 
     @Override

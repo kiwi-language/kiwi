@@ -1,4 +1,5 @@
 class PlatformUser (
+    @Summary
     var loginName: string,
     priv var password: string
 ) {
@@ -12,9 +13,6 @@ class PlatformUser (
 @Searchable
 class Application(
     var name: string,
-    priv var owner: PlatformUser
+    var owner: PlatformUser
 ) {
-    fn getOwner() -> PlatformUser {
-        return this.owner
-    }
 }

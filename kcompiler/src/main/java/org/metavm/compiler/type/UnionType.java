@@ -11,6 +11,7 @@ import org.metavm.compiler.util.List;
 import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public final class UnionType implements Type, Comparable<UnionType> {
@@ -120,5 +121,10 @@ public final class UnionType implements Type, Comparable<UnionType> {
     @Override
     public ElementTable getTable() {
         return getLUB().getTable();
+    }
+
+    @Override
+    public boolean isNullable() {
+        return alternatives.anyMatch(Type::isNullable);
     }
 }

@@ -41,17 +41,22 @@ public class ApiController {
     public Result<Object> handlePost(HttpServletRequest servletRequest,
                                      HttpServletResponse servletResponse,
                                      @RequestBody(required = false) Map<String, Object> requestBody) {
-        initContextAppId(servletRequest);
-        var httpReq = buildHttpRequest(servletRequest);
-        var httpResp = new HttpResponseImpl();
-        var r =  Result.success(apiAdapter.handlePost(
-                servletRequest.getRequestURI(),
-                Objects.requireNonNullElse(requestBody, Map.of()),
-                httpReq,
-                httpResp
-        ));
-        writeHttpResponse(httpResp, servletResponse);
-        return r;
+        try {
+            ContextUtil.setWaitForSearchSync(true);
+            initContextAppId(servletRequest);
+            var httpReq = buildHttpRequest(servletRequest);
+            var httpResp = new HttpResponseImpl();
+            var r = Result.success(apiAdapter.handlePost(
+                    servletRequest.getRequestURI(),
+                    Objects.requireNonNullElse(requestBody, Map.of()),
+                    httpReq,
+                    httpResp
+            ));
+            writeHttpResponse(httpResp, servletResponse);
+            return r;
+        } finally {
+            ContextUtil.setWaitForSearchSync(false);
+        }
     }
 
     @DeleteMapping("/api/**")

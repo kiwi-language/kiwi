@@ -92,7 +92,7 @@ public class CompilationTask {
             }
             for (File file : files) {
                 log.setSourceFile(file.getSourceFile());
-                file.accept(new Check(log));
+                file.accept(new Check(project, log));
             }
             return project;
         }

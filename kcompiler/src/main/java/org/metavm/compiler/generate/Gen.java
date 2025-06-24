@@ -1279,7 +1279,7 @@ public class Gen extends StructuralNodeVisitor {
 
         @Override
         public void store() {
-            code.store(variable.getIndex());
+            variable.store(code, env);
         }
 
         @Override

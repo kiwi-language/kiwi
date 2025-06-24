@@ -1,0 +1,12 @@
+package del
+
+class Inventory(var quantity: int) {
+
+    fn reduceQuantity(amount: int) {
+        require(quantity >= amount, "Insufficient quantity")
+        quantity -= amount
+        if (quantity == 0)
+            delete this
+    }
+
+}

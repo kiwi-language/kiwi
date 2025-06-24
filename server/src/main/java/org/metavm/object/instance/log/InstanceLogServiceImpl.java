@@ -8,7 +8,7 @@ import org.metavm.entity.MetaContextCache;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.persistence.MapperRegistry;
+import org.metavm.object.instance.search.SearchSync;
 import org.metavm.task.SyncSearchTask;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.DebugEnv;
@@ -54,13 +54,17 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     @Transactional
     @Override
     public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext) {
-        try(var context = newContext(appId);
-            var ignored = ContextUtil.getProfiler().enter("createSearchSyncTask")) {
-            context.bind(new SyncSearchTask(
-                    context.allocateRootId(), idsToIndex, idsToRemove  /*defWal != null ? defWal.getId() : null*/));
-//                this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
-            context.finish();
+        if (ContextUtil.isWaitForEsSync()) {
+            try (var context = entityContextFactory.newContext(appId, metaContextCache.get(appId, false))) {
+                SearchSync.sync(idsToIndex, idsToRemove, context);;
             }
+        } else {
+            try (var context = newContext(appId);
+                    var ignored = ContextUtil.getProfiler().enter("createSearchSyncTask")) {
+                context.bind(new SyncSearchTask(context.allocateRootId(), idsToIndex, idsToRemove));
+                context.finish();
+            }
+        }
     }
 
     private void handleMigration(long appId, Collection<Id> instanceIds) {

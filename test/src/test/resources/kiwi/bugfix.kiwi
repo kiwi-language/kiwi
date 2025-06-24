@@ -1,0 +1,317 @@
+// E-commerce Platform
+import org.metavm.api.Index
+
+@Label("币种")
+enum Currency(
+    @Label("汇率")
+    val rate: double
+) {
+    @Label("美元")
+    USD(1.0) {
+        fn label() -> string { return "$" }
+    },
+    @Label("欧元")
+    EUR(0.92) {
+        fn label() -> string { return "€" }
+    },
+    @Label("人民币")
+    CNY(7.25) {
+        fn label() -> string { return "¥" }
+    },
+    ;
+    abstract fn label() -> string
+}
+
+@Label("金额")
+value class Money(
+    @Label("数额")
+    val amount: double,
+    @Label("币种")
+    val currency: Currency
+) {
+    @Summary
+    priv val summary = currency.label() + amount
+
+    fn add(@Label("待加金额") that: Money) -> Money {
+        require(this.currency == that.currency, "币种不匹配，无法相加")
+        return Money(this.amount + that.amount, this.currency)
+    }
+
+    fn sub(@Label("待减金额") that: Money) -> Money {
+        require(this.currency == that.currency, "币种不匹配，无法相减")
+        require(this.amount >= that.amount, "金额不足，无法扣减")
+        return Money(this.amount - that.amount, this.currency)
+    }
+
+    fn times(@Label("乘数") n: int) -> Money {
+        return Money(this.amount * n, this.currency)
+    }
+}
+
+@Label("地址")
+value class Address(
+    @Label("街道")
+    val street: string,
+    @Label("城市")
+    val city: string,
+    @Label("州/省")
+    val state: string,
+    @Label("邮政编码")
+    val zipCode: string,
+    @Label("国家")
+    val country: string
+) {
+    @Summary
+    priv val summary = street + ", " + city + ", " + state + " " + zipCode + ", " + country
+}
+
+@Label("商品类目")
+enum Category {
+    @Label("电子产品")
+    ELECTRONICS,
+    @Label("书籍")
+    BOOKS,
+    @Label("服装")
+    CLOTHING,
+    @Label("家居用品")
+    HOME_GOODS,
+    ;
+}
+
+@Label("订单状态")
+enum OrderStatus {
+    @Label("待付款")
+    PENDING,
+    @Label("处理中")
+    PROCESSING,
+    @Label("已发货")
+    SHIPPED,
+    @Label("已送达")
+    DELIVERED,
+    @Label("已取消")
+    CANCELLED,
+    ;
+}
+
+@Label("顾客")
+class Customer(
+    @Summary
+    @Label("姓名")
+    var name: string,
+    @Label("邮箱")
+    val email: string,
+    @Label("收货地址")
+    var shippingAddress: Address
+) {
+    static val emailIdx = Index<string, Customer>(true, c -> c.email)
+
+    @Label("更新收货地址")
+    fn updateShippingAddress(@Label("新地址") newAddress: Address) {
+        this.shippingAddress = newAddress
+    }
+}
+
+@Label("商品")
+class Product(
+    @Summary
+    @Label("名称")
+    var name: string,
+    @Label("描述")
+    var description: string,
+    @Label("价格")
+    var price: Money,
+    @Label("库存")
+    var stock: int,
+    @Label("类目")
+    var category: Category
+) {
+    static val nameIdx = Index<string, Product>(true, p -> p.name)
+    static val categoryIdx = Index<Category, Product>(false, p -> p.category)
+
+    @Label("扣减库存")
+    fn reduceStock(@Label("数量") quantity: int) {
+        require(stock >= quantity, "库存不足: " + this.name)
+        stock -= quantity
+    }
+
+    @Label("增加库存")
+    fn increaseStock(@Label("数量") quantity: int) {
+        require(quantity > 0, "增加数量必须为正数")
+        stock += quantity
+    }
+}
+
+@Label("订单")
+class Order(
+    @Label("顾客")
+    val customer: Customer,
+    @Label("总价")
+    val totalPrice: Money,
+    @Label("收货地址")
+    val shippingAddress: Address
+) {
+    @Summary
+    priv val summary = "顾客: " + customer.name + " - 总价: " + totalPrice
+
+    @Label("状态")
+    var status = OrderStatus.PENDING
+
+    static val statusIdx = Index<OrderStatus, Order>(false, o -> o.status)
+    static val customerIdx = Index<Customer, Order>(false, o -> o.customer)
+
+    @Label("更新状态")
+    fn updateStatus(@Label("新状态") newStatus: OrderStatus) {
+        require(this.status != OrderStatus.CANCELLED, "无法更改已取消的订单状态")
+        require(this.status != OrderStatus.DELIVERED, "无法更改已送达的订单状态")
+        this.status = newStatus
+    }
+
+    @Label("订单项")
+    class Item(
+        @Label("商品")
+        val product: Product,
+        @Label("数量")
+        val quantity: int,
+        @Label("购买时价格")
+        val priceAtPurchase: Money
+    )
+}
+
+@Label("订单项请求")
+value class OrderItemRequest(
+    @Label("商品")
+    val product: Product,
+    @Label("数量")
+    val quantity: int
+)
+
+@Bean
+@Label("顾客服务")
+class CustomerService {
+
+    @Label("注册顾客")
+    fn registerCustomer(
+        @Label("姓名") name: string,
+        @Label("邮箱") email: string,
+        @Label("街道") street: string,
+        @Label("城市") city: string,
+        @Label("州/省") state: string,
+        @Label("邮政编码") zipCode: string,
+        @Label("国家") country: string
+    ) -> Customer {
+        val existingCustomer = Customer.emailIdx.getFirst(email)
+        require(existingCustomer == null, "该邮箱已被注册")
+        val address = Address(street, city, state, zipCode, country)
+        val customer = Customer(name, email, address)
+        return customer
+    }
+
+    @Label("通过邮箱查找顾客")
+    fn findCustomerByEmail(@Label("邮箱") email: string) -> Customer? {
+        return Customer.emailIdx.getFirst(email)
+    }
+}
+
+@Bean
+@Label("商品服务")
+class ProductService {
+
+    @Label("上架商品")
+    fn createProduct(
+        @Label("名称") name: string,
+        @Label("描述") description: string,
+        @Label("价格") price: Money,
+        @Label("初始库存") stock: int,
+        @Label("类目") category: Category
+    ) -> Product {
+        val existingProduct = Product.nameIdx.getFirst(name)
+        require(existingProduct == null, "同名商品已存在")
+        require(stock >= 0, "初始库存不能为负")
+        return Product(name, description, price, stock, category)
+    }
+
+    @Label("通过名称查找商品")
+    fn findProductByName(@Label("名称") name: string) -> Product? {
+        return Product.nameIdx.getFirst(name)
+    }
+
+    @Label("通过类目查找商品")
+    fn findProductsByCategory(@Label("类目") category: Category) -> Product[] {
+        return Product.categoryIdx.getAll(category)
+    }
+
+    @Label("更新库存")
+    fn updateStock(
+        @Label("商品") product: Product,
+        @Label("新库存") newStock: int
+    ) {
+        require(newStock >= 0, "库存不能为负")
+        product.stock = newStock
+    }
+}
+
+@Bean
+@Label("订单服务")
+class OrderService {
+
+    @Label("下单")
+    fn placeOrder(
+        @Label("顾客") customer: Customer,
+        @Label("订单项") items: OrderItemRequest[]
+    ) -> Order {
+        require(items.length > 0, "订单中必须至少包含一件商品")
+
+        var totalPrice: Money? = null
+        var i = 0
+        while (i < items.length) {
+            val item = items[i]
+            val product = item.product
+            require(item.quantity > 0, "商品数量必须为正数")
+            require(product.stock >= item.quantity, "商品库存不足: " + product.name)
+
+            val itemPrice = product.price.times(item.quantity)
+            if (totalPrice == null) {
+                totalPrice = itemPrice
+            } else {
+                totalPrice = totalPrice!!.add(itemPrice)
+            }
+            i++
+        }
+
+        val order = Order(customer, totalPrice!!, customer.shippingAddress)
+
+        i = 0
+        while (i < items.length) {
+            val item = items[i]
+            val product = item.product
+            product.reduceStock(item.quantity)
+            order.Item(product, item.quantity, product.price)
+            i++
+        }
+
+        return order
+    }
+
+    @Label("更新订单状态")
+    fn updateOrderStatus(@Label("订单") order: Order, @Label("新状态") newStatus: OrderStatus) {
+        order.updateStatus(newStatus)
+    }
+
+    @Label("取消订单")
+    fn cancelOrder(@Label("订单") order: Order) {
+        require(order.status == OrderStatus.PENDING || order.status == OrderStatus.PROCESSING, "只有待处理或处理中的订单可以取消")
+        // Note: Due to platform constraints, cancelling an order does not automatically restock items.
+        // This would require a separate administrative action.
+        order.updateStatus(OrderStatus.CANCELLED)
+    }
+
+    @Label("按顾客查找订单")
+    fn findOrdersByCustomer(@Label("顾客") customer: Customer) -> Order[] {
+        return Order.customerIdx.getAll(customer)
+    }
+
+    @Label("按状态查找订单")
+    fn findOrdersByStatus(@Label("状态") status: OrderStatus) -> Order[] {
+        return Order.statusIdx.getAll(status)
+    }
+}

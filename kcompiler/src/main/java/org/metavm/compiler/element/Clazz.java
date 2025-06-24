@@ -276,12 +276,7 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
     }
 
     public Field findFieldByName(Name name) {
-        var found = Utils.find(fields, f -> f.getName().equals(name));
-        if (found != null) return found;
-        var super_ = getSuper();
-        if (super_ != null)
-            return super_.getClazz().findFieldByName(name);
-        return null;
+        return (Field) getTable().lookupFirst(name, e -> e instanceof Field);
     }
 
     public Field getFieldByName(String name) {

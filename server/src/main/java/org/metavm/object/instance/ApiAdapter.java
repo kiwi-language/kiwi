@@ -43,7 +43,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
 
     public Object handlePost(String uri, Map<String, Object> requestBody, HttpRequest httpRequest, HttpResponse httpResponse) {
         ClassType type;
-        if ((type = truGetClassType(uri)) != null)
+        if ((type = parseGetClassType(uri)) != null)
             return apiService.saveInstance(transformRequestObject(requestBody, type), httpRequest, httpResponse);
         else {
             var path = parsePath(uri);
@@ -54,6 +54,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
                         searchReq.criteria,
                         searchReq.page,
                         searchReq.pageSize,
+                        false,
                         searchReq.newlyCreated
                 );
                 return new SearchResult(
@@ -144,12 +145,15 @@ public class ApiAdapter extends EntityContextFactoryAware {
     }
 
     private Object transformRequestString(String s, Type type) {
-        if (type instanceof StringType)
+        var ut = type.getUnderlyingType();
+        if (ut instanceof StringType)
             return s;
-        if (type instanceof ClassType) {
-            if (type.isEnum())
-                return Map.of("type", type.getTypeDesc(), "name", s);
-            else if (type.isValueType())
+        if (ut instanceof ClassType) {
+            if (s.isEmpty())
+                return null;
+            if (ut.isEnum())
+                return Map.of("type", ut.getTypeDesc(), "name", s);
+            else if (ut.isValueType())
                 throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
             else
                 return Map.of("id", s);
@@ -202,21 +206,31 @@ public class ApiAdapter extends EntityContextFactoryAware {
             if (!f.isStatic() && f.isPublic()) {
                 var value = fields.get(f.getName());
                 var fName = getFieldName(f.getName(), f.getPropertyType());
-                if (value != null)
+                if (value != null) {
                     transformed.put(fName, transformResultValue(value, f.getPropertyType()));
+                    if (isEntityType(f.getPropertyType())) {
+                        var cls = ((ClassType) f.getPropertyType().getUnderlyingType()).getKlass();
+                        if (cls.getTitleField() != null) {
+                            var nameF = f.getName() + NamingUtils.firstCharToUpperCase(cls.getTitleField().getName());
+                            transformed.put(nameF, ((Map) value).get("summary"));
+                        }
+                    }
+                }
             }
         });
         var children = (Map<String, List<Map<String, Object>>>) result.get("children");
         if (children != null) {
             for (ClassType childType : type.getInnerClassTypes()) {
                 var childObjects = children.get(childType.getName());
+                var childFieldName = getChildFieldName(childType.getName());
                 if (childObjects != null) {
-                    var childFieldName = getChildFieldName(childType.getName());
                     transformed.put(
                             childFieldName,
                             Utils.map(childObjects, c -> transformResultObject(c, childType))
                     );
                 }
+                else
+                    transformed.put(childFieldName, List.of());
             }
         }
         return transformed;
@@ -241,19 +255,23 @@ public class ApiAdapter extends EntityContextFactoryAware {
         var fields = new HashMap<String, Object>();
         var constructor = type.getConstructor();
         constructor.getParameters().forEach(param -> {
-            var value = map.get(param.getName());
             var fName = getFieldName(param.getName(), param.getType());
+            var value = map.get(fName);
             if (value != null)
-                fields.put(fName, transformRequestValue(value, param.getType()));
+                fields.put(param.getName(), transformRequestValue(value, param.getType()));
         });
         return fields;
     }
 
     private String getFieldName(String baseName, Type type) {
-        if (type.getUnderlyingType() instanceof ClassType ct && !ct.isValueType() && !ct.isEnum())
+        if (isEntityType(type))
             return baseName + "Id";
         else
             return baseName;
+    }
+
+    private boolean isEntityType(Type type) {
+        return type.getUnderlyingType() instanceof ClassType ct && !ct.isValueType() && !ct.isEnum();
     }
 
     private String getChildFieldName(String childTypeName) {
@@ -264,16 +282,15 @@ public class ApiAdapter extends EntityContextFactoryAware {
         var fields = new HashMap<String, Object>();
         type.forEachField(field -> {
             if (field.isPublic()) {
-                var value = map.get(field.getName());
-                var fName = getFieldName(field.getName(), field.getPropertyType());
+                var value = map.get(getFieldName(field.getName(), field.getPropertyType()));
                 if (value != null)
-                    fields.put(fName, transformRequestValue(value, field.getPropertyType()));
+                    fields.put(field.getName(), transformRequestValue(value, field.getPropertyType()));
             }
         });
         return fields;
     }
 
-    private ClassType truGetClassType(String uri) {
+    private ClassType parseGetClassType(String uri) {
         if (!uri.startsWith("/api/"))
             throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
         var name = NamingUtils.pathToName(uri.substring(5), true);
@@ -287,7 +304,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
         var idx = uri.lastIndexOf('/');
         if (idx == -1 || idx == uri.length() - 1)
             throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-        var clasType = truGetClassType(uri.substring(0, idx));
+        var clasType = parseGetClassType(uri.substring(0, idx));
         if (clasType == null)
             throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
         return new Path(clasType, uri.substring(idx + 1));
