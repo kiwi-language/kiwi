@@ -96,10 +96,16 @@ public class Gen extends StructuralNodeVisitor {
             for (Node member : classDecl.getMembers()) {
                 if (member instanceof FieldDecl fieldDecl) {
                     var field = fieldDecl.getElement();
-                    if (!field.isStatic() && fieldDecl.getInitial() != null) {
-                        code.loadThis(env);
-                        genExpr(fieldDecl.getInitial(), field.getType()).load();
-                        field.store(code, env);
+                    if (!field.isStatic()) {
+                        if (fieldDecl.getInitial() != null) {
+                            code.loadThis(env);
+                            genExpr(fieldDecl.getInitial(), field.getType()).load();
+                            field.store(code, env);
+                        } else if (field.getType().isNullable()) {
+                            code.loadThis(env);
+                            code.ldc(null);
+                            field.store(code, env);
+                        }
                     }
                 }
                 else if (member instanceof Init init)

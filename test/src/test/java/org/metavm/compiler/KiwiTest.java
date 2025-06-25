@@ -721,4 +721,11 @@ public class KiwiTest extends KiwiTestBase {
         assertEquals("Order: Leen-¥100.0", order.get("summary"));
     }
 
+    public void testImplicitNullInitialValue() {
+        deploy("kiwi/field_init/implicit_null_initial_value.kiwi");
+        var id = saveInstance("field_init.Foo", Map.of());
+        var foo = getObject(id);
+        assertNull(foo.get("value"));
+    }
+
 }
