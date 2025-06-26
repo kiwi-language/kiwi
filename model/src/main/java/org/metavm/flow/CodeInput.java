@@ -203,6 +203,7 @@ public class CodeInput extends MvInput  {
             case Bytecodes.LT_CURRENT_FLOW -> LoadCurrentFlowNode.read(this, name);
             case Bytecodes.LT_ANCESTOR -> LoadAncestorTypeNode.read(this, name);
             case Bytecodes.DUP2 -> Dup2Node.read(this, name);
+            case Bytecodes.DELETE -> DeleteNode.read(this, name);
             default -> throw new IllegalStateException("Unrecognized bytecode: " + code);
         };
         node.setOffset(offset);
@@ -225,12 +226,19 @@ public class CodeInput extends MvInput  {
     }
 
     public LabelNode readLabel() {
-        int offset = this.offset + readShort();
+        return getLabel(offset + readShort());
+    }
+
+    public LabelNode getLabel(int offset) {
         return offset2label.computeIfAbsent(offset, o -> new LabelNode("label" + offset2label.size(), null, code));
     }
 
+    public int getOffset() {
+        return offset;
+    }
+
     public void skipPadding() {
-        var n = (offset & 3) + 3 - offset;
+        var n = (offset & ~3) + 3 - offset;
         for (int i = 0; i < n; i++) read();
     }
 

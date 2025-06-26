@@ -8,6 +8,10 @@ import org.metavm.entity.ElementVisitor;
 @Entity
 public class DeleteNode extends Node {
 
+    public static Node read(CodeInput input, String name) {
+        return new DeleteNode(name, input.getPrev(), input.getCode());
+    }
+
     protected DeleteNode(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
         super(name, null, previous, code);
     }
