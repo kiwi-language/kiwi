@@ -297,12 +297,18 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.longInstance(date.getValue()));
             }),
     now(
-            "time now()",
+            "long now()",
+            true,
+            List.of(),
+            (func, args, ctx) -> FlowExecResult.of(Instances.longInstance(System.currentTimeMillis()))
+    ),
+    newDate(
+            "time newDate()",
             true,
             List.of(),
             (func, args, ctx) -> FlowExecResult.of(Instances.timeInstance(System.currentTimeMillis()))
     ),
-    time(
+    dateFromTime(
             "time timeFromMillis(long millis)",
             true,
             List.of(),

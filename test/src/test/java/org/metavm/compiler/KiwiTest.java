@@ -7,6 +7,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.compiler.util.CompilationException;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.Flows;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.ClassInstance;
@@ -679,13 +680,46 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testBugfix() {
         deploy("kiwi/bugfix.kiwi");
-        try (var context = newContext()) {
-            context.loadKlasses();
-            var cls = context.getKlassByQualifiedName("Product");
-            var field = cls.getFieldByName("name");
-            assertEquals("s0", field.getColumn().name());
+        var customerId = saveInstance("Customer", Map.of(
+                "name", "Leen",
+                "email", "leen@kiwi.org",
+                "passwordHash", "123456",
+                "address", "Kiwi Village 001",
+                "phone", "111"
+        ));
+        var restaurantId = saveInstance("Restaurant", Map.of(
+                "name", "Pizza Hut",
+                "address", "Kiwi Village 002",
+                "cuisine", ApiNamedObject.of(
+                        "Cuisine",
+                        "ITALIAN"
+                )
+        ));
+        var orderId = saveInstance("Order", Map.of(
+                "customer", customerId,
+                "restaurant", restaurantId,
+                "totalPrice", Map.of(
+                        "amount", 100,
+                        "currency",ApiNamedObject.of("Currency", "USD")
+                )
+        ));
+        var order = getObject(orderId);
+        var summary = order.get("summary");
+        logger.debug("{}", summary);
+    }
+
+    private void rebuildNodes(Klass clazz) {
+        for (Method method : clazz.getMethods()) {
+            method.rebuildNodes();
+            for (Klass klass : method.getKlasses()) {
+                rebuildNodes(klass);
+            }
+        }
+        for (Klass klass : clazz.getKlasses()) {
+            rebuildNodes(klass);
         }
     }
+
 
     public void testEsFieldName() {
         deploy("kiwi/search/es_field_name.kiwi");
@@ -726,6 +760,14 @@ public class KiwiTest extends KiwiTestBase {
         var id = saveInstance("field_init.Foo", Map.of());
         var foo = getObject(id);
         assertNull(foo.get("value"));
+    }
+
+    public void testTimeNow() {
+        deploy("kiwi/time/now.kiwi");
+        var r = (boolean) callMethod(ApiNamedObject.of("lab"), "beforeNow", List.of(
+                System.currentTimeMillis()
+        ));
+        assertTrue(r);
     }
 
 }

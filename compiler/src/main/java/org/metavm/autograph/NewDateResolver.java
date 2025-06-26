@@ -27,10 +27,10 @@ public class NewDateResolver implements NewResolver {
     public Node resolve(PsiNewExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         var args = requireNonNull(methodCallExpression.getArgumentList()).getExpressions();
         if(args.length == 0)
-            return methodGenerator.createInvokeFunction(StdFunction.now.get().getRef());
+            return methodGenerator.createInvokeFunction(StdFunction.newDate.get().getRef());
         else {
             expressionResolver.resolve(args[0]);
-            return methodGenerator.createInvokeFunction(StdFunction.time.get().getRef());
+            return methodGenerator.createInvokeFunction(StdFunction.dateFromTime.get().getRef());
         }
     }
 }

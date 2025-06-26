@@ -552,7 +552,7 @@ public class MockEnter {
 
     private static void createNowFunc(Package rootPackage) {
         var nowFunc = new FreeFunc(NameTable.instance.get("now"), rootPackage);
-        nowFunc.setRetType(PrimitiveType.TIME);
+        nowFunc.setRetType(PrimitiveType.LONG);
     }
 
     private static void createToStringFunc(Package rootPackage) {

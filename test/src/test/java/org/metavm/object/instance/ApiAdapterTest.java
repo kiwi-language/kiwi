@@ -140,6 +140,23 @@ public class ApiAdapterTest extends TestCase {
         assertEquals(100.0, order.getDouble("totalPrice"), 0.01);
     }
 
+    public void testAutomaticTypeConversion() {
+        deploy("kiwi/shopping2.kiwi");
+        var id = (String) TestUtils.doInTransaction(() -> apiAdapter.handlePost(
+                "/api/product",
+                Map.of(
+                        "name", "Shoes",
+                        "price", "100",
+                        "stock", "100"
+                ),
+                mockHttpRequest(),
+                mockHttpResponse()
+        ));
+        var product = getObject(id);
+        assertEquals(100.0, product.getDouble("price"), 0.01);
+        assertEquals(100, product.get("stock"));
+    }
+
     public void testSaveWithChildren() {
         deploy("kiwi/children.kiwi");
         var id = (String) TestUtils.doInTransaction(() -> apiAdapter.handlePost(

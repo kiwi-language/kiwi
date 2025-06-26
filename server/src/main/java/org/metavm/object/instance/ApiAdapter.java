@@ -158,6 +158,23 @@ public class ApiAdapter extends EntityContextFactoryAware {
             else
                 return Map.of("id", s);
         }
+        else if (ut instanceof PrimitiveType pt) {
+            try {
+                return switch (pt.getKind()) {
+                    case BYTE -> Byte.parseByte(s);
+                    case SHORT -> Short.parseShort(s);
+                    case INT -> Integer.parseInt(s);
+                    case LONG -> Long.parseLong(s);
+                    case FLOAT -> Float.parseFloat(s);
+                    case DOUBLE -> Double.parseDouble(s);
+                    case BOOLEAN -> Boolean.parseBoolean(s);
+                    case CHAR -> s;
+                    default -> throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+                };
+            } catch (NumberFormatException e) {
+                throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+            }
+        }
         else
             return s;
     }
