@@ -1,0 +1,17 @@
+package to_string
+
+enum Currency {
+    CNY,
+    USD,
+    EURO,
+    ;
+}
+
+@Bean
+class Lab {
+
+    fn formatMoney(amount: double, currency: Currency) -> string {
+        return amount + " " + currency
+    }
+
+}

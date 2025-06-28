@@ -1,0 +1,69 @@
+package user
+
+import org.metavm.api.Index
+import util.BusinessException
+import util.ErrorCode
+import util.EmailUtil
+
+class VerificationCode(
+    val receiver: string,
+    val code: string,
+    val expiredAt: long,
+    val clientIP: string
+) {
+
+    static val DEFAULT_EXPIRE_IN_MILLIS = 15 * 60 * 1000
+
+    priv static val MAX_SENT_PER_FIFTEEN_MINUTES = 15
+
+    static val receiverCodeExpiredAtIndex =
+            Index<IndexReceiverCodeExpiredAt, VerificationCode>(false, c -> IndexReceiverCodeExpiredAt(c.receiver, c.code, c.expiredAt))
+
+    static val clientIpCreatedAtIndex =
+            Index<IndexClientIpCreatedAt, VerificationCode>(false, c -> IndexClientIpCreatedAt(c.clientIP, c.createdAt))
+
+    static fn create(receiver: string , code: string, clientIP: string) -> VerificationCode {
+        return VerificationCode(receiver, code, now() + DEFAULT_EXPIRE_IN_MILLIS, clientIP)
+    }
+
+    val createdAt = now()
+
+    static val EMAIL_PTN = "^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$"
+
+    static fn sendVerificationCode(receiver: string, title: string, clientIP: string) {
+        if (!regexMatch(EMAIL_PTN, receiver))
+            throw BusinessException.of(ErrorCode.INVALID_EMAIL_ADDRESS)
+        var code = formatNumber("000000", random(1000000))
+        var count = clientIpCreatedAtIndex.count(
+                IndexClientIpCreatedAt(clientIP, now() - 15 * 60 * 1000),
+                IndexClientIpCreatedAt(clientIP, now())
+        )
+        if (count > MAX_SENT_PER_FIFTEEN_MINUTES)
+            throw BusinessException.of(ErrorCode.VERIFICATION_CODE_SENT_TOO_OFTEN)
+        VerificationCode.create(receiver, code, clientIP)
+        EmailUtil.send(receiver, title, code)
+    }
+
+    static fn checkVerificationCode(receiver: string, code: string) {
+        var valid = receiverCodeExpiredAtIndex.count(
+                IndexReceiverCodeExpiredAt(receiver, code, now()),
+                IndexReceiverCodeExpiredAt(receiver, code, now() + 10 * DEFAULT_EXPIRE_IN_MILLIS)
+        ) > 0L
+        if (!valid)
+            throw BusinessException.of(ErrorCode.INCORRECT_VERIFICATION_CODE)
+    }
+
+    value class IndexReceiverCodeExpiredAt(
+        val receiver: string, 
+        val code: string,
+        val expiredAt: long
+    )
+
+    value class IndexClientIpCreatedAt(
+        clientIP: string, 
+        createdAt: long
+    )
+
+}
+
+

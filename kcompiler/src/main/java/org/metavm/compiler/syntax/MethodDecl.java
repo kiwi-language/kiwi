@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-public final class MethodDecl extends Decl<Method> {
+public final class MethodDecl extends ModifiedDecl<Method> {
     private final List<Modifier> mods;
     private List<Annotation> annotations;
     private final List<TypeVariableDecl> typeParameters;
@@ -87,7 +87,8 @@ public final class MethodDecl extends Decl<Method> {
         if (body != null) action.accept(body);
     }
 
-    public List<Modifier> mods() {
+    @Override
+    public List<Modifier> getMods() {
         return mods;
     }
 

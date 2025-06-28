@@ -223,7 +223,7 @@ public class DDLTest extends TestCase {
             Assert.fail("Should have thrown exception");
         } catch (BusinessException e) {
             Assert.assertEquals(
-                    ResultUtil.formatMessage(ErrorCode.MISSING_FIELD_INITIALIZER, "Product.description"),
+                    ResultUtil.formatMessage(ErrorCode.MISSING_FIELD_MIGRATION_FUNC, "Product.description"),
                     e.getMessage()
             );
         }

@@ -1,322 +1,116 @@
-// Food Delivery
+// Todo List Application
 import org.metavm.api.Index
 
-@Label("金额")
-value class Money(
-    @Label("数额")
-    val amount: double,
-    @Label("币种")
-    val currency: Currency
-) {
+@Label("用户")
+class User(
     @Summary
-    priv val summary = amount + " " + currency.label()
+    @Label("用户名")
+    var username: string,
 
-    fn add(that: Money) -> Money {
-        require(this.currency == that.currency, "Currency mismatch")
-        return Money(this.amount + that.amount, this.currency)
-    }
-
-    fn times(n: int) -> Money {
-        return Money(this.amount * n, this.currency)
-    }
-}
-
-@Label("下单项请求")
-value class OrderItemRequest(
-    @Label("菜单项")
-    val menuItem: Restaurant.MenuItem,
-    @Label("数量")
-    val quantity: int
-)
-
-@Label("币种")
-enum Currency {
-    @Label("美元")
-    USD,
-    @Label("欧元")
-    EUR
-    ;
-
-    fn label() -> string {
-        if (this == USD) {
-            return "$"
-        } else if (this == EUR) {
-            return "€"
-        }
-        return ""
-    }
-}
-
-@Label("菜系")
-enum Cuisine {
-    @Label("意大利菜")
-    ITALIAN,
-    @Label("中餐")
-    CHINESE,
-    @Label("墨西哥菜")
-    MEXICAN,
-    @Label("印度菜")
-    INDIAN,
-    @Label("其他")
-    OTHER
-    ;
-}
-
-@Label("订单状态")
-enum OrderStatus {
-    @Label("已下单")
-    PLACED,
-    @Label("准备中")
-    PREPARING,
-    @Label("配送中")
-    OUT_FOR_DELIVERY,
-    @Label("已送达")
-    DELIVERED,
-    @Label("已取消")
-    CANCELLED
-    ;
-}
-
-@Label("客户")
-class Customer(
-    @Summary
-    @Label("姓名")
-    var name: string,
-    @Label("邮箱")
-    val email: string,
     @Label("密码哈希")
-    var passwordHash: string,
-    @Label("地址")
-    var address: string,
-    @Label("电话")
-    var phone: string
+    var passwordHash: string
 ) {
-    static val emailIdx = Index<string, Customer>(true, c -> c.email)
+
+    static val usernameIdx = Index<string, User>(true, u -> u.username)
+
 }
 
-@Label("司机")
-class Driver(
+@Label("待办事项")
+class Todo(
     @Summary
-    @Label("姓名")
-    val name: string,
-    @Label("电话")
-    val phone: string
-) {
-    static val availableIdx = Index<bool, Driver>(false, d -> d.available)
+    @Label("任务")
+    val task: string,
 
-    @Label("可用状态")
-    var available = true
-}
+    @Label("已完成")
+    var completed: bool,
 
-@Label("餐厅")
-class Restaurant(
-    @Summary
-    @Label("名称")
-    var name: string,
-    @Label("地址")
-    var address: string,
-    @Label("菜系")
-    var cuisine: Cuisine
-) {
-    static val nameIdx = Index<string, Restaurant>(true, r -> r.name)
-    static val cuisineIdx = Index<Cuisine, Restaurant>(false, r -> r.cuisine)
+    @Label("用户")
+    val user: User,
 
-    @Label("添加菜单项")
-    fn addMenuItem(
-        @Label("名称") name: string,
-        @Label("描述") description: string,
-        @Label("价格") price: Money
-    ) -> MenuItem {
-        return this.MenuItem(name, description, price)
-    }
-
-    @Label("菜单项")
-    class MenuItem(
-        @Summary
-        @Label("名称")
-        var name: string,
-        @Label("描述")
-        var description: string,
-        @Label("价格")
-        var price: Money
-    ) {
-        @Label("可用状态")
-        var available = true
-    }
-}
-
-@Label("订单")
-class Order(
-    @Label("客户")
-    val customer: Customer,
-    @Label("餐厅")
-    val restaurant: Restaurant,
-    @Label("总价")
-    var totalPrice: Money,
-    @Label("司机")
-    var driver: Driver?
-) {
-    static val statusIdx = Index<OrderStatus, Order>(false, o -> o.status)
-    static val customerIdx = Index<Customer, Order>(false, o -> o.customer)
-
-    @Summary
-    priv var summary = "Order #" + this + " for " + customer.name
-
-    @Label("订单状态")
-    var status = OrderStatus.PLACED
     @Label("创建时间")
-    val createdAt = now()
+    val createdAt: long
+) {
 
-    @Label("订单项")
-    class OrderItem(
-        @Label("菜单项")
-        val menuItem: Restaurant.MenuItem,
-        @Label("数量")
-        val quantity: int,
-        @Label("单价")
-        val price: Money
-    )
+    static val userIdx = Index<User, Todo>(false, t -> t.user)
+
+    @Label("切换状态")
+    fn toggleStatus() {
+        completed = !completed
+    }
+
 }
 
 @Bean
-@Label("客户服务")
-class CustomerService {
+@Label("用户服务")
+class UserService {
 
     @Label("注册")
-    fn register(
-        @Label("姓名") name: string,
-        @Label("邮箱") email: string,
-        @Label("密码哈希") passwordHash: string,
-        @Label("地址") address: string,
-        @Label("电话") phone: string
-    ) -> Customer {
-        require(Customer.emailIdx.getFirst(email) == null, "Email is already taken")
-        return Customer(name, email, passwordHash, address, phone)
+    fn register(@Label("用户名") username: string, @Label("密码哈希") passwordHash: string) -> User {
+        require(User.usernameIdx.getFirst(username) == null, "Username already exists")
+        return new User(username, passwordHash)
     }
 
     @Label("登录")
-    fn login(@Label("邮箱") email: string, @Label("密码哈希") passwordHash: string) -> Customer? {
-        val customer = Customer.emailIdx.getFirst(email)
-        if (customer != null && customer!!.passwordHash == passwordHash) {
-            return customer
+    fn login(@Label("用户名") username: string, @Label("密码哈希") passwordHash: string) -> User? {
+        val user = User.usernameIdx.getFirst(username)
+        if (user == null) {
+            return null
         }
-        return null
-    }
-}
-
-@Bean
-@Label("司机服务")
-class DriverService {
-    @Label("注册司机")
-    fn register(@Label("姓名") name: string, @Label("电话") phone: string) -> Driver {
-        return Driver(name, phone)
-    }
-
-    @Label("查找可用司机")
-    fn findAvailableDriver() -> Driver? {
-        val drivers = Driver.availableIdx.getAll(true)
-        if (drivers.length > 0) {
-            return drivers[0]
+        if (user!!.passwordHash == passwordHash) {
+            return user
         }
         return null
     }
 
-    @Label("更新可用状态")
-    fn setAvailability(@Label("司机") driver: Driver, @Label("是否可用") available: bool) {
-        driver.available = available
-    }
 }
 
 @Bean
-@Label("餐厅服务")
-class RestaurantService {
-    @Label("添加餐厅")
-    fn addRestaurant(
-        @Label("名称") name: string,
-        @Label("地址") address: string,
-        @Label("菜系") cuisine: Cuisine
-    ) -> Restaurant {
-        return Restaurant(name, address, cuisine)
+@Label("待办服务")
+class TodoService {
+
+    @Label("添加待办")
+    fn addTodo(user: User, @Label("任务") task: string) -> Todo {
+        require(task != "", "Task cannot be empty")
+        return new Todo(task, false, user, now())
     }
 
-    @Label("按名称查找")
-    fn findByName(@Label("名称") name: string) -> Restaurant? {
-        return Restaurant.nameIdx.getFirst(name)
+    @Label("切换待办状态")
+    fn toggleTodoStatus(todo: Todo) {
+        todo.toggleStatus()
     }
 
-    @Label("按菜系查找")
-    fn findByCuisine(@Label("菜系") cuisine: Cuisine) -> Restaurant[] {
-        return Restaurant.cuisineIdx.getAll(cuisine)
-    }
-}
-
-@Bean
-@Label("订单服务")
-class OrderService {
-
-    @Label("下单")
-    fn placeOrder(
-        @Label("客户") customer: Customer,
-        @Label("餐厅") restaurant: Restaurant,
-        @Label("订单项") items: OrderItemRequest[]
-    ) -> Order {
-        require(items.length > 0, "Order must have at least one item")
-
-        val currency = items[0].menuItem.price.currency
-        var total = Money(0.0, currency)
-
-        for (itemReq in items) {
-            val menuItem = itemReq.menuItem
-            require(menuItem.available, "Menu item " + menuItem.name + " is not available")
-            require(menuItem.price.currency == currency, "All items must have the same currency")
-            val itemPrice = menuItem.price.times(itemReq.quantity)
-            total = total.add(itemPrice)
-        }
-
-        val order = Order(customer, restaurant, total, null)
-
-        for (itemReq in items) {
-            order.OrderItem(itemReq.menuItem, itemReq.quantity, itemReq.menuItem.price)
-        }
-
-        return order
+    @Label("删除待办")
+    fn deleteTodo(todo: Todo) {
+        delete todo
     }
 
-    @Label("分配司机")
-    fn assignDriver(@Label("订单") order: Order, @Label("司机") driver: Driver) {
-        require(order.status == OrderStatus.PLACED, "Order must be in PLACED state to assign a driver")
-        require(driver.available, "Driver is not available")
-        order.driver = driver
-        driver.available = false
-        order.status = OrderStatus.PREPARING
+    @Label("获取用户的所有待办")
+    fn getTodos(user: User) -> Todo[] {
+        return Todo.userIdx.getAll(user)
     }
 
-    @Label("更新订单状态")
-    fn updateStatus(@Label("订单") order: Order, @Label("新状态") newStatus: OrderStatus) {
-        if (order.status == OrderStatus.PREPARING && newStatus == OrderStatus.OUT_FOR_DELIVERY) {
-            require(order.driver != null, "A driver must be assigned before delivery")
-            order.status = newStatus
-        } else if (order.status == OrderStatus.OUT_FOR_DELIVERY && newStatus == OrderStatus.DELIVERED) {
-            order.status = newStatus
-            if (order.driver != null) {
-                order.driver!!.available = true
+    @Label("获取用户未完成的待办")
+    fn getPendingTodos(user: User) -> Todo[] {
+        val allTodos = Todo.userIdx.getAll(user)
+        val pendingTodos = new Todo[]
+        for (todo in allTodos) {
+            if (!todo.completed) {
+                pendingTodos.append(todo)
             }
-        } else {
-             require(false, "Invalid status transition")
         }
+        return pendingTodos
     }
 
-    @Label("取消订单")
-    fn cancelOrder(@Label("订单") order: Order) {
-        require(order.status == OrderStatus.PLACED || order.status == OrderStatus.PREPARING, "Order cannot be cancelled at this stage")
-        order.status = OrderStatus.CANCELLED
-        if (order.driver != null) {
-            order.driver!!.available = true
+    @Label("获取用户已完成的待办")
+    fn getCompletedTodos(user: User) -> Todo[] {
+        val allTodos = Todo.userIdx.getAll(user)
+        val completedTodos = new Todo[]
+        for (todo in allTodos) {
+            if (todo.completed) {
+                completedTodos.append(todo)
+            }
         }
+        return completedTodos
     }
 
-    @Label("查找客户的订单")
-    fn findOrdersByCustomer(@Label("客户") customer: Customer) -> Order[] {
-        return Order.customerIdx.getAll(customer)
-    }
 }

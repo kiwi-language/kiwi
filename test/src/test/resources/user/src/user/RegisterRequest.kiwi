@@ -1,0 +1,8 @@
+package user
+
+value class RegisterRequest(
+    val loginName: string,
+    val name: string,
+    val password: string,
+    val verificationCode: string
+)

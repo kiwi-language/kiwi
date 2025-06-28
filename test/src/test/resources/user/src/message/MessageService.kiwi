@@ -1,0 +1,20 @@
+package message
+
+import user.UserService
+import util.BusinessException
+import util.ErrorCode
+
+@Bean
+class MessageService(
+    priv val userService: UserService
+) {
+
+    fn read(message: Message) {
+        var user = userService.currentUser()
+        if (message.receiver != user)
+            throw BusinessException.of(ErrorCode.ILLEGAL_ACCESS)
+        if (!message.read)
+            message.read = true
+    }
+
+}

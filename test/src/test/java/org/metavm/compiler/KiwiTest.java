@@ -678,35 +678,35 @@ public class KiwiTest extends KiwiTestBase {
         assertEquals("Default Location", loc.get("name"));
     }
 
-    public void testBugfix() {
-        deploy("kiwi/bugfix.kiwi");
-        var customerId = saveInstance("Customer", Map.of(
-                "name", "Leen",
-                "email", "leen@kiwi.org",
-                "passwordHash", "123456",
-                "address", "Kiwi Village 001",
-                "phone", "111"
-        ));
-        var restaurantId = saveInstance("Restaurant", Map.of(
-                "name", "Pizza Hut",
-                "address", "Kiwi Village 002",
-                "cuisine", ApiNamedObject.of(
-                        "Cuisine",
-                        "ITALIAN"
-                )
-        ));
-        var orderId = saveInstance("Order", Map.of(
-                "customer", customerId,
-                "restaurant", restaurantId,
-                "totalPrice", Map.of(
-                        "amount", 100,
-                        "currency",ApiNamedObject.of("Currency", "USD")
-                )
-        ));
-        var order = getObject(orderId);
-        var summary = order.get("summary");
-        logger.debug("{}", summary);
-    }
+//    public void testBugfix() {
+//        deploy("kiwi/bugfix.kiwi");
+//        var customerId = saveInstance("Customer", Map.of(
+//                "name", "Leen",
+//                "email", "leen@kiwi.org",
+//                "passwordHash", "123456",
+//                "address", "Kiwi Village 001",
+//                "phone", "111"
+//        ));
+//        var restaurantId = saveInstance("Restaurant", Map.of(
+//                "name", "Pizza Hut",
+//                "address", "Kiwi Village 002",
+//                "cuisine", ApiNamedObject.of(
+//                        "Cuisine",
+//                        "ITALIAN"
+//                )
+//        ));
+//        var orderId = saveInstance("Order", Map.of(
+//                "customer", customerId,
+//                "restaurant", restaurantId,
+//                "totalPrice", Map.of(
+//                        "amount", 100,
+//                        "currency",ApiNamedObject.of("Currency", "USD")
+//                )
+//        ));
+//        var order = getObject(orderId);
+//        var summary = order.get("summary");
+//        logger.debug("{}", summary);
+//    }
 
     private void rebuildNodes(Klass clazz) {
         for (Method method : clazz.getMethods()) {

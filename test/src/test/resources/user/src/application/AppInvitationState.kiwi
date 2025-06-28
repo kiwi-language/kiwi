@@ -1,0 +1,12 @@
+package application
+
+enum AppInvitationState(
+    val code: int
+) {
+
+    INITIAL(0),
+    ACCEPTED(1),
+    ;
+
+}
+

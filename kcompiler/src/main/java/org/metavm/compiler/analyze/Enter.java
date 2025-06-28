@@ -61,11 +61,11 @@ public class Enter {
             var scope = (ClassScope) currentElement();
             var name = classDecl.isAnonymous() ?
                     Name.from("$" + scope.getClasses().size()) : classDecl.name();
-            var mods = parseModifiers(classDecl.mods());
+            var mods = parseModifiers(classDecl.getMods());
             var clazz = new Clazz(
                     ClassTag.valueOf(classDecl.tag().name()),
                     name,
-                    parseAccess(classDecl.mods()),
+                    parseAccess(classDecl.getMods()),
                     scope
             );
             if (mods.temp)
@@ -109,7 +109,7 @@ public class Enter {
 
         @Override
         public Void visitFieldDecl(FieldDecl fieldDecl) {
-            var mods = parseModifiers(fieldDecl.mods());
+            var mods = parseModifiers(fieldDecl.getMods());
             var field = new Field(
                     fieldDecl.getName(),
                     DeferredType.instance,
@@ -126,7 +126,7 @@ public class Enter {
 
         @Override
         public Void visitMethodDecl(MethodDecl methodDecl) {
-            var mods = parseModifiers(methodDecl.mods());
+            var mods = parseModifiers(methodDecl.getMods());
             var clazz = (Clazz) currentElement();
             var method = new Method(
                     methodDecl.name(),

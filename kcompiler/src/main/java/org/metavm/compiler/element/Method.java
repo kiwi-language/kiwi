@@ -76,6 +76,8 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
     public void invoke(Code code, Env env) {
         if (this == ArrayType.appendMethod)
             code.arrayAdd();
+        else if (this == ArrayType.removeMethod)
+            code.arrayRemove();
         else if (this == ArrayType.intSumMethod) {
             var proj = env.getProject();
             var func = proj.getRootPackage().getFunction(NameTable.instance.sumInt);

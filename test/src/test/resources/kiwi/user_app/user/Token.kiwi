@@ -1,0 +1,8 @@
+package user_app.user
+
+import user_app.application.Application
+
+value class Token(
+    application: Application,
+    token: string
+)

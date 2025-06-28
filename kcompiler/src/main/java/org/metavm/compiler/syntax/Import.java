@@ -33,7 +33,12 @@ public class Import extends Node {
     }
 
     public void resolve(Project project, Log log) {
-        var pkg = project.getPackage(name.x());
+        var pkg = project.findPackage(name.x());
+        if (pkg == null) {
+            elements = List.of();
+            log.error(name.x(), Errors.symbolNotFound);
+            return;
+        }
         var cls = pkg.findClass(name.sel());
         if (cls != null)
             elements = List.of(cls);

@@ -688,6 +688,12 @@ public class Code {
         state.pop(2);
     }
 
+    public void arrayRemove() {
+        code(DELETE_ELEMENT);
+        state.pop(2);
+        state.push(PrimitiveType.INT);
+    }
+
     public void del() {
         code(DELETE);
         state.pop();

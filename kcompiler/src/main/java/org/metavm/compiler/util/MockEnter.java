@@ -62,6 +62,13 @@ public class MockEnter {
         createSumLong(rootPkg);
         createSumFloat(rootPkg);
         createSumDouble(rootPkg);
+        createSecureHashFunc(rootPkg);
+        createSecureRandomFunc(rootPkg);
+        createGetContextFunc(rootPkg);
+        createSetContextFunc(rootPkg);
+        createRandomFunc(rootPkg);
+        createRegexMatchFunc(rootPkg);
+        createFormatNumberFunc(rootPkg);
     }
 
     private static void createInteger(Package rootPkg) {
@@ -664,6 +671,51 @@ public class MockEnter {
         new Param(Name.from("values"), Types.instance.getArrayType(typeVar), func);
         new Param(Name.from("name"), Types.instance.getStringType(), func);
         func.setRetType(Types.instance.getNullableType(typeVar));
+    }
+
+    private static void createSecureHashFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("secureHash"), rootPkg);
+        new Param(Name.from("value"), Types.instance.getStringType(), func);
+        new Param(Name.from("salt"), Types.instance.getNullableType(Types.instance.getStringType()), func);
+        func.setRetType(Types.instance.getStringType());
+    }
+
+    private static void createSecureRandomFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("secureRandom"), rootPkg);
+        new Param(Name.from("length"), PrimitiveType.INT, func);
+        func.setRetType(Types.instance.getStringType());
+    }
+
+    private static void createGetContextFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("getContext"), rootPkg);
+        new Param(Name.from("key"), Types.instance.getStringType(), func);
+        func.setRetType(Types.instance.getNullableAny());
+    }
+
+    private static void createSetContextFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("setContext"), rootPkg);
+        new Param(Name.from("key"), Types.instance.getStringType(), func);
+        new Param(Name.from("value"), PrimitiveType.ANY, func);
+    }
+
+    private static void createRandomFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("random"), rootPkg);
+        new Param(Name.from("bound"), PrimitiveType.LONG, func);
+        func.setRetType(PrimitiveType.LONG);
+    }
+
+    private static void createRegexMatchFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("regexMatch"), rootPkg);
+        new Param(Name.from("pattern"), Types.instance.getStringType(), func);
+        new Param(Name.from("str"), Types.instance.getStringType(), func);
+        func.setRetType(PrimitiveType.BOOL);
+    }
+
+    private static void createFormatNumberFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("formatNumber"), rootPkg);
+        new Param(Name.from("pattern"), Types.instance.getStringType(), func);
+        new Param(Name.from("number"), PrimitiveType.LONG, func);
+        func.setRetType(Types.instance.getStringType());
     }
 
     public static Project enter(List<File> files) {

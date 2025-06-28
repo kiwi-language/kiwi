@@ -26,4 +26,8 @@ public class EnumNative implements NativeBase {
         return instance.getField(StdField.enumOrdinal.get());
     }
 
+    public Value toString(CallContext callContext) {
+        return name(callContext);
+    }
+
 }

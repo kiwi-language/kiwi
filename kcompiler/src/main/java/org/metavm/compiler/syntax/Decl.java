@@ -14,4 +14,5 @@ public abstract class Decl<T extends Element> extends Node {
         element.setNode(this);
         this.element = element;
     }
+
 }

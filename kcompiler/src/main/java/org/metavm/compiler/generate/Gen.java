@@ -37,7 +37,6 @@ public class Gen extends StructuralNodeVisitor {
 
     @Override
     public Void visitFile(File file) {
-        logger.debug("{}", file.getText());
         return super.visitFile(file);
     }
 

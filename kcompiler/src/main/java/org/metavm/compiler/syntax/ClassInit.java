@@ -1,6 +1,7 @@
 package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.Method;
+import org.metavm.compiler.util.List;
 
 import java.util.Objects;
 import java.util.function.Consumer;

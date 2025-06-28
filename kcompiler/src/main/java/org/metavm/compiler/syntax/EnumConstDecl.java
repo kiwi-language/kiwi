@@ -111,4 +111,5 @@ public final class EnumConstDecl extends Decl<EnumConst> {
     public int hashCode() {
         return Objects.hash(annotations, name, arguments, decl, init);
     }
+
 }

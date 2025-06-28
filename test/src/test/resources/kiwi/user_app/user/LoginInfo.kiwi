@@ -1,0 +1,15 @@
+package user_app.user
+
+
+import user_app.application.Application
+
+value class LoginInfo(
+    val application: Application?, 
+    val user:User?
+) {
+
+    static fn failed() -> LoginInfo {
+        return LoginInfo(null, null)
+    }
+
+}

@@ -1,0 +1,28 @@
+package application
+
+import org.metavm.api.Index
+import user.User
+import util.BusinessException
+import util.ErrorCode
+
+class AppInvitation(
+    val application: Application,
+    val user: User,
+    val isAdmin: bool
+) {
+
+    static val appIndex = Index<Application, AppInvitation>(false, i -> i.application)
+
+    var state = AppInvitationState.INITIAL
+
+    fn accept() {
+        if(this.state != AppInvitationState.INITIAL)
+            throw BusinessException.of(ErrorCode.INVITATION_ALREADY_ACCEPTED)
+        this.state = AppInvitationState.ACCEPTED
+    }
+
+    fn getTitle() -> string {
+        return "You are invited to join application " + application.name
+    }
+
+}

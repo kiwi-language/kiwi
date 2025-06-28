@@ -7,6 +7,11 @@ import org.metavm.compiler.element.Project;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.Types;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+import static org.metavm.compiler.syntax.ModifierTag.*;
+
 public class Check extends StructuralNodeVisitor {
 
     private final Log log;
@@ -18,7 +23,17 @@ public class Check extends StructuralNodeVisitor {
     }
 
     @Override
+    public Void visitClassDecl(ClassDecl classDecl) {
+        if (classDecl.getElement().isInner())
+            checkMods(classDecl, INNER_CLASS_ALLOWED_MODS);
+        else
+            checkMods(classDecl, CLASS_ALLOWED_MODS);
+        return super.visitClassDecl(classDecl);
+    }
+
+    @Override
     public Void visitMethodDecl(MethodDecl methodDecl) {
+        checkMods(methodDecl, METHOD_ALLOWED_MODS);
         try (var ignored = env.enterScope(methodDecl, methodDecl.getElement())) {
             return super.visitMethodDecl(methodDecl);
         }
@@ -42,6 +57,7 @@ public class Check extends StructuralNodeVisitor {
 
     @Override
     public Void visitFieldDecl(FieldDecl fieldDecl) {
+        checkMods(fieldDecl, FIELD_ALLOWED_MODS);
         var field = fieldDecl.getElement();
         if (field.getDeclClass().getSummaryField() == field && field.getType() != Types.instance.getStringType())
             log.error(fieldDecl, Errors.summaryFieldMustBeString);
@@ -50,9 +66,35 @@ public class Check extends StructuralNodeVisitor {
 
     @Override
     public Void visitClassParamDecl(ClassParamDecl classParamDecl) {
+        checkMods(classParamDecl, CLASS_PARAM_ALLOWED_MODS);
         var field = classParamDecl.getField();
-        if (field != null && field.getDeclClass().getSummaryField() == field && field.getType() != Types.instance.getStringType())
-            log.error(classParamDecl, Errors.summaryFieldMustBeString);
+        if (field != null) {
+            if (field.getDeclClass().getSummaryField() == field && field.getType() != Types.instance.getStringType())
+                log.error(classParamDecl, Errors.summaryFieldMustBeString);
+        }
         return super.visitClassParamDecl(classParamDecl);
     }
+
+
+    private static final Set<ModifierTag> CLASS_PARAM_ALLOWED_MODS = EnumSet.of(PUB, PROT, PRIV);
+    private static final Set<ModifierTag> FIELD_ALLOWED_MODS = EnumSet.of(PUB, PROT, PRIV, STATIC, DELETED);
+    private static final Set<ModifierTag> CLASS_ALLOWED_MODS = EnumSet.of(
+            PUB, ABSTRACT, VALUE, TEMP
+    );
+
+    private static final Set<ModifierTag> INNER_CLASS_ALLOWED_MODS = EnumSet.of(
+            PUB, PROT, PRIV, ABSTRACT, VALUE, TEMP, STATIC
+    );
+
+    private static final Set<ModifierTag> METHOD_ALLOWED_MODS = EnumSet.of(
+            PUB, PROT, PRIV, ABSTRACT, STATIC
+    );
+
+    private void checkMods(ModifiedDecl<?> node, Set<ModifierTag> allowedMods) {
+        for (Modifier mod : node.getMods()) {
+            if (!allowedMods.contains(mod.tag()))
+                log.error(mod, Errors.modifierNotAllowedHere(mod.tag()));
+        }
+    }
+
 }

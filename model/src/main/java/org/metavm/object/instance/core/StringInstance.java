@@ -29,6 +29,11 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
 
     // <editor-fold defaultstate="collapsed" desc="nativeMethods">
 
+    public Value chatAt(Value index, CallContext callContext) {
+        var idx = ((IntValue) index).value;
+        return Instances.charInstance(value.charAt(idx));
+    }
+
     public Value hashCode(CallContext callContext) {
         return Instances.intInstance(value.hashCode());
     }

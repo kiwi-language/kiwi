@@ -1,0 +1,22 @@
+package util
+
+import org.metavm.api.Index
+
+class EmailUtil {
+
+    static fn send(receiver: string, title: string, content: string) {
+        Email(receiver, title, content)
+    }
+
+}
+
+
+class Email(
+    var receiver,
+    var title,
+    var content
+) {
+
+    static val receiverIdx = Index<string, Email>(false, e -> e.receiver)
+
+}

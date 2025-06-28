@@ -37,4 +37,8 @@ public final class LocalVarDecl extends VariableDecl<LocalVar> {
         return (LocalVarDecl) super.setPos(pos);
     }
 
+    @Override
+    public List<Modifier> getMods() {
+        return List.of();
+    }
 }

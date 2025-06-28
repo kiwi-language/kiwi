@@ -121,7 +121,7 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
         return classes;
     }
 
-    public Clazz getClass(Name name) {
+    public Clazz findClass(Name name) {
         return classes.find(c -> c.name.equals(name));
     }
 

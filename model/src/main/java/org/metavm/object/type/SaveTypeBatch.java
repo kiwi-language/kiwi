@@ -191,7 +191,7 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         for (Field field : newFields) {
             if (Instances.findFieldInitializer(field, fromEnumKlasses.contains(field.getDeclaringType())) == null
                     && field.getInitializer() == null && Instances.getDefaultValue(field, context) == null)
-                throw new BusinessException(ErrorCode.MISSING_FIELD_INITIALIZER, field.getQualifiedName());
+                throw new BusinessException(ErrorCode.MISSING_FIELD_MIGRATION_FUNC, field.getQualifiedName());
         }
         for (Field field : typeChangedFields) {
             if (Instances.findTypeConverter(field) == null)

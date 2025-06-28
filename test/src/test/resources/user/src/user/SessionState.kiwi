@@ -1,0 +1,10 @@
+package user
+
+enum SessionState {
+
+    ACTIVE(),
+    CLOSED(),
+    ;
+
+}
+

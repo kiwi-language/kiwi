@@ -115,7 +115,7 @@ public final class MethodInst extends ElementBase implements MethodRef, FuncInst
 
     @Override
     public void load(Code code, Env env) {
-        if (method == ArrayType.appendMethod)
+        if (method == ArrayType.appendMethod || method == ArrayType.removeMethod)
             throw new UnsupportedOperationException();
         else if (isStatic())
             code.getStaticMethod(this);

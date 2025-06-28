@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -100,8 +101,9 @@ public class Main {
     }
 
     private void printSourceTag(String name) {
-        var path = String.format("/type/source-tag/%s", name.replace('.', '/'));
-        var tag = CompilerHttpUtils.get(path, new TypeReference<Integer>() {});
+        var tag = CompilerHttpUtils.post("/type/source-tag",
+                Map.of("appId", getAppId(), "name", name),
+                new TypeReference<Integer>() {});
         System.out.println(tag);
     }
 

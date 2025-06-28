@@ -174,6 +174,22 @@ public class DiagTest extends TestCase {
         );
     }
 
+    public void testDeletedInitParam() {
+        compile("""
+                class Foo(
+                    deleted var name: string
+                )
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals(
+                """
+                        dummy.kiwi:2: Modifier 'deleted' is not allowed here
+                                deleted var name: string
+                                ^""",
+                log.getDiags().head().toString()
+        );
+    }
+
     private List<Diag> compile(String text) {
         log.setSourceFile(new DummySourceFile(text));
         var parser = new Parser(

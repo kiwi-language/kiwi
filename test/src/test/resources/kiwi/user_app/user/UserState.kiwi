@@ -1,0 +1,11 @@
+package user_app.user
+
+enum UserState {
+
+    ACTIVE(),
+    INACTIVE(),
+    DETACHED(),
+    ;
+
+}
+

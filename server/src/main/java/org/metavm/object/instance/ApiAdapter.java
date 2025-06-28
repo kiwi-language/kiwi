@@ -25,6 +25,7 @@ import static org.metavm.util.NamingUtils.firstCharsToLowerCase;
 public class ApiAdapter extends EntityContextFactoryAware {
 
     private static final String KEY_ID = "id";
+    private static final String KEY_INCLUDE_CHILDREN = "includeChildren";
     private static final String KEY_PAGE = "page";
     private static final String KEY_PAGE_SIZE = "pageSize";
     private static final String KEY_NEWLY_CHANGED_ID = "newlyChangedId";
@@ -54,7 +55,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
                         searchReq.criteria,
                         searchReq.page,
                         searchReq.pageSize,
-                        false,
+                        "true".equals(requestBody.get(KEY_INCLUDE_CHILDREN)),
                         searchReq.newlyCreated
                 );
                 return new SearchResult(

@@ -47,9 +47,7 @@ public final class Modifier extends Node {
     }
 
     @Override
-    public String toString() {
-        return "Modifier[" +
-                "tag=" + tag + ']';
+    public Modifier setPos(int pos) {
+        return (Modifier) super.setPos(pos);
     }
-
 }

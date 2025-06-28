@@ -1,0 +1,10 @@
+package application
+
+enum ApplicationState {
+
+    ACTIVE(),
+    REMOVING(),
+    ;
+
+}
+

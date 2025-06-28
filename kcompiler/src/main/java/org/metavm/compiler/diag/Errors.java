@@ -1,10 +1,7 @@
 package org.metavm.compiler.diag;
 
 import org.metavm.compiler.element.Clazz;
-import org.metavm.compiler.syntax.Expr;
-import org.metavm.compiler.syntax.Ident;
-import org.metavm.compiler.syntax.Token;
-import org.metavm.compiler.syntax.TokenKind;
+import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.Type;
 import org.metavm.compiler.util.List;
 
@@ -15,6 +12,10 @@ public class Errors {
     public static Error illegalEscChar = create("illegal.esc.char");
 
     public static Error symbolNotFound = create("symbol.not.found");
+
+    public static Error modifierNotAllowedHere(ModifierTag mod) {
+        return create("modifier.not.allowed.here", mod.name().toLowerCase());
+    }
 
     public static Error unexpectedChar(int c) {
         return create("unexpected.char", c);

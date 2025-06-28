@@ -1,0 +1,10 @@
+package user_app.application
+
+import user_app.user.User
+
+value class AppInvitationRequest(
+    val application: Application,
+    val user: User,
+    val isAdmin: bool
+) {
+}

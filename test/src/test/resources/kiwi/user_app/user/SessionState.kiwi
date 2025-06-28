@@ -1,0 +1,10 @@
+package user_app.user
+
+enum SessionState {
+
+    ACTIVE(),
+    CLOSED(),
+    ;
+
+}
+

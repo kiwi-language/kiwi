@@ -2,6 +2,7 @@ package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.Name;
 import org.metavm.compiler.element.TypeVar;
+import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -71,4 +72,5 @@ public class TypeVariableDecl extends Decl<TypeVar>  {
     public TypeVariableDecl setPos(int pos) {
         return (TypeVariableDecl) super.setPos(pos);
     }
+
 }

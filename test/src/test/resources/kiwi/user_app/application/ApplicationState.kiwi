@@ -1,0 +1,10 @@
+package user_app.application
+
+enum ApplicationState {
+
+    ACTIVE(),
+    REMOVING(),
+    ;
+
+}
+

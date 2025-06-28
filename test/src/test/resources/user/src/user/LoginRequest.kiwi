@@ -1,0 +1,9 @@
+package user
+
+value class LoginRequest(
+    val appId: long,
+    val loginName: string,
+    val password: string
+)
+
+

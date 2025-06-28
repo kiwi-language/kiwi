@@ -175,8 +175,9 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
         }
     }
 
-    public Integer getSourceTag(String name) {
-        try (var context = newContext()) {
+    public Integer getSourceTag(long appId, String name) {
+        ensureAppAccess(appId);
+        try (var context = newContext(appId)) {
             var klass = context.findKlassByQualifiedName(name);
             if(klass != null)
                 return klass.getSourceTag();

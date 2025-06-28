@@ -1,0 +1,6 @@
+package user_app.user
+
+class Role(
+    var name: string
+)
+
