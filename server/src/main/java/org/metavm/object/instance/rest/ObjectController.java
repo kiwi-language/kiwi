@@ -65,6 +65,13 @@ public class ObjectController {
         return Result.success(apiService.getInstance(id));
     }
 
+    @PostMapping("/multi-get")
+    public Result<List<Map<String, Object>>> multiGet(HttpServletRequest servletRequest, @RequestBody MultiGetRequest request) {
+        verify(servletRequest);
+        return Result.success(apiService.multiGet(request.ids(), request.excludeChildren(), request.excludeFields()));
+    }
+
+
     @PostMapping("/search")
     public Result<SearchResult> search(HttpServletRequest servletRequest, @RequestBody Map<String, Object> requestBody) {
         verify(servletRequest);

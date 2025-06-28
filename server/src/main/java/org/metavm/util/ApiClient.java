@@ -38,6 +38,13 @@ public class ApiClient {
         return ApiObject.from(apiService.getInstance(id.toString()));
     }
 
+    public List<ApiObject> multiGet(List<Id> ids) {
+        return Utils.map(
+                apiService.multiGet(Utils.map(ids, Id::toString), false, false),
+                ApiObject::from
+        );
+    }
+
     public void delete(Id id) {
         apiService.delete(id.toString());
     }
