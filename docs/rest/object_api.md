@@ -133,12 +133,12 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
 * **`POST /object`**
 * **Request Body:**
 
-   | Field      | Type        | Description                                     |
-   |:-----------|:------------|:------------------------------------------------|
-   | `object`   | JSON Object | [Object Representation](#object-representation) |
+  | Field      | Type        | Description                                     |
+     |:-----------|:------------|:------------------------------------------------|
+  | `object`   | JSON Object | [Object Representation](#object-representation) |
 * **Response Data:**: Saved object's ID (`String`)
 * **Create Example**:
-    * Request
+  * Request
     ```http
     POST /object
     X-App-ID: {app-id}
@@ -165,7 +165,7 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
       }
     }
     ```
-    * Response
+  * Response
     ```json
     {
       "code": 0,
@@ -173,7 +173,7 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
     } 
     ```
 * **Update Example**:
-    * Request
+  * Request
     ```http
     POST /object
     X-App-ID: {app-id}
@@ -202,7 +202,7 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
       }
     }
     ```
-    * Response
+  * Response
     ```json
     {
       "code": 0,
@@ -211,17 +211,17 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
     ```
 
 
-### Retrieve Object
+### Get Object
 * **`GET /object/{id}`**
 * **Response Data**: [Object Representation](#object-representation)
 
 * **Example**:
-    * Request
+  * Request
     ```http
     GET /object/{product-id}
     X-App-ID: {app-id}
     ```
-    * Response
+  * Response
     ```json
     {
       "code": 0,
@@ -246,17 +246,93 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
     }
     ```
 
+### Multi-get Objects
+*   **`POST /object/multi-get`**
+*   **Request Body:**
+
+| Field | Type | Description |
+|:---|:---|:---|
+| `ids` | `string[]` | An array of object IDs to retrieve. |
+| `excludeChildren` | `bool` | Optional. If `true`, the response will exclude child objects. Defaults to `false`. |
+| `excludeFields` | `bool` | Optional. If `true`, the `fields` object will be excluded from the response for each retrieved object. Defaults to `false`. |
+
+*   **Response Data:** A JSON array containing the [Object Representation](#object-representation) for each requested ID. The order of objects in the response array corresponds to the order of IDs in the request body.
+
+* **Example:**
+  * Request
+    ```http
+    POST /object/multi-get
+    X-App-ID: {app-id}
+    Content-Type: application/json
+  
+    {
+      "ids": ["{order-id-1}", "{order-id-2}"]
+    }
+    ```
+  * Response
+    ```json
+    {
+      "code": 0,
+      "data": [
+        {
+          "id": "{order-id-1}",
+          "type": "org.kiwi.demo.Order",
+          "fields": {
+            "price": {
+              "type": "org.kiwi.demo.Money",
+              "fields": { "amount": 14000, "currency": { "type": "org.kiwi.demo.Currency", "name": "CNY" } }
+            },
+            "confirmed": true
+          },
+          "children": {
+            "Item": [{
+              "id": "{item-id-1}",
+              "type": "org.kiwi.demo.Order.Item",
+              "fields": {
+                "product": { "id": "{product-id-1}", "type": "org.kiwi.demo.Product", "summary": "MacBook Pro" },
+                "quantity": 1
+              },
+              "children": {}
+            }]
+          }
+        },
+        {
+          "id": "{order-id-2}",
+          "type": "org.kiwi.demo.Order",
+          "fields": {
+            "price": {
+              "type": "org.kiwi.demo.Money",
+              "fields": { "amount": 800, "currency": { "type": "org.kiwi.demo.Currency", "name": "USD" } }
+            },
+            "confirmed": false
+          },
+          "children": {
+            "Item": [{
+              "id": "{item-id-2}",
+              "type": "org.kiwi.demo.Order.Item",
+              "fields": {
+                "product": { "id": "{product-id-2}", "type": "org.kiwi.demo.Product", "summary": "Magic Mouse" },
+                "quantity": 2
+              },
+              "children": {}
+            }]
+          }
+        }
+      ]
+    }
+    ```
+
 ### Delete Object
 * **`DELETE /object/{id}`**
 * **Response Data**: None
 
 * **Example**:
-    * Request
+  * Request
     ```http
     DELETE /object/{product-id}
     X-App-ID: {app-id}
     ```
-    * Response
+  * Response
     ```json
     {
       "code": 0
@@ -266,9 +342,9 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
 ### Search Objects
 * **`POST /object/search`**
 * **Request Body:**
-  
+
   | Field            | Type          | Description                                                                                                             |
-  |:-----------------|:--------------|:------------------------------------------------------------------------------------------------------------------------|
+    |:-----------------|:--------------|:------------------------------------------------------------------------------------------------------------------------|
   | `type`           | `string`      | Qualified class name                                                                                                    |
   | `criteria`       | JSON object   | Zero or more `public` fields. Numeric fields support range queries (`[min, max]`)                                       |
   | `page`           | `int`         | Page number (default `1`)                                                                                               |
@@ -277,11 +353,11 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
 * **Response Data:**
 
   | Field   | Type               | Description                                                                |
-  |:--------|:-------------------|:---------------------------------------------------------------------------|
+    |:--------|:-------------------|:---------------------------------------------------------------------------|
   | `items` | JSON object array  | Current page items (See [Object Representation](#object-representation))   |
   | `total` | `long`             | Total number of items across all pages                                     |
 * **Example:**
-    * Request
+  * Request
     ```http
     POST /object/search
     X-App-ID: {app-id}
@@ -296,7 +372,7 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
       }
     }
     ```
-    * Response:
+  * Response:
     ```json
     {
       "code": 0,
@@ -330,14 +406,14 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
 *   **Request Body:**
 
     | Field       | Type        | Description                         |
-    |:------------|:------------|:------------------------------------|
+        |:------------|:------------|:------------------------------------|
     | `receiver`  | JSON Object | Target object reference             |
     | `method`    | `string`    | Method name                         |
     | `arguments` | JSON Object | Key-value pairs of method arguments |
 
 *   **Response Data:** Method's return value (if any).
 *   **Example:**
-      * Request
+  * Request
       ```http
       POST /object/invoke
       X-App-ID: {app-id}
@@ -353,7 +429,7 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
         }
       }
       ```
-      * Response:
+  * Response:
       ```json
       { 
         "code": 0 
@@ -371,13 +447,3 @@ A generic wrapper for API responses.
 | `code`    | `int`    | `0` for success, non-zero for failure |
 | `message` | `string` | Error message if `code` is non-zero   | 
 | `data`    | `T`      | The actual response data              |
-
-
-
-
-
-
-
-
-
-

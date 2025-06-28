@@ -188,6 +188,21 @@ public class ApiService extends ApplicationStatusAware {
     }
 
     @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
+    public List<Map<String, Object>> multiGet(List<String> ids, boolean excludeChildren, boolean excludeFields) {
+        ensureApplicationActive();
+        var idList = Utils.map(ids, Id::parse);
+        try (var context = newContext()) {
+            idList.forEach(context::buffer);
+            return Utils.map(idList, id -> formatObject(
+                    (ClassInstance) context.get(id),
+                    true,
+                    !excludeFields,
+                    !excludeChildren
+            ));
+        }
+    }
+
+    @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
     public Object getStatic(String className, String fieldName) {
         ensureApplicationActive();
         try(var context = newContext()) {

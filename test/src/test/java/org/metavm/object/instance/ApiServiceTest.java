@@ -12,6 +12,7 @@ import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,13 +24,15 @@ public class ApiServiceTest extends TestCase {
     private TypeManager typeManager;
     private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
+    private ApiService apiService;
     private EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
-        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache(),
-                new InstanceQueryService(bootResult.instanceSearchService())));
+        apiService = new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache(),
+                new InstanceQueryService(bootResult.instanceSearchService()));
+        apiClient = new ApiClient(apiService);
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
         schedulerAndWorker = bootResult.schedulerAndWorker();
@@ -39,6 +42,7 @@ public class ApiServiceTest extends TestCase {
     @Override
     protected void tearDown() throws Exception {
         apiClient = null;
+        apiService = null;
         schedulerAndWorker = null;
         typeManager = null;
         entityContextFactory = null;
@@ -218,6 +222,27 @@ public class ApiServiceTest extends TestCase {
         delete(id);
         var r = apiClient.search("search.SearchFoo", Map.of(), 1, 20, null);
         assertEquals(0, r.total());
+    }
+
+    public void testMultiGet() {
+        MockUtils.assemble("kiwi/foo.kiwi", typeManager, schedulerAndWorker);
+        var ids = new ArrayList<Id>();
+        for (int i = 0; i < 3; i++) {
+            ids.add(saveInstance("Foo", Map.of("name", "foo" + i)));
+        }
+        var objects = apiClient.multiGet(ids);
+        assertEquals(ids.size(), objects.size());
+        for (int i = 0; i < ids.size(); i++) {
+            var o = objects.get(i);
+            assertEquals(ids.get(i), o.id());
+            assertEquals("foo" + i, o.get("name"));
+        }
+
+        var objects1 = apiService.multiGet(Utils.map(ids, Id::toString),
+                true, true);
+        assertNotNull(objects1.getFirst().get("summary"));
+        assertNull(objects1.getFirst().get("children"));
+        assertNull(objects1.getFirst().get("field"));
     }
 
     private Id saveInstance(String className, Map<String, Object> map) {
