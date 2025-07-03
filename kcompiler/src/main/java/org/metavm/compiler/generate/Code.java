@@ -165,9 +165,19 @@ public class Code {
 
     public void ldc(Object value) {
         code(LOAD_CONSTANT);
-        var l = new LiteralValue(value);
+        var l = new LiteralValue(toStackLiteral(value));
         constant(l);
         state.push(l.getType().toStackType());
+    }
+
+    private Object toStackLiteral(Object value) {
+        return switch (value) {
+            case Byte b -> b.intValue();
+            case Short s -> s.intValue();
+            case Character c -> (int) c;
+            case null -> null;
+            default -> value;
+        };
     }
 
     private void index(int index) {
@@ -688,8 +698,15 @@ public class Code {
         state.pop(2);
     }
 
+    public void arrayRemove() {
+        code(DELETE_ELEMENT);
+        state.pop(2);
+        state.push(PrimitiveType.INT);
+    }
+
     public void del() {
         code(DELETE);
+        state.pop();
     }
 
     public class State {

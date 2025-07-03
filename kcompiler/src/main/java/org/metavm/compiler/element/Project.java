@@ -3,6 +3,7 @@ package org.metavm.compiler.element;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.syntax.*;
 
+import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -50,12 +51,15 @@ public class Project extends ElementBase implements Element {
             throw new ParsingException("Invalid package name " + qualifiedName.getText());
     }
 
-    public Package getPackage(Expr qualifiedName) {
+    public @Nullable Package findPackage(Expr qualifiedName) {
         if (qualifiedName instanceof Ident name)
             return rootPackage.getPackage(name.getName());
-        else if (qualifiedName instanceof SelectorExpr selectorExpr)
-            return getPackage(selectorExpr.x()).getPackage(selectorExpr.sel());
-        else
+        else if (qualifiedName instanceof SelectorExpr selectorExpr) {
+            var pkg = findPackage(selectorExpr.x());
+            if (pkg == null)
+                return null;
+            return pkg.findPackage(selectorExpr.sel());
+        } else
             throw new ParsingException("Invalid package name: " + qualifiedName.getText());
     }
 

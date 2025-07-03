@@ -85,4 +85,9 @@ public class LocalVar extends ElementBase implements Variable {
     public Executable getExecutable() {
         return executable;
     }
+
+    @Override
+    public String toString() {
+        return name.toString();
+    }
 }

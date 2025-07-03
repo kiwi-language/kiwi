@@ -48,7 +48,7 @@ POST http://localhost:8080/platform-user/exit-app
 Accept: application/json
 
 ###
-POST https://metavm.tech/login
+POST https://api.metavm.tech/login
 Accept: application/json
 Content-Type: application/json
 
@@ -59,7 +59,7 @@ Content-Type: application/json
 }
 
 ###
-POST https://metavm.tech/app
+POST https://api.metavm.tech/app
 X-App-ID: 2
 Content-Type: application/json
 
@@ -69,7 +69,7 @@ Content-Type: application/json
 
 
 ###
-POST https://metavm.tech/object/invoke
+POST https://api.metavm.tech/object/invoke
 Accept: application/json
 Content-Type: application/json
 X-App-ID: 1000000010
@@ -86,7 +86,7 @@ X-App-ID: 1000000010
 }
 
 ###
-POST https://metavm.tech/object/search
+POST https://api.metavm.tech/object/search
 Content-Type: application/json
 X-App-ID: 1000000010
 
@@ -97,12 +97,12 @@ X-App-ID: 1000000010
 }
 
 ###
-GET https://metavm.tech/app?page=1&pageSize=5&searchText=root
+GET https://api.metavm.tech/app?page=1&pageSize=5&searchText=root
 X-App-ID: 2
 
 
 ###
-DELETE https://metavm.tech/app/1000005051
+DELETE https://api.metavm.tech/app/1000005051
 X-App-ID: 2
 
 ###
@@ -147,7 +147,7 @@ POST http://localhost:8080/logout
 X-App-ID: 2
 
 ###
-GET https://metavm.tech/app/1000000010
+GET https://api.metavm.tech/app/1000000010
 X-App-ID: 2
 
 ###
@@ -1418,7 +1418,7 @@ X-App-ID: 1000000011
 }
 
 ###
-POST https://metavm.tech/object/invoke
+POST https://api.metavm.tech/object/invoke
 X-App-ID: 1000000010
 Content-Type: application/json
 Accept: */*
@@ -1464,4 +1464,23 @@ Content-Type: application/json
 }
 
 ###
+POST http://localhost:8080/api/product/reduce-stock
+X-App-ID: 1000000010
+Content-Type: application/json
+
+{
+  "productId": "01fcc7d6b90700",
+  "quantity": 1
+}
+
+###
+POST http://localhost:8080/type/source-tag
+Content-Type: application/json
+Cookie: __token_2__=079026ee-80cc-4dbe-95e3-83c795b4dcb4
+X-App-ID: 2
+
+{
+  "appId": 1000013053,
+  "name": "User"
+}
 

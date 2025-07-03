@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import static org.metavm.util.TestConstants.APP_ID;
+
 public class TypeManagerTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(TypeManagerTest.class);
@@ -41,7 +43,7 @@ public class TypeManagerTest extends TestCase {
         apiClient = new ApiClient(new ApiService(entityContextFactory, metaContextCache,
                 new InstanceQueryService(bootResult.instanceSearchService())));
         userId = bootResult.userId();
-        ContextUtil.setAppId(TestConstants.APP_ID);
+        ContextUtil.setAppId(APP_ID);
     }
 
     @Override
@@ -55,7 +57,7 @@ public class TypeManagerTest extends TestCase {
 
     public void testShopping() {
         var typeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
-        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+        try (var context = entityContextFactory.newContext(APP_ID)) {
             var productKlass = context.getKlass(typeIds.productTypeId());
             Assert.assertEquals(2, productKlass.getFields().size());
             var couponStateKlass = context.getKlass(typeIds.couponStateTypeId());
@@ -65,7 +67,7 @@ public class TypeManagerTest extends TestCase {
 
     public void testSynchronizeSearch() {
         TestUtils.doInTransaction(() -> {
-            try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            try(var context = entityContextFactory.newContext(APP_ID)) {
                 var fooKlass = TestUtils.newKlassBuilder("SynchronizeFoo").searchable(true).build();
                 context.bind(fooKlass);
                 context.finish();
@@ -75,7 +77,7 @@ public class TypeManagerTest extends TestCase {
         });
 //        TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, entityContextFactory);
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
-        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+        try (var context = entityContextFactory.newContext(APP_ID)) {
             var k = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance("SynchronizeFoo"));
             Assert.assertNotNull(k);
         }
@@ -85,10 +87,10 @@ public class TypeManagerTest extends TestCase {
         ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
         ContextUtil.setUserId(userId);
         TestUtils.doInTransaction(() ->
-            typeManager.deploy(TestConstants.APP_ID, MockUtils.compile("kiwi/simple_shopping.kiwi"))
+            typeManager.deploy(APP_ID, MockUtils.compile("kiwi/simple_shopping.kiwi"))
         );
         TestUtils.waitForDDLCompleted(schedulerAndWorker);
-        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+        try (var context = entityContextFactory.newContext(APP_ID)) {
             var klasses = context.loadKlasses();
             assertEquals(1, klasses.size());
             assertEquals("Product", klasses.getFirst().getName());
@@ -105,13 +107,13 @@ public class TypeManagerTest extends TestCase {
     public void testChangeStaticFields() {
         MockUtils.assemble("kiwi/static_fields.kiwi", typeManager, schedulerAndWorker);
         TestUtils.doInTransaction(() -> apiClient.callMethod("UpdateStaticFoo", "set", List.of(2)));
-        metaContextCache.invalidate(TestConstants.APP_ID, false);
+        metaContextCache.invalidate(APP_ID, false);
         var value = TestUtils.doInTransaction(() -> apiClient.callMethod("UpdateStaticFoo", "get", List.of()));
         Assert.assertEquals(2, value);
 
         var opt1Id = typeManager.getEnumConstantId("Option", "opt1");
         TestUtils.doInTransaction(() -> apiClient.callMethod(opt1Id, "setValue", List.of(1)));
-        metaContextCache.invalidate(TestConstants.APP_ID, false);
+        metaContextCache.invalidate(APP_ID, false);
         var optValue = TestUtils.doInTransaction(() -> apiClient.callMethod(opt1Id, "getValue", List.of()));
         Assert.assertEquals(1, optValue);
     }
@@ -140,25 +142,27 @@ public class TypeManagerTest extends TestCase {
 //    }
 
     public void testGetSourceTag() {
+        ContextUtil.setUserId(userId);
         TestUtils.doInTransactionWithoutResult(() -> {
-            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            try (var context = entityContextFactory.newContext(APP_ID)) {
                 var klass = TestUtils.newKlassBuilder("Foo").sourceTag(1).build();
                 FieldBuilder.newBuilder("name", klass, Types.getStringType()).sourceTag(1).build();
                 context.bind(klass);
                 context.finish();
             }
         });
-        Assert.assertEquals(Integer.valueOf(1), typeManager.getSourceTag("Foo"));
-        Assert.assertEquals(Integer.valueOf(1), typeManager.getSourceTag("Foo.name"));
+        ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
+        Assert.assertEquals(Integer.valueOf(1), typeManager.getSourceTag(APP_ID, "Foo"));
+        Assert.assertEquals(Integer.valueOf(1), typeManager.getSourceTag(APP_ID, "Foo.name"));
         try {
-            typeManager.getSourceTag("NotExist");
+            typeManager.getSourceTag(APP_ID, "NotExist");
             Assert.fail();
         }
         catch (BusinessException e) {
             Assert.assertSame(ErrorCode.INVALID_ELEMENT_NAME, e.getErrorCode());
         }
         try {
-            typeManager.getSourceTag("Foo.notExist");
+            typeManager.getSourceTag(APP_ID, "Foo.notExist");
             Assert.fail();
         }
         catch (BusinessException e) {
@@ -169,7 +173,7 @@ public class TypeManagerTest extends TestCase {
     public void testEntityRefcount() {
         MockUtils.assemble("kiwi/del/del.kiwi", typeManager, schedulerAndWorker);
         TestUtils.doInTransactionWithoutResult(() -> {
-            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            try (var context = entityContextFactory.newContext(APP_ID)) {
                 var barKlass = context.getKlassByQualifiedName("del.Bar");
                 context.remove(barKlass);
                 context.finish();
@@ -184,7 +188,7 @@ public class TypeManagerTest extends TestCase {
     public void testAppStatusCheck() {
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var platformCtx = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                var app = platformCtx.getEntity(Application.class, PhysicalId.of(TestConstants.APP_ID, 0));
+                var app = platformCtx.getEntity(Application.class, PhysicalId.of(APP_ID, 0));
                 app.deactivate();
                 platformCtx.finish();
             }

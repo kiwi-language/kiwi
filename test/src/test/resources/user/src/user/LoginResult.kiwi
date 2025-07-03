@@ -1,0 +1,6 @@
+package user
+
+value class LoginResult(
+    val token: string?,
+    val user: User
+)

@@ -223,7 +223,7 @@ public class DDLTest extends TestCase {
             Assert.fail("Should have thrown exception");
         } catch (BusinessException e) {
             Assert.assertEquals(
-                    ResultUtil.formatMessage(ErrorCode.MISSING_FIELD_INITIALIZER, "Product.description"),
+                    ResultUtil.formatMessage(ErrorCode.MISSING_FIELD_MIGRATION_FUNC, "Product.description"),
                     e.getMessage()
             );
         }
@@ -821,7 +821,7 @@ public class DDLTest extends TestCase {
         try (var context = newContext()) {
             var klass = context.getKlassByQualifiedName("FooService");
             Assert.assertEquals(BeanKinds.COMPONENT, klass.getAttribute(AttributeNames.BEAN_KIND));
-            Assert.assertEquals(NamingUtils.firstCharToLowerCase(klass.getName()), klass.getAttribute(AttributeNames.BEAN_NAME));
+            Assert.assertEquals(NamingUtils.firstCharsToLowerCase(klass.getName()), klass.getAttribute(AttributeNames.BEAN_NAME));
         }
         Id fooServiceId;
         try(var context = newContext()) {
@@ -879,25 +879,26 @@ public class DDLTest extends TestCase {
         assemble("kiwi/enable_search_before.kiwi");
         var id = saveInstance(className, Map.of("name", "foo"));
         assemble("kiwi/enable_search_after.kiwi");
-        var page = search(className, Map.of("name", "foo"), 1, 20).data();
+        var page = search(className, Map.of("name", "foo"), 1, 20).items();
         Assert.assertEquals(1, page.size());
         Assert.assertEquals(id, page.getFirst().id());
     }
 
     public void testDeleteClass() {
         assemble("kiwi/ddl/delete_nested_class_before.kiwi");
-        try (var context = newContext()) {
-            var klasses = context.loadKlasses();
-            var childKlass = Utils.findRequired(klasses, k -> k.getName().equals("Child"));
-            DebugEnv.id = childKlass.getId();
-            klasses.forEach(k -> logger.debug("Klass {} ID: {}", k.getName(), k.getId()));
-        }
         assemble("kiwi/ddl/delete_nested_class_after.kiwi");
     }
 
     public void testDeleteBeanClass() {
-        assemble("kiwi/ddl/delete_bean_class_before.kiwi");
-        assemble("kiwi/ddl/delete_bean_class_after.kiwi");
+        assemble("kiwi/ddl/rename_field_before.kiwi");
+        var id = saveInstance("Product", Map.of("title", "Shoes"));
+        assemble("kiwi/ddl/rename_field_after.kiwi");
+        var product = apiClient.getObject(id);
+        assertEquals("Shoes", product.get("name"));
+    }
+
+    public void testRenameField() {
+
     }
 
     private void assemble(String fileName) {

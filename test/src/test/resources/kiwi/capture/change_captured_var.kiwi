@@ -1,0 +1,13 @@
+package capture
+
+@Bean
+class Lab {
+
+    fn sum(values: int[]) -> int {
+        var sum = 0
+        values.forEach(i -> sum += i)
+        return sum
+    }
+
+}
+

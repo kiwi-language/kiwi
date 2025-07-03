@@ -62,7 +62,7 @@ public class InstanceQueryService {
 //        var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
         var created = Utils.map(query.createdIds(), instanceRepository::get);
         var filteredCreatedId =
-                Utils.filterAndMap(created, i -> match((ClassInstance) i, searchQuery.types(), condition), Instance::tryGetId);
+                Utils.filterAndMap(created, i -> match((ClassInstance) i, searchQuery), Instance::tryGetId);
         List<Id> ids = Utils.merge(idPage.items(), filteredCreatedId, true);
         ids = Utils.filter(ids, id -> !query.excludedIds().contains(id));
         ids = instanceRepository.filterAlive(ids);
@@ -72,9 +72,9 @@ public class InstanceQueryService {
         return new Page<>(Utils.map(ids, id -> instanceRepository.get(id).getReference()), total);
     }
 
-    private boolean match(ClassInstance instance, Set<String> types, Expression condition) {
-        return types.contains(instance.getInstanceType().toExpression()) &&
-                (condition == null || ((BooleanValue) condition.evaluate(new InstanceEvaluationContext(instance))).isTrue());
+    private boolean match(ClassInstance instance, SearchQuery query) {
+        return query.types().contains(instance.getInstanceType().toExpression()) &&
+                (query.condition() == null || query.condition().evaluate(instance.buildSource()));
     }
 
     public long count(InstanceQuery query, IInstanceContext context) {

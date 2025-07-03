@@ -1,0 +1,24 @@
+package message
+
+import org.metavm.api.Index
+import user.User
+import util.BusinessException
+import util.ErrorCode
+
+class Message(
+    val receiver: User,
+    @Summary 
+    val title: string, 
+    val kind: MessageKind, 
+    val target: any? 
+) {
+
+    static val targetIndex  = Index<any, Message>(false, m -> m.target)
+
+    var read = false
+
+    fn clearTarget() {
+        this.target = null
+    }
+
+}

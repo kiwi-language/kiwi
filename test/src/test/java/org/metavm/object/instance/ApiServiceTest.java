@@ -180,21 +180,21 @@ public class ApiServiceTest extends TestCase {
         var id = saveInstance("search.SearchFoo", Map.of("name", "Foo"));
         var r = apiClient.search("search.SearchFoo", Map.of(), 1, 20, id);
         assertEquals(1, r.total());
-        assertEquals(1, r.data().size());
-        assertEquals(id, r.data().getFirst().id());
+        assertEquals(1, r.items().size());
+        assertEquals(id, r.items().getFirst().id());
 
         TestUtils.waitForEsSync(schedulerAndWorker);
 
         // Ensure search condition is applied properly
         var r1 = apiClient.search("search.SearchFoo", Map.of("name", "Bar"), 1, 20, id);
         assertEquals(0, r1.total());
-        assertEquals(0, r1.data().size());
+        assertEquals(0, r1.items().size());
 
         // Ensure providing newly created ID after document sync doesn't cause problems
         var r2 = apiClient.search("search.SearchFoo", Map.of(), 1, 20, id);
         assertEquals(1, r2.total());
-        assertEquals(1, r2.data().size());
-        assertEquals(id, r2.data().getFirst().id());
+        assertEquals(1, r2.items().size());
+        assertEquals(id, r2.items().getFirst().id());
     }
 
     public void testAppStatusCheck() {

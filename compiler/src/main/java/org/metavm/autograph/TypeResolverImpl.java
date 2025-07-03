@@ -90,6 +90,7 @@ public class TypeResolverImpl implements TypeResolver {
         return type;
     }
 
+    @Override
     public Type resolve(PsiType psiType, ResolutionStage stage) {
         return switch (psiType) {
             case PsiPrimitiveType primitiveType -> resolvePrimitiveType(primitiveType);

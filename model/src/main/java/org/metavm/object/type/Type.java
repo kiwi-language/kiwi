@@ -250,7 +250,7 @@ public abstract class Type implements TypeOrTypeKey, Writable, ValueObject, Elem
     }
 
     public boolean isReference() {
-        return isArray() || isPojo() || (isBinaryNullable() && getUnderlyingType().isReference());
+        return false;
     }
 
     public Type getUnderlyingType() {

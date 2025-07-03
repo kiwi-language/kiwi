@@ -28,13 +28,14 @@ public class TableSwitchNode extends SwitchNode {
     }
 
     public static Node read(CodeInput input, String name) {
+        var base = input.getOffset();
         input.skipPadding();
-        var defaultTarget = input.readLabel();
+        var defaultTarget = input.getLabel(base + input.readFixedInt());
         var low = input.readFixedInt();
         var high = input.readFixedInt();
         var targets = new ArrayList<LabelNode>();
         for (int i = low; i <= high; i++)
-            targets.add(input.readLabel());
+            targets.add(input.getLabel(base + input.readFixedInt()));
         var node = new TableSwitchNode(name, input.getPrev(), input.getCode(), low, high);
         node.setDefaultTarget(defaultTarget);
         node.setTargets(targets);

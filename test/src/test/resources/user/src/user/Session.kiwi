@@ -1,0 +1,32 @@
+package user
+
+import org.metavm.api.Index
+
+class Session(
+    val user: User, 
+    val autoCloseAt: long
+) {
+
+    static val userStateIndex
+            = Index<UserAndState, Session>(false, s -> UserAndState(s.user, s.state))
+
+    static val tokenIndex = Index<string, Session>(true, s -> s.token)
+
+    val token = secureRandom(128)
+    var closedAt: long?
+    var state = SessionState.ACTIVE
+
+
+    fn isActive() -> bool {
+        return state == SessionState.ACTIVE && autoCloseAt > now()
+    }
+
+    fn close() {
+        state = SessionState.CLOSED
+        closedAt = now()
+    }
+
+}
+
+value class UserAndState(user: User, state: SessionState) {
+}

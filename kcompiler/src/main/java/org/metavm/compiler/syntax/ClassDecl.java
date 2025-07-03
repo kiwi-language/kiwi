@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
-public final class ClassDecl extends Decl<Clazz> {
+public final class ClassDecl extends ModifiedDecl<Clazz> {
     private final ClassTag tag;
     private final List<Modifier> mods;
     private final List<Annotation> annotations;
@@ -129,7 +129,8 @@ public final class ClassDecl extends Decl<Clazz> {
         return tag;
     }
 
-    public List<Modifier> mods() {
+    @Override
+    public List<Modifier> getMods() {
         return mods;
     }
 

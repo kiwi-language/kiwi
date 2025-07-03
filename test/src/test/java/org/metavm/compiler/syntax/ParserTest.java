@@ -234,7 +234,7 @@ public class ParserTest extends TestCase {
                                         Name.from("op1"),
                                         List.of(),
                                         ClassDeclBuilder.builder(NameTable.instance.empty)
-                                                .addExtend(new Extend(new ClassTypeNode(Ident.from("Option"))))
+                                                .addExtend(new Extend(new Call(Ident.from("Option"), List.of())))
                                                 .build()
                                 )
                         ))
@@ -254,8 +254,8 @@ public class ParserTest extends TestCase {
                 new ClassDecl(
                         ClassTag.CLASS, List.of(), List.of(), Name.from("Derived"), null,
                         List.of(
-                                new Extend(new ClassTypeNode(Ident.from("Base")), List.of(new Literal(1))),
-                                new Extend(new ClassTypeNode(Ident.from("Speak")))
+                                new Extend(new Call(Ident.from("Base"), List.of(new Literal(1)))),
+                                new Extend(Ident.from("Speak"))
                         ),
                         List.of(), List.of(), List.of(), List.of()
                 ),
@@ -1076,7 +1076,7 @@ public class ParserTest extends TestCase {
         assertEquals(
                 new AnonClassExpr(
                         ClassDeclBuilder.builder(NameTable.instance.empty)
-                                .addExtend(new Extend(new ClassTypeNode(Ident.from("Speak"))))
+                                .addExtend(new Extend(new Call(Ident.from("Speak"), List.of())))
                                 .build()
                 ),
                 expr("new Speak() {}")

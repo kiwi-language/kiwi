@@ -7,6 +7,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.compiler.util.CompilationException;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.Flows;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.ClassInstance;
@@ -409,8 +410,8 @@ public class KiwiTest extends KiwiTestBase {
                 "status", ApiNamedObject.of("search.Status", "ENABLED")
         ));
         Assert.assertEquals(1, r.total());
-        Assert.assertEquals(id, r.data().getFirst().id());
-        assertNull(r.data().getFirst().getMap().get("children"));
+        Assert.assertEquals(id, r.items().getFirst().id());
+        assertNull(r.items().getFirst().getMap().get("children"));
 
         var id1 = saveInstance(className, Map.of("name", "kiwi", "Child", List.of(
                         Map.of(
@@ -421,7 +422,7 @@ public class KiwiTest extends KiwiTestBase {
         TestUtils.waitForEsSync(schedulerAndWorker);
         var r1 = search(className, Map.of());
         assertEquals(2, r1.total());
-        assertEquals(id1, r1.data().getFirst().id());
+        assertEquals(id1, r1.items().getFirst().id());
     }
 
     public void testBean() {
@@ -595,7 +596,6 @@ public class KiwiTest extends KiwiTestBase {
                 ))
         );
         var childId = getObject(id).getChildren("Child").getFirst().id();
-        logger.debug("Child ID: {}", childId);
         var childService = ApiNamedObject.of("childService");
         var found = callMethod(childService, "findChildByName", List.of("child"));
         assertEquals(childId, found);
@@ -664,6 +664,126 @@ public class KiwiTest extends KiwiTestBase {
         ));
         var parent1 = getObject(id);
         assertEquals(0, parent1.getChildren("Child").size());
+    }
+
+    public void testLineComment() {
+        deploy("kiwi/comment/line_comment.kiwi");
+        var id = saveInstance("comment.Foo", Map.of("name", "foo"));
+        var foo = getObject(id);
+        assertEquals("foo", foo.get("name"));
+    }
+
+    public void testMultiLineComment() {
+        deploy("kiwi/comment/multi_line_comment.kiwi");
+        var id = saveInstance("comment.Foo", Map.of("name", "foo"));
+        var foo = getObject(id);
+        assertEquals("foo", foo.get("name"));
+    }
+
+    public void testLambdaForwardFieldRef() {
+        deploy("kiwi/lambda/forward_field_ref.kiwi");
+    }
+
+    public void testNewIndexNewField() {
+        deploy("kiwi/ddl/new_idx_new_field_before.kiwi");
+        var id = saveInstance("ddl.WorkOrder", Map.of("orderNo", "001"));
+        deploy("kiwi/ddl/new_idx_new_field_after.kiwi");
+        var wd = getObject(id);
+        var locId = wd.getId("targetLocation");
+        var loc = getObject(locId);
+        assertEquals("Default Location", loc.get("name"));
+    }
+
+//    public void testBugfix() {
+//        deploy("kiwi/bugfix.kiwi");
+//        var customerId = saveInstance("Customer", Map.of(
+//                "name", "Leen",
+//                "email", "leen@kiwi.org",
+//                "passwordHash", "123456",
+//                "address", "Kiwi Village 001",
+//                "phone", "111"
+//        ));
+//        var restaurantId = saveInstance("Restaurant", Map.of(
+//                "name", "Pizza Hut",
+//                "address", "Kiwi Village 002",
+//                "cuisine", ApiNamedObject.of(
+//                        "Cuisine",
+//                        "ITALIAN"
+//                )
+//        ));
+//        var orderId = saveInstance("Order", Map.of(
+//                "customer", customerId,
+//                "restaurant", restaurantId,
+//                "totalPrice", Map.of(
+//                        "amount", 100,
+//                        "currency",ApiNamedObject.of("Currency", "USD")
+//                )
+//        ));
+//        var order = getObject(orderId);
+//        var summary = order.get("summary");
+//        logger.debug("{}", summary);
+//    }
+
+    private void rebuildNodes(Klass clazz) {
+        for (Method method : clazz.getMethods()) {
+            method.rebuildNodes();
+            for (Klass klass : method.getKlasses()) {
+                rebuildNodes(klass);
+            }
+        }
+        for (Klass klass : clazz.getKlasses()) {
+            rebuildNodes(klass);
+        }
+    }
+
+
+    public void testEsFieldName() {
+        deploy("kiwi/search/es_field_name.kiwi");
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var cls = context.getKlassByQualifiedName("search.Product");
+            var field = cls.getFieldByName("name");
+            assertEquals("s0", field.getColumn().name());
+        }
+    }
+
+    public void testDeleteInBranch() {
+        deploy("kiwi/del/del_in_branch.kiwi");
+        var id = saveInstance("del.Inventory", Map.of(
+                "quantity", 100
+        ));
+        callMethod(id, "reduceQuantity", List.of(100));
+        try {
+            getObject(id);
+            fail("Instance should have been deleted");
+        } catch (BusinessException e) {
+            assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+    }
+
+    public void testConcatValueObject() {
+        deploy("kiwi/str/concat_value_obj.kiwi");
+        var customerId = saveInstance("str.Customer", Map.of("name", "Leen"));
+        var orderId = saveInstance("str.Order", Map.of("customer", customerId, "totalPrice",
+                Map.of("amount", 100, "currency", ApiNamedObject.of("str.Currency", "CNY"))
+                ));
+        var order = getObject(orderId);
+        assertEquals("Order: Leen-¥100.0", order.get("summary"));
+    }
+
+    public void testImplicitNullInitialValue() {
+        deploy("kiwi/field_init/implicit_null_initial_value.kiwi");
+        var id = saveInstance("field_init.Foo", Map.of());
+        var foo = getObject(id);
+        assertNull(foo.get("value"));
+    }
+
+    public void testTimeNow() {
+        deploy("kiwi/time/now.kiwi");
+        var r = (boolean) callMethod(ApiNamedObject.of("lab"), "beforeNow", List.of(
+                System.currentTimeMillis()
+        ));
+        assertTrue(r);
     }
 
 }

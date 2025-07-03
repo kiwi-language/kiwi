@@ -8,7 +8,7 @@ class AnonymousClassWithArgs {
         }.getValue()
     }
 
-    abstract class Base(priv val value: int) {
+    static abstract class Base(priv val value: int) {
 
         fn getValue() -> int {
             return value

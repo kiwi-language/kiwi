@@ -7,8 +7,9 @@ import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.ValueHolder;
 import org.metavm.entity.natives.ValueHolderOwner;
 import org.metavm.flow.Method;
+import org.metavm.flow.Parameter;
+import org.metavm.object.type.Types;
 import org.metavm.util.BiUnion;
-import org.metavm.util.Utils;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -64,11 +65,20 @@ public enum StdMethod implements ValueHolderOwner<Method> {
 
     public void init(DefContext defContext, boolean local) {
         var klass = defContext.getKlass(javaClass);
-        var method = klass.getMethodByNameAndParamTypes(
-                methodName,
-                Utils.map(parameterTypes, defContext::getNullableType)
-        );
-        if(local)
+        var method = klass.getMethod(m -> {
+            if (m.getName().equals(methodName) && m.getParameters().size() == parameterTypes.size()) {
+                var it = parameterTypes.iterator();
+                for (Parameter parameter : m.getParameters()) {
+                    var pt = defContext.getType(it.next());
+                    if (!parameter.getType().equals(pt) && !parameter.getType().equals(Types.getNullableType(pt)))
+                        return false;
+                }
+                return true;
+            }
+            else
+                return false;
+        });
+        if (local)
             setLocal(method);
         else
             set(method);

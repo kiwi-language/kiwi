@@ -19,6 +19,7 @@ import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
@@ -128,7 +129,7 @@ public class Declarator extends VisitorBase {
     }
 
     private String getDefaultBeanName(Klass klass) {
-        return NamingUtils.firstCharToLowerCase(klass.getName());
+        return NamingUtils.firstCharsToLowerCase(klass.getName());
     }
 
     @Override
@@ -220,7 +221,7 @@ public class Declarator extends VisitorBase {
     }
 
     private Type resolveParameterType(PsiParameter parameter) {
-        return resolveNullableType(parameter.getType());
+        return resolveType(parameter.getType(), TranspileUtils.isAnnotationPresent(parameter, Nonnull.class));
     }
 
     @Override
@@ -281,6 +282,11 @@ public class Declarator extends VisitorBase {
 
     private Type resolveType(PsiType psiType) {
         return typeResolver.resolveTypeOnly(psiType);
+    }
+
+    private Type resolveType(PsiType psiType, boolean nonnull) {
+        return nonnull ? typeResolver.resolve(psiType, ResolutionStage.INIT) :
+                typeResolver.resolveNullable(psiType, ResolutionStage.INIT);
     }
 
     private Type resolveNullableType(PsiType psiType) {

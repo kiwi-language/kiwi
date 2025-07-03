@@ -2,6 +2,7 @@ package org.metavm.compiler.analyze;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.element.Attribute;
+import org.metavm.compiler.element.Field;
 import org.metavm.compiler.element.Name;
 import org.metavm.compiler.element.NameTable;
 import org.metavm.compiler.syntax.*;
@@ -35,7 +36,7 @@ public class Meta extends StructuralNodeVisitor {
     }
 
     private String getBeanName(Name className) {
-        return NamingUtils.firstCharToLowerCase(className.toString());
+        return NamingUtils.firstCharsToLowerCase(className.toString());
     }
 
     @Override
@@ -56,32 +57,37 @@ public class Meta extends StructuralNodeVisitor {
     }
 
     @Override
+    public Void visitClassParamDecl(ClassParamDecl classParamDecl) {
+        var field = classParamDecl.getField();
+        if (field != null) {
+            processField(field, classParamDecl.getAnnotations());
+            classParamDecl.getElement().setAttributes(field.getAttributes());
+        } else {
+            var r = parseAnnotations(classParamDecl.getAnnotations());
+            classParamDecl.getElement().setAttributes(r.attributes);
+        }
+        return super.visitClassParamDecl(classParamDecl);
+    }
+
+    @Override
     public Void visitFieldDecl(FieldDecl fieldDecl) {
-        var r = parseAnnotations(fieldDecl.getAnnotations());
-        var field = fieldDecl.getElement();
+        processField(fieldDecl.getElement(), fieldDecl.getAnnotations());
+        return super.visitFieldDecl(fieldDecl);
+    }
+
+    private void processField(Field field, List<Annotation> annotations) {
+        var r = parseAnnotations(annotations);
         field.setAttributes(r.attributes);
         if (r.summary)
             field.setAsSummary();
-        return super.visitFieldDecl(fieldDecl);
+        if (r.tag != null)
+            field.setSourceTag(r.tag);
     }
 
     @Override
     public Void visitEnumConstDecl(EnumConstDecl enumConstDecl) {
         enumConstDecl.getElement().setAttributes(parseAnnotations(enumConstDecl.getAnnotations()).attributes);
         return super.visitEnumConstDecl(enumConstDecl);
-    }
-
-    @Override
-    public Void visitClassParamDecl(ClassParamDecl classParamDecl) {
-        var r = parseAnnotations(classParamDecl.getAnnotations());
-        var field = classParamDecl.getField();
-        if (field != null) {
-            field.setAttributes(r.attributes);
-            if (r.summary)
-                field.setAsSummary();
-        }
-        classParamDecl.getElement().setAttributes(r.attributes);
-        return super.visitClassParamDecl(classParamDecl);
     }
 
     private ParseResult parseAnnotations(List<Annotation> annotations) {

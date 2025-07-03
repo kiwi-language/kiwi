@@ -1,0 +1,28 @@
+package lambda
+
+import org.metavm.api.Index
+
+class Product(
+    var name: string
+) {
+
+    static val statusIdx = Index<ProductStatus, Product>(false, p -> p.status)
+
+    var status = ProductStatus.INACTIVE
+
+}
+
+enum ProductStatus {
+    ACTIVE,
+    INACTIVE,
+    ;
+}
+
+@Bean
+class ProductService {
+
+    fn getFirstActive() -> Product? {
+        return Product.statusIdx.getFirst(ProductStatus.ACTIVE)
+    }
+
+}

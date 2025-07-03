@@ -519,4 +519,10 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
     public boolean isBean() {
         return getKlass().isBeanClass();
     }
+
+    @Override
+    public boolean isReference() {
+        return !getKlass().isValueKlass();
+    }
+
 }

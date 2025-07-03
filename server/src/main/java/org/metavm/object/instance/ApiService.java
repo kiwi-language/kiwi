@@ -235,7 +235,7 @@ public class ApiService extends ApplicationStatusAware {
         }
     }
 
-    public SearchResult search(String type, Map<String, Object> criteria, int page, int pageSize, @Nullable String newlyCreateId) {
+    public SearchResult search(String type, Map<String, Object> criteria, int page, int pageSize, boolean includeChildren, @Nullable String newlyCreateId) {
         ensureApplicationActive();
         try (var entityContext = newContext()) {
             var klass = entityContext.getKlassByQualifiedName(type);
@@ -269,7 +269,7 @@ public class ApiService extends ApplicationStatusAware {
                     .build();
             var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
             return new SearchResult(
-                    Utils.map(dataPage1.items(), i -> formatValue(i, true, false)),
+                    Utils.map(dataPage1.items(), i -> formatValue(i, true, includeChildren)),
                     dataPage1.total()
             );
         }

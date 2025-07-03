@@ -9,6 +9,7 @@ import org.metavm.manufacturing.utils.ContextKeys;
 import org.metavm.manufacturing.utils.CookieNames;
 
 import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.util.Set;
 
 @Component
@@ -25,7 +26,7 @@ public class VerifyInterceptor implements Interceptor {
     }
 
     @Override
-    public void before(HttpRequest request, HttpResponse response) {
+    public void before(@Nonnull HttpRequest request, @Nonnull HttpResponse response) {
         // TODO auth process temporarily removed caused by object API path refactoring
 //        if(!whiteList.contains(request.getRequestURI())) {
             var token = request.getCookie(CookieNames.TOKEN);
@@ -42,7 +43,7 @@ public class VerifyInterceptor implements Interceptor {
 
     @Nullable
     @Override
-    public Object after(HttpRequest request, HttpResponse response, @Nullable Object result) {
+    public Object after(@Nonnull HttpRequest request, @Nonnull HttpResponse response, @Nullable Object result) {
         return result;
     }
 }

@@ -36,7 +36,7 @@ public class RemoveElementNode extends Node {
 
     @Override
     public int getStackChange() {
-        return -2;
+        return -1;
     }
 
     @Override

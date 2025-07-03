@@ -873,8 +873,14 @@ public class Instances {
                 var ret = Flows.invoke(method.getRef(), clsInst, List.of(), callContext);
                 return toJavaString(requireNonNull(ret));
             }
+            var titleField = clsInst.getInstanceKlass().getTitleField();
+            if (titleField != null && clsInst.isFieldInitialized(titleField)
+                    && clsInst.getField(titleField) instanceof StringReference s)
+                return s.getValue();
+            else if (!instance.isValue())
+                return instance.getStringId();
         }
-        return instance.getInstanceType().getTypeDesc() + "@" + instance.getStringId();
+        return instance.getInstanceType().getTypeDesc(); // + "@" + instance.getStringId();
     }
 
     public static int toInt(@Nullable Value value) {

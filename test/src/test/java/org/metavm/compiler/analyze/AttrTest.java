@@ -4,31 +4,46 @@ import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.compiler.CompilerTestUtils;
-import org.metavm.compiler.syntax.Expr;
-import org.metavm.compiler.syntax.StructuralNodeVisitor;
-import org.metavm.compiler.syntax.TypeNode;
+import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.PrimitiveType;
-import org.metavm.compiler.type.Type;
 import org.metavm.util.TestUtils;
-import org.metavm.util.Utils;
 
 @Slf4j
 public class AttrTest extends TestCase {
 
     public void test() {
-        var source = TestUtils.getResourcePath( "kiwi/Shopping.kiwi");
-        process(source);
+        process( "kiwi/Shopping.kiwi");
+    }
+
+    public void testLambda() {
+        process("kiwi/Lambda.kiwi");
+    }
+
+    public void testDeferredExpr() {
+        process("kiwi/custom_runner_after.kiwi");
+    }
+
+    public void testLivingBeing() {
+        process("kiwi/LivingBeing.kiwi");
     }
 
     private void process(String source) {
-        var file = CompilerTestUtils.parse(source);
+        var file = CompilerTestUtils.parse(TestUtils.getResourcePath(source));
         CompilerTestUtils.attr(file);
         file.accept(new StructuralNodeVisitor() {
 
             @Override
             public Void visitTypeNode(TypeNode typeNode) {
                 return null;
+            }
+
+            @Override
+            public Void visitExtend(Extend extend) {
+                if (extend.getExpr() instanceof Call)
+                    return super.visitExtend(extend);
+                else
+                    return null;
             }
 
             @Override
@@ -41,41 +56,6 @@ public class AttrTest extends TestCase {
                 return super.visitExpr(expr);
             }
         });
-    }
-
-    public void testLambda() {
-        var source = TestUtils.getResourcePath("kiwi/Lambda.kiwi");
-        process(source);
-    }
-
-    public void testDeferredExpr() {
-        var source = TestUtils.getResourcePath("kiwi/custom_runner_after.kiwi");
-        var file = CompilerTestUtils.parse(source);
-
-//        log.debug("{}", file.getText());
-
-        CompilerTestUtils.attr(file);
-        file.accept(new StructuralNodeVisitor() {
-
-            @Override
-            public Void visitTypeNode(TypeNode typeNode) {
-                return null;
-            }
-
-            @Override
-            public Void visitExpr(Expr expr) {
-                Assert.assertTrue(
-                        "Expression '" + expr.getText() +  "' is not resolved",
-                        expr.getElement() instanceof ClassType ||
-                                (expr.getType() != PrimitiveType.NEVER && expr.getType() != DeferredType.instance)
-                );
-                return super.visitExpr(expr);
-            }
-        });
-    }
-
-    public void testLivingBeing() {
-        process(TestUtils.getResourcePath("kiwi/LivingBeing.kiwi"));
     }
 
 }

@@ -22,6 +22,8 @@ public class NameTable {
     public final Name iterator = get("iterator");
     public final Name next = get("next");
     public final Name append = get("append");
+    public final Name contains = get("contains");
+    public final Name remove = get("remove");
     public final Name T = get("T");
     public final Name t = get("t");
     public final Name cinit = get("__cinit__");

@@ -1,0 +1,10 @@
+package time
+
+@Bean
+class Lab {
+
+    fn beforeNow(time: long) -> bool {
+        return now() >= time
+    }
+
+}

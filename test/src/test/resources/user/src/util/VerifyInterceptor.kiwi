@@ -1,0 +1,33 @@
+import org.metavm.api.Interceptor
+
+import org.metavm.api.entity.HttpRequest
+import org.metavm.api.entity.HttpResponse
+import user.UserService
+import user.LoginResult
+
+@Bean
+class VerifyInterceptor(
+    priv val userService: UserService
+) : Interceptor {
+
+    fn before(request: HttpRequest, response: HttpResponse) {
+        var token = request.getCookie("token")
+        if(token == null)
+            return
+        var session = userService.verify(token!!)
+        if(session == null)
+            return
+        setContext("session", session!!)
+    }
+
+    fn after(request: HttpRequest, response: HttpResponse, result: any?) -> any? {
+        if (result is LoginResult) {
+            val r = result as LoginResult
+            print("Received login result. Token: " + r.token)
+            if (r.token != null)
+                response.addCookie("token", r.token!!)
+        }
+        return result
+    }
+
+}

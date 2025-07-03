@@ -1,10 +1,14 @@
 package org.metavm.compiler;
 
+import lombok.SneakyThrows;
 import org.metavm.compiler.analyze.*;
+import org.metavm.compiler.apigen.ApiGenerator;
 import org.metavm.compiler.diag.DefaultLog;
 import org.metavm.compiler.diag.DiagFactory;
 import org.metavm.compiler.diag.DiagSource;
+import org.metavm.compiler.element.ClassScope;
 import org.metavm.compiler.element.Clazz;
+import org.metavm.compiler.element.Package;
 import org.metavm.compiler.element.Project;
 import org.metavm.compiler.file.FileManager;
 import org.metavm.compiler.file.PathSourceFile;
@@ -22,6 +26,7 @@ import org.metavm.util.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collection;
 
@@ -29,10 +34,8 @@ import static java.util.Objects.requireNonNull;
 
 public class CompilationTask {
 
-    private final char[] buf = new char[1024 * 1024];
-
     private final List<Path> paths;
-    private final String buildDir;
+    private final Path buildDir;
     private List<File> files = List.nil();
     private final Project project = new Project();
     private final FileManager fileManager = new FileManager();
@@ -44,7 +47,7 @@ public class CompilationTask {
     );
 
 
-    public CompilationTask(Collection<Path> paths, String buildDir) {
+    public CompilationTask(Collection<Path> paths, Path buildDir) {
         this.paths = List.from(paths);
         this.buildDir = buildDir;
     }
@@ -89,7 +92,7 @@ public class CompilationTask {
             }
             for (File file : files) {
                 log.setSourceFile(file.getSourceFile());
-                file.accept(new Check(log));
+                file.accept(new Check(project, log));
             }
             return project;
         }
@@ -119,17 +122,44 @@ public class CompilationTask {
         }
     }
 
+    public void generateApi() {
+        var classes = List.<Clazz>builder();
+        files.forEach(f -> {
+            for (var classDecl : f.getClassDeclarations()) {
+                classes.append(classDecl.getElement());
+            }
+        });
+        var c = classes.build();
+        var api = new ApiGenerator().generate(c);
+        var apiBuildDir = buildDir.getParent().resolve("apigen");
+        Utils.writeFile(apiBuildDir.resolve("api.ts"), api.getBytes(StandardCharsets.UTF_8));
+    }
+
     public Project getProject() {
         return project;
     }
 
+    @SneakyThrows
     private void writeClassFile(Clazz klass) {
-        var path = buildDir + '/' + requireNonNull(klass.getQualName()).toString().replace('.', '/') + ".mvclass";
+        var path = getClassFilePath(buildDir, klass);
         var bout = new ByteArrayOutputStream();
         var output = new KlassOutput(bout);
         var writer = new ClassFileWriter(output);
         writer.write(klass);
         Utils.writeFile(path, bout.toByteArray());
+    }
+
+    private Path getClassFilePath(Path root, Clazz cls) {
+        return getClassScopePath(root, cls.getScope()).resolve(cls.getName() + ".mvclass");
+    }
+
+    private Path getClassScopePath(Path root, ClassScope scope) {
+        return switch (scope) {
+            case Package pkg -> pkg.isRoot() ? root :
+                getClassScopePath(root, requireNonNull(pkg.getParent())).resolve(pkg.getName().toString());
+            case Clazz parentCls -> getClassFilePath(root, parentCls);
+            default -> throw new IllegalStateException("Cannot get path for " + scope);
+        };
     }
 
     public int getErrorCount() {

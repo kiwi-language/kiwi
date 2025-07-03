@@ -61,16 +61,17 @@ public class Enter {
             var scope = (ClassScope) currentElement();
             var name = classDecl.isAnonymous() ?
                     Name.from("$" + scope.getClasses().size()) : classDecl.name();
-            var mods = parseModifiers(classDecl.mods());
+            var mods = parseModifiers(classDecl.getMods());
             var clazz = new Clazz(
                     ClassTag.valueOf(classDecl.tag().name()),
                     name,
-                    parseAccess(classDecl.mods()),
+                    parseAccess(classDecl.getMods()),
                     scope
             );
             if (mods.temp)
                 clazz.setEphemeral(true);
-            if (mods.static_ || classDecl.tag() == org.metavm.compiler.syntax.ClassTag.ENUM)
+            if (mods.static_ || classDecl.tag() == org.metavm.compiler.syntax.ClassTag.ENUM
+                    || classDecl.tag() == org.metavm.compiler.syntax.ClassTag.VALUE)
                 clazz.setStatic(true);
             if (clazz.isEnum())
                 enterEnumMethods(clazz);
@@ -109,7 +110,7 @@ public class Enter {
 
         @Override
         public Void visitFieldDecl(FieldDecl fieldDecl) {
-            var mods = parseModifiers(fieldDecl.mods());
+            var mods = parseModifiers(fieldDecl.getMods());
             var field = new Field(
                     fieldDecl.getName(),
                     DeferredType.instance,
@@ -126,7 +127,7 @@ public class Enter {
 
         @Override
         public Void visitMethodDecl(MethodDecl methodDecl) {
-            var mods = parseModifiers(methodDecl.mods());
+            var mods = parseModifiers(methodDecl.getMods());
             var clazz = (Clazz) currentElement();
             var method = new Method(
                     methodDecl.name(),
@@ -263,7 +264,7 @@ public class Enter {
             if (tags.contains(ModifierTag.PUB)) return Access.PUBLIC;
             if (tags.contains(ModifierTag.PROT)) return Access.PROTECTED;
             if (tags.contains(ModifierTag.PRIV)) return Access.PRIVATE;
-            return Access.PACKAGE;
+            return Access.PUBLIC;
         }
 
         private void enterElement(Element element) {

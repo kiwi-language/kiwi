@@ -6,6 +6,7 @@ import org.metavm.compiler.util.Traces;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 @Slf4j
@@ -76,6 +77,10 @@ public class ElementTable {
     private void ensureNotFrozen() {
 //        if (frozen)
 //            throw new IllegalStateException("Element table is frozen");
+    }
+
+    public void forEach(Consumer<Element> action) {
+        map.forEach((name, elem) -> action.accept(elem));
     }
 
     @Override

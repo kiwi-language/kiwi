@@ -1,0 +1,26 @@
+package util
+
+class BusinessException(
+    errorCode: ErrorCode,
+    params: any[]
+): Exception(UserUtil.formatMessage(errorCode.message, params)) {
+
+    static fn of(errorCode: ErrorCode) -> BusinessException {
+        return BusinessException(errorCode, new any[])
+    }
+
+    static fn of(errorCode: ErrorCode, param: string) -> BusinessException {
+        val params = new any[]
+        params.append(param)
+        return BusinessException(errorCode, params)
+    }
+
+    static fn of(errorCode: ErrorCode, param1: string, param2: string) -> BusinessException {
+        val params = new any[]
+        params.append(param1)
+        params.append(param2)
+        return BusinessException(errorCode, params)
+    }
+
+
+}

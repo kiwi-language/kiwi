@@ -168,7 +168,7 @@ public class TypeResolver extends StructuralNodeVisitor {
                     classDecl.getImplements().forEach(t -> t.accept(this));
                     var superTypes = List.<ClassType>builder();
                     for (Extend ext : classDecl.getImplements()) {
-                        if (ext.getType().getType() instanceof ClassType st) {
+                        if (ext.getType() instanceof ClassType st) {
                             st.getClazz().getClasses().forEach(scope::add);
                             superTypes.append(st);
                         }
@@ -199,4 +199,9 @@ public class TypeResolver extends StructuralNodeVisitor {
         return super.visitTypeNode(typeNode);
     }
 
+    @Override
+    public Void visitExtend(Extend extend) {
+        extend.resolveType(env);
+        return super.visitExtend(extend);
+    }
 }

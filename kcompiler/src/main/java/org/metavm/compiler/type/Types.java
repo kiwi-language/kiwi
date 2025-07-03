@@ -67,7 +67,11 @@ public class Types {
                 return ErrorType.instance;
             }
             else if (scope instanceof ClassType owner) {
-                var clazz = owner.getClazz().getClass(name);
+                var clazz = owner.getClazz().findClass(name);
+                if (clazz == null) {
+                    env.getLog().error(expr, Errors.symbolNotFound);
+                    return ErrorType.instance;
+                }
                 return clazz.getInst(owner, clazz.getTypeParams());
             }
         } else if (expr instanceof TypeApply typeApply) {
@@ -120,6 +124,10 @@ public class Types {
         var compareTo = new Method("compareTo", Access.PUBLIC, false, false, false, clazz);
         new Param("that", getNullableType(clazz), compareTo);
         compareTo.setRetType(PrimitiveType.INT);
+
+        var charAt = new Method("charAt", Access.PUBLIC, false, false, false, clazz);
+        new Param("index", PrimitiveType.INT, charAt);
+        charAt.setRetType(PrimitiveType.CHAR);
 
         return clazz;
     }

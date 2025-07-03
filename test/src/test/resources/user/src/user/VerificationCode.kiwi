@@ -1,0 +1,76 @@
+package user
+
+import org.metavm.api.Index
+import util.BusinessException
+import util.ErrorCode
+import util.EmailService
+
+class VerificationCode(
+    val receiver: string,
+    val code: string,
+    val expiredAt: long,
+    val clientIP: string
+) {
+
+    static val receiverCodeExpiredAtIndex =
+            Index<IndexReceiverCodeExpiredAt, VerificationCode>(false, c -> IndexReceiverCodeExpiredAt(c.receiver, c.code, c.expiredAt))
+
+    static val clientIpCreatedAtIndex =
+            Index<IndexClientIpCreatedAt, VerificationCode>(false, c -> IndexClientIpCreatedAt(c.clientIP, c.createdAt))
+
+    val createdAt = now()
+
+}
+
+value class IndexReceiverCodeExpiredAt(
+    val receiver: string,
+    val code: string,
+    val expiredAt: long
+)
+
+value class IndexClientIpCreatedAt(
+    clientIP: string,
+    createdAt: long
+)
+
+@Bean
+class VerificationCodeService(
+    priv val emailService: EmailService
+) {
+
+    static val EMAIL_PTN = "^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$"
+
+    static val DEFAULT_EXPIRE_IN_MILLIS = 15 * 60 * 1000
+
+    priv static val MAX_SENT_PER_FIFTEEN_MINUTES = 15
+
+    fn create(receiver: string , code: string, clientIP: string) -> VerificationCode {
+        return VerificationCode(receiver, code, now() + DEFAULT_EXPIRE_IN_MILLIS, clientIP)
+    }
+
+    fn sendVerificationCode(receiver: string, title: string, clientIP: string) {
+        if (!regexMatch(EMAIL_PTN, receiver))
+            throw BusinessException.of(ErrorCode.INVALID_EMAIL_ADDRESS)
+        var code = formatNumber("000000", random(1000000))
+        var count = VerificationCode.clientIpCreatedAtIndex.count(
+                IndexClientIpCreatedAt(clientIP, now() - 15 * 60 * 1000),
+                IndexClientIpCreatedAt(clientIP, now())
+        )
+        if (count > MAX_SENT_PER_FIFTEEN_MINUTES)
+            throw BusinessException.of(ErrorCode.VERIFICATION_CODE_SENT_TOO_OFTEN)
+        create(receiver, code, clientIP)
+        emailService.send(receiver, title, code)
+    }
+
+    fn checkVerificationCode(receiver: string, code: string) {
+        var valid = VerificationCode.receiverCodeExpiredAtIndex.count(
+                IndexReceiverCodeExpiredAt(receiver, code, now()),
+                IndexReceiverCodeExpiredAt(receiver, code, now() + 10 * DEFAULT_EXPIRE_IN_MILLIS)
+        ) > 0L
+        if (!valid)
+            throw BusinessException.of(ErrorCode.INCORRECT_VERIFICATION_CODE)
+    }
+
+}
+
+

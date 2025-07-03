@@ -169,11 +169,20 @@ public class Field extends ElementBase implements Member, FieldRef {
         instances = instances.prepend(fieldInst);
     }
 
+    public void setSourceTag(Integer sourceTag) {
+        this.sourceTag = sourceTag;
+    }
+
     public List<Attribute> getAttributes() {
         return attributes;
     }
 
     public void setAttributes(List<Attribute> attributes) {
         this.attributes = attributes;
+    }
+
+    @Override
+    public String toString() {
+        return declaringClass.getTypeText() + "." + name;
     }
 }
