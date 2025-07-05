@@ -54,6 +54,7 @@ public class TypeResolver extends StructuralNodeVisitor {
             file.getPackage().getRoot().getPackages().forEach(scope::add);
             enterPackage(pkg, scope);
             enterPackage(pkg.getRoot().subPackage("java").subPackage("lang"), scope);
+            enterPackage(pkg.getRoot().subPackage("org").subPackage("metavm").subPackage("api"), scope);
             super.visitFile(file);
             pkg = prevPkg;
             return null;

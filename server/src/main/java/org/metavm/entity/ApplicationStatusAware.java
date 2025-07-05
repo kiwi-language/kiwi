@@ -9,8 +9,6 @@ import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Utils;
 
-import java.util.function.Supplier;
-
 public class ApplicationStatusAware extends EntityContextFactoryAware{
     public ApplicationStatusAware(EntityContextFactory entityContextFactory) {
         super(entityContextFactory);
@@ -42,16 +40,6 @@ public class ApplicationStatusAware extends EntityContextFactoryAware{
             var user = platformCtx.getEntity(PlatformUser.class, userId);
             if (app.getOwner() != user && Utils.noneMatch(user.getApplications(), app1 -> app1.getTreeId() == appId))
                 throw new BusinessException(ErrorCode.ILLEGAL_ACCESS);
-        }
-    }
-
-    public <R> R doInApplication(long appId, Supplier<R> action) {
-        ensureAppAccess(appId);
-        try {
-            ContextUtil.setAppId(appId);
-            return action.get();
-        } finally {
-            ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
         }
     }
 

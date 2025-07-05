@@ -406,7 +406,23 @@ public class ApiAdapterTest extends TestCase {
                 "owner", Id.parse(userId)
         ));
         var app = apiAdapter.handleGet("/api/application/" + appId);
-        assertEquals(List.of(userId), app.get("membersIds"));
+        assertEquals(List.of(userId), app.get("memberIds"));
+    }
+
+    public void testShadowedChildren() {
+        deploy("kiwi/blog.kiwi");
+        var blogId = saveInstance("Blog", Map.of(
+                "title", "Kiwi Tutorial",
+                "content", "..."
+        ));
+        var userId = saveInstance("User", Map.of("name", "Leen"));
+        callMethod(Id.parse(blogId), "vote", List.of(Id.parse(userId)));
+        var blog = getObject(blogId);
+        assertEquals(1, blog.get("votes"));
+    }
+
+    private Object callMethod(Object receiver, String methodName, List<Object> args) {
+        return TestUtils.doInTransaction(() -> apiClient.callMethod(receiver, methodName, args));
     }
 
     private void deploy(String source) {

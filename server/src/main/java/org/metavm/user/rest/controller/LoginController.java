@@ -2,6 +2,7 @@ package org.metavm.user.rest.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.metavm.user.rest.dto.LoginWithTokenRequest;
 import org.springframework.web.bind.annotation.*;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Result;
@@ -31,6 +32,14 @@ public class LoginController {
         return Result.success(new LoginInfo(loginResult.token().appId(), loginResult.userId()));
     }
 
+    @PostMapping("/login-with-token")
+    public void loginWithToken(@RequestBody LoginWithTokenRequest request,
+                               HttpServletRequest servletRequest,
+                               HttpServletResponse servletResponse) {
+        Tokens.setToken(servletRequest, servletResponse, Constants.PLATFORM_APP_ID,
+                new Token(Constants.PLATFORM_APP_ID, request.token()));
+    }
+
     @PostMapping("/logout")
     public Result<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         var tokens = Tokens.getAllTokens(request);
@@ -46,7 +55,7 @@ public class LoginController {
         var appId = Long.parseLong(request.getHeader(Headers.X_APP_ID));
         if(appId != -1L) {
             var token = Tokens.getToken(appId, request);
-            if (token != null && loginService.verify(token).isSuccessful())
+            if (token != null && loginService.authenticate(token).isSuccessful())
                 return Result.success(new LoginInfo(ContextUtil.getAppId(), ContextUtil.getUserId().toString()));
         }
         return Result.success(new LoginInfo(-1L, null));

@@ -1484,3 +1484,23 @@ X-App-ID: 2
   "name": "User"
 }
 
+###
+POST http://localhost:8080/platform-user
+Content-Type: application/json
+Cookie: __token_2__=44081589-fc96-4ab5-a722-b31c7359c4e7
+X-App-ID: 2
+
+{
+  "loginName": "leen",
+  "name": "leen",
+  "password": "123456",
+  "roleIds": []
+}
+
+###
+POST http://localhost:8080/login-with-token
+Content-Type: application/json
+
+{
+  "token": "87301570-04ab-4946-aa2d-1fec2f770eaa"
+}

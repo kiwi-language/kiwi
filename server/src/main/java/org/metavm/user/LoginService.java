@@ -74,14 +74,23 @@ public class LoginService extends EntityContextFactoryAware {
             if (!user.getPassword().equals(EncodingUtils.md5(request.password())))
                 token = null;
             else
-                token = directLogin(request.appId(), user, context);
+                token = issueToken(request.appId(), user, context);
             context.bind(new LoginAttempt(context.allocateRootId(), token != null, request.loginName(), clientIP, new Date()));
             context.finish();
             return new LoginResult(token, user.getStringId());
         }
     }
 
-    public Token directLogin(long appId, User user, IInstanceContext context) {
+    @Transactional
+    public Token issueToken(long appId, String userId) {
+        try (var context = newContext(appId)) {
+            var token = issueToken(appId, context.getEntity(User.class, userId), context);
+            context.finish();
+            return token;
+        }
+    }
+
+    public Token issueToken(long appId, User user, IInstanceContext context) {
         var session = new Session(context.allocateRootId(), user, new Date(System.currentTimeMillis() + TOKEN_TTL));
         context.bind(session);
         return new Token(appId, session.getToken());
@@ -102,10 +111,10 @@ public class LoginService extends EntityContextFactoryAware {
     }
 
     @Transactional(readOnly = true)
-    public LoginInfo verify(@NotNull Token token) {
+    public LoginInfo authenticate(@NotNull Token token) {
         var appId = token.appId();
         try (var context = newContext(appId);
-             var ignored = ContextUtil.getProfiler().enter("verifyAndSetContext")) {
+             var ignored = ContextUtil.getProfiler().enter("authenticate")) {
             var session = context.selectFirstByKey(Session.IDX_TOKEN, Instances.stringInstance(token.token()));
             if (session != null && session.isActive()) {
                 ContextUtil.setAppId(appId);

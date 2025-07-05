@@ -20,14 +20,16 @@ import java.util.Set;
 
 @Component
 @Order(4)
-public class VerificationFilter extends OncePerRequestFilter {
+public class AuthenticateFilter extends OncePerRequestFilter {
 
-    public static final Logger logger = LoggerFactory.getLogger(VerificationFilter.class);
+    public static final Logger logger = LoggerFactory.getLogger(AuthenticateFilter.class);
 
     private final LoginService loginService;
 
     public static final Set<String> PASSING_PREFIXES = Set.of(
             "/login",
+            "/login-with-token",
+            "/internal-api",
             "/bootstrap",
             "/system",
             "/lab",
@@ -39,7 +41,7 @@ public class VerificationFilter extends OncePerRequestFilter {
             "/api"
     );
 
-    public VerificationFilter(LoginService loginService) {
+    public AuthenticateFilter(LoginService loginService) {
         this.loginService = loginService;
     }
 
@@ -56,7 +58,7 @@ public class VerificationFilter extends OncePerRequestFilter {
             appId = Utils.tryParseLong(request.getParameter("__app_id__"));
         if (appId != null) {
             var token = Tokens.getToken(appId, request);
-            if (token != null &&  loginService.verify(token).isSuccessful()) {
+            if (token != null &&  loginService.authenticate(token).isSuccessful()) {
                 filterChain.doFilter(request, response);
                 return;
             }

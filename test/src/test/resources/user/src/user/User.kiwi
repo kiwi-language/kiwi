@@ -1,6 +1,5 @@
 package user
 
-import org.metavm.api.Index
 import application.Application
 import util.BusinessException
 import util.ErrorCode

@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -56,7 +58,12 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext) {
         if (ContextUtil.isWaitForEsSync()) {
             try (var context = entityContextFactory.newContext(appId, metaContextCache.get(appId, false))) {
-                SearchSync.sync(idsToIndex, idsToRemove, context);;
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        SearchSync.sync(idsToIndex, idsToRemove, true, context);;
+                    }
+                });
             }
         } else {
             try (var context = newContext(appId);

@@ -1,6 +1,5 @@
 package ddl
 
-import org.metavm.api.Index
 
 class WorkOrder(
     val orderNo: string,

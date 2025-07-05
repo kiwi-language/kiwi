@@ -16,6 +16,7 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.util.Hooks;
+import org.metavm.util.SearchSyncRequest;
 import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 
@@ -70,11 +71,12 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     }
 
     @Override
-    public void bulk(long appId, List<ClassInstance> toIndex, List<Id> toDelete) {
+    public void bulk(SearchSyncRequest request) {
         BulkRequest bulkRequest = new BulkRequest();
-        bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
-        List<IndexRequest> indexRequests = Utils.map(toIndex, instance -> buildIndexRequest(appId, instance));
-        List<DeleteRequest> deleteRequests = Utils.map(toDelete, id -> buildDeleteRequest(appId, id));
+        bulkRequest.setRefreshPolicy(request.waitUtilRefresh() ? WriteRequest.RefreshPolicy.WAIT_UNTIL : WriteRequest.RefreshPolicy.NONE);
+        var appId = request.appId();
+        List<IndexRequest> indexRequests = Utils.map(request.changedInstances(), instance -> buildIndexRequest(appId, instance));
+        List<DeleteRequest> deleteRequests = Utils.map(request.removedInstanceIds(), id -> buildDeleteRequest(appId, id));
         indexRequests.forEach(bulkRequest::add);
         deleteRequests.forEach(bulkRequest::add);
         try {

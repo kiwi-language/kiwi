@@ -7,6 +7,8 @@ import org.metavm.object.type.StringType;
 import org.metavm.util.NamingUtils;
 import org.metavm.util.Utils;
 
+import java.util.stream.Collectors;
+
 public class ApiGenUtils {
 
     public static String getApiClass(Clazz clazz) {
@@ -28,7 +30,8 @@ public class ApiGenUtils {
                     yield apiClsName + "<" + Utils.join(classType.getTypeArguments(), Type::getTypeText) + ">";
             }
             case ArrayType arrayType -> getApiType(arrayType.getElementType()) + "[]";
-            case UnionType unionType -> Utils.join(unionType.alternatives(), ApiGenUtils::getApiType, " | ");
+            case UnionType unionType -> unionType.alternatives().stream()
+                            .map(ApiGenUtils::getApiType).sorted().collect(Collectors.joining(" | "));
             default -> throw new IllegalStateException("Type " + type.getTypeText() + " is not supported in API");
         };
     }

@@ -136,9 +136,11 @@ public class IdentAttr extends StructuralNodeVisitor {
             for (Import imp : file.getImports()) {
                 imp.getElements().forEach(scope::add);
             }
-            file.getPackage().getRoot().getPackages().forEach(scope::add);
-            enterPackage(file.getPackage().getRoot(), scope);
-            enterPackage(file.getPackage().getRoot().subPackage("java").subPackage("lang"), scope);
+            var rootPkg =  file.getPackage().getRoot();
+            rootPkg.getPackages().forEach(scope::add);
+            enterPackage(rootPkg, scope);
+            enterPackage(rootPkg.subPackage("java").subPackage("lang"), scope);
+            enterPackage(rootPkg.subPackage("org").subPackage("metavm").subPackage("api"), scope);
             if (!file.getPackage().isRoot())
                 enterPackage(file.getPackage(), scope);
             return super.visitFile(file);

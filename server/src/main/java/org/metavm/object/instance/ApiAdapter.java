@@ -1,5 +1,7 @@
 package org.metavm.object.instance;
 
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.common.ErrorCode;
@@ -9,10 +11,7 @@ import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.*;
-import org.metavm.util.BusinessException;
-import org.metavm.util.Instances;
-import org.metavm.util.NamingUtils;
-import org.metavm.util.Utils;
+import org.metavm.util.*;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
@@ -22,6 +21,7 @@ import static org.metavm.util.NamingUtils.firstCharsToLowerCase;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Component
+@Slf4j
 public class ApiAdapter extends EntityContextFactoryAware {
 
     private static final String KEY_ID = "id";
@@ -42,11 +42,15 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return (Map<String, Object>) transformResultObject(apiService.getInstance(path.suffix()), path.classType);
     }
 
+    @SneakyThrows
     public Object handlePost(String uri, Map<String, Object> requestBody, HttpRequest httpRequest, HttpResponse httpResponse) {
         ClassType type;
-        if ((type = parseGetClassType(uri)) != null)
-            return apiService.saveInstance(transformRequestObject(requestBody, type), httpRequest, httpResponse);
-        else {
+        if ((type = parseGetClassType(uri)) != null) {
+            var o = transformRequestObject(requestBody, type);
+            return PersistenceUtil.doWithRetries(() ->
+                            apiService.saveInstance(o, httpRequest, httpResponse)
+                    );
+        } else {
             var path = parsePath(uri);
             if (path.suffix.equals("_search")) {
                 var searchReq = buildSearchRequest(requestBody, path.classType);
@@ -66,14 +70,16 @@ public class ApiAdapter extends EntityContextFactoryAware {
                 var methodName = NamingUtils.pathToName(path.suffix);
                 var method = resolveMethod(path.classType, methodName, requestBody);
                 var invokeReq = buildInvokeRequest(requestBody, method);
-                var r = apiService.handleMethodCall(
-                        invokeReq.receiver,
-                        methodName,
-                        invokeReq.arguments,
-                        httpRequest,
-                        httpResponse
-                );
-                return transformResultValue(r, method.getReturnType());
+                return PersistenceUtil.doWithRetries(() -> {
+                    var r = apiService.handleMethodCall(
+                            invokeReq.receiver,
+                            methodName,
+                            invokeReq.arguments,
+                            httpRequest,
+                            httpResponse
+                    );
+                    return transformResultValue(r, method.getReturnType());
+                });
             }
         }
     }
@@ -87,7 +93,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
 
     public void handleDelete(String uri) {
         var path = parsePath(uri);
-        apiService.delete(path.suffix);
+        PersistenceUtil.doWithRetries(() -> apiService.delete(path.suffix));
     }
 
     private record InvokeRequest(
@@ -111,7 +117,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
         }
         var args = new HashMap<String, Object>();
         method.getParameters().forEach(param -> {
-            var arg = requestBody.get(getFieldName(param.getName(), param.getType()));
+            var arg = requestBody.get(transformFieldName(param.getName(), param.getType()));
             if (arg != null)
                 args.put(param.getName(), transformRequestValue(arg, param.getType()));
         });
@@ -223,7 +229,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
         type.forEachField(f -> {
             if (!f.isStatic() && f.isPublic()) {
                 var value = fields.get(f.getName());
-                var fName = getFieldName(f.getName(), f.getPropertyType());
+                var fName = transformFieldName(f.getName(), f.getPropertyType());
                 if (value != null) {
                     transformed.put(fName, transformResultValue(value, f.getPropertyType()));
                     if (isEntityType(f.getPropertyType())) {
@@ -241,14 +247,15 @@ public class ApiAdapter extends EntityContextFactoryAware {
             for (ClassType childType : type.getInnerClassTypes()) {
                 var childObjects = children.get(childType.getName());
                 var childFieldName = getChildFieldName(childType.getName());
-                if (childObjects != null) {
-                    transformed.put(
-                            childFieldName,
-                            Utils.map(childObjects, c -> transformResultObject(c, childType))
-                    );
+                if (!transformed.containsKey(childFieldName)) {
+                    if (childObjects != null) {
+                        transformed.put(
+                                childFieldName,
+                                Utils.map(childObjects, c -> transformResultObject(c, childType))
+                        );
+                    } else
+                        transformed.put(childFieldName, List.of());
                 }
-                else
-                    transformed.put(childFieldName, List.of());
             }
         }
         return transformed;
@@ -273,7 +280,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
         var fields = new HashMap<String, Object>();
         var constructor = type.getConstructor();
         constructor.getParameters().forEach(param -> {
-            var fName = getFieldName(param.getName(), param.getType());
+            var fName = transformFieldName(param.getName(), param.getType());
             var value = map.get(fName);
             if (value != null)
                 fields.put(param.getName(), transformRequestValue(value, param.getType()));
@@ -281,13 +288,13 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return fields;
     }
 
-    private String getFieldName(String baseName, Type type) {
+    private String transformFieldName(String name, Type type) {
         if (isEntityType(type))
-            return baseName + "Id";
+            return name + "Id";
         else if (isEntityArrayType(type))
-            return baseName + "Ids";
+            return InflectUtil.singularize(name) + "Ids";
         else
-            return baseName;
+            return name;
     }
 
     private boolean isEntityType(Type type) {
@@ -299,14 +306,14 @@ public class ApiAdapter extends EntityContextFactoryAware {
     }
 
     private String getChildFieldName(String childTypeName) {
-        return firstCharsToLowerCase(childTypeName) + "s";
+        return InflectUtil.pluralize(firstCharsToLowerCase(childTypeName));
     }
 
     private Map<String, Object> transformRequestObjectFields(Map<String, Object> map, ClassType type) {
         var fields = new HashMap<String, Object>();
         type.forEachField(field -> {
             if (field.isPublic()) {
-                var value = map.get(getFieldName(field.getName(), field.getPropertyType()));
+                var value = map.get(transformFieldName(field.getName(), field.getPropertyType()));
                 if (value != null)
                     fields.put(field.getName(), transformRequestValue(value, field.getPropertyType()));
             }
