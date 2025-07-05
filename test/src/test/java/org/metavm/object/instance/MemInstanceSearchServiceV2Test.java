@@ -9,6 +9,7 @@ import org.metavm.object.instance.search.AndSearchCondition;
 import org.metavm.object.instance.search.MatchSearchCondition;
 import org.metavm.object.instance.search.SearchQuery;
 import org.metavm.util.MockUtils;
+import org.metavm.util.SearchSyncRequest;
 import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
 
@@ -33,7 +34,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
         var fooTypes = MockUtils.createFooTypes(true);
         var foo = MockUtils.createFoo(fooTypes, this::nextRootId);
         var fooType = fooTypes.fooType().getType();
-        memInstanceSearchServiceV2.bulk(TestConstants.APP_ID, List.of(foo), List.of());
+        memInstanceSearchServiceV2.bulk(new SearchSyncRequest(TestConstants.APP_ID, List.of(foo), List.of(), true));
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
                 Set.of(fooType.toExpression()),
@@ -70,7 +71,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
         var livingBeingTypes = MockUtils.createLivingBeingTypes(true);
         var humanType = livingBeingTypes.humanType().getType();
         var human = MockUtils.createHuman(livingBeingTypes, nextRootId());
-        memInstanceSearchServiceV2.bulk(TestConstants.APP_ID, List.of(human), List.of());
+        memInstanceSearchServiceV2.bulk(new SearchSyncRequest(TestConstants.APP_ID, List.of(human), List.of(), true));
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
                 Set.of(humanType.toExpression()),

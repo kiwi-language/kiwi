@@ -140,7 +140,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
                 ContextUtil.enterApp(id, null);
                 try (var ctx = newContext(app.getTreeId())) {
                     var appUser = ctx.selectFirstByKey(User.IDX_PLATFORM_USER_ID, Instances.stringInstance(user.getStringId()));
-                    var token = loginService.directLogin(id, appUser, ctx);
+                    var token = loginService.issueToken(id, appUser, ctx);
                     ctx.finish();
                     return new LoginResult(token, user.getStringId());
                 } finally {
@@ -162,7 +162,6 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     public void joinApplication(PlatformUser platformUser, Application app, IInstanceContext platformContext) {
         platformUser.joinApplication(app);
         if (app.getTreeId() != platformContext.getAppId() && app.getTreeId() != Constants.ROOT_APP_ID) {
-            ContextUtil.enterApp(app.getTreeId(), null);
             try (var context = newContext(app.getTreeId())) {
                 var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, Instances.stringInstance(platformUser.getStringId()));
                 if (user == null) {
@@ -174,8 +173,6 @@ public class PlatformUserManager extends EntityContextFactoryAware {
                     user.setState(UserState.ACTIVE);
                 }
                 context.finish();
-            } finally {
-                ContextUtil.exitApp();
             }
         }
         if (TransactionSynchronizationManager.isSynchronizationActive()

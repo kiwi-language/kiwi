@@ -60,3 +60,13 @@ Authorization: Basic elastic 85263670
 
 
 
+###
+PUT http://localhost:9200/instance/_settings
+Content-Type: application/json
+Authorization: Basic elastic 85263670
+
+{
+  "index": {
+    "refresh_interval": "100ms"
+  }
+}

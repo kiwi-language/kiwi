@@ -39,6 +39,8 @@ public class Application extends org.metavm.entity.Entity {
     public static final SearchField<Application> esState =
             SearchField.create("i0", app -> Instances.intInstance(app.state.code()));
 
+    public static final SearchField<Application> esOwner = SearchField.create("r0", app -> app.owner);
+
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
@@ -208,5 +210,6 @@ public class Application extends org.metavm.entity.Entity {
     protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
         source.put("l0." + esName.getColumn(), esName.getValue(this));
         source.put("l0." + esState.getColumn(), esState.getValue(this));
+        source.put("l0." + esOwner.getColumn(), esOwner.getValue(this));
     }
 }

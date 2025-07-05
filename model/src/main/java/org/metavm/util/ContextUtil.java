@@ -29,6 +29,7 @@ public class ContextUtil {
         private final List<String> finishedContexts = new ArrayList<>();
         private boolean isDDL;
         private boolean waitForEsSync;
+        private boolean debugging;
 
         long nextTmpId() {
             return nextTmpId++;
@@ -139,6 +140,14 @@ public class ContextUtil {
 
     public static void setWaitForSearchSync(boolean waitForEsSync) {
         getContextInfo().waitForEsSync = waitForEsSync;
+    }
+
+    public static void setDebugging(boolean debugging) {
+        getContextInfo().debugging = debugging;
+    }
+
+    public static boolean isDebugging() {
+        return getContextInfo().debugging;
     }
 
     public static boolean isWaitForEsSync() {

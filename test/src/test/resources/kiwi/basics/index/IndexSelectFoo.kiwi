@@ -1,6 +1,5 @@
 package index
 
-import org.metavm.api.Index
 
 class IndexSelectFoo(priv var name: string) {
 

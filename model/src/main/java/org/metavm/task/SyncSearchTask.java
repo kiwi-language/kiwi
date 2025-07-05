@@ -42,7 +42,7 @@ public class SyncSearchTask extends Task {
 
     @Override
     protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
-        SearchSync.sync(changedIds, removedIds, context);
+        SearchSync.sync(changedIds, removedIds, false, context);
         return true;
     }
 

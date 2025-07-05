@@ -8,6 +8,7 @@ import org.metavm.entity.*;
 import org.metavm.message.Message;
 import org.metavm.message.MessageKind;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.persistence.SchemaManager;
@@ -29,7 +30,7 @@ import java.util.Objects;
 import static org.metavm.util.Constants.*;
 
 @Component
-public class ApplicationManager extends EntityContextFactoryAware {
+public class ApplicationManager extends ApplicationStatusAware {
 
     public static final int APP_SECRET_LEN = 32;
 
@@ -60,12 +61,13 @@ public class ApplicationManager extends EntityContextFactoryAware {
         this.schemaManager = schemaManager;
     }
 
-    public Page<ApplicationDTO> list(int page, int pageSize, String searchText, @Nullable Long newlyCreatedId) {
+    public Page<ApplicationDTO> list(int page, int pageSize, String searchText, Id userId, @Nullable Long newlyCreatedId) {
         try (var context = newPlatformContext()) {
             var dataPage = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Application.class)
                             .addFieldMatchIfNotNull(Application.esName, Utils.safeCall(searchText, Instances::stringInstance))
                             .addFieldNotMatch(Application.esState, Instances.intInstance(ApplicationState.REMOVING.code()))
+                            .addFieldMatch(Application.esOwner, context.createReference(userId))
                             .newlyCreated(newlyCreatedId != null ? List.of(PhysicalId.of(newlyCreatedId, 0)) : List.of())
                             .page(page)
                             .pageSize(pageSize)
@@ -102,11 +104,6 @@ public class ApplicationManager extends EntityContextFactoryAware {
         }
     }
 
-    private void ensurePlatformUser() {
-        if (ContextUtil.getAppId() != PLATFORM_APP_ID)
-            throw new BusinessException(ErrorCode.REENTERING_APP);
-    }
-
     @Transactional
     public CreateAppResult createBuiltin(ApplicationCreateRequest request) {
         return createBuiltin(null, request);
@@ -122,18 +119,15 @@ public class ApplicationManager extends EntityContextFactoryAware {
         return createBuiltin(PLATFORM_APP_ID, ApplicationCreateRequest.fromNewUser(PLATFORM_APP_NAME, PLATFORM_ADMIN_LOGIN_NAME, PLATFORM_ADMIN_PASSWORD));
     }
 
-
     @Transactional
     public long save(ApplicationDTO appDTO) {
-        ensurePlatformUser();
         try (var platformCtx = newPlatformContext()) {
             Application app;
             if (appDTO.id() == null || appDTO.id() == 0L) {
-                var owner = platformCtx.getEntity(PlatformUser.class, ContextUtil.getUserId());
+                var owner = platformCtx.getEntity(PlatformUser.class, appDTO.ownerId());
                 app = createApp(platformCtx.allocateTreeId(), appDTO.name(), owner, platformCtx);
             } else {
                 app = platformCtx.getEntity(Application.class, Constants.getAppId(appDTO.id()));
-                ensureAppAdmin(app);
                 app.setName(appDTO.name());
             }
             platformCtx.finish();
@@ -203,12 +197,11 @@ public class ApplicationManager extends EntityContextFactoryAware {
     }
 
     @Transactional
-    public void update(ApplicationDTO applicationDTO) {
+    public void update(ApplicationDTO applicationDTO, Id userId) {
         setupContextInfo(applicationDTO.id());
         Objects.requireNonNull(applicationDTO.id());
         try (IInstanceContext platformContext = newPlatformContext()) {
             Application app = platformContext.getEntity(Application.class, Constants.getAppId(applicationDTO.id()));
-            ensureAppAdmin(app);
             app.setName(applicationDTO.name());
             platformContext.finish();
         }
@@ -219,7 +212,6 @@ public class ApplicationManager extends EntityContextFactoryAware {
         try (IInstanceContext platformContext = newPlatformContext()) {
             var id = Constants.getAppId(appId);
             var app = platformContext.getEntity(Application.class, id);
-            ensureAppOwner(app);
             app.deactivate();
             platformContext.bind(new RemoveAppTaskGroup(platformContext.allocateRootId(), id));
             platformContext.finish();
@@ -230,8 +222,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
     public void evict(AppEvictRequest request) {
         try (var platformCtx = newPlatformContext()) {
             var app = platformCtx.getEntity(Application.class, Constants.getAppId(request.appId()));
-            ensureAppAdmin(app);
-            var users = Utils.map(request.userIds(), userId -> platformCtx.getEntity(PlatformUser.class, userId));
+            var users = Utils.map(request.userIds(), uId -> platformCtx.getEntity(PlatformUser.class, uId));
             PlatformUsers.leaveApp(users, app, platformCtx);
             platformCtx.finish();
         }
@@ -241,7 +232,6 @@ public class ApplicationManager extends EntityContextFactoryAware {
     public void invite(AppInvitationRequest request) {
         try (var platformCtx = newPlatformContext()) {
             var app = platformCtx.getEntity(Application.class, Constants.getAppId(request.appId()));
-            ensureAppAdmin(app);
             var invitee = platformCtx.getEntity(PlatformUser.class, request.userId());
             if (invitee.hasJoinedApplication(app))
                 throw new BusinessException(ErrorCode.ALREADY_JOINED_APP, invitee.getLoginName());
@@ -259,10 +249,9 @@ public class ApplicationManager extends EntityContextFactoryAware {
     }
 
     @Transactional
-    public void promote(long appId, String userId) {
+    public void promote(long appId, Id userId) {
         try (var context = newPlatformContext()) {
             var app = context.getEntity(Application.class, Constants.getAppId(appId));
-            ensureAppAdmin(app);
             var user = context.getEntity(PlatformUser.class, userId);
             app.addAdmin(user);
             context.bind(new Message(context.allocateRootId(),
@@ -274,10 +263,9 @@ public class ApplicationManager extends EntityContextFactoryAware {
     }
 
     @Transactional
-    public void demote(long appId, String userId) {
+    public void demote(long appId, Id userId) {
         try (var context = newPlatformContext()) {
             var app = context.getEntity(Application.class, Constants.getAppId(appId));
-            ensureAppAdmin(app);
             var user = context.getEntity(PlatformUser.class, userId);
             app.removeAdmin(user);
             context.bind(new Message(context.allocateRootId(),
@@ -334,14 +322,20 @@ public class ApplicationManager extends EntityContextFactoryAware {
         return EncodingUtils.secureRandom(APP_SECRET_LEN);
     }
 
-    public void ensureAppAdmin(Application application) {
-        if (Utils.noneMatch(application.getAdmins(), admin -> admin.idEquals(ContextUtil.getUserId())))
-            throw new BusinessException(ErrorCode.CURRENT_USER_NOT_APP_ADMIN);
+    public void ensureAppAdmin(long appId, Id userId) {
+        try (var context = newPlatformContext()) {
+            var app = context.getEntity(Application.class, PhysicalId.of(appId, 0));
+            if (Utils.noneMatch(app.getAdmins(), admin -> admin.idEquals(userId)))
+                throw new BusinessException(ErrorCode.CURRENT_USER_NOT_APP_ADMIN);
+        }
     }
 
-    public void ensureAppOwner(Application application) {
-        if (!application.getOwner().idEquals(ContextUtil.getUserId()))
-            throw new BusinessException(ErrorCode.CURRENT_USER_NOT_APP_OWNER);
+    public void ensureAppOwner(long appId, Id userId) {
+        try (var context = newPlatformContext()) {
+            var app = context.getEntity(Application.class, PhysicalId.of(appId, 0));
+            if (!app.getOwner().idEquals(userId))
+                throw new BusinessException(ErrorCode.CURRENT_USER_NOT_APP_OWNER);
+        }
     }
 
     private void setupContextInfo(long appId) {

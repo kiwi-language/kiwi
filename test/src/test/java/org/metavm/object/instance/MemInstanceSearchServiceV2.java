@@ -7,6 +7,7 @@ import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.instance.search.SearchQuery;
 import org.metavm.util.Hooks;
 import org.metavm.util.MultiApplicationMap;
+import org.metavm.util.SearchSyncRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +75,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
     public void add(long appId, ClassInstance instance) {
-        bulk(appId, List.of(instance), List.of());
+        bulk(new SearchSyncRequest(appId, List.of(instance), List.of(), false));
     }
 
     public void clear() {
@@ -82,18 +83,18 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
     @Override
-    public void bulk(long appId, List<ClassInstance> toIndex, List<Id> toDelete) {
-        for (ClassInstance instance : toIndex) {
+    public void bulk(SearchSyncRequest request) {
+        for (ClassInstance instance : request.changedInstances()) {
             Objects.requireNonNull(instance.tryGetTreeId());
             sourceMap.put(
-                    appId,
+                    request.appId(),
                     instance.getTreeId(),
                     buildSource(instance)
             );
         }
-        for (var id : toDelete) {
-            sourceMap.remove(appId, id.getTreeId());
-            sourceMap.remove(appId, id.getTreeId());
+        for (var id : request.removedInstanceIds()) {
+            sourceMap.remove(request.appId(), id.getTreeId());
+            sourceMap.remove(request.appId(), id.getTreeId());
         }
     }
 

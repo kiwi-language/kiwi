@@ -1,5 +1,4 @@
 // Todo List Application
-import org.metavm.api.Index
 
 @Label("用户")
 class User(

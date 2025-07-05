@@ -180,6 +180,9 @@ public enum ErrorCode {
     // query
     ILLEGAL_QUERY(1801, "Illegal query"),
 
+    // Persistence
+    RETRY_FAILED(2001, "Retry failed")
+
     ;
 
     private final int code;

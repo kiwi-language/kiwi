@@ -3,6 +3,7 @@ package org.metavm.compiler.apigen;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.List;
+import org.metavm.util.InflectUtil;
 import org.metavm.util.NamingUtils;
 import org.metavm.util.Utils;
 
@@ -11,7 +12,8 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.compiler.apigen.ApiGenUtils.*;
-import static org.metavm.util.NamingUtils.*;
+import static org.metavm.util.NamingUtils.firstCharToUpperCase;
+import static org.metavm.util.NamingUtils.firstCharsToLowerCase;
 
 public class ApiGenerator {
 
@@ -71,17 +73,18 @@ public class ApiGenerator {
             apiWriter.indent();
             if (!cls.isValue())
                 apiWriter.writeln("id?: string");
+            var fieldNames = new HashSet<String>();
             for (Field field : cls.getFields()) {
                 if (field.isPublic() && !field.isStatic()) {
                     if (!initParamsNames.contains(field.getName()))
                         apiWriter.writeln("// Not needed for creation");
-                    writeVariable(field);
+                    writeVariable(field, fieldNames);
                     if (field.getType().getUnderlyingType() instanceof ClassType ct && isEntityType(ct)) {
                         var nullable = field.getType() instanceof UnionType;
                         var summaryField = ct.getClazz().getSummaryField();
                         if (summaryField != null) {
                             var fName = field.getName() + firstCharToUpperCase(summaryField.getName().toString());
-                            if (cls.findFieldByName(Name.from(fName)) == null) {
+                            if (fieldNames.add(fName)) {
                                 apiWriter.writeln("// Available in response but not needed in request");
                                 apiWriter.writeln(fName + (nullable ? "?: string" : ": string"));
                             }
@@ -91,8 +94,9 @@ public class ApiGenerator {
             }
             for (Clazz innerCls : cls.getClasses()) {
                 if (innerCls.isPublic() && innerCls.isEntity()) {
-                    var fieldName = firstCharsToLowerCase(innerCls.getName().toString()) + "s";
-                    apiWriter.writeln(fieldName + ": " + getApiClass(innerCls) + "[]");
+                    var fieldName = InflectUtil.pluralize(firstCharsToLowerCase(innerCls.getName().toString()));
+                    if (fieldNames.add(fieldName))
+                        apiWriter.writeln(fieldName + ": " + getApiClass(innerCls) + "[]");
                 }
             }
             apiWriter.deIndent();
@@ -105,9 +109,11 @@ public class ApiGenerator {
             generateSearchRequest(cls);
             generateListView(cls);
         }
-        for (Method method : cls.getMethods()) {
-            if (method.isPublic() && !method.isStatic() && !method.isInit())
-                generateInvokeRequest(method);
+        if (cls.isBean()) {
+            for (Method method : cls.getMethods()) {
+                if (method.isPublic() && !method.isStatic() && !method.isInit())
+                    generateInvokeRequest(method);
+            }
         }
         for (Clazz innerCls : cls.getClasses()) {
             if (innerCls.isPublic())
@@ -119,15 +125,16 @@ public class ApiGenerator {
         apiWriter.writeln("export interface " + getApiClass(cls) + "ListView {");
         apiWriter.indent();
         apiWriter.writeln("id: string");
+        var fieldNames = new HashSet<String>();
         for (Field field : cls.getFields()) {
             if (field.isPublic() && !field.isStatic()) {
-                writeVariable(field);
+                writeVariable(field, fieldNames);
                 if (field.getType().getUnderlyingType() instanceof ClassType ct && isEntityType(ct)) {
                     var nullable = field.getType() instanceof UnionType;
                     var summaryField = ct.getClazz().getSummaryField();
                     if (summaryField != null) {
                         var fName = field.getName() + firstCharToUpperCase(summaryField.getName().toString());
-                        if (cls.findFieldByName(Name.from(fName)) == null)
+                        if (fieldNames.add(fName))
                             apiWriter.writeln(fName + (nullable ? "?: string" : ": string"));
                     }
                 }
@@ -158,6 +165,7 @@ public class ApiGenerator {
             return;
         apiWriter.writeln("export interface Search" + typeName +  " {");
         apiWriter.indent();
+        var fieldNames = new HashSet<String>();
         for (Field field : cls.getFields()) {
             if (field.isPublic() && !field.isStatic() && isSearchable(field.getType())) {
                 var ut = field.getType().getUnderlyingType();
@@ -166,7 +174,7 @@ public class ApiGenerator {
                     apiWriter.writeln("min" + fName + "?: number");
                     apiWriter.writeln("max" + fName + "?: number");
                 }
-                writeVariable(field, true);
+                writeVariable(field, true, fieldNames);
             }
         }
         apiWriter.writeln("// 1-based page number");
@@ -190,10 +198,11 @@ public class ApiGenerator {
             return;
         apiWriter.writeln("export interface " + typeName + " {");
         apiWriter.indent();
+        var fieldNames = new HashSet<String>();
         if (!method.getDeclType().getClazz().isBean())
             writeSelfVar(method.getDeclClass());
         for (var param : method.getParams()) {
-            writeVariable(param);
+            writeVariable(param, fieldNames);
         }
         apiWriter.deIndent();
         apiWriter.writeln("}");
@@ -204,15 +213,23 @@ public class ApiGenerator {
         apiWriter.writeln(firstCharsToLowerCase(getApiClass(clazz)) + "Id: string");
     }
 
-    private void writeVariable(Variable variable) {
-        writeVariable(variable, false);
+    private void writeVariable(Variable variable, Set<String> fieldNamex) {
+        writeVariable(variable, false, fieldNamex);
     }
 
-    private void writeVariable(Variable variable, boolean optional) {
-        if (isEntityType(variable.getType()))
-            apiWriter.writeln(variable.getName() +  (optional || variable.getType().isNullable() ? "Id?: string" : "Id: string"));
+    private void writeVariable(Variable variable, boolean optional, Set<String> fieldNames) {
+        var varName = transformFieldName(variable.getName().toString(), variable.getType());
+        if (fieldNames.add(varName))
+            apiWriter.writeln(varName + (optional ? "?: " :  ": ") + getApiType(variable.getType()));
+    }
+
+    private String transformFieldName(String name, Type type) {
+        if (isEntityType(type))
+            return name + "Id";
+        else if (type.getUnderlyingType() instanceof ArrayType arrayType && isEntityType(arrayType.getElementType()))
+            return InflectUtil.singularize(name) + "Ids";
         else
-            apiWriter.writeln(variable.getName() + (optional ? "?: " :  ": ") + getApiType(variable.getType()));
+            return name;
     }
 
     public void generateFuncs(Clazz clazz) {
@@ -225,10 +242,12 @@ public class ApiGenerator {
             generateSearch(clazz);
         }
         clazz.forEachClass(this::generateFuncs);
-        clazz.getMethods().forEach(m -> {
-            if (m.isPublic() && !m.isAbstract() && !m.isStatic() && !m.isInit())
-                generateInvoke(m);
-        });
+        if (clazz.isBean()) {
+            clazz.getMethods().forEach(m -> {
+                if (m.isPublic() && !m.isAbstract() && !m.isStatic() && !m.isInit())
+                    generateInvoke(m);
+            });
+        }
     }
 
     private String toPath(Name name) {

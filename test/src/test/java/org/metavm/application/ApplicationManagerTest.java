@@ -53,6 +53,7 @@ public class ApplicationManagerTest extends TestCase {
                 verificationCodeService
         );
         ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
+        ContextUtil.setUserId(bootResult.userId());
     }
 
     @Override
@@ -65,14 +66,14 @@ public class ApplicationManagerTest extends TestCase {
     public void test() {
         var id = TestUtils.doInTransaction(() ->
                 applicationManager.createBuiltin(new ApplicationCreateRequest(
-                        "metavm", "metavm","123456", null
+                        "metavm", "metavm","123456", ContextUtil.getUserId().toString()
         ))).appId();
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
-        var page = applicationManager.list(1, 20, "metavm", null);
+        var page = applicationManager.list(1, 20, "metavm", ContextUtil.getUserId(), null);
         Assert.assertEquals(1, page.items().size());
         Assert.assertEquals(id, (long) page.items().getFirst().id());
 
-        var page1 = applicationManager.list(1, 20, null, null);
+        var page1 = applicationManager.list(1, 20, null, ContextUtil.getUserId(),null);
         Assert.assertEquals(2, page1.items().size());
     }
 
@@ -80,13 +81,13 @@ public class ApplicationManagerTest extends TestCase {
         var userId = getUserId();
         ContextUtil.setUserId(Id.parse(userId));
         var id = TestUtils.doInTransaction(() ->
-                applicationManager.save(new ApplicationDTO(null, "metavm", null)));
+                applicationManager.save(new ApplicationDTO(null, "metavm", ContextUtil.getUserId().toString())));
 //        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = applicationManager.list(1, 20, "metavm", null);
+        var r = applicationManager.list(1, 20, "metavm", ContextUtil.getUserId(),null);
         assertEquals(1, r.total());
         TestUtils.doInTransactionWithoutResult(() -> applicationManager.delete(id));
-        var r1 = applicationManager.list(1, 20, "metavm", null);
+        var r1 = applicationManager.list(1, 20, "metavm", ContextUtil.getUserId(),null);
         assertEquals(0, r1.total());
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         TestUtils.waitForEsSync(schedulerAndWorker);
@@ -97,7 +98,7 @@ public class ApplicationManagerTest extends TestCase {
         catch (BusinessException e) {
             assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
         }
-        var r2 = applicationManager.list(1, 20, "metavm", null);
+        var r2 = applicationManager.list(1, 20, "metavm", ContextUtil.getUserId(),null);
         assertEquals(0, r2.total());
     }
 
@@ -108,12 +109,12 @@ public class ApplicationManagerTest extends TestCase {
             TestUtils.doInTransaction(() ->
                     applicationManager.save(
                             new ApplicationDTO(
-                                    null, "leen-" + i_, null
+                                    null, "leen-" + i_, ContextUtil.getUserId().toString()
                             )
                     ));
         }
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = applicationManager.list(1, 2, null, null);
+        var r = applicationManager.list(1, 2, null, ContextUtil.getUserId(),null);
         assertEquals(2, r.items().size());
     }
 
@@ -124,12 +125,12 @@ public class ApplicationManagerTest extends TestCase {
             TestUtils.doInTransaction(() ->
                     applicationManager.save(
                             new ApplicationDTO(
-                                    null, "leen-" + i_, null
+                                    null, "leen-" + i_, ContextUtil.getUserId().toString()
                             )
                     ));
         }
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = applicationManager.list(2, 5, null, null);
+        var r = applicationManager.list(2, 5, null, ContextUtil.getUserId(),null);
         assertEquals(9, r.total());
     }
 
@@ -138,15 +139,15 @@ public class ApplicationManagerTest extends TestCase {
                 applicationManager.createBuiltin(new ApplicationCreateRequest(
                         "Metavm App", "metavm","123456", getUserId()
                 ))).appId();
-        var r0 = applicationManager.list(1, 20, "metavm", id);
+        var r0 = applicationManager.list(1, 20, "metavm", ContextUtil.getUserId(), id);
         assertEquals(1, r0.total());
 
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = applicationManager.list(1, 20, "metavm", null);
+        var r = applicationManager.list(1, 20, "metavm", ContextUtil.getUserId(),null);
         assertEquals(1, r.total());
         assertEquals("Metavm App", r.items().getFirst().name());
 
-        var r1 = applicationManager.list(1, 20, "meta", null);
+        var r1 = applicationManager.list(1, 20, "meta", ContextUtil.getUserId(),null);
         assertEquals(1, r1.total());
     }
 

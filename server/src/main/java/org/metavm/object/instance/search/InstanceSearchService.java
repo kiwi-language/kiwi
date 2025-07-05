@@ -1,10 +1,8 @@
 package org.metavm.object.instance.search;
 
 import org.metavm.common.Page;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-
-import java.util.List;
+import org.metavm.util.SearchSyncRequest;
 
 public interface InstanceSearchService {
 
@@ -12,5 +10,5 @@ public interface InstanceSearchService {
 
     long count(SearchQuery query);
 
-    void bulk(long appId, List<ClassInstance> toIndex, List<Id> toDelete);
+    void bulk(SearchSyncRequest request);
 }

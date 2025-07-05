@@ -1,6 +1,5 @@
 package user
 
-import org.metavm.api.Index
 
 class Session(
     val user: User, 

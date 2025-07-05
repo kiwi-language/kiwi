@@ -24,10 +24,10 @@ public class ApiGeneratorTest extends TestCase {
         var clazz = Mocks.createShoppingClasses();
         var text = new ApiGenerator().generate(clazz);
         Files.writeString(
-                Path.of("/tmp/page-works/1/src/api.ts"),
+                Path.of("/Users/leen/develop/page-works/1/src/api.ts"),
                 text
         );
-        var r = Utils.executeCommand(Path.of("/tmp/page-works/1"), "npm", "run", "build");
+        var r = Utils.executeCommand(Path.of("/Users/leen/develop/page-works/1"), "npm", "run", "build");
         System.out.println(r.output());
         Utils.require(r.exitCode() == 0, "Build failed");
     }

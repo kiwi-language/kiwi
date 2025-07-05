@@ -52,7 +52,8 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
 
     @Transactional
     public String deploy(long appId, InputStream in) {
-        return doInApplication(appId, () -> deploy(in));
+        ContextUtil.setAppId(appId);
+        return deploy(in);
     }
 
     @Override

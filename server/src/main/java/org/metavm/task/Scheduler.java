@@ -88,7 +88,7 @@ public class Scheduler extends EntityContextFactoryAware {
             for (ShadowTask task : tasks) {
                 var ip = executors.get((i++) % executors.size()).getIp();
                 task.setExecutorIP(ip);
-                logger.info("Assigning task {} to executor {}", EntityUtils.getRealType(task).getSimpleName(), ip);
+                logger.info("Assigning shadow task {} to executor {}", task.getId(), ip);
             }
             nextWorkerIP = executors.get(i % executors.size()).getIp();
             context.finish();

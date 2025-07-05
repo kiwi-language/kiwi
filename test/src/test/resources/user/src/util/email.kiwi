@@ -1,6 +1,5 @@
 package util
 
-import org.metavm.api.Index
 
 @Bean
 class EmailService {

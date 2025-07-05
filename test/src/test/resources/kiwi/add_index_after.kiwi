@@ -1,4 +1,3 @@
-import org.metavm.api.Index
 
 class Product(var name: string) {
 

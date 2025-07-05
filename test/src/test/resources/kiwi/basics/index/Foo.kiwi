@@ -1,6 +1,5 @@
 package index
 
-import org.metavm.api.Index
 import java.util.List
 
 class Foo(

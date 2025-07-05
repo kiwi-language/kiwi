@@ -1,0 +1,26 @@
+
+class Blog(
+    var title: string,
+    var content: string
+) {
+
+    var votes = 0
+
+    class Vote(var user: User) {
+
+        static val userIdx = Index<User, Vote>(false, v -> v.user)
+
+    }
+
+    fn vote(user: User) {
+        if (Vote.userIdx.getFirst(user) != null)
+            throw Exception("Already voted")
+        Vote(user)
+        votes++
+    }
+
+}
+
+class User(
+    var name: string
+)

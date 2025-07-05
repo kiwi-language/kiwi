@@ -89,7 +89,7 @@ public class PlatformUserController {
     public Result<LoginInfo> enterApp(@PathVariable("id") long id, HttpServletRequest request, HttpServletResponse response) {
         Token token = Tokens.getToken(id, request);
         if (token != null) {
-            var loginInfo = loginService.verify(token);
+            var loginInfo = loginService.authenticate(token);
             if (loginInfo.isSuccessful())
                 return Result.success(loginInfo);
         }
@@ -116,7 +116,7 @@ public class PlatformUserController {
     private void ensurePlatformUser(HttpServletRequest request) {
         if (ContextUtil.getAppId() != Constants.PLATFORM_APP_ID) {
             var platformToken = Tokens.getPlatformToken(request);
-            if (platformToken == null || !loginService.verify(platformToken).isSuccessful())
+            if (platformToken == null || !loginService.authenticate(platformToken).isSuccessful())
                 throw new BusinessException(ErrorCode.PLATFORM_USER_REQUIRED);
         }
     }
