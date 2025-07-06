@@ -119,6 +119,7 @@ public class CodeInput extends MvInput  {
             case Bytecodes.DUP_X1 -> DupX1Node.read(this, name);
             case Bytecodes.DUP_X2 -> DupX2Node.read(this, name);
             case Bytecodes.LOAD_PARENT -> LoadParentNode.read(this, name);
+            case Bytecodes.LOAD_CHILDREN -> LoadChildrenNode.read(this, name);
             case Bytecodes.NEW_CHILD -> NewChildNode.read(this, name);
             case Bytecodes.LONG_TO_DOUBLE -> LongToDoubleNode.read(this, name);
             case Bytecodes.DOUBLE_TO_LONG -> DoubleToLongNode.read(this, name);

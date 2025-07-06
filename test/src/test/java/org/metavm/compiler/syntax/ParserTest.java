@@ -1084,7 +1084,7 @@ public class ParserTest extends TestCase {
     }
 
     public void testIntegrated() throws URISyntaxException, IOException {
-        var path = Paths.get(requireNonNull(ParserTest.class.getResource("/kiwi/Shopping.kiwi")).toURI());
+        var path = Paths.get(requireNonNull(ParserTest.class.getResource("/kiwi/shopping.kiwi")).toURI());
         var sourceFile = new PathSourceFile(
                 path,
                 new FileManager()

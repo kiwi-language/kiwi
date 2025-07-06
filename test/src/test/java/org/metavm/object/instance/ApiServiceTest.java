@@ -49,70 +49,61 @@ public class ApiServiceTest extends TestCase {
     }
 
     public void testNewInstance() {
-        MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
-        var title = "Shoes-40";
+        deploy("kiwi/shopping.kiwi");
+        var name = "Shoes";
         var price = 100.0;
-        var quantity = 100;
-        var skuId = TestUtils.doInTransaction(() -> apiClient.newInstance(
-                "SKU", List.of(title, price, quantity)
+        var stock = 100;
+        var productId = saveInstance("Product", Map.of(
+           "name", name, "price", price, "stock", stock
         ));
-        var sku = apiClient.getObject(skuId);
-        Assert.assertEquals(title, sku.getString("name"));
-        Assert.assertEquals(price, sku.getDouble("price"), 0.0001);
-        Assert.assertEquals(quantity, sku.getInt("quantity"));
+        var product = apiClient.getObject(productId);
+        Assert.assertEquals(name, product.getString("name"));
+        Assert.assertEquals(price, product.getDouble("price"), 0.0001);
+        Assert.assertEquals(stock, product.getInt("stock"));
     }
+
     public void testHandleInstanceMethodCall() {
-        MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
-//        var skuId = (String) TestUtils.doInTransaction(() -> apiService.handleNewInstance(
-//                "SKU", List.of("Shoes-40", 100.0, 100L)
-//        ));
-        var skuId = TestUtils.doInTransaction(() -> apiClient.saveInstance("SKU", Map.of(
-            "name", "Shoes-40",
+        deploy("kiwi/shopping.kiwi");
+        var productId = saveInstance("Product", Map.of(
+            "name", "Shoes",
             "price", 100.0,
-            "quantity", 100
-        )));
-        // decrease quantity
-        TestUtils.doInTransaction(() -> apiClient.callMethod(
-                skuId,
-                "decQuantity",
+            "stock", 100
+        ));
+        callMethod(
+                productId,
+                "reduceStock",
                 List.of(1)
-        ));
-        var sku = apiClient.getObject(skuId);
-        Assert.assertEquals(99, sku.getInt("quantity"));
-        // create coupons
-        var coupon1Id = TestUtils.doInTransaction(() -> apiClient.newInstance(
+        );
+        var product = apiClient.getObject(productId);
+        Assert.assertEquals(99, product.getInt("stock"));
+        var couponId = saveInstance(
                 "Coupon",
-                List.of("5 Yuan off", 5)
-        ));
-        var coupon2Id = TestUtils.doInTransaction(() -> apiClient.newInstance(
-                "Coupon",
-                List.of("10 Yuan off", 10)
-        ));
-        // buy
-        var orderId = (Id) TestUtils.doInTransaction(() -> apiClient.callMethod(
-                skuId,
-                "buy",
-                List.of(1, List.of(coupon1Id, coupon2Id))
-        ));
+                Map.of("title", "10 Yuan off", "discount", 10)
+        );
+        var orderId = (Id) callMethod(
+                ApiNamedObject.of("orderService"),
+                "placeOrder",
+                List.of(productId, 1, couponId)
+        );
         var order = apiClient.getObject(orderId);
-        Assert.assertEquals(1, order.getInt("quantity"));
-        Assert.assertEquals(85.0, order.getDouble("price"), 0.0001);
+        Assert.assertEquals(1, order.getChildren("Item").getFirst().getInt("quantity"));
+        Assert.assertEquals(90.0, order.getDouble("totalPrice"), 0.0001);
     }
 
     public void testMethodCallWithMap() {
-        MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
-        var skuId = TestUtils.doInTransaction(() -> apiClient.saveInstance("SKU", Map.of(
-                "name", "Shoes-40",
+        deploy("kiwi/shopping.kiwi");
+        var productId = saveInstance("Product", Map.of(
+                "name", "Shoes",
                 "price", 100.0,
-                "quantity", 100
-        )));
+                "stock", 100
+        ));
         TestUtils.doInTransaction(() -> apiClient.callMethod(
-                skuId,
-                "decQuantity",
+                productId,
+                "reduceStock",
                 Map.of("quantity", 1)
         ));
-        var sku = apiClient.getObject(skuId);
-        Assert.assertEquals(99, sku.getInt("quantity"));
+        var product = apiClient.getObject(productId);
+        Assert.assertEquals(99, product.getInt("stock"));
     }
 
 
@@ -122,7 +113,7 @@ public class ApiServiceTest extends TestCase {
         TestUtils.waitForEsSync(schedulerAndWorker);
         var r = apiClient.search("del.Foo", Map.of(), 1, 20);
         assertEquals(1, r.total());
-        delete(id);
+        deleteObject(id);
         try {
             getObject(id);
             fail("Should have been removed");
@@ -219,7 +210,7 @@ public class ApiServiceTest extends TestCase {
         MockUtils.assemble("kiwi/search/search.kiwi", typeManager, schedulerAndWorker);
         var id = saveInstance("search.SearchFoo", Map.of("name", "Foo"));
         TestUtils.waitForEsSync(schedulerAndWorker);
-        delete(id);
+        deleteObject(id);
         var r = apiClient.search("search.SearchFoo", Map.of(), 1, 20, null);
         assertEquals(0, r.total());
     }
@@ -245,16 +236,28 @@ public class ApiServiceTest extends TestCase {
         assertNull(objects1.getFirst().get("field"));
     }
 
+    private void deploy(String source) {
+        MockUtils.assemble(source, typeManager, schedulerAndWorker);
+    }
+
     private Id saveInstance(String className, Map<String, Object> map) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, map));
     }
 
-    public void delete(Id id) {
+    private void deleteObject(Id id) {
         TestUtils.doInTransactionWithoutResult(() -> apiClient.delete(id));
     }
 
-    public ApiObject getObject(Id id) {
+    private ApiObject getObject(Id id) {
         return apiClient.getObject(id);
+    }
+
+    private Object callMethod(Object qualifier, String methodName, List<Object> args) {
+        return TestUtils.doInTransaction(() -> apiClient.callMethod(
+                qualifier,
+                methodName,
+                args
+        ));
     }
 
 }

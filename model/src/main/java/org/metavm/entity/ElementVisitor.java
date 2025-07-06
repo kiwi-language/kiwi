@@ -884,4 +884,12 @@ public abstract class ElementVisitor<R> {
     public R visitDeleteNode(DeleteNode deleteNode) {
         return visitNode(deleteNode);
     }
+
+    public R visitLoadChildrenNode(LoadChildrenNode loadChildrenNode) {
+        return visitNode(loadChildrenNode);
+    }
+
+    public R visitIdNode(IdNode idNode) {
+        return visitNode(idNode);
+    }
 }

@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 public class Project extends ElementBase implements Element {
 
     private final Package rootPackage = new Package(NameTable.instance.empty, null, this);
+    private Clazz indexClass;
 
     public Package getRootPackage() {
         return rootPackage;
@@ -81,6 +82,14 @@ public class Project extends ElementBase implements Element {
     @Override
     public void write(ElementWriter writer) {
         throw new UnsupportedOperationException();
+    }
+
+    public Clazz getIndexClass() {
+        return indexClass;
+    }
+
+    public void setIndexClass(Clazz indexClass) {
+        this.indexClass = indexClass;
     }
 
     public void traceClasses() {

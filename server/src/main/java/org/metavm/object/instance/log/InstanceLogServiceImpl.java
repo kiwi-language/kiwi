@@ -57,14 +57,14 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     @Override
     public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext) {
         if (ContextUtil.isWaitForEsSync()) {
-            try (var context = entityContextFactory.newContext(appId, metaContextCache.get(appId, false))) {
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        SearchSync.sync(idsToIndex, idsToRemove, true, context);;
-                    }
+                        @Override
+                        public void afterCommit () {
+                            try (var context = entityContextFactory.newContext(appId, metaContextCache.get(appId, false))){
+                                SearchSync.sync(idsToIndex, idsToRemove, true, context);
+                            }
+                        }
                 });
-            }
         } else {
             try (var context = newContext(appId);
                     var ignored = ContextUtil.getProfiler().enter("createSearchSyncTask")) {

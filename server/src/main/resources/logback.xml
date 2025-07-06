@@ -5,7 +5,7 @@
         </encoder>
     </appender>
 
-    <logger name="org.metavm" level="debug" additivity="false">
+    <logger name="org.metavm" level="info" additivity="false">
         <appender-ref ref="STDOUT" />
     </logger>
 

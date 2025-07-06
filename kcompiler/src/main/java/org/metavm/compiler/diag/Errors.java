@@ -7,11 +7,14 @@ import org.metavm.compiler.util.List;
 
 public class Errors {
 
-    public static final Error UNCLOSED_COMMENT = create("unclosed.comment");
-    public static final Error MALFORMED_FLOAT_LITERAL = create("malformed.float.literal");
-    public static Error illegalEscChar = create("illegal.esc.char");
-
-    public static Error symbolNotFound = create("symbol.not.found");
+    public static final Error unclosedComment = create("unclosed.comment");
+    public static final Error malformedFloatLiteral = create("malformed.float.literal");
+    public static final Error illegalEscChar = create("illegal.esc.char");
+    public static final Error symbolNotFound = create("symbol.not.found");
+    public static final Error nonStaticIndexField = create("non.static.index.field");
+    public static final Error invalidIndexValueType = create("invalid.index.value.type");
+    public static final Error misplacedIndexField = create("misplaced.index.field");
+    public static final Error reservedFieldName = create("reserved.field.name");
 
     public static Error ambiguousReference(String matches)  {
         return create("ambiguous.reference", matches);

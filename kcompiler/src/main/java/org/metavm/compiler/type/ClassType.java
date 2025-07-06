@@ -144,15 +144,21 @@ public interface ClassType extends Type, Element, Comparable<ClassType> {
         for (var s : allSuperTypes) {
             table.addAll(s.getTable());
         }
-        table.add(new BuiltinVariable(NameTable.instance.this_, null, this));
-        var s = getSuperType();
-        if (s != null) {
-            table.add(new BuiltinVariable(NameTable.instance.super_, null, s));
-        }
         getClasses().forEach(table::add);
         getMethods().forEach(table::add);
         getClazz().getEnumConstants().forEach(table::add);
         getFields().forEach(table::add);
+        table.add(new BuiltinVariable(NameTable.instance.this_, null, this));
+        var s = getSuperType();
+        if (s != null)
+            table.add(new BuiltinVariable(NameTable.instance.super_, null, s));
+        if (isEntity()) {
+            ClassType owner;
+            if (!isStatic() && (owner = getOwner()) != null)
+                table.add(new BuiltinVariable(NameTable.instance.parent, null, owner));
+            table.add(new BuiltinVariable(NameTable.instance.children, null, Types.instance.getAnyArray()));
+            table.add(new BuiltinVariable(NameTable.instance.id, null, Types.instance.getStringType()));
+        }
         table.freeze();
         if (Traces.traceElementTable)
             log.trace("Element table for class type {}: {}", this.getTypeText(), table);
@@ -223,6 +229,14 @@ public interface ClassType extends Type, Element, Comparable<ClassType> {
     MethodRef getPrimaryInit();
 
     boolean isEnum();
+
+    default boolean isEntity() {
+        return getClazz().isEntity();
+    }
+
+    default boolean isValue() {
+        return getClazz().isValue();
+    }
 
     default boolean isInner() {
         return getClazz().isInner();

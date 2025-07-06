@@ -1,5 +1,6 @@
 package org.metavm.compiler.analyze;
 
+import org.metavm.compiler.diag.Errors;
 import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.ClassTag;
 import org.metavm.compiler.element.*;
@@ -111,6 +112,8 @@ public class Enter {
         @Override
         public Void visitFieldDecl(FieldDecl fieldDecl) {
             var mods = parseModifiers(fieldDecl.getMods());
+            if (isReservedFieldName(fieldDecl.getName()))
+                log.error(fieldDecl, Errors.reservedFieldName);
             var field = new Field(
                     fieldDecl.getName(),
                     DeferredType.instance,
@@ -123,6 +126,11 @@ public class Enter {
                 logger.trace("Entering field {}", field.getQualifiedName());
             fieldDecl.setElement(field);
             return super.visitFieldDecl(fieldDecl);
+        }
+
+        private boolean isReservedFieldName(Name name) {
+            return NameTable.instance.parent == name || NameTable.instance.children == name
+                    || NameTable.instance.id == name;
         }
 
         @Override
@@ -198,14 +206,16 @@ public class Enter {
                 logger.trace("Entering class parameter {}", classParamDecl.getName());
             classParamDecl.setElement(param);
             if (classParamDecl.isWithField()) {
+                if (isReservedFieldName(classParamDecl.getName()))
+                    log.error(classParamDecl, Errors.reservedFieldName);
                 classParamDecl.setField(
                         new Field(
-                            classParamDecl.getName(),
-                            DeferredType.instance,
-                            mods.access,
-                            false,
-                            mods.deleted,
-                            clazz
+                                classParamDecl.getName(),
+                                DeferredType.instance,
+                                mods.access,
+                                false,
+                                mods.deleted,
+                                clazz
                         )
                 );
             }

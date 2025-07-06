@@ -41,94 +41,61 @@ public class ShoppingTest extends TestCase {
     }
 
     public void testCreateProduct() {
-        MockUtils.createShoppingTypes(typeManager,schedulerAndWorker);
+        MockUtils.assemble("kiwi/shopping.kiwi", typeManager, schedulerAndWorker);
         TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
            "name", "shoes",
-           "skuList", List.of(
-                   Map.of(
-                           "name", "40",
-                           "price", 100,
-                           "quantity", 100
-                   )
-                )
+           "price", 100,
+           "stock", 100
         )));
     }
 
-    public void testDecAmount() {
-        MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
+    public void testReduceStock() {
+        MockUtils.assemble("kiwi/shopping.kiwi", typeManager, schedulerAndWorker);
         var productId = createProduct();
         var product = getObject(productId);
-        var firstSkuId = (Id) product.getArray("skuList").get(0);
-        var firstSku = getObject(firstSkuId);
-        int originalAmount = firstSku.getInt("quantity");
-        callMethod(firstSkuId, "decQuantity", List.of(1));
-        var updatedFirstSku = getObject(firstSkuId);
-        int newAmount = updatedFirstSku.getInt("quantity");
-        assertEquals(originalAmount - 1, newAmount);
+        int origStock = product.getInt("stock");
+        callMethod(productId, "reduceStock", List.of(1));
+        var updatedProduct = getObject(productId);
+        int newStock = updatedProduct.getInt("stock");
+        assertEquals(origStock - 1, newStock);
         try {
-            callMethod(firstSkuId, "decQuantity", List.of(originalAmount));
-            fail("Should fail when amount is not enough");
+            callMethod(productId, "reduceStock", List.of(origStock));
+            fail("Should fail due to insufficient stock");
         } catch (BusinessException e) {
-            Assert.assertEquals("Out of inventory", e.getMessage());
+            Assert.assertEquals("Insufficient stock", e.getMessage());
         }
     }
 
     public void testBuy() {
-        MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
+        MockUtils.assemble("kiwi/shopping.kiwi", typeManager, schedulerAndWorker);
         var productId = createProduct();
         var product = getObject(productId);
-        var couponsIds = createCoupons();
-        var firstSkuId = (Id) product.getArray("skuList").getFirst();
-        var firstSku = getObject(firstSkuId);
-        var orderId = (Id) callMethod(firstSkuId, "buy", List.of(1, couponsIds));
+        var couponId = createCoupon();
+        var orderService = ApiNamedObject.of("orderService");
+        var orderId = (Id) callMethod(orderService, "placeOrder", List.of(productId, 1, couponId));
         var order = getObject(orderId);
-        Assert.assertEquals(1, order.getInt("quantity"));
-        Assert.assertEquals(70.0, order.getDouble("price"), 0.0001);
-        for (var couponId : couponsIds) {
-            var coupon = getObject(couponId);
-            Assert.assertEquals("USED", coupon.getEnumConstant("state").name());
-        }
-        var reloadedFirstSkuDTO = getObject(firstSkuId);
-        var originalQuantity = firstSku.getInt("quantity");
-        var skuQuantity = reloadedFirstSkuDTO.getInt("quantity");
-        Assert.assertEquals(originalQuantity - 1, skuQuantity);
+        Assert.assertEquals(1, order.getChildren("Item").getFirst().getInt("quantity"));
+        Assert.assertEquals(90.0, order.getDouble("totalPrice"), 0.0001);
+        var coupon = getObject(couponId);
+        Assert.assertEquals(true, coupon.get("used"));
+        var reloadedFirstSkuDTO = getObject(productId);
+        var origStock = product.getInt("stock");
+        var stock = reloadedFirstSkuDTO.getInt("stock");
+        Assert.assertEquals(origStock - 1, stock);
     }
 
     private Id createProduct() {
         return saveInstance("Product", Map.of(
                 "name", "Shoes",
-                "skuList", List.of(
-                        Map.of(
-                                "name", "40",
-                                "price", 100,
-                                "quantity", 100
-                        ),
-                        Map.of(
-                                "name", "41",
-                                "price", 100,
-                                "quantity", 100
-                        ),
-                        Map.of(
-                                "name", "42",
-                                "price", 100,
-                                "quantity", 100
-                        )
-                )
+                "price", 100,
+                "stock", 100
         ));
     }
 
-    private List<Id> createCoupons() {
-        return List.of(
-                saveInstance("Coupon", Map.of(
-                        "name", "5 Yuan Off", "discount", 5
-                )),
-                saveInstance("Coupon", Map.of(
-                        "name", "10 Yuan Off", "discount", 10
-                )),
-                saveInstance("Coupon", Map.of(
-                        "name", "15 Yuan Off", "discount", 15
-                ))
-        );
+    private Id createCoupon() {
+        return saveInstance("Coupon", Map.of(
+                "title", "10 Yuan Off", "discount", 10
+        ));
     }
 
     protected Id saveInstance(String className, Map<String, Object> fields) {

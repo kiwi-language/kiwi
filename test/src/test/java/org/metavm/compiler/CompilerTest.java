@@ -1,6 +1,7 @@
 package org.metavm.compiler;
 
 import junit.framework.TestCase;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.List;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 
+@Slf4j
 public class CompilerTest extends TestCase {
 
     private TypeManager typeManager;
@@ -45,7 +47,7 @@ public class CompilerTest extends TestCase {
     }
 
     public void test() {
-        var source = TestUtils.getResourcePath("kiwi/Shopping.kiwi");
+        var source = TestUtils.getResourcePath("kiwi/shopping.kiwi");
         var task = new CompilationTask(List.of(Path.of(source)), Path.of(TestConstants.TARGET));
         task.parse();
         MockEnter.enterStandard(task.getProject());
@@ -57,59 +59,34 @@ public class CompilerTest extends TestCase {
 
         var productId = createProduct();
         var product = getObject(productId);
-        var couponsIds = createCoupons();
-        var firstSkuId = (Id) product.getArray("skuList").get(0);
-        var firstSku = getObject(firstSkuId);
-        var orderId = (Id) callMethod(firstSkuId, "buy", List.of(1, couponsIds));
+        var couponId = createCoupon();
+        var orderService = ApiNamedObject.of("orderService");
+        var orderId = (Id) callMethod(orderService, "placeOrder", List.of(productId, 1, couponId));
         var order = getObject(orderId);
-        Assert.assertEquals(1, order.getInt("quantity"));
-        Assert.assertEquals(70.0, order.getDouble("price"), 0.0001);
-        for (var couponId : couponsIds) {
-            var coupon = getObject(couponId);
-            Assert.assertEquals("USED", coupon.getEnumConstant("state").name());
-        }
-        var reloadedFirstSkuDTO = getObject(firstSkuId);
-        var originalQuantity = firstSku.getInt("quantity");
-        var skuQuantity = reloadedFirstSkuDTO.getInt("quantity");
+        var orderItem = order.getChildren("Item").getFirst();
+        Assert.assertEquals(1, orderItem.getInt("quantity"));
+        Assert.assertEquals(90.0, order.getDouble("totalPrice"), 0.0001);
+        var coupon = getObject(couponId);
+        assertEquals(true, coupon.get("used"));
+        var reloadedProduct = getObject(productId);
+        var originalQuantity = product.getInt("stock");
+        var skuQuantity = reloadedProduct.getInt("stock");
         Assert.assertEquals(originalQuantity - 1, skuQuantity);
 
     }
 
-    private List<Id> createCoupons() {
-        return List.of(
-                saveInstance("Coupon", Map.of(
-                        "name", "5 Yuan Off", "discount", 5
-                )),
-                saveInstance("Coupon", Map.of(
-                        "name", "10 Yuan Off", "discount", 10
-                )),
-                saveInstance("Coupon", Map.of(
-                        "name", "15 Yuan Off", "discount", 15
-                ))
-        );
+    private Id createCoupon() {
+        return saveInstance("Coupon", Map.of(
+                "title", "10 Yuan Off", "discount", 10
+        ));
     }
 
 
     private Id createProduct() {
         return saveInstance("Product", Map.of(
                 "name", "Shoes",
-                "skuList", List.of(
-                        Map.of(
-                                "name", "40",
-                                "price", 100,
-                                "quantity", 100
-                        ),
-                        Map.of(
-                                "name", "41",
-                                "price", 100,
-                                "quantity", 100
-                        ),
-                        Map.of(
-                                "name", "42",
-                                "price", 100,
-                                "quantity", 100
-                        )
-                )
+                "price", 100,
+                "stock", 100
         ));
     }
 

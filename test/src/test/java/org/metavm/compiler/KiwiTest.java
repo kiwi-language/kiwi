@@ -25,18 +25,14 @@ public class KiwiTest extends KiwiTestBase {
 
     public static final Logger logger = LoggerFactory.getLogger(KiwiTest.class);
 
-    public void testParentChild() {
-        deploy("kiwi/ParentChild.kiwi");
-    }
-
     public void testMyList() {
         deploy("kiwi/List.kiwi");
     }
 
     public void testShopping() {
-        deploy("kiwi/Shopping.kiwi");
+        deploy("kiwi/shopping.kiwi");
         // redeploy
-        deploy("kiwi/Shopping.kiwi");
+        deploy("kiwi/shopping.kiwi");
     }
 
     public void testLivingBeing() {

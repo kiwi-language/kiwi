@@ -106,7 +106,7 @@ public class Tokenizer {
                             yield nextToken();
                         next();
                     }
-                    log.error(pos(), Errors.UNCLOSED_COMMENT);
+                    log.error(pos(), Errors.unclosedComment);
                     yield Tokens.EOF;
                 }
                 if (accept('='))
@@ -343,7 +343,7 @@ public class Tokenizer {
                 if (isDigit(10))
                     scanDigits(10);
                 else {
-                    log.error(start, Errors.MALFORMED_FLOAT_LITERAL);
+                    log.error(start, Errors.malformedFloatLiteral);
                     error = true;
                 }
             }
@@ -354,7 +354,7 @@ public class Tokenizer {
                 if (isDigit(10))
                     scanDigits(10);
                 else {
-                    log.error(start, Errors.MALFORMED_FLOAT_LITERAL);
+                    log.error(start, Errors.malformedFloatLiteral);
                     error = true;
                 }
             }

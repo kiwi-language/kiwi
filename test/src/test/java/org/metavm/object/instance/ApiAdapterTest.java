@@ -122,7 +122,7 @@ public class ApiAdapterTest extends TestCase {
     }
 
     public void testEmptyIdString() {
-        deploy("kiwi/shopping2.kiwi");
+        deploy("kiwi/shopping.kiwi");
         var productId = saveInstance("Product", Map.of(
                 "name", "Shoes", "price", 100, "stock", 100)
         );
@@ -141,7 +141,7 @@ public class ApiAdapterTest extends TestCase {
     }
 
     public void testAutomaticTypeConversion() {
-        deploy("kiwi/shopping2.kiwi");
+        deploy("kiwi/shopping.kiwi");
         var id = (String) TestUtils.doInTransaction(() -> apiAdapter.handlePost(
                 "/api/product",
                 Map.of(
@@ -419,6 +419,44 @@ public class ApiAdapterTest extends TestCase {
         callMethod(Id.parse(blogId), "vote", List.of(Id.parse(userId)));
         var blog = getObject(blogId);
         assertEquals(1, blog.get("votes"));
+    }
+
+    public void testCompositeIndexKey() {
+        deploy("kiwi/index/composite_key.kiwi");
+        var blogId = saveInstance(
+                "index.Blog",
+                Map.of(
+                        "title", "Kiwi Tutorial",
+                        "content", "..."
+                )
+        );
+        var userId = saveInstance(
+                "index.User",
+                Map.of("name", "Leen")
+        );
+        // Clear the context to make situation realistic
+        ContextUtil.setContext(null);
+        try {
+            ContextUtil.setWaitForSearchSync(true);
+            TestUtils.doInTransaction(() -> apiAdapter.handlePost(
+                    "/api/index/blog-service/vote",
+                    Map.of("blogId", blogId, "userId", userId),
+                    mockHttpRequest(),
+                    mockHttpResponse()
+            ));
+        } finally {
+            ContextUtil.setWaitForSearchSync(false);
+        }
+        try {
+            callMethod(
+                    ApiNamedObject.of("blogService"),
+                    "vote",
+                    List.of(Id.parse(blogId), Id.parse(userId))
+            );
+            fail("Should fail for repeated vote");
+        } catch (BusinessException e) {
+            assertEquals("User has already voted for this blog", e.getMessage());
+        }
     }
 
     private Object callMethod(Object receiver, String methodName, List<Object> args) {

@@ -13,13 +13,13 @@ import org.metavm.util.TestUtils;
 public class TransformerTest extends TestCase {
 
     public void test() {
-        var source = TestUtils.getResourcePath("kiwi/Shopping.kiwi");
+        var source = TestUtils.getResourcePath("kiwi/shopping.kiwi");
         var file = CompilerTestUtils.parse(source);
         var proj = CompilerTestUtils.attr(file);
         var transformer = new Lower(proj, new DummyLog());
         file.accept(transformer);
         var classDecl = file.getClassDeclarations().find(
-                decl -> decl instanceof ClassDecl c && c.name().toString().equals("CouponState")
+                decl -> decl instanceof ClassDecl c && c.name().toString().equals("OrderStatus")
         );
         Assert.assertNotNull(classDecl);
         var clazz = classDecl.getElement();

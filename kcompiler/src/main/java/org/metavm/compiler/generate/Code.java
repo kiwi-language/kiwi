@@ -53,6 +53,12 @@ public class Code {
         state.push(type);
     }
 
+    public void loadChildren() {
+        code(LOAD_CHILDREN);
+        state.pop();
+        state.push(Types.instance.getAnyArray());
+    }
+
     public void reset(@Nullable Type top) {
         state = new State();
         if (top != null)
@@ -707,6 +713,12 @@ public class Code {
     public void del() {
         code(DELETE);
         state.pop();
+    }
+
+    public void id() {
+        code(ID);
+        state.pop();
+        state.push(Types.instance.getStringType());
     }
 
     public class State {

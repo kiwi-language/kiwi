@@ -10,10 +10,10 @@ class Warehouse<T>(priv var location: T) {
         this.location = location
     }
 
-    class Container<C>(priv val id: C) {
+    class Container<C>(priv val identifier: C) {
 
         fn getId() -> C {
-            return id
+            return identifier
         }
 
         fn getWarehouse() -> Warehouse<T> {
