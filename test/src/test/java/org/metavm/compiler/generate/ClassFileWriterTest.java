@@ -27,16 +27,12 @@ public class ClassFileWriterTest extends TestCase {
         MockStandardTypesInitializer.init();
     }
 
-    public void testParentChild() {
-        process("kiwi/ParentChild.kiwi");
-    }
-
     public void testLivingBeing() {
         process("kiwi/LivingBeing.kiwi");
     }
 
     public void test() {
-        process("kiwi/Shopping.kiwi");
+        process("kiwi/shopping.kiwi");
     }
 
     public void testEnum() {

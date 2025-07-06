@@ -182,47 +182,6 @@ public class MockUtils {
                 .build();
     }
 
-    public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        assemble("kiwi/Shopping.kiwi", typeManager, schedulerAndWorker);
-        var entityContextFactory = schedulerAndWorker.entityContextFactory();
-        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var productKlass = context.getKlassByQualifiedName("Product");
-            var skuKlass = context.getKlassByQualifiedName("SKU");
-            var couponKlass = context.getKlassByQualifiedName("Coupon");
-            var couponStateKlas = context.getKlassByQualifiedName("CouponState");
-            var orderKlass = context.getKlassByQualifiedName("Order");
-            var skuListType = TypeExpressions.getArrayListType(TypeExpressions.getClassType(skuKlass.getStringId()));
-            var couponListType = TypeExpressions.getArrayListType(TypeExpressions.getClassType(couponKlass.getStringId()));
-            return new ShoppingTypeIds(
-                    productKlass.getStringId(),
-                    skuKlass.getStringId(),
-                    couponStateKlas.getStringId(),
-                    couponKlass.getStringId(),
-                    orderKlass.getStringId(),
-                    skuListType,
-                    couponListType,
-                    productKlass.getFieldByName("name").getStringId(),
-                    productKlass.getFieldByName("skuList").getStringId(),
-                    skuKlass.getFieldByName("name").getStringId(),
-                    skuKlass.getFieldByName("price").getStringId(),
-                    skuKlass.getFieldByName("quantity").getStringId(),
-                    skuKlass.getMethodByName("decQuantity").getStringId(),
-                    skuKlass.getMethodByName("buy").getStringId(),
-                    couponKlass.getFieldByName("name").getStringId(),
-                    couponKlass.getFieldByName("discount").getStringId(),
-                    couponKlass.getFieldByName("state").getStringId(),
-                    orderKlass.getFieldByName("code").getStringId(),
-                    orderKlass.getFieldByName("sku").getStringId(),
-                    orderKlass.getFieldByName("quantity").getStringId(),
-                    orderKlass.getFieldByName("price").getStringId(),
-                    orderKlass.getFieldByName("orderTime").getStringId(),
-                    orderKlass.getFieldByName("coupons").getStringId(),
-                    typeManager.getEnumConstantId("CouponState", "NORMAL"),
-                    typeManager.getEnumConstantId("CouponState", "USED")
-            );
-        }
-    }
-
     public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
         assemble("kiwi/LivingBeing.kiwi", typeManager, schedulerAndWorker);
         var entityContextFactory = schedulerAndWorker.entityContextFactory();

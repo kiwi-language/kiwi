@@ -1131,6 +1131,16 @@ public class VmStack {
                                 stack[top++] = requireNonNull(v.resolveMvObject().getParent(idx)).getReference();
                                 pc += 3;
                             }
+                            case Bytecodes.LOAD_CHILDREN -> {
+                                var v = stack[--top];
+                                stack[top++] = Instances.arrayValue(Utils.map(v.resolveMvObject().getChildren(), Instance::getReference));
+                                pc++;
+                            }
+                            case Bytecodes.ID -> {
+                                var v = stack[--top];
+                                stack[top++] = Instances.stringInstance(v.resolveMvObject().getStringId());
+                                pc++;
+                            }
                             case Bytecodes.TABLE_SWITCH -> {
                                 var k = ((IntValue) stack[--top]).value;
                                 int p = pc + 4 & 0xfffffffc;

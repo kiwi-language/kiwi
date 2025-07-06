@@ -11,7 +11,7 @@ import java.nio.file.Path;
 public class CompilationTaskTest extends TestCase {
 
     public void test() {
-        var source = TestUtils.getResourcePath( "kiwi/Shopping.kiwi");
+        var source = TestUtils.getResourcePath( "kiwi/shopping.kiwi");
         var task = new CompilationTask(List.of(Path.of(source)), Path.of(TestConstants.TARGET));
         task.parse();
         MockEnter.enterStandard(task.getProject());

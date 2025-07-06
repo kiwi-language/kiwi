@@ -5,6 +5,7 @@ import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.*;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
 import org.metavm.flow.Bytecodes;
@@ -607,10 +608,13 @@ public class Gen extends StructuralNodeVisitor {
         @Override
         public Item visitSelectorExpr(SelectorExpr selectorExpr) {
             if (selectorExpr.getElement() instanceof BuiltinVariable builtinVar) {
-                if (builtinVar.getName() != Name.this_())
-                    throw new AnalysisException("Unexpected built-in var: " + builtinVar.getName().toString());
-                loadImplicitSelf((ClassType) builtinVar.getType());
-                return getStackitem(builtinVar.getType());
+                if (builtinVar.getName() == Name.this_()) {
+                    loadImplicitSelf((ClassType) builtinVar.getType());
+                    return getStackitem(builtinVar.getType());
+                } else {
+                    selectorExpr.x().accept(this).load();
+                    return loadBuiltinField(builtinVar);
+                }
             }
             var member = (MemberRef) selectorExpr.getElement();
             if (member instanceof MethodRef m && m.isInit()
@@ -624,6 +628,18 @@ public class Gen extends StructuralNodeVisitor {
                 selectorExpr.x().accept(this).load();
                 return new MemberItem(member);
             }
+        }
+
+        private Item loadBuiltinField(BuiltinVariable builtinVar) {
+            var name = builtinVar.getName();
+            if (name == NameTable.instance.parent)
+                return new ParentItem((ClassType) builtinVar.getType());
+            else if (name == NameTable.instance.children)
+                return new ChildrenItem();
+            else if (name == NameTable.instance.id)
+                return new IdItem();
+            else
+                throw new CompilationException("Unexpected built-in variable: " + builtinVar.getName());
         }
 
         @Override
@@ -733,13 +749,17 @@ public class Gen extends StructuralNodeVisitor {
                     }
                 }
                 case FreeFuncRef func -> new FuncItem(func);
-                case BuiltinVariable b when (b.getName() == Name.this_() || b.getName() == Name.super_()) -> {
-                    if (b.getElement() instanceof MethodRef method) {
+                case BuiltinVariable b -> {
+                    if (b.getName() == Name.this_() || b.getName() == Name.super_()) {
+                        if (b.getElement() instanceof MethodRef method) {
+                            code.loadThis(env);
+                            yield new MemberItem(method);
+                        } else
+                            yield new ThisItem();
+                    } else {
                         code.loadThis(env);
-                        yield new MemberItem(method);
+                        yield loadBuiltinField(b);
                     }
-                    else
-                        yield new ThisItem();
                 }
                 case null, default -> throw new RuntimeException("Unrecognized element: " + e + ", ref: " + ident.getText());
             };
@@ -1261,6 +1281,95 @@ public class Gen extends StructuralNodeVisitor {
 
         @Override
         void drop() {
+        }
+    }
+
+    private class ParentItem extends Item {
+
+        private final ClassType parentType;
+
+        private ParentItem(ClassType parentType) {
+            super(TypeTags.TAG_CLASS);
+            this.parentType = parentType;
+        }
+
+        @Override
+        void dup() {
+            code.dup();
+        }
+
+        @Override
+        Item load() {
+            code.loadParent(0, parentType);
+            return stackItems[TypeTags.TAG_CLASS];
+
+        }
+
+        @Override
+        void stash() {
+            code.dupX1();
+        }
+
+        @Override
+        void drop() {
+            code.pop();
+        }
+    }
+
+
+    private class ChildrenItem extends Item {
+
+        private ChildrenItem() {
+            super(TypeTags.TAG_ARRAY);
+        }
+
+        @Override
+        void dup() {
+            code.dup();
+        }
+
+        @Override
+        void stash() {
+            code.dupX1();
+        }
+
+        @Override
+        Item load() {
+            code.loadChildren();
+            return stackItems[TypeTags.TAG_ARRAY];
+        }
+
+        @Override
+        void drop() {
+            code.pop();
+        }
+    }
+
+    private class IdItem extends Item {
+
+        private IdItem() {
+            super(TypeTags.TAG_STRING);
+        }
+
+        @Override
+        void dup() {
+            code.dup();
+        }
+
+        @Override
+        void stash() {
+            code.dupX1();
+        }
+
+        @Override
+        Item load() {
+            code.id();
+            return stackItems[TypeTags.TAG_STRING];
+        }
+
+        @Override
+        void drop() {
+            code.pop();
         }
     }
 

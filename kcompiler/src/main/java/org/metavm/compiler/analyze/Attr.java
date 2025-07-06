@@ -524,8 +524,15 @@ public class Attr extends StructuralNodeVisitor {
         }
 
         public Element resolve(Function<Element, Element> mapper, @Nullable Comparator<Element> comparator, Function<Expr, Error> errorFunc) {
+            var it = candidates.iterator();
+            if (!it.hasNext()) {
+                log.error(expr, Errors.symbolNotFound);
+                onResolved(ErrorElement.instance);
+                return ErrorElement.instance;
+            }
             var matches = List.<Element>nil();
-            out: for (Element candidate : candidates) {
+            out: while (it.hasNext()) {
+                var candidate = it.next();
                 ensureElementTyped(candidate);
                 Element resolved;
                 if ((resolved = mapper.apply(candidate)) != null) {

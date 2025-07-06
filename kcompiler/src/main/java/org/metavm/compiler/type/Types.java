@@ -215,6 +215,10 @@ public class Types {
         return getNullableType(PrimitiveType.ANY);
     }
 
+    public Type getAnyArray() {
+        return getArrayType(PrimitiveType.ANY);
+    }
+
     public Type getNullableString() {
         return getNullableType(getStringType());
     }

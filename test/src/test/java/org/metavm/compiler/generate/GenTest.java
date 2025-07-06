@@ -9,7 +9,7 @@ import org.metavm.util.TestUtils;
 public class GenTest extends TestCase {
 
     public void test() {
-        var source = TestUtils.getResourcePath("kiwi/Shopping.kiwi");
+        var source = TestUtils.getResourcePath("kiwi/shopping.kiwi");
         var file = CompilerTestUtils.parse(source);
         var project = CompilerTestUtils.attr(file);
         file.accept(new Lower(project, new DummyLog()));

@@ -11,6 +11,7 @@ public class Bytecodes {
     public static final int GET_METHOD = 2;
     public static final int ADD_OBJECT = 3;
     public static final int SET_FIELD = 4;
+    public static final int ID = 5;
     public static final int RETURN = 9;
     public static final int RAISE = 10;
     public static final int INVOKE_VIRTUAL = 11;
@@ -39,6 +40,7 @@ public class Bytecodes {
     public static final int INDEX_SELECT = 38;
     public static final int INDEX_SELECT_FIRST = 39;
     public static final int GOTO = 40;
+    public static final int LOAD_CHILDREN = 41;
     public static final int NON_NULL = 42;
     public static final int SET_ELEMENT = 43;
     public static final int IF_NE = 44;

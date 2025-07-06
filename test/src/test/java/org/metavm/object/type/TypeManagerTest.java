@@ -56,12 +56,12 @@ public class TypeManagerTest extends TestCase {
     }
 
     public void testShopping() {
-        var typeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
+        MockUtils.assemble("kiwi/shopping.kiwi", typeManager, schedulerAndWorker);
         try (var context = entityContextFactory.newContext(APP_ID)) {
-            var productKlass = context.getKlass(typeIds.productTypeId());
-            Assert.assertEquals(2, productKlass.getFields().size());
-            var couponStateKlass = context.getKlass(typeIds.couponStateTypeId());
-            Assert.assertEquals(2, couponStateKlass.getEnumConstants().size());
+            var productCls = context.getKlassByQualifiedName("Product");
+            Assert.assertEquals(3, productCls.getFields().size());
+            var orderStatusCls = context.getKlassByQualifiedName("OrderStatus");
+            Assert.assertEquals(3, orderStatusCls.getEnumConstants().size());
         }
     }
 

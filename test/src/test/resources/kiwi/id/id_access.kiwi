@@ -1,0 +1,9 @@
+package id
+
+class Foo {
+
+    fn getId() -> string {
+        return id
+    }
+
+}

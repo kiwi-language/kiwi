@@ -2,9 +2,11 @@ package org.metavm.compiler.analyze;
 
 import org.metavm.compiler.diag.Errors;
 import org.metavm.compiler.diag.Log;
+import org.metavm.compiler.element.Field;
 import org.metavm.compiler.element.LocalVar;
 import org.metavm.compiler.element.Project;
 import org.metavm.compiler.syntax.*;
+import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.Types;
 
 import java.util.EnumSet;
@@ -28,6 +30,19 @@ public class Check extends StructuralNodeVisitor {
             checkMods(classDecl, INNER_CLASS_ALLOWED_MODS);
         else
             checkMods(classDecl, CLASS_ALLOWED_MODS);
+        var klass = classDecl.getElement();
+        for (Field field : klass.getFields()) {
+            if (field.getType() instanceof ClassType ct && ct.getClazz() == env.getProject().getIndexClass()) {
+                if (!field.isStatic())
+                    log.error(field.getNode(), Errors.nonStaticIndexField);
+                if (ct.getTypeArguments().getLast() instanceof ClassType valueType) {
+                    if (valueType.getClazz() != klass)
+                        log.error(field.getNode(), Errors.misplacedIndexField);
+                }
+                else
+                    log.error(field.getNode(), Errors.invalidIndexValueType);
+            }
+        }
         return super.visitClassDecl(classDecl);
     }
 

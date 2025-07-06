@@ -1,0 +1,24 @@
+package index
+
+class Vote(val blog: Blog, val user: User) {
+
+    static val voteIdx = Index<VoteKey, Vote>(true, v -> VoteKey(v.blog, v.user))
+
+}
+
+value class VoteKey(val blog: Blog, val user: User)
+
+class Blog(var title: string, var content: string)
+
+class User(var name)
+
+@Bean
+class BlogService {
+
+    fn vote(blog: Blog, user: User) {
+        if (Vote.voteIdx.getFirst(VoteKey(blog, user)) != null)
+            throw Exception("User has already voted for this blog")
+        Vote(blog, user)
+    }
+
+}

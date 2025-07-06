@@ -6,13 +6,14 @@ class Product(
 ) {
 
     fn reduceStock(quantity: int) {
-        require(stock >= quantity, "Insuffciient stock")
+        require(stock >= quantity, "Insufficient stock")
         stock -= quantity
     }
 
 }
 
 class Coupon(
+    var title: string,
     var discount: double
 ) {
 
@@ -27,10 +28,16 @@ class Coupon(
 
 class Order(var totalPrice: double) {
 
+    var status = OrderStatus.PENDING
+
     class Item(
-        product: Product,
-        quantity: int
-    )
+        val product: Product,
+        val quantity: int
+    ) {
+
+        static val productIdx = Index<Product, Item>(false, i -> i.product)
+
+    }
 
 }
 
@@ -49,4 +56,24 @@ class OrderService {
         return order
     }
 
+    fn findOrderItemsByProduct(product: Product) -> Order.Item[] {
+        return Order.Item.productIdx.getAll(product)
+    }
+
+    fn confirmOrder(order: Order) {
+        if (order.status == OrderStatus.PENDING) {
+            order.status = OrderStatus.CONFIRMED
+        } else {
+            throw Exception("Order cannot be confirmed, current status: " + order.status)
+        }
+    }
+
+}
+
+
+enum OrderStatus {
+    PENDING,
+    CONFIRMED,
+    CANCELLED
+    ;
 }

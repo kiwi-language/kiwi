@@ -46,7 +46,7 @@ public class DiagTest extends TestCase {
                         ^""", diags.head().toString());
     }
 
-    public void testCantResolveExpr() {
+    public void testMethodNotFound() {
         var diags = compile("""
                 class Foo {
                 
@@ -58,7 +58,7 @@ public class DiagTest extends TestCase {
                 """);
         assertEquals(1, diags.size());
         assertEquals("""
-                           dummy.kiwi:4: Cannot resolve function
+                           dummy.kiwi:4: Symbol not found
                                        bar()
                                        ^""",
                 diags.head().toString()
@@ -185,6 +185,90 @@ public class DiagTest extends TestCase {
                                 deleted var name: string
                                 ^""",
                 log.getDiags().head().toString()
+        );
+    }
+
+    public void testMisplacedIndexField() {
+        compile("""
+                class Order {
+                
+                    static val itemQuantityIdx = Index<int, Item>(false, i -> i.quantity)
+                
+                    class Item(val quantity: int)
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals(
+                """
+                        dummy.kiwi:3: Index field must be defined in the class it indexes
+                                static val itemQuantityIdx = Index<int, Item>(false, i -> i.quantity)
+                                           ^""",
+                log.getDiags().head().toString()
+        );
+    }
+
+    public void testInvalidIndexValueType() {
+        compile("""
+                class Order {
+                
+                    static val intIdx = Index<int, int>(false, i -> i)
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals(
+                """
+                        dummy.kiwi:3: Invalid index value type
+                                static val intIdx = Index<int, int>(false, i -> i)
+                                           ^""",
+                log.getDiags().head().toString()
+        );
+    }
+
+    public void testNonStaticIndexField() {
+        compile("""
+                class Product(var name: string) {
+                
+                    val nameIdx = Index<string, Product>(true, p -> p.name)
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals(
+                """
+                        dummy.kiwi:3: Index field must be static
+                                val nameIdx = Index<string, Product>(true, p -> p.name)
+                                    ^""",
+                log.getDiags().head().toString()
+        );
+    }
+
+    public void testReservedFieldNames() {
+        compile("""
+                class Foo(val id: string, val parent: any) {
+                    val children = new any[]
+                }
+                """);
+        assertEquals(3, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:2: Reserved field name
+                        val children = new any[]
+                            ^""",
+                log.getDiags().head().toString());
+        assertEquals(
+                """
+                        dummy.kiwi:1: Reserved field name
+                            class Foo(val id: string, val parent: any) {
+                                                          ^""",
+                log.getDiags().tail().head().toString()
+        );
+        assertEquals(
+                """
+                        dummy.kiwi:1: Reserved field name
+                            class Foo(val id: string, val parent: any) {
+                                          ^""",
+                log.getDiags().tail().tail().head().toString()
         );
     }
 

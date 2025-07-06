@@ -1,0 +1,27 @@
+package parent
+
+class Product(var name: string)
+
+class Order {
+
+    class Item(val product: Product) {
+        static val productIdx = Index<Product, Item>(false, i -> i.product)
+    }
+
+}
+
+@Bean
+class OrderService {
+
+    fn placeOrder(product: Product) -> Order {
+        val order = Order()
+        order.Item(product)
+        return order
+    }
+
+    fn findProductOrders(product: Product) -> Order[] {
+        var items = Order.Item.productIdx.getAll(product)
+        return items.map<Order>(i -> i.parent)
+    }
+
+}

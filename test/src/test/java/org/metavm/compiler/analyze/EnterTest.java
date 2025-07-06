@@ -20,7 +20,7 @@ import java.nio.file.Path;
 public class EnterTest extends TestCase {
 
     public void test() {
-        var source = TestUtils.getResourcePath( "kiwi/Shopping.kiwi");
+        var source = TestUtils.getResourcePath( "kiwi/shopping.kiwi");
         var file = parse(source);
 
         var project = new Project();
@@ -33,12 +33,8 @@ public class EnterTest extends TestCase {
 
         var productClass =  pkg.getClass(NameTable.instance.get("Product"));
         Assert.assertEquals("Product", productClass.getName().toString());
-        Assert.assertEquals(2, productClass.getFields().size());
-        Assert.assertEquals(5, productClass.getMethods().size());
-
-        var couponStateClass = pkg.getClass(NameTable.instance.get("CouponState"));
-        Assert.assertEquals("CouponState", couponStateClass.getName().toString());
-        Assert.assertEquals(2, couponStateClass.getEnumConstants().size());
+        Assert.assertEquals(3, productClass.getFields().size());
+        Assert.assertEquals(2, productClass.getMethods().size());
     }
 
 

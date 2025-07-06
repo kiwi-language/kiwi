@@ -19,7 +19,7 @@ import org.metavm.util.TestUtils;
 public class TypeResolverTest extends TestCase {
 
     public void test() {
-        var source = TestUtils.getResourcePath("kiwi/Shopping.kiwi");
+        var source = TestUtils.getResourcePath("kiwi/shopping.kiwi");
         var file = CompilerTestUtils.parse(source);
 
         var project = MockEnter.enter(List.of(file));
@@ -33,17 +33,9 @@ public class TypeResolverTest extends TestCase {
         file.accept(typeResolver);
 
         var productClass = file.getClassDeclarations().getFirst().getElement();
-        var skuClass = project.classForName("SKU");
 
         var nameField = productClass.getFieldByName("name");
         Assert.assertSame(Types.instance.getStringType(), nameField.getType());
-
-        var getSkuListMethod = productClass.getMethodsByName("getSkuList").next();
-        var listClazz = project.classForName("java.util.List");
-        Assert.assertSame(
-                listClazz.getInst(null, List.of(skuClass)),
-                getSkuListMethod.getRetType()
-        );
     }
 
     public void testTypeVariable() {

@@ -41,7 +41,7 @@ public class MockEnter {
         createAioob(rtEx, project);
         createObjectInputStream(rootPkg);
         createObjectOutputStream(rootPkg);
-        createIndex(rootPkg);
+        project.setIndexClass(createIndex(rootPkg));
 
         createHttpCookie(project);
         createHttpHeader(project);
@@ -86,7 +86,7 @@ public class MockEnter {
         compareMeth.setRetType(PrimitiveType.INT);
     }
 
-    private static void createIndex(Package rootPkg) {
+    private static Clazz createIndex(Package rootPkg) {
         var pkg = rootPkg.subPackage("org").subPackage("metavm").subPackage("api");
         var clazz = new Clazz(ClassTag.CLASS, Name.from("Index"), Access.PUBLIC, pkg);
         var keyType = new TypeVar(Name.from("K"), PrimitiveType.ANY, clazz);
@@ -119,6 +119,7 @@ public class MockEnter {
         new Param("min", Types.instance.getNullableType(keyType), count);
         new Param("max", Types.instance.getNullableType(keyType), count);
         count.setRetType(PrimitiveType.LONG);
+        return clazz;
     }
 
     private static void createCollection(Package rootPkg) {

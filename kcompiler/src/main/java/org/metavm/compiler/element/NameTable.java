@@ -70,6 +70,9 @@ public class NameTable {
     public final Name in = get("in");
     public final Name time = get("time");
     public final Name password = get("password");
+    public final Name parent = get("parent");
+    public final Name children = get("children");
+    public final Name id = get("id");
 
     private NameTable() {
     }

@@ -13,7 +13,7 @@ import org.metavm.util.TestUtils;
 public class AttrTest extends TestCase {
 
     public void test() {
-        process( "kiwi/Shopping.kiwi");
+        process( "kiwi/shopping.kiwi");
     }
 
     public void testLambda() {

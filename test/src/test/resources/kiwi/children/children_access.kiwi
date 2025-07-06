@@ -1,0 +1,51 @@
+package children
+
+class Product(var name: string, var stock: int) {
+
+    fn reduceStock(quantity: int) {
+        require(stock >= quantity, "Insufficient stock")
+        stock -= quantity
+    }
+
+    fn restock(quantity: int) {
+        stock += quantity
+    }
+
+}
+
+class Order {
+
+    var status = OrderStatus.PENDING
+
+    class Item(val product: Product, val quantity: int)
+
+}
+
+enum OrderStatus {
+    PENDING,
+    CONFIRMED,
+    CANCELLED,
+    ;
+}
+
+@Bean
+class OrderService {
+
+    fn placeOrder(product: Product, quantity: int) -> Order {
+        product.reduceStock(quantity)
+        val order = Order()
+        order.Item(product, quantity)
+        return order
+    }
+
+    fn cancelOrder(order: Order) {
+        require(order.status == OrderStatus.PENDING, "Order cannot be cancelled in status: " + order.status)
+        order.status = OrderStatus.CANCELLED
+        for (child in order.children) {
+            if (child is Order.Item item) {
+                item.product.restock(item.quantity)
+            }
+        }
+    }
+
+}
