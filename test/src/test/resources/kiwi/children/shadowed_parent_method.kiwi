@@ -1,0 +1,21 @@
+package children
+
+class Parent {
+
+    class Child {
+
+        fn greet() -> string {
+             return greet0()
+        }
+
+        fn greet0() -> string {
+            return "Hi"
+        }
+
+    }
+
+    fn greet0() -> string {
+        return "Hello"
+    }
+
+}

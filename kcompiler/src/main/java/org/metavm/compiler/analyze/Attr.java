@@ -451,13 +451,15 @@ public class Attr extends StructuralNodeVisitor {
         }
 
         private int compareCallCandidate(Element e1, Element e2) {
+            if (e1 == e2)
+                return -1;
             var funcType1 = (FuncType) ((ValueElement) e1).getType();
             var funcType2 = (FuncType) ((ValueElement) e2).getType();
-            if (e1 instanceof MethodRef m1 && e2 instanceof MethodRef m2) {
-                if (isOverride(m1, m2))
-                    return -1;
-                if (isOverride(m2, m1))
-                    return 1;
+            if (funcType1.getParamTypes().equals(funcType2.getParamTypes())) {
+                if (e1 instanceof MethodRef m1 && e2 instanceof MethodRef m2 && m1.getDeclType() == m2.getDeclType())
+                    return 0;
+                // The first one takes precedence
+                return -1;
             }
             if (isApplicable(funcType2.getParamTypes(), funcType1.getParamTypes()))
                 return -1;
@@ -542,8 +544,8 @@ public class Attr extends StructuralNodeVisitor {
                     }
                     var newMatches = List.<Element>nil();
                     for (Element match : matches) {
-                        var r = comparator.compare(resolved, match);
-                        if (r > 0)
+                        var r = comparator.compare(match, resolved);
+                        if (r < 0) // Discard if there's an existing match shadowing the resolved element
                             continue out;
                         if (r == 0)
                             newMatches = newMatches.prepend(match);

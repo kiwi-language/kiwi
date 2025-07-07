@@ -70,3 +70,15 @@ Authorization: Basic elastic 85263670
     "refresh_interval": "100ms"
   }
 }
+
+
+###
+PUT http://localhost:9200/instance/_settings
+Content-Type: application/json
+Authorization: Basic elastic 85263670
+
+{
+  "persistent": {
+    "cluster.routing.allocation.disk.watermark.flood_stage": "98%"
+  }
+}

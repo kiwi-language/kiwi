@@ -727,11 +727,13 @@ public class ApiService extends ApplicationStatusAware {
                     + ": " + ThrowableNative.getMessage(result.exception()));
         //noinspection unchecked
         var children = (Map<String, Object>) map.getOrDefault(KEY_CHILDREN, Map.of());
-        saveChildren(children, self, context);
+        saveChildren(children, self, List.of(), context);
         return self;
     }
 
     private void updateObject(ClassInstance instance, Map<String, Object> map, IInstanceContext context) {
+        var origChildren = new ArrayList<Instance>();
+        instance.forEachChild(origChildren::add);
         var type = instance.getInstanceType();
         var fields = (Map<String, Object>) map.getOrDefault(KEY_FIELDS, Map.of());
         fields.forEach((k, v) -> {
@@ -751,12 +753,11 @@ public class ApiService extends ApplicationStatusAware {
         });
         //noinspection unchecked
         var children = (Map<String, Object>) map.getOrDefault(KEY_CHILDREN, Map.of());
-        saveChildren(children, instance, context);
+        saveChildren(children, instance, origChildren, context);
     }
 
-    private void saveChildren(Map<String, Object> children, ClassInstance instance, IInstanceContext context) {
-        var removedChildren = new HashSet<Instance>();
-        instance.forEachChild(removedChildren::add);
+    private void saveChildren(Map<String, Object> children, ClassInstance instance, Collection<Instance> origChildren, IInstanceContext context) {
+        var removedChildren = new HashSet<>(origChildren);
         instance.getInstanceType().getInnerClassTypes().forEach(t -> {
             if (children.get(t.getName()) instanceof List<?> values) {
                 for (Object value : values) {

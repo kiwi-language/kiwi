@@ -1,0 +1,17 @@
+package override
+
+class Base {
+
+    fn greet() -> string {
+        return "Hello"
+    }
+
+}
+
+class Sub {
+
+    fn greet() -> string {
+        return "Hi"
+    }
+
+}

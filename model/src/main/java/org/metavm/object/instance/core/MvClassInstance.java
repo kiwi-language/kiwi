@@ -892,7 +892,12 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
         void initialize(MvClassInstance owner, ClassType type) {
             for (Field field : type.getKlass().getSortedFields()) {
-                add(new InstanceField(owner, field, type.getTypeMetadata().getType(field.getTypeIndex())));
+                try {
+                    add(new InstanceField(owner, field, type.getTypeMetadata().getType(field.getTypeIndex())));
+                }
+                catch (Exception e) {
+                    throw new InternalException("Failed to initialize field '" + field.getQualifiedName() + "' for instance: " + table.owner.getId());
+                }
             }
         }
 

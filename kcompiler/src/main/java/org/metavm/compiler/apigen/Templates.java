@@ -9,7 +9,6 @@ public class Templates {
             }
             
             export interface ErrorResponse {
-              code: number;
               message: string;
             }
             
