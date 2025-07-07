@@ -19,3 +19,5 @@ Optimized error message:
 - Check return value matches the declared return type
 
 - Resolve issue of referencing inner class from outside
+
+- Add support for string length field

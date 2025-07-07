@@ -7,12 +7,6 @@ class Product(quantity: int) {
         return inventory
     }
 
-    class Inventory(var quantity: int) {
-
-        fn getQuantity() -> int {
-            return quantity
-        }
-
-    }
+    class Inventory(var quantity: int)
 
 }

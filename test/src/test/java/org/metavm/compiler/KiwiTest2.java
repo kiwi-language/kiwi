@@ -94,4 +94,22 @@ public class KiwiTest2 extends KiwiTestBase {
         assertEquals(id.toString(), callMethod(id, "getId", List.of()));
     }
 
+    public void testOverride() {
+        deploy("kiwi/override/override.kiwi");
+        var id = saveInstance("override.Sub", Map.of());
+        var greeting = callMethod(id, "greet", List.of());
+        assertEquals("Hi", greeting);
+    }
+
+    public void testShadowedParentMethod() {
+        deploy("kiwi/children/shadowed_parent_method.kiwi");
+        var id = saveInstance("children.Parent", Map.of(
+                "Child", List.of(Map.of())
+        ));
+        var parent = getObject(id);
+        var child = parent.getChildren("Child").getFirst();
+        var greeting = callMethod(child.id(), "greet", List.of());
+        assertEquals("Hi", greeting);
+    }
+
 }
