@@ -564,7 +564,6 @@ public class Parser {
         for (;;) {
             var t = type();
             types.append(t);
-
             if (is(COMMA))
                 nextToken();
             else
@@ -1365,10 +1364,12 @@ public class Parser {
         accept(LPAREN);
         var params = List.<ParamDecl>builder();
         if (!is(RPAREN)) {
-            params.append(lambdaParam());
-            while (!is(RPAREN)) {
-                accept(COMMA);
+            for (;;) {
                 params.append(lambdaParam());
+                if (is(COMMA))
+                    nextToken();
+                else
+                    break;
             }
         }
         accept(RPAREN);

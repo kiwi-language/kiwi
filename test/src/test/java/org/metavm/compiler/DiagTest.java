@@ -272,6 +272,19 @@ public class DiagTest extends TestCase {
         );
     }
 
+    public void testTuples() {
+        compile("""
+                class Product(var name: string, var price: double) {
+                
+                    fn func() -> (Lab) -> any {
+                         return l -> (l.name, l.price)
+                    }
+                
+                }
+                """);
+        log.flush();
+    }
+
     private List<Diag> compile(String text) {
         log.setSourceFile(new DummySourceFile(text));
         var parser = new Parser(
