@@ -52,8 +52,10 @@ public class Attr extends StructuralNodeVisitor {
         }
         else if (expr.getType() instanceof ArrayType arrayType)
             v.setType(arrayType.getElementType());
-        else
+        else {
             log.error(expr, Errors.forEachNotApplicableToType(expr.getType()));
+            v.setType(ErrorType.instance);
+        }
         foreachStmt.getBody().accept(this);
         return null;
     }

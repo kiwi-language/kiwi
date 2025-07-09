@@ -1,6 +1,7 @@
 package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.analyze.Env;
+import org.metavm.compiler.type.ErrorType;
 import org.metavm.compiler.type.Type;
 
 import java.util.function.Consumer;
@@ -27,6 +28,6 @@ public class ErrorTypeNode extends TypeNode {
 
     @Override
     protected Type actualResolve(Env env) {
-        return null;
+        return ErrorType.instance;
     }
 }
