@@ -897,6 +897,29 @@ public class DDLTest extends TestCase {
         assertEquals("Shoes", product.get("name"));
     }
 
+    public void testDeleteClassWithInstances() {
+        assemble("kiwi/ddl/delete_class_with_instances_before.kiwi");
+        var id = saveInstance("ddl.Foo", Map.of(
+                "name", "foo",
+                "Bar", List.of(
+                        Map.of(
+                                "name", "bar"
+                        )
+                )
+        ));
+        assemble("kiwi/ddl/delete_class_with_instances_after.kiwi");
+        try (var context = newContext()) {
+            try {
+                context.getKlassByQualifiedName("ddl.Foo.Bar");
+                fail("Class should have been deleted");
+            } catch (BusinessException e) {
+                assertSame(ErrorCode.CLASS_NOT_FOUND, e.getErrorCode());
+            }
+        }
+        var foo = getObject(id);
+        assertEquals(0, foo.getChildren("Bar").size());
+    }
+
     public void testRenameField() {
 
     }
@@ -907,6 +930,10 @@ public class DDLTest extends TestCase {
 
     private String assemble(String fileName, boolean waitForDDLCompleted) {
         return MockUtils.assemble(fileName, typeManager, waitForDDLCompleted, schedulerAndWorker);
+    }
+
+    public ApiObject getObject(Id id) {
+        return apiClient.getObject(id);
     }
 
     private Id saveInstance(String className, Map<String, Object> value) {

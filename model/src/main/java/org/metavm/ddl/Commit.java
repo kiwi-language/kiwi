@@ -32,6 +32,8 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     public static BiConsumer<Long, Boolean> META_CONTEXT_INVALIDATE_HOOK;
     public static BiConsumer<Long, Id> tableSwitchHook;
     public static BiConsumer<Long, Id> dropTmpTableHook;
+    public static Consumer<Long> cleanupRemovingClassesHook;
+
     @SuppressWarnings("unused")
     private static Klass __klass__;
 

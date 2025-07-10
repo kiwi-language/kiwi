@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.function.Function;
 
 import static org.metavm.entity.DifferenceAttributeKey.NEW_INDEX_ITEMS;
@@ -114,9 +115,8 @@ public class IndexConstraintPlugin implements ContextPlugin {
     public void afterSaving(EntityChange<VersionRT> change, IInstanceContext context) {
         var oldItems = change.getAttribute(OLD_INDEX_ITEMS);
         var currentItems = change.getAttribute(NEW_INDEX_ITEMS);
-        var changeList = context.isMigrating() ?
-                ChangeList.inserts(currentItems) :
-                ChangeList.build(oldItems, currentItems, Function.identity());
+        var changes = ChangeList.build(oldItems, currentItems, Function.identity());
+        var changeList = context.isMigrating() ? ChangeList.of(currentItems, List.of(), changes.deletes()) : changes;
         instanceStore.saveIndexEntries(context.getAppId(), changeList);
 //        if (NncUtils.isNotEmpty(changeList.inserts())) {
 //            NncUtils.doInBatch(changeList.inserts(), instanceStore::batchInsert);

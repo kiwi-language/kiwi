@@ -1504,3 +1504,12 @@ Content-Type: application/json
 {
   "token": "87301570-04ab-4946-aa2d-1fec2f770eaa"
 }
+
+
+###
+POST http://localhost:7003/internal-api/user/issue-token
+Content-Type: application/json
+
+{
+  "userId": "018ed5d8b90700"
+}

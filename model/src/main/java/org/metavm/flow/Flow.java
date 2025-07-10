@@ -470,6 +470,12 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         localKlass.setScope(this);
     }
 
+    public void removeLocalKlass(Klass localKlass) {
+        if (!klasses.remove(localKlass))
+            throw new IllegalStateException(
+                    "Klass " + localKlass.getQualifiedName() + " not found in flow " + getQualifiedName());
+    }
+
     public List<Klass> getKlasses() {
         return Collections.unmodifiableList(klasses);
     }
@@ -716,6 +722,11 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     @Override
     public void addKlass(Klass klass) {
         addLocalKlass(klass);
+    }
+
+    @Override
+    public void removeKlass(Klass klass) {
+        removeLocalKlass(klass);
     }
 
     public void rebuildNodes() {

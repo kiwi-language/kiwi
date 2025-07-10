@@ -7,6 +7,7 @@ import org.metavm.util.Utils;
 public enum ClassTypeState {
     INIT(1),
     DEPLOYED(2),
+    REMOVING(3),
 
     ;
 
