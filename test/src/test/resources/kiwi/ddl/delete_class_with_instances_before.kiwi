@@ -1,0 +1,7 @@
+package ddl
+
+class Foo(var name: string) {
+
+    class Bar(var name: string)
+
+}

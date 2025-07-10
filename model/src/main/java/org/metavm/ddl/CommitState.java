@@ -47,6 +47,7 @@ public enum CommitState {
     SUBMITTING(1) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
+            Commit.cleanupRemovingClassesHook.accept(context.getAppId());
         }
 
         @Override

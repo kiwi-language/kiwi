@@ -495,6 +495,10 @@ public class Instances {
                                @Nullable RedirectStatus redirectStatus,
                                IInstanceContext context) {
         if (instance instanceof ClassInstance clsInst) {
+            if (clsInst.getInstanceKlass().getState() == ClassTypeState.REMOVING) {
+                context.remove(clsInst);
+                return;
+            }
             for (Field field : newFields) {
                 var k = clsInst.getInstanceType().asSuper(field.getDeclaringType());
                 if (k != null) {

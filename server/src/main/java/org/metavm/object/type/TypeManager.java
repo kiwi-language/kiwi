@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -42,6 +43,7 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
         super(entityContextFactory);
         this.beanManager = beanManager;
         this.schemaManager = schemaManager;
+        Commit.cleanupRemovingClassesHook = this::cleanupRemovingClasses;
     }
 
     private void initClass(Klass klass, IInstanceContext context) {
@@ -122,9 +124,30 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
         }
     }
 
+    @Transactional
+    protected void cleanupRemovingClasses(long appId) {
+        try (var context = newContext(appId, b -> b.migrating(true))) {
+            var klasses = context.loadKlasses();
+            for (Klass klass : klasses) {
+                if (klass.getState() == ClassTypeState.REMOVING) {
+                    if (klass.isRoot())
+                        context.remove(klass);
+                    else
+                        Objects.requireNonNull(klass.getScope()).removeKlass(klass);
+                    var sft = StaticFieldTable.getInstance(klass.getType(), context);
+                    context.remove(sft);
+                }
+            }
+            context.finish();
+        }
+    }
+
     private void handleRemovedKlass(Klass klass, IInstanceContext context) {
         var tracing = DebugEnv.traceDeployment;
-        context.remove(klass);
+        klass.setState(ClassTypeState.REMOVING);
+        var scope = klass.getScope();
+        if (scope != null)
+            scope.addKlass(klass);
         if (tracing)
             logger.trace("Removing klass {} ({})", klass.getQualifiedName(), klass.getId());
         if (klass.isBeanClass()) {
@@ -140,7 +163,6 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
                 context.remove(sft.get(f).resolveObject());
             }
         }
-        context.remove(sft);
     }
 
     private void rebuildNodes(Klass clazz) {

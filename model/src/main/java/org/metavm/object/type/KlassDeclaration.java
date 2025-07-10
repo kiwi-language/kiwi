@@ -21,6 +21,8 @@ public interface KlassDeclaration extends GenericDeclaration {
 
     void addKlass(Klass klass);
 
+    void removeKlass(Klass klass);
+
     default Klass getKlassByByName(String name) {
         return Utils.findRequired(getKlasses(), k -> k.getName().equals(name),
                 () -> "Cannot find class '" + name + "' in " + this);

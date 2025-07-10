@@ -680,6 +680,11 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         klass.scope = this;
     }
 
+    public void removeInnerKlass(Klass klass) {
+        if (!klasses.remove(klass))
+            throw new RuntimeException("Klass " + klass.getName() + " is not found in " + this.getName());
+    }
+
     public List<Klass> getKlasses() {
         return Collections.unmodifiableList(klasses);
     }
@@ -687,6 +692,11 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     @Override
     public void addKlass(Klass klass) {
         addInnerKlass(klass);
+    }
+
+    @Override
+    public void removeKlass(Klass klass) {
+        removeInnerKlass(klass);
     }
 
     public void setKlasses(List<Klass> klasses) {
