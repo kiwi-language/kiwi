@@ -131,6 +131,7 @@ public enum ErrorCode {
     VERIFICATION_CODE_SENT_TOO_OFTEN(612, "Verification code sent too frequently, please try again later"),
     TOO_MANY_LOGIN_ATTEMPTS(613, "Too many login attempts, please try again later"),
     LOGIN_REQUIRED(614, "Please log in first"),
+    USERNAME_NOT_AVAILABLE(615, "Username {} is not available"),
 
     // Constraint
     DUPLICATE_KEY(701, "Duplicate unique key '{}'"),
