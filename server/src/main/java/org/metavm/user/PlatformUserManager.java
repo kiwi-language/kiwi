@@ -1,19 +1,22 @@
 package org.metavm.user;
 
-import org.metavm.object.instance.core.IInstanceContext;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.metavm.application.Application;
 import org.metavm.application.rest.dto.ApplicationDTO;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
-import org.metavm.entity.*;
+import org.metavm.entity.EntityContextFactory;
+import org.metavm.entity.EntityContextFactoryAware;
+import org.metavm.entity.EntityQueryBuilder;
+import org.metavm.entity.EntityQueryService;
 import org.metavm.event.EventQueue;
 import org.metavm.event.rest.dto.JoinAppEvent;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.user.rest.dto.*;
 import org.metavm.util.*;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -82,6 +85,11 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     @Transactional
     public String save(UserDTO userDTO) {
         try (var platformContext = newPlatformContext()) {
+            if (userDTO.id() == null) {
+                var existing = platformContext.selectFirstByKey(PlatformUser.IDX_LOGIN_NAME, Instances.stringInstance(userDTO.name()));
+                if (existing != null)
+                    throw new BusinessException(ErrorCode.USERNAME_NOT_AVAILABLE, userDTO.name());
+            }
             User user = save(userDTO, platformContext);
             platformContext.finish();
             return user.getStringId();
