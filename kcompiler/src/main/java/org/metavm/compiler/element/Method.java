@@ -130,7 +130,7 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
     }
 
     public Name getQualName() {
-        return declClass.getName().concat("." + getName());
+        return declClass.getQualName().concat("." + getName());
     }
 
     public String getSignature() {
