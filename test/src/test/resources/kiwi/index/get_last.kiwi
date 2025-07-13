@@ -1,0 +1,16 @@
+package index
+
+class Foo(var value: int) {
+
+    static val valueIdx = Index<int, Foo>(false, f -> f.value)
+
+}
+
+@Bean
+class FooService {
+
+    fn getLastFooByValue(value: int) -> Foo? {
+        return Foo.valueIdx.getLast(value)
+    }
+
+}

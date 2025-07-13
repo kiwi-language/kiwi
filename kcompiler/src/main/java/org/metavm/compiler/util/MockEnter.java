@@ -104,6 +104,10 @@ public class MockEnter {
         new Param(Name.from("key"), Types.instance.getNullableType(keyType), getFirst);
         getFirst.setRetType(Types.instance.getNullableType(valueType));
 
+        var getLast = new Method(Name.from("getLast"), Access.PUBLIC, false, false, false, clazz);
+        new Param(Name.from("key"), Types.instance.getNullableType(keyType), getLast);
+        getLast.setRetType(Types.instance.getNullableType(valueType));
+
         var getAll = new Method(Name.from("getAll"), Access.PUBLIC, false, false, false, clazz);
         new Param(Name.from("key"), Types.instance.getNullableType(keyType), getAll);
         getAll.setRetType(Types.instance.getArrayType(valueType));
@@ -111,9 +115,7 @@ public class MockEnter {
         var query = new Method("query", Access.PUBLIC, false, false, false, clazz);
         new Param("min", Types.instance.getNullableType(keyType), query);
         new Param("max", Types.instance.getNullableType(keyType), query);
-        var listType = rootPkg.subPackage("java").subPackage("util").getClass("List")
-                .getInst(List.of(valueType));
-        query.setRetType(Types.instance.getNullableType(listType));
+        query.setRetType(Types.instance.getArrayType(valueType));
 
         var count = new Method("count", Access.PUBLIC, false, false, false, clazz);
         new Param("min", Types.instance.getNullableType(keyType), count);

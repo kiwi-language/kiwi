@@ -21,7 +21,7 @@ public class EntityMemoryIndexTest extends TestCase {
         var index = new EntityMemoryIndex();
         var klass = TestUtils.newKlassBuilder("HashCodeBaz", "hashcode.HashCodeBaz").build();
         index.save(klass);
-        var found = index.selectByUniqueKey(Klass.UNIQUE_QUALIFIED_NAME, List.of(Instances.stringInstance("hashcode.HashCodeBaz")));
+        var found = index.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, List.of(Instances.stringInstance("hashcode.HashCodeBaz")));
         Assert.assertNotNull(found);
     }
 

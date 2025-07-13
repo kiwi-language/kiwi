@@ -1,11 +1,11 @@
 package org.metavm.compiler;
 
-import org.metavm.compiler.util.List;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.ApiNamedObject;
 import org.metavm.util.BusinessException;
 import org.metavm.util.TestUtils;
 
+import java.util.List;
 import java.util.Map;
 
 public class KiwiTest2 extends KiwiTestBase {
@@ -40,7 +40,7 @@ public class KiwiTest2 extends KiwiTestBase {
            "quantity", 1
         ));
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var items = (java.util.List<?>) callMethod(orderService, "findOrderItemsByProduct", List.of(productId));
+        var items = (List<?>) callMethod(orderService, "findOrderItemsByProduct", List.of(productId));
         assertEquals(1, items.size());
 
         callMethod(orderService, "confirmOrder", List.of(orderId));
@@ -58,7 +58,7 @@ public class KiwiTest2 extends KiwiTestBase {
                 "placeOrder",
                 List.of(productId)
         );
-        var orders = (java.util.List<?>) callMethod(
+        var orders = (List<?>) callMethod(
                 orderService,
                 "findProductOrders",
                 List.of(productId)
@@ -110,6 +110,32 @@ public class KiwiTest2 extends KiwiTestBase {
         var child = parent.getChildren("Child").getFirst();
         var greeting = callMethod(child.id(), "greet", List.of());
         assertEquals("Hi", greeting);
+    }
+
+    public void testIndexQuery() {
+        deploy("kiwi/index/query.kiwi");
+        var id = saveInstance("index.Foo", Map.of(
+                "value", 1
+        ));
+        var found = (List<?>) callMethod(
+                ApiNamedObject.of("fooService"),
+                "queryFoosByValue",
+                List.of(0, 2)
+        );
+        assertEquals(1, found.size());
+        assertEquals(id, found.getFirst());
+    }
+
+    public void testGetLast() {
+        deploy("kiwi/index/get_last.kiwi");
+        saveInstance("index.Foo", Map.of("value", 1));
+        var id = saveInstance("index.Foo", Map.of("value", 1));
+        var found = callMethod(
+                ApiNamedObject.of("fooService"),
+                "getLastFooByValue",
+                List.of(1)
+        );
+        assertEquals(id, found);
     }
 
 }

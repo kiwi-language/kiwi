@@ -13,6 +13,9 @@ public interface InstanceRepository extends InstanceProvider {
     @Nullable
     Reference selectFirstByKey(IndexKeyRT key);
 
+    @Nullable
+    Reference selectLastByKey(IndexKeyRT key);
+
     List<Reference> indexScan(IndexKeyRT from, IndexKeyRT to);
 
     long indexCount(IndexKeyRT from, IndexKeyRT to);

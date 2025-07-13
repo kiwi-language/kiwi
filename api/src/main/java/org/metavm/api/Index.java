@@ -1,7 +1,7 @@
 package org.metavm.api;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.function.Function;
 
 public class Index<K, V> {
@@ -17,8 +17,9 @@ public class Index<K, V> {
         this.name = name;
     }
 
-    public List<V> query(K min, K max) {
-        return List.of();
+    @Nonnull
+    public V[] query(K min, K max) {
+        return (V[]) new Object[0];
     }
 
     public long count(K min, K max) {
@@ -31,6 +32,10 @@ public class Index<K, V> {
     }
 
     public @Nullable V getFirst(K key) {
+        return (V) value;
+    }
+
+    public @Nullable V getLast(K key) {
         return (V) value;
     }
 

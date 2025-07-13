@@ -616,15 +616,21 @@ public class Utils {
         return isNotEmpty(list) ? mapping.apply(list.getFirst()) : null;
     }
 
+    public static <T, R> @Nullable R last(List<T> list, Function<T, R> mapping) {
+        return isNotEmpty(list) ? mapping.apply(list.getLast()) : null;
+    }
+
     public static <T, R> @Nullable R first(LinkedList<T> list, Function<T, R> mapping) {
         return isNotEmpty(list) ? mapping.apply(list.getFirst()) : null;
     }
-
 
     public static <T> @Nullable T first(List<T> list) {
         return first(list, Function.identity());
     }
 
+    public static <T> @Nullable T last(List<T> list) {
+        return last(list, Function.identity());
+    }
 
     public static <T> @Nullable T first(LinkedList<T> list) {
         return first(list, Function.identity());

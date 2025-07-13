@@ -318,6 +318,18 @@ public class MockDefContext extends DefContext {
         return entityMap.get(id);
     }
 
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public Reference selectFirstByKey(IndexKeyRT key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public Reference selectLastByKey(IndexKeyRT key) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public <T extends Instance> T bind(T entity) {
         entityMap.put(entity.getId(), (Entity) entity);

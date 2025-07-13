@@ -644,10 +644,15 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public Reference selectFirstByKey(IndexKeyRT key) {
         if(key.getIndex().isUnique() && parent != null && parent.containsUniqueKey(key))
             return parent.selectFirstByKey(key);
-//        NncUtils.requireTrue(key.getIndex().isUnique());
-//        var instances = memIndex.get(key);
-//        if (NncUtils.isNotEmpty(instances)) return instances.iterator().next();
-        return Utils.first(selectByKey(key));
+        return Utils.first(query(key.toQuery(false, 1L)));
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public Reference selectLastByKey(IndexKeyRT key) {
+        if(key.getIndex().isUnique() && parent != null && parent.containsUniqueKey(key))
+            return parent.selectLastByKey(key);
+        return Utils.first(query(key.toQuery(true, 1L)));
     }
 
     public IInstanceContext getParent() {

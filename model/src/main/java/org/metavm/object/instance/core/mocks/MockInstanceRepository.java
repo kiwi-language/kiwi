@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core.mocks;
 
+import org.jetbrains.annotations.Nullable;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
@@ -26,6 +27,12 @@ public class MockInstanceRepository implements InstanceRepository {
 
     @Override
     public Reference selectFirstByKey(IndexKeyRT key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Reference selectLastByKey(IndexKeyRT key) {
         throw new UnsupportedOperationException();
     }
 

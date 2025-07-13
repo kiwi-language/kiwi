@@ -37,6 +37,14 @@ public class IndexNative implements NativeBase {
         );
     }
 
+    public Value getLast(Value key, CallContext callContext) {
+        var indexKey = buildIndexKey(getIndex(), key);
+        return Objects.requireNonNullElseGet(
+                callContext.instanceRepository().selectLastByKey(indexKey),
+                Instances::nullInstance
+        );
+    }
+
     public Value getAll(Value key, CallContext callContext) {
         var result = callContext.instanceRepository().indexSelect(buildIndexKey(getIndex(), key));
         return convertToArray(result, callContext);
@@ -47,7 +55,7 @@ public class IndexNative implements NativeBase {
                 buildIndexKey(getIndex(), min),
                 buildIndexKey(getIndex(), max)
         );
-        return convertToList(result, callContext);
+        return convertToArray(result, callContext);
     }
 
     public Value count(Value min, Value max, CallContext callContext) {
