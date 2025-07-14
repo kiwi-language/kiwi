@@ -12,6 +12,7 @@ import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,13 +61,17 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
 
 
     public InstanceIndexQuery toQuery() {
+        return toQuery(false, null);
+    }
+
+    public InstanceIndexQuery toQuery(boolean desc, @Nullable Long limit) {
         var key = new InstanceIndexKey(index, values);
         return new InstanceIndexQuery(
                 index,
                 key,
                 key,
-                false,
-                null
+                desc,
+                limit
         );
     }
 

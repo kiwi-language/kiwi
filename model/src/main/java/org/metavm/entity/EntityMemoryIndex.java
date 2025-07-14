@@ -77,9 +77,14 @@ public class EntityMemoryIndex {
         return getIndex(indexDef).selectByKey(values);
     }
 
-    public <T extends Entity> @Nullable T selectByUniqueKey(IndexDef<T> indexDef, List<Value> values) {
-        return getIndex(indexDef).selectByUniqueKey(values);
+    public <T extends Entity> @Nullable T selectFirstByKey(IndexDef<T> indexDef, List<Value> values) {
+        return getIndex(indexDef).selectFirstByKey(values);
     }
+
+    public <T extends Entity> @Nullable T selectLastByKey(IndexDef<T> indexDef, List<Value> values) {
+        return getIndex(indexDef).selectLastByKey(values);
+    }
+
 
     public <T extends Entity> List<T> query(EntityIndexQuery<T> query) {
         var index = getIndex(query.indexDef());
@@ -113,9 +118,14 @@ public class EntityMemoryIndex {
             return index.subSet(new Entry<>(key, null), new Entry<>(key, (T) MAX_OBJECT)).stream().map(Entry::object).toList();
         }
 
-        public @Nullable T selectByUniqueKey(List<Value> values) {
+        public @Nullable T selectFirstByKey(List<Value> values) {
             return Utils.first(selectByKey(values));
         }
+
+        public @Nullable T selectLastByKey(List<Value> values) {
+            return Utils.last(selectByKey(values));
+        }
+
 
         private List<Key> getKey(Entity object) {
             return List.of(new Key(indexDef.getValues(object)));

@@ -260,12 +260,12 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     @Nullable
     @Override
     public <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Value... values) {
-        return memoryIndex.selectByUniqueKey(indexDef, List.of(values));
+        return memoryIndex.selectFirstByKey(indexDef, List.of(values));
     }
 
     @Override
     public boolean containsUniqueKey(IndexDef<?> indexDef, Value... values) {
-        return memoryIndex.selectByUniqueKey(indexDef, List.of(values)) != null;
+        return memoryIndex.selectFirstByKey(indexDef, List.of(values)) != null;
     }
 
     @Override
@@ -541,6 +541,18 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     @Override
     public Instance get(Id id) {
         return entityMap.get(id);
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public Reference selectFirstByKey(IndexKeyRT key) {
+        return Utils.first(selectByKey(key));
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public Reference selectLastByKey(IndexKeyRT key) {
+        return Utils.last(selectByKey(key));
     }
 
     @Override

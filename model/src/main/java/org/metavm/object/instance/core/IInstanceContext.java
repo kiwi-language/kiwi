@@ -110,10 +110,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     boolean containsUniqueKey(IndexKeyRT key);
 
-    default Reference selectFirstByKey(IndexKeyRT key) {
-        return Utils.first(selectByKey(key));
-    }
-
     default <T extends Instance> T bind(T instance) {
         batchBind(List.of(instance));
         return instance;
