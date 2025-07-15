@@ -19,7 +19,6 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
-import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.*;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -508,54 +507,9 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         isTemplate = (flags & FLAG_TEMPLATE) != 0;
     }
 
-    public ConstantPool getExistingTypeMetadata(List<? extends Type> typeArguments) {
-        if (Utils.map(getAllTypeParameters(), TypeVariable::getType).equals(typeArguments))
-            return constantPool;
-        return (ConstantPool) ParameterizedStore.get(this, typeArguments);
-    }
-
-    private ConstantPool createTypeMetadata(List<? extends Type> typeArguments) {
-        return new ConstantPool(this, typeArguments);
-    }
-
-    public void addTypeMetadata(ConstantPool parameterized) {
-        var existing = ParameterizedStore.get(this, parameterized.typeArguments.secretlyGetTable());
-        if(existing != null)
-            throw new IllegalStateException("Parameterized klass " + parameterized + " already exists. "
-                    + "existing: " + System.identityHashCode(existing) + ", new: "+ System.identityHashCode(parameterized)
-            );
-        Utils.require(ParameterizedStore.put(this, parameterized.typeArguments.secretlyGetTable(), parameterized) == null,
-                () -> "Parameterized klass " + parameterized + " already exists");
-    }
-
     @JsonIgnore
     public boolean isConstantPoolParameterized() {
         return isTemplate;
-    }
-
-    public TypeMetadata getTypeMetadata(List<? extends Type> typeArguments) {
-        if (!isConstantPoolParameterized()) {
-            if (typeArguments.isEmpty())
-                return constantPool;
-            else
-                throw new InternalException(this + " is not a template class. Type arguments: " + typeArguments);
-        }
-//        typeArguments.forEach(Type::getTypeDesc);
-        var typeMetadata = getExistingTypeMetadata(typeArguments);
-        if (typeMetadata == constantPool)
-            return constantPool;
-        if(typeMetadata == null) {
-            typeMetadata = createTypeMetadata(typeArguments);
-            addTypeMetadata(typeMetadata);
-        }
-        else if (typeMetadata.getStage().isAfterOrAt(stage))
-            return typeMetadata;
-        var existingTm = typeMetadata;
-        var subst = new SubstitutorV2(
-                constantPool, getAllTypeParameters(), typeArguments, typeMetadata, stage);
-        typeMetadata = (ConstantPool) constantPool.accept(subst);
-        assert typeMetadata == existingTm;
-        return typeMetadata;
     }
 
     @JsonIgnore

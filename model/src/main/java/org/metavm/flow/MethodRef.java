@@ -258,7 +258,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
     }
 
     public TypeMetadata getTypeMetadata0() {
-        return getRawFlow().getTypeMetadata(getAllTypeArguments());
+        return getRawFlow().getConstantPool().parameterize(getAllTypeArguments());
     }
 
     public boolean isSetter() {

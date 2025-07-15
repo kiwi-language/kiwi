@@ -1274,16 +1274,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         return getMethodTable().findOverride(method, typeMetadata);
     }
 
-    public void updateParameterized() {
-        ParameterizedStore.forEach(constantPool, (typeArgs, k) -> {
-            var p = (ConstantPool) k;
-            p.setStage(ResolutionStage.INIT);
-            var subst = new SubstitutorV2(
-                    this, typeParameters, typeArgs, k, stage);
-            constantPool.accept(subst);
-        });
-    }
-
     public List<TypeVariable> getTypeParameters() {
         return Collections.unmodifiableList(typeParameters);
     }
@@ -1791,51 +1781,8 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         return constantPool.addValue(value);
     }
 
-    public ConstantPool getExistingTypeMetadata(List<? extends Type> typeArguments) {
-        if (Utils.map(getAllTypeParameters(), TypeVariable::getType).equals(typeArguments))
-            return constantPool;
-        return (ConstantPool) ParameterizedStore.get(this, typeArguments);
-    }
-
-    private ConstantPool createTypeMetadata(List<? extends Type> typeArguments) {
-        return new ConstantPool(this, typeArguments);
-    }
-
-    public void addTypeMetadata(ConstantPool parameterized) {
-        var existing = ParameterizedStore.get(this, parameterized.typeArguments.secretlyGetTable());
-        if(existing != null)
-            throw new IllegalStateException("Parameterized klass " + parameterized + " already exists. "
-                    + "existing: " + System.identityHashCode(existing) + ", new: "+ System.identityHashCode(parameterized)
-            );
-        Utils.require(ParameterizedStore.put(this, parameterized.typeArguments.secretlyGetTable(), parameterized) == null,
-                () -> "Parameterized klass " + parameterized + " already exists");
-    }
-
     public boolean isConstantPoolParameterized() {
         return isTemplate || (scope != null && scope.isConstantPoolParameterized());
-    }
-
-    public TypeMetadata getTypeMetadata(List<Type> typeArguments) {
-        if (!isConstantPoolParameterized()) {
-            if (typeArguments.isEmpty())
-                return constantPool;
-            else
-                throw new InternalException(this + " is not a template class");
-        }
-//        typeArguments.forEach(Type::getTypeDesc);
-        var typeMetadata = getExistingTypeMetadata(typeArguments);
-        if (typeMetadata == constantPool)
-            return constantPool;
-        if(typeMetadata == null) {
-            typeMetadata = createTypeMetadata(typeArguments);
-            addTypeMetadata(typeMetadata);
-        }
-        else if (typeMetadata.getStage().isAfterOrAt(stage))
-            return typeMetadata;
-        var subst = new SubstitutorV2(
-                constantPool, getAllTypeParameters(), typeArguments, typeMetadata, stage);
-        typeMetadata = (ConstantPool) constantPool.accept(subst);
-        return typeMetadata;
     }
 
     @JsonIgnore

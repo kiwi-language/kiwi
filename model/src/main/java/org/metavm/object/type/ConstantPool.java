@@ -8,9 +8,11 @@ import org.metavm.entity.*;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
+import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
+import org.metavm.util.Utils;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -20,22 +22,25 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
 
     private final ConstantScope scope;
     private List<Value> entries = new ArrayList<>();
+    private transient ConstantPool template;
     @CopyIgnore
     private transient Map<Object, Integer> value2entry = new HashMap<>();
     @CopyIgnore
     private transient Object[] values = new Object[1];
 
-    public transient ReadWriteArray<Type> typeArguments;
+    public transient List<Type> typeArguments;
     private transient ResolutionStage stage = ResolutionStage.INIT;
+    private transient int version;
 
     public ConstantPool(ConstantScope scope) {
         this.scope = scope;
+        this.template = this;
     }
 
-    public ConstantPool(ConstantScope scope, List<? extends Type> typeArguments) {
-        this(scope);
-        this.typeArguments = new ReadWriteArray<>(Type.class);
-        this.typeArguments.addAll(typeArguments);
+    public ConstantPool(ConstantPool template, List<? extends Type> typeArguments) {
+        this(template.scope);
+        this.typeArguments = new ArrayList<>(typeArguments);
+        this.template = template;
     }
 
     @Generated
@@ -64,6 +69,7 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
     }
 
     public int addEntry(Value value) {
+        version++;
         int i = entries.size();
         entries.add(value);
         value2entry.put(value, i);
@@ -74,6 +80,7 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
     }
 
     public void clear() {
+        version++;
         entries = new ArrayList<>();
         value2entry = new HashMap<>();
         values = new Object[1];
@@ -139,14 +146,6 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
         return Arrays.toString(getValues());
     }
 
-    public ConstantPool copy() {
-        var copy = new ConstantPool(scope);
-        for (var entry : entries) {
-            copy.addValue(entry);
-        }
-        return copy;
-    }
-
     @Override
     public boolean isValidLocalKey() {
         return true;
@@ -195,6 +194,10 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
         map.put("stage", this.getStage().name());
     }
 
+    public int getVersion() {
+        return version;
+    }
+
     @Generated
     public void write(MvOutput output) {
         output.writeList(entries, output::writeValue);
@@ -205,4 +208,26 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
         buildJson(map);
         return map;
     }
+
+    public ConstantPool parameterize(List<Type> typeArgs) {
+        if (typeArgs.isEmpty() || Utils.biAllMatch(scope.getAllTypeParameters(), typeArgs, (tv, t) -> tv.getType().equals(t)))
+            return this;
+        var typeMetadata = new ConstantPool(this, typeArgs);
+        substitute(typeMetadata);
+        return typeMetadata;
+    }
+
+    public void ensureUptodate() {
+        if (template.version > version)
+            template.substitute(this);
+    }
+
+    private void substitute(ConstantPool parameterized) {
+        Utils.require(parameterized.scope == scope, "Cannot substitute constant pool with different scope");
+        var subst = new SubstitutorV2(
+                this, scope.getAllTypeParameters(), parameterized.typeArguments, parameterized, stage);
+        this.accept(subst);
+        parameterized.version = version;
+    }
+
 }

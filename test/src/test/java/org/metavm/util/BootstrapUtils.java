@@ -37,7 +37,6 @@ public class BootstrapUtils {
             var defContext = state.defContext();
             ModelDefRegistry.setDefContext(defContext);
             StdFunction.setEmailSender(MockEmailSender.INSTANCE);
-            ParameterizedStore.getMap().clear();
             var state = BootstrapUtils.state.copy();
             var mapperRegistry = state.instanceMapperRegistry();
             var idProvider = new IdService(new IdGenerator(state.blockRepository()));

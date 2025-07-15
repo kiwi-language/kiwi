@@ -10,7 +10,6 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
-import org.metavm.util.ParameterizedStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -49,9 +48,7 @@ public class MetaContextCache extends EntityContextFactoryAware {
 
     public IInstanceContext get(long appId, boolean migrating) {
         try {
-            var context = cache.get(new CacheKey(appId, migrating));
-            ParameterizedStore.setMap(context.getParameterizedMap());
-            return context;
+            return cache.get(new CacheKey(appId, migrating));
         } catch (ExecutionException e) {
             throw new InternalException(e);
         }
@@ -75,7 +72,6 @@ public class MetaContextCache extends EntityContextFactoryAware {
             else
                 context.setDescription("MetaContext");
             context.loadKlasses();
-            context.setParameterizedMap(ParameterizedStore.getMap());
             if (DebugEnv.dumpMetaContext) {
                 logger.trace("MetaContext Dump");
                 context.dumpContext();
