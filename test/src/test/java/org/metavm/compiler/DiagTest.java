@@ -285,6 +285,19 @@ public class DiagTest extends TestCase {
         log.flush();
     }
 
+    public void testSelfRefVariableInit() {
+        compile("""
+                class Lab {
+                    var a = a
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:2: Cannot resolve symbol
+                        var a = a
+                                ^""", log.getDiags().getFirst().toString());
+    }
+
     private List<Diag> compile(String text) {
         log.setSourceFile(new DummySourceFile(text));
         var parser = new Parser(

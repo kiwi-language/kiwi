@@ -49,8 +49,14 @@ public class IdentAttr extends StructuralNodeVisitor {
 
     @Override
     public Void visitDeclStmt(DeclStmt declStmt) {
-        env.currentScope().add(declStmt.getDecl().getElement());
-        return super.visitDeclStmt(declStmt);
+        if (declStmt.getDecl().getElement() instanceof Variable) {
+            super.visitDeclStmt(declStmt);
+            env.currentScope().add(declStmt.getDecl().getElement());
+            return null;
+        } else {
+            env.currentScope().add(declStmt.getDecl().getElement());
+            return super.visitDeclStmt(declStmt);
+        }
     }
 
     @Override
