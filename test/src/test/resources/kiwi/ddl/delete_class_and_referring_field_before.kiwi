@@ -1,0 +1,10 @@
+package ddl
+
+class Product(var name: string, var kind: ProductKind)
+
+enum ProductKind {
+    ELECTRONICS,
+    CLOTHING,
+    OTHER,
+    ;
+}

@@ -21,4 +21,5 @@ public interface EntityRepository extends EntityProvider {
         else return allocateRootId();
     }
 
+    boolean remove(Instance instance);
 }

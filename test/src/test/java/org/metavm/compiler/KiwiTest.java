@@ -14,6 +14,7 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Access;
 import org.metavm.object.type.ArrayKind;
+import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -780,6 +781,22 @@ public class KiwiTest extends KiwiTestBase {
                 System.currentTimeMillis()
         ));
         assertTrue(r);
+    }
+
+    public void testEnumConstType() {
+        deploy("kiwi/enums/enum_const_type.kiwi");
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var productKlass = context.getKlassByQualifiedName("enums.Product");
+            var statusKlass = context.getKlassByQualifiedName("enums.ProductStatus");
+            var f = productKlass.getFieldByName("status");
+            assertEquals(statusKlass.getType(), f.getType());
+            for (Field ecField : statusKlass.getEnumConstants()) {
+                var ec = ecField.getStatic(context);
+                var ecKlass = statusKlass.getKlassByByName("$" + ecField.getName());
+                assertEquals(ecKlass.getType(), ec.resolveMvObject().getInstanceType());
+            }
+        }
     }
 
 }

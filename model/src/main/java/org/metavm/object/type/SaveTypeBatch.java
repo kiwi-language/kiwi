@@ -7,8 +7,6 @@ import org.metavm.ddl.Commit;
 import org.metavm.ddl.FieldChange;
 import org.metavm.ddl.FieldChangeKind;
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityRepository;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.*;
 import org.metavm.util.*;
@@ -112,7 +110,7 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         return modifiedEnumConstants;
     }
 
-    public EntityRepository getContext() {
+    public IInstanceContext getContext() {
         return context;
     }
 
@@ -152,7 +150,7 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
             fieldChanges.add(new FieldChange(
                     f.getDeclaringType().getStringId(),
                     f.getStringId(),
-                    f.getOriginalTag(),
+                    f.getTag(),
                     f.getTag(),
                     FieldChangeKind.TYPE_CHANGE));
         }
@@ -213,9 +211,20 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         var enumConstants = new ArrayList<ClassInstance>();
         for (Klass klass : klasses) {
             if (klass.isEnum()) {
-                for (var ec : klass.getEnumConstants()) {
-                    ec.updateEnumConstant(context);
-                    enumConstants.add(ec.getStatic(context).resolveObject());
+                for (var f : klass.getEnumConstants()) {
+                    f.updateEnumConstant(context);
+                    var ec = f.getStatic(context).resolveObject();
+                    enumConstants.add(ec);
+                    // Migrate to new format
+                    if (ec.getInstanceKlass().isEnum()) {
+                        var kName = "$" + f.getName();
+                        var k = Utils.find(
+                                ec.getInstanceKlass().getKlasses(),
+                                k1 -> k1.getName().equals(kName)
+                        );
+                        if (k != null)
+                            ((MvClassInstance) ec).setType(k.getType());
+                    }
                 }
             }
         }
@@ -364,7 +373,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         if(tracing) log.trace("Field {} updated", field.getQualifiedName());
         if(!field.isStatic() && !field.getType().isAssignableFrom(fieldInfo.type)) {
             addTypeChangedField(field);
-            field.changeTag(Objects.requireNonNull(klassInfo).nextFieldTag());
         }
         if(fieldInfo.state != field.getState()) {
             if(fieldInfo.state == MetadataState.REMOVED) {

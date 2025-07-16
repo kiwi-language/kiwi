@@ -31,7 +31,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     public static final Klass uninitializedKlass = KlassBuilder.newBuilder(new NullId(), "Uninitialized", "Uninitialized").build();
 
     private final FieldTable fieldTable = new FieldTable(this);
-    private final Klass klass;
+    private Klass klass;
     private final @NotNull MvClassInstance root;
     private final MvClassInstance parent;
     private int refcount;
@@ -56,8 +56,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             this.parent = parent;
             parent.addChild(this);
             root = parent.getRoot();
-        }
-        else {
+        } else {
             root = this;
             this.parent = null;
         }
@@ -99,9 +98,9 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     }
 
     public void logFieldTable() {
-        for (IInstanceField field : fieldTable) {
-            logger.info("Klass tag {}, field tag {}, value {}, unknown: {}",
-                    field.getKlassTag(), field.getTag(), field.getValue(), field instanceof UnknownField);
+        for (InstanceField field : fieldTable) {
+            logger.info("Klass tag {}, field tag {}, value {}",
+                    field.getKlassTag(), field.getTag(), field.getValue());
         }
     }
 
@@ -223,8 +222,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             if(subTable instanceof FieldSubTable st && (writeObjectMethod = st.type.getWriteObjectMethod()) != null) {
                 output.writeLong(st.klassTag);
                 customWrite(st, writeObjectMethod, output);
-            }
-            else if ((numFields = subTable.countFieldsForWriting()) > 0) {
+            } else if ((numFields = subTable.countFieldsForWriting()) > 0) {
                 output.writeLong(subTable.getKlassTag());
                 defaultWriteFields(subTable, output, numFields);
             }
@@ -239,11 +237,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         markingOutput.setCurrentKlassSlot(subTable);
         var ctx = ContextUtil.getEntityContext();
         var s = ctx.bind(MvObjectOutputStream.create(markingOutput));
-        var si = s;
         Flows.invoke(
                 writeObjectMethod,
                 this,
-                List.of(si.getReference()),
+                List.of(s.getReference()),
                 ContextUtil.getEntityContext()
         );
         markingOutput.insertBytesSectionIfRequired();
@@ -258,9 +255,9 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         defaultWriteFields(st, output, st.countFieldsForWriting());
     }
 
-    private void defaultWriteFields(IFieldSubTable subTable, MvOutput output, int numFields) {
+    private void defaultWriteFields(FieldSubTable subTable, MvOutput output, int numFields) {
         output.writeInt(numFields);
-        subTable.forEach(field -> {
+        subTable.fields.forEach(field -> {
             if (!field.shouldSkipWrite()) {
 //                if(DebugEnv.flag && field instanceof InstanceField f)
 //                    logger.debug("Writing field {}", f.getField().getName());
@@ -303,8 +300,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         var fieldTable = this.fieldTable;
         fieldTable.initialize();
         var subTables = fieldTable.subTables;
-        var unknownSubTables = fieldTable.unknownSubTables;
-        unknownSubTables.clear();
         var oldSlot = input.getCurrentKlassSlot();
         var tag2lev = klass.getTag2level();
         var slots = new InstanceInput[sortedKlasses.size()];
@@ -323,11 +318,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
                 else
                     slots[lev] = input.copy(new ByteArrayInputStream(readSlot(input)));
             } else {
-                var ust = new UnknownFieldSubTable(klassTag);
-                unknownSubTables.add(ust);
                 int numFields = input.readInt();
                 for (int k = 0; k < numFields; k++) {
-                    ust.unknownFields.add(new UnknownField(this, klassTag, input.readInt(), input.readInstanceBytes()));
+                    input.readInt();
+                    input.readInstanceBytes();
                 }
             }
         }
@@ -379,8 +373,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     private void defaultReadFields(InstanceInput input, FieldSubTable subTable) {
         var klassTag = subTable.klassTag;
         var fields = subTable.fields;
-        var unknownFields = subTable.unknownFields;
-        unknownFields.clear();
         int m = 0;
         int numFields = input.readInt();
         for (int l = 0; l < numFields; l++) {
@@ -394,7 +386,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
                 field.secretlySet(input.readValue());
                 m++;
             } else
-                unknownFields.add(new UnknownField(this, klassTag, fieldTag, input.readInstanceBytes()));
+                input.readInstanceBytes();
         }
         for (; m < fields.size(); m++) {
             fields.get(m).ensureInitialized();
@@ -465,18 +457,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     public Value getField(Field field) {
         return field(field).getValue();
-    }
-
-    public void tryClearUnknownField(long klassTag, int tag) {
-        fieldTable.tryClearUnknownField(klassTag, tag);
-    }
-
-    public Value getUnknownField(long klassTag, int tag) {
-        return fieldTable.getUnknown(klassTag, tag);
-    }
-
-    public @Nullable Value tryGetUnknown(long klassId, int tag) {
-        return fieldTable.tryGetUnknown(klassId, tag);
     }
 
     public FlowValue getFunction(MethodRef method) {
@@ -578,11 +558,15 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public Instance copy(Function<ClassType, Id> idSupplier) {
-        var type = getInstanceType();
-        var id = type.isValue() ? null :
+        return copy(getInstanceType(), idSupplier);
+    }
+
+    @Override
+    public Instance copy(ClassType type, Function<ClassType, Id> idSupplier) {
+        var id = type.isValueType() ? null :
                 (isRoot() ? idSupplier.apply(type) : getRoot().nextChildId());
-        var parent = type.isValue() ? null : (MvClassInstance) getParent();
-        var copy = ClassInstanceBuilder.newBuilder(getInstanceType(), id).initFieldTable(false)
+        var parent = type.isValueType() ? null : (MvClassInstance) getParent();
+        var copy = ClassInstanceBuilder.newBuilder(type, id).initFieldTable(false)
                 .parent(parent)
                 .build();
         copy.initializeFieldsArray();
@@ -592,39 +576,20 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
                 var v = field.getValue();
                 st.add(new InstanceField(copy, field.getField(), field.getType(), v));
             }
+            if (subTable.type.equals(type))
+                break;
         }
         return copy;
-    }
-
-    public void setUnknown(long classTag, int fieldTag, Value value) {
-        var bout = new ByteArrayOutputStream();
-        var out = new InstanceOutput(bout);
-        out.writeValue(value);
-        UnknownField uf = new UnknownField(this, classTag, fieldTag, bout.toByteArray());
-        fieldTable.addUnknownField(uf);
-    }
-
-    public void setFieldByTag(long classTag, int fieldTag, Value value) {
-        var st = fieldTable.findSubTable(classTag);
-        if(st != null) {
-            var ff = Utils.find(st, f -> f.getTag() == fieldTag);
-            if(ff != null) {
-                ff.set(value);
-                return;
-            }
-        }
-        setUnknown(classTag, fieldTag, value);
     }
 
     private void initializeFieldsArray() {
         fields = new InstanceField[klass.getFieldCount()];
     }
 
-    private static class FieldTable implements Iterable<IInstanceField> {
+    private static class FieldTable implements Iterable<InstanceField> {
 
         private final MvClassInstance owner;
         private final List<FieldSubTable> subTables = new ArrayList<>();
-        private final List<UnknownFieldSubTable> unknownSubTables = new ArrayList<>();
 
         private FieldTable(MvClassInstance owner) {
             this.owner = owner;
@@ -644,42 +609,16 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             return subTable;
         }
 
-        IFieldSubTable findSubTable(long klassTag) {
+        FieldSubTable findSubTable(long klassTag) {
             for (FieldSubTable subTable : subTables) {
                 if(subTable.klassTag == klassTag)
                     return subTable;
-            }
-            for (UnknownFieldSubTable unknownSubTable : unknownSubTables) {
-                if(unknownSubTable.klassTag == klassTag)
-                    return unknownSubTable;
             }
             return null;
         }
 
         void onFieldAdded(InstanceField field) {
             owner.fields[field.getField().getOffset()] = field;
-        }
-
-        void tryClearUnknownField(long classTag, int tag) {
-            for (FieldSubTable subTable : subTables) {
-                if(subTable.klassTag == classTag) {
-                    subTable.clearUnknown(tag);
-                    return;
-                }
-            }
-            for (UnknownFieldSubTable unknownSubTable : unknownSubTables) {
-                if(unknownSubTable.klassTag == classTag) {
-                    unknownSubTable.clearUnknown(tag);
-                    return;
-                }
-            }
-        }
-
-        void addUnknownSubTable(UnknownFieldSubTable ust) {
-            var index = Collections.binarySearch(unknownSubTables, ust);
-            if(index >= 0)
-                throw new IllegalStateException("FieldSubTable " + ust.getKlassTag() + " already exists");
-            unknownSubTables.add(-(index + 1), ust);
         }
 
         InstanceField get(Field field) {
@@ -699,12 +638,12 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             }
         }
 
-        public void forEach(Consumer<? super IInstanceField> action) {
+        public void forEach(Consumer<? super InstanceField> action) {
             forEachSubTable(st -> st.forEach(action));
         }
 
-        public Iterator<IFieldSubTable> subTableIterator() {
-            return Utils.mergeIterator(subTables.iterator(), unknownSubTables.iterator());
+        public Iterator<FieldSubTable> subTableIterator() {
+            return subTables.iterator();
         }
 
         public int countSubTablesForWriting() {
@@ -713,22 +652,18 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
                 if(!st.shouldSkipWrite())
                     count++;
             }
-            for (UnknownFieldSubTable ust : unknownSubTables) {
-                if(!ust.shouldSkipWrite())
-                    count++;
-            }
             return count;
         }
 
-        public void forEachSubTable(Consumer<? super IFieldSubTable> action) {
-            Utils.forEachMerged(subTables, unknownSubTables, action);
+        public void forEachSubTable(Consumer<? super FieldSubTable> action) {
+            subTables.forEach(action);
         }
 
         @NotNull
         @Override
-        public Iterator<IInstanceField> iterator() {
+        public Iterator<InstanceField> iterator() {
             var tableIt = subTableIterator();
-            Iterator<IInstanceField> i = null;
+            Iterator<InstanceField> i = null;
             while (tableIt.hasNext()) {
                 var n = tableIt.next().iterator();
                 if (n.hasNext()) {
@@ -739,7 +674,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             var firstIt = i;
             return new Iterator<>() {
 
-                Iterator<IInstanceField> it = firstIt;
+                Iterator<InstanceField> it = firstIt;
 
                 @Override
                 public boolean hasNext() {
@@ -747,10 +682,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
                 }
 
                 @Override
-                public IInstanceField next() {
+                public InstanceField next() {
                     var next = it.next();
                     if (!it.hasNext()) {
-                        Iterator<IInstanceField> nextIt = null;
+                        Iterator<InstanceField> nextIt = null;
                         while (tableIt.hasNext()) {
                             var n = tableIt.next().iterator();
                             if (n.hasNext()) {
@@ -765,34 +700,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             };
         }
 
-        public Value getUnknown(long klassTag, int tag) {
-            var r = tryGetUnknown(klassTag, tag);
-            if(r != null)
-                return r;
-            throw new IllegalStateException("Can not find unknown field " + klassTag + "." + tag + " in " + owner.getId());
-        }
-
-        public @Nullable Value tryGetUnknown(long klassTag, int tag) {
-            for (var f : this) {
-                if(f instanceof UnknownField uf && uf.getKlassTag() == klassTag && uf.getTag() == tag)
-                    return uf.getValue();
-            }
-            return null;
-        }
-
-        public void addUnknownField(UnknownField unknownField) {
-            for (FieldSubTable st : subTables) {
-                if (st.klassTag == unknownField.getKlassTag()) {
-                    st.addUnknownField(unknownField);
-                    return;
-                } else if (st.klassTag > unknownField.getKlassTag()) {
-                    break;
-                }
-            }
-            var ust = new UnknownFieldSubTable(unknownField.getKlassTag());
-            addUnknownSubTable(ust);
-            ust.add(unknownField);
-        }
     }
 
     public boolean isSearchable() {
@@ -865,24 +772,17 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         return Collections.unmodifiableList(children);
     }
 
-    private interface IFieldSubTable extends Iterable<IInstanceField>, Comparable<IFieldSubTable> {
-
-        long getKlassTag();
-
-        @Override
-        default int compareTo(@NotNull MvClassInstance.IFieldSubTable o) {
-            return Long.compare(getKlassTag(), o.getKlassTag());
-        }
-
-        int countFieldsForWriting();
+    @Override
+    public void setType(Type type) {
+        super.setType(type);
+        klass = ((ClassType) type).getKlass();
     }
 
-    private static class FieldSubTable implements IFieldSubTable, KlassDataSlot {
+    private static class FieldSubTable implements KlassDataSlot, Iterable<InstanceField> {
         private final FieldTable table;
         private final ClassType type;
         private final long klassTag;
         private final List<InstanceField> fields = new ArrayList<>();
-        private final List<UnknownField> unknownFields = new ArrayList<>();
 
         public FieldSubTable(FieldTable table, ClassType type) {
             this.table = table;
@@ -896,7 +796,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
                     add(new InstanceField(owner, field, type.getTypeMetadata().getType(field.getTypeIndex())));
                 }
                 catch (Exception e) {
-                    throw new InternalException("Failed to initialize field '" + field.getQualifiedName() + "' for instance: " + table.owner.getId());
+                    throw new InternalException("Failed to initialize field '" + field.getQualifiedName() + "' for instance: " + table.owner.getId(), e);
                 }
             }
         }
@@ -906,43 +806,26 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             table.onFieldAdded(field);
         }
 
-        void addUnknownField(UnknownField unknownField) {
-            var index = Collections.binarySearch(unknownFields, unknownField);
-            if(index >= 0)
-                throw new IllegalStateException("Field " + unknownField.getKlassTag() + "." + unknownField.getTag() + " already exists in the field table");
-            unknownFields.add(-(index + 1), unknownField);
-        }
-
         public int countFieldsForWriting() {
             int count = 0;
             for (InstanceField field : fields) {
                 if (!field.shouldSkipWrite())
                     count++;
             }
-            for (UnknownField unknownField : unknownFields) {
-                if(!unknownField.shouldSkipWrite())
-                    count++;
-            }
             return count;
         }
 
         @Override
-        public void forEach(Consumer<? super IInstanceField> action) {
-            Utils.forEachMerged(fields, unknownFields, action);
+        public void forEach(Consumer<? super InstanceField> action) {
+            fields.forEach(action);
         }
 
         @NotNull
         @Override
-        public Iterator<IInstanceField> iterator() {
-            return Utils.mergeIterator(fields.iterator(), unknownFields.iterator());
+        public Iterator<InstanceField> iterator() {
+            return fields.iterator();
        }
 
-        public boolean clearUnknown(int tag) {
-//            return fields.removeIf(f -> f instanceof UnknownField && f.getTag() == tag);
-            return unknownFields.removeIf(f -> f.getTag() == tag);
-        }
-
-        @Override
         public long getKlassTag() {
             return klassTag;
         }
@@ -950,51 +833,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         private boolean shouldSkipWrite() {
             return type.getKlass().getWriteObjectMethod() == null && countFieldsForWriting() == 0;
         }
-    }
-
-    private static class UnknownFieldSubTable implements IFieldSubTable, KlassDataSlot {
-
-        private final long klassTag;
-        private final List<UnknownField> unknownFields = new ArrayList<>();
-
-        private UnknownFieldSubTable(long klassTag) {
-            this.klassTag = klassTag;
-        }
-
-        @NotNull
-        @Override
-        public Iterator<IInstanceField> iterator() {
-            //noinspection unchecked,rawtypes
-            return (Iterator) unknownFields.iterator();
-        }
-
-        void add(UnknownField unknownField) {
-            unknownFields.add(unknownField);
-        }
-
-        @Override
-        public long getKlassTag() {
-            return klassTag;
-        }
-
-        private boolean shouldSkipWrite() {
-            return countFieldsForWriting() == 0;
-        }
-
-        public boolean clearUnknown(int tag) {
-//            return fields.removeIf(f -> f instanceof UnknownField && f.getTag() == tag);
-            return unknownFields.removeIf(f -> f.getTag() == tag);
-        }
-
-        public int countFieldsForWriting() {
-            int count = 0;
-            for (UnknownField unknownField : unknownFields) {
-                if(!unknownField.shouldSkipWrite())
-                    count++;
-            }
-            return count;
-        }
-
     }
 
 }

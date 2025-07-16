@@ -54,7 +54,13 @@ public abstract class Task extends org.metavm.entity.Entity {
         visitor.visitLong();
     }
 
-    protected abstract boolean run0(IInstanceContext context, IInstanceContext taskContext);
+    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
+        var r = run1(context, taskContext);
+        context.validate();
+        return r;
+    }
+
+    protected abstract boolean run1(IInstanceContext context, IInstanceContext taskContext);
 
     public void run(IInstanceContext executionContext, IInstanceContext taskContext) {
         try {
@@ -63,15 +69,15 @@ public abstract class Task extends org.metavm.entity.Entity {
                 if (group != null) {
                     group.onTaskCompletion(this, executionContext, taskContext);
                 }
+                onSuccess(executionContext, taskContext);
                 state = TaskState.COMPLETED;
             } else {
                 state = TaskState.RUNNABLE;
             }
         }
         catch (Exception e) {
-            log.error("Failed to run task {}-{}", getTitle(), getStringId(), e);
             try {
-                onFailure(executionContext, taskContext);
+                onFailure(taskContext);
             }
             catch (Exception e1) {
                 log.error("Failed to execute onFailure for task {}-{}", getTitle(), getStringId(), e1);
@@ -79,6 +85,7 @@ public abstract class Task extends org.metavm.entity.Entity {
             state = TaskState.FAILED;
             if(group != null)
                 group.onTaskFailure(this, executionContext, taskContext);
+            throw e;
         }
     }
 
@@ -136,8 +143,10 @@ public abstract class Task extends org.metavm.entity.Entity {
         return lastRunTimestamp;
     }
 
-    protected void onFailure(IInstanceContext context, IInstanceContext taskContext) {
+    protected void onFailure(IInstanceContext taskContext) {
     }
+
+    protected void onSuccess(IInstanceContext context, IInstanceContext taskContext) {}
 
     public long getStartAt() {
         return startAt;

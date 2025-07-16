@@ -317,22 +317,6 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
     }
 
     @Override
-    public void tryClearUnknownField(long klassTag, int tag) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Value getUnknownField(long klassTag, int tag) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Nullable
-    @Override
-    public Value tryGetUnknown(long klassId, int tag) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void ensureAllFieldsInitialized() {
 
     }
@@ -343,8 +327,9 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
     }
 
     @Override
-    public void setUnknown(long classTag, int fieldTag, Value value) {
-        throw new UnsupportedOperationException();
+    public Instance copy(ClassType type, Function<ClassType, Id> idSupplier) {
+        assert type.equals(getInstanceType());
+        return this;
     }
 
     @Nullable
@@ -395,6 +380,11 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
 
     @Override
     public void incRefcount(int amount) {
+    }
+
+    @Override
+    public long getVersion() {
+        return 0;
     }
 
     // </editor-fold>

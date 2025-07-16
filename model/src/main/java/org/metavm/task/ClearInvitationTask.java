@@ -41,7 +41,7 @@ public class ClearInvitationTask extends Task {
     }
 
     @Override
-    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
+    protected boolean run1(IInstanceContext context, IInstanceContext taskContext) {
         var invitations = context.query(AppInvitation.IDX_APP.newQueryBuilder()
                 .eq(new EntityIndexKey(List.of(context.createReference(appId))))
                 .limit(BATCH_SIZE)

@@ -1,0 +1,12 @@
+package ddl
+
+enum ProductKind {
+    CLOTHING,
+    OTHER
+    ;
+}
+
+class Product(
+    var name: string,
+    var kind: ProductKind
+)

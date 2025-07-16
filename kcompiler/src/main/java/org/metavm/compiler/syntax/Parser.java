@@ -1057,21 +1057,18 @@ public class Parser {
         List<Expr> args = List.of();
         if (is(LPAREN))
             args = arguments();
-        ClassDecl classDecl = null;
-        if (is(LBRACE)) {
-            classDecl = new ClassDecl(
-                    ClassTag.CLASS, List.nil(), List.nil(),
-                    NameTable.instance.empty,
-                    null,
-                    List.of(new Extend(new Call(new Ident(className), args))),
-                    List.nil(),
-                     List.nil(),
-                    List.nil(),
-                    classMembers()
-            );
-            args = List.of();
-        }
-        return new EnumConstDecl(annotations, name, args, classDecl).setPos(pos);
+        List<Node> classMembers = is(LBRACE) ? classMembers() : List.of();
+        var classDecl = new ClassDecl(
+                ClassTag.CLASS, List.nil(), List.nil(),
+                Name.from("$" + name),
+                null,
+                List.of(new Extend(new Call(new Ident(className).setPos(pos), args).setPos(pos)).setPos(pos)),
+                List.nil(),
+                List.nil(),
+                List.nil(),
+                classMembers
+        ).setPos(pos);
+        return new EnumConstDecl(annotations, name, List.of(), classDecl).setPos(pos);
     }
 
     private List<Node> classMembers() {

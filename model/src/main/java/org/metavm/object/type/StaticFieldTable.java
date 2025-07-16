@@ -214,4 +214,8 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
         }
     }
 
+    public void clear() {
+        entries.clear();
+    }
+
 }

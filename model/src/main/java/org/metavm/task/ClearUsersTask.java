@@ -42,7 +42,7 @@ public class ClearUsersTask extends Task {
     }
 
     @Override
-    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
+    protected boolean run1(IInstanceContext context, IInstanceContext taskContext) {
         var app = context.getEntity(Application.class, appId);
         var users = context.query(
                 PlatformUser.IDX_APP.newQueryBuilder()

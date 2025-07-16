@@ -47,13 +47,22 @@ public abstract class ScanTask extends Task {
         var r = scan(context, cursor, BATCH_SIZE);
         var batch = r.instances();
         process(batch, context, taskContext);
+        context.validate();
         if (!r.completed()) {
             cursor = r.cursor();
             return false;
-        } else {
-            onScanOver(context, taskContext);
+        } else
             return true;
-        }
+    }
+
+    @Override
+    protected void onSuccess(IInstanceContext context, IInstanceContext taskContext) {
+        onScanOver(context, taskContext);
+    }
+
+    @Override
+    protected boolean run1(IInstanceContext context, IInstanceContext taskContext) {
+        throw new UnsupportedOperationException();
     }
 
     protected void onStart(IInstanceContext context, IInstanceContext taskContext) {

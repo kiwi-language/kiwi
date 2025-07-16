@@ -40,7 +40,7 @@ public class SendMessageTask extends Task {
     }
 
     @Override
-    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
+    protected boolean run1(IInstanceContext context, IInstanceContext taskContext) {
         Hooks.PUBLISH_USER_EVENT.accept(new ReceiveMessageEvent(message.toDTO()));
         return true;
     }

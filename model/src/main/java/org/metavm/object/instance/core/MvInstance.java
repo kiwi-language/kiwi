@@ -188,4 +188,7 @@ public abstract class MvInstance extends BaseInstance {
         return state().isRemoving();
     }
 
+    public void setType(Type type) {
+        this.type = type;
+    }
 }

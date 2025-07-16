@@ -109,7 +109,7 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
                     logger.trace("{}", klass.getText());
                 }
             }
-            Instances.clearMarks(existingKlasses).forEach(k -> handleRemovedKlass(k, context));
+            Instances.clearMarks(existingKlasses).forEach(k -> handleRemovedKlass(k, batch));
             var beanDefReg = BeanDefinitionRegistry.getInstance(context);
             beanManager.createBeans(klasses, beanDefReg, context);
             for (Klass newClass : batch.getNewKlasses()) {
@@ -142,27 +142,22 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
         }
     }
 
-    private void handleRemovedKlass(Klass klass, IInstanceContext context) {
+    private void handleRemovedKlass(Klass klass, SaveTypeBatch batch) {
         var tracing = DebugEnv.traceDeployment;
+        if (tracing)
+            logger.trace("Removing klass {} ({})", klass.getQualifiedName(), klass.getId());
+        klass.resetHierarchy();
         klass.setState(ClassTypeState.REMOVING);
         var scope = klass.getScope();
         if (scope != null)
             scope.addKlass(klass);
-        if (tracing)
-            logger.trace("Removing klass {} ({})", klass.getQualifiedName(), klass.getId());
+        var context = batch.getContext();
         if (klass.isBeanClass()) {
             if (tracing)
                 logger.trace("Removing bean {}", klass.getAttribute(AttributeNames.BEAN_NAME));
             beanManager.removeBeans(List.of(klass), BeanDefinitionRegistry.getInstance(context), context);
         }
-        var sft = StaticFieldTable.getInstance(klass.getType(), context);
-        if (klass.isEnum()) {
-            for (Field f : klass.getEnumConstants()) {
-                if (tracing)
-                    logger.trace("Removing enum constant: {}", f.getQualifiedName());
-                context.remove(sft.get(f).resolveObject());
-            }
-        }
+        StaticFieldTable.getInstance(klass.getType(), context).clear();
     }
 
     private void rebuildNodes(Klass clazz) {
@@ -189,6 +184,7 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
                 throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, klassName);
             if(klass.isEnum()) {
                 klass.resetHierarchy();
+                klass.getKlasses().forEach(Klass::resetHierarchy);
                 var sft = StaticFieldTable.getInstance(klass.getType(), context);
                 var ec = sft.getEnumConstantByName(enumConstantName);
                 return ec.getId();

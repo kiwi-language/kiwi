@@ -230,58 +230,6 @@ public class DDLTest extends TestCase {
 
     }
 
-//    public void testDDLRollback() {
-//        assemble("kiwi/ddl_before.kiwi");
-//        var shoesId = saveInstance("Product", Map.of(
-//                "name", "Shoes",
-//                "inventory", Map.of(
-//                        "quantity", 100
-//                ),
-//                "price", 100,
-//                "manufacturer", "AppEase"
-//        ));
-//        for (int i = 0; i < 16; i++) {
-//            saveInstance("Product", Map.of(
-//                    "name", "Product" + i,
-//                    "inventory", Map.of(
-//                            "quantity", 100
-//                    ),
-//                    "price", 100,
-//                    "manufacturer", "AppEase"
-//            ));
-//        }
-//        var shoes = apiClient.getObject(shoesId);
-//        var inventoryId = shoes.getString("inventory");
-//        saveInstance("Product", Map.of(
-//                "name", "Hat",
-//                "inventory", inventoryId,
-//                "price", 20,
-//                "manufacturer", "AppEase"
-//        ));
-//        var commitId = assemble("kiwi/ddl_after.kiwi", false);
-//        Field availableField;
-//        try(var context = newContext()) {
-//            var commit = context.getEntity(Commit.class, commitId);
-//            try(var walContext = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.readWAL(commit.getWal()))) {
-//                var productKlass = Objects.requireNonNull(walContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
-//                        Instances.stringInstance("Product")));
-//                availableField = productKlass.getFieldByName("available");
-//            }
-//        }
-//        TestUtils.waitForDDLState(s -> s == CommitState.ABORTED, 16, schedulerAndWorker);
-//        try(var context = newContext()) {
-//            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
-//            try {
-//                shoesInst.getUnknownField(availableField.getDeclaringType().getTag(), availableField.getTag());
-//                Assert.fail("Field should have been rolled back");
-//            }
-//            catch (IllegalStateException ignored) {}
-//            var invInst = context.get(Id.parse(inventoryId));
-//            Assert.assertNull(invInst.getParent());
-//            Assert.assertNull(invInst.getParentField());
-//        }
-//    }
-
     public void testEntityToValueConversion() {
         assemble("kiwi/value_ddl_before.kiwi");
         var shoesId = saveInstance("Product", Map.of(
@@ -532,8 +480,6 @@ public class DDLTest extends TestCase {
             var kindRef = (Reference) shoesInst.getField("kind");
             var kind = (ClassInstance) context.get(kindId);
             Assert.assertSame(kind, kindRef.get());
-            Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag()));
-            Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag()));
         }
     }
 
@@ -918,6 +864,87 @@ public class DDLTest extends TestCase {
         }
         var foo = getObject(id);
         assertEquals(0, foo.getChildren("Bar").size());
+    }
+
+    public void testAbstractEnumMethod() {
+        assemble("kiwi/ddl/enum_constant_body_before.kiwi");
+        var r = callMethod(
+                ApiNamedObject.of("sequenceAnalysisService"),
+                "analyzeSequence",
+                List.of(
+                        "acd",
+                        ApiNamedObject.of(
+                                "ddl.SequenceType",
+                                "PROTEIN"
+                        )
+                )
+        );
+        assertEquals(3.0, r);
+
+        assemble("kiwi/ddl/enum_constant_body_after.kiwi");
+        var r1 = callMethod(
+                ApiNamedObject.of("sequenceAnalysisService"),
+                "analyzeSequence",
+                List.of(
+                        "acd",
+                        ApiNamedObject.of(
+                                "ddl.SequenceType",
+                                "PROTEIN"
+                        )
+                )
+        );
+        assertEquals(6.0, r1);
+    }
+
+    public void testRemoveEnumConst() {
+        assemble("kiwi/ddl/remove_enum_const_before.kiwi");
+        assemble("kiwi/ddl/remove_enum_const_after.kiwi");
+    }
+
+
+    public void testRemoveEnumClass() {
+        assemble("kiwi/ddl/remove_enum_cls_before.kiwi");
+        assemble("kiwi/ddl/remove_enum_cls_after.kiwi");
+    }
+
+    public void testRemoveUsedEnumConst() {
+        assemble("kiwi/ddl/remove_used_enum_const_before.kiwi");
+        var id = saveInstance(
+                "ddl.Product",
+                Map.of(
+                        "name", "MacBook Pro",
+                        "kind", ApiNamedObject.of(
+                                "ddl.ProductKind",
+                                "ELECTRONICS"
+                        )
+                )
+        );
+        assemble("kiwi/ddl/remove_used_enum_const_after.kiwi", false);
+        TestUtils.waitForDDLAborted(schedulerAndWorker);
+        var product = getObject(id);
+        assertEquals("MacBook Pro", product.get("name"));
+        assertEquals("ELECTRONICS", product.getEnumConstant("kind").name());
+    }
+
+    public void testDeleteClassWithReferringField() {
+        assemble("kiwi/ddl/delete_class_and_referring_field_before.kiwi");
+        var id = saveInstance("ddl.Product", Map.of(
+                "name", "MacBook Pro",
+                "kind", ApiNamedObject.of("ddl.ProductKind", "ELECTRONICS")
+        ));
+
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var k = context.getKlassByQualifiedName("ddl.ProductKind");
+            for (Field f : k.getEnumConstants()) {
+                var ec = f.getStatic(context).resolveDurable();
+                logger.debug("Enum constant {}: {}, {}", f.getName(), ec.getId(), ec.getId().getTreeId());
+            }
+        }
+
+        assemble("kiwi/ddl/delete_class_and_referring_field_after.kiwi");
+        var product = getObject(id);
+        assertEquals("MacBook Pro", product.get("name"));
     }
 
     public void testRenameField() {

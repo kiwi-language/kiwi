@@ -152,7 +152,7 @@ X-App-ID: 2
 
 ###
 GET http://localhost:8080/schema
-X-App-ID: 1000000010
+X-App-ID: 1000095196
 
 ###
 POST http://localhost:8080/object/search/product
@@ -1511,7 +1511,7 @@ POST http://localhost:7003/internal-api/user/issue-token
 Content-Type: application/json
 
 {
-  "userId": "018ed5d8b90700"
+  "userId": "019aa3dcb90700"
 }
 
 
@@ -1519,3 +1519,15 @@ Content-Type: application/json
 GET https://api.metavm.tech/platform-user?pageSize=100
 X-App-ID: 2
 Cookie: __token_2__=cad13707-13c8-44d7-92fb-259bd6d20695
+
+###
+POST http://localhost:8080/api/service/sequence-analysis-service/analyze-sequence
+X-App-ID: 1000095133
+Content-Type: application/json
+
+{
+  "request": {
+    "sequenceData": "abc",
+    "sequenceType": "PROTEIN"
+  }
+}

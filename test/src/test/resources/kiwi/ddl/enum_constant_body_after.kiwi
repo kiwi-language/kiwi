@@ -1,0 +1,35 @@
+package ddl
+
+enum SequenceType {
+
+    DNA {
+            fn calculateWeight(sequence: string) -> double {
+                return sequence.length()
+            }
+    },
+    RNA {
+            fn calculateWeight(sequence: string) -> double {
+                return sequence.length() + 1
+            }
+    },
+    PROTEIN {
+            fn calculateWeight(sequence: string) -> double {
+                return sequence.length() * 2
+            }
+    },
+
+;
+
+    abstract fn calculateWeight(sequence: string) -> double
+
+}
+
+
+@Bean
+class SequenceAnalysisService {
+
+    fn analyzeSequence(sequence: string, seqType: SequenceType) -> double {
+        require(sequence.length() > 0, "序列数据不能为空")
+        return seqType.calculateWeight(sequence)
+    }
+}

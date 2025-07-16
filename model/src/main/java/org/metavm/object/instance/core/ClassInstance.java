@@ -12,6 +12,7 @@ import org.metavm.util.Utils;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public interface ClassInstance extends Instance {
@@ -113,12 +114,6 @@ public interface ClassInstance extends Instance {
 
     Value getField(Field field);
 
-    void tryClearUnknownField(long klassTag, int tag);
-
-    Value getUnknownField(long klassTag, int tag);
-
-    @Nullable Value tryGetUnknown(long klassId, int tag);
-
     default FlowValue getFunction(MethodRef method) {
         return new FlowValue(Objects.requireNonNull(getInstanceType().findOverride(method)), this);
     }
@@ -162,7 +157,9 @@ public interface ClassInstance extends Instance {
         return getInstanceKlass().getKind() != ClassKind.VALUE;
     }
 
-    void setUnknown(long classTag, int fieldTag, Value value);
+    default Instance copy(ClassType type, Function<ClassType, Id> idSupplier) {
+        throw new UnsupportedOperationException();
+    }
 
     default boolean isSearchable() {
         return getInstanceKlass().isSearchable();

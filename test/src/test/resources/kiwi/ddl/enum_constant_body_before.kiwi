@@ -1,0 +1,18 @@
+package ddl
+
+enum SequenceType {
+
+    DNA,
+    RNA,
+    PROTEIN,
+;
+
+}
+
+@Bean
+class SequenceAnalysisService {
+
+    fn analyzeSequence(sequence: string, seqType: SequenceType) -> double {
+        return sequence.length()
+    }
+}

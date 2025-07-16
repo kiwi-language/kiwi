@@ -106,8 +106,21 @@ public class MigrationInstanceStore implements IInstanceStore {
         var mapper = getInstanceMapper(context.getAppId(), "instance_tmp");
         var migrated = mapper.selectByIds(context.getAppId(), ids);
         var removedIds = new HashSet<>(mapper.filterDeletedIds(ids));
-        var unmigratedIds = Utils.exclude(ids, removedIds::contains);
-        var unmigrated = wrapped.loadForest(unmigratedIds, context);
+        var unmigrated = wrapped.loadForest(
+                Utils.exclude(ids, removedIds::contains),
+                context
+        );
+        if (DebugEnv.traceMigration) {
+            log.trace("Loading Forest");
+            log.trace("Migrated:");
+            for (InstancePO instancePO : migrated) {
+                log.trace("ID: {}, version: {}", instancePO.getId(), instancePO.getVersion());
+            }
+            log.debug("Unmigrated:");
+            for (InstancePO instancePO : unmigrated) {
+                log.trace("ID: {}, version: {}", instancePO.getId(), instancePO.getVersion());
+            }
+        }
         return mergeResults(migrated, unmigrated, Comparator.comparing(InstancePO::getId), InstancePO::getVersion);
     }
 

@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.common.ErrorCode;
@@ -9,14 +10,11 @@ import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.MvOutput;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
-public class InstanceField implements IInstanceField {
-
-    private static final Logger logger = LoggerFactory.getLogger(InstanceField.class);
+@Slf4j
+public class InstanceField {
 
     private final ClassInstance owner;
     private final Field field;
@@ -46,12 +44,10 @@ public class InstanceField implements IInstanceField {
         return field.getTag();
     }
 
-    @Override
     public boolean shouldSkipWrite() {
         return field.isTransient() || value == null || value.shouldSkipWrite();
     }
 
-    @Override
     public void writeValue(MvOutput output) {
         Objects.requireNonNull(value, () -> "Field " + field.getQualifiedName() + " is not initialized");
         output.writeValue(value);
@@ -81,7 +77,6 @@ public class InstanceField implements IInstanceField {
             value = Instances.getDefaultValue(type);
     }
 
-    @Override
     public void clear() {
         this.value = null;
     }
@@ -95,7 +90,6 @@ public class InstanceField implements IInstanceField {
         }
     }
 
-    @Override
     public @NotNull Value getValue() {
         return Objects.requireNonNull(value,
                 () -> "Field " + field.getQualifiedName() + " is not initialized");
@@ -122,7 +116,6 @@ public class InstanceField implements IInstanceField {
         return type.isArray();
     }
 
-    @Override
     public boolean isFieldInitialized() {
         return value != null;
     }

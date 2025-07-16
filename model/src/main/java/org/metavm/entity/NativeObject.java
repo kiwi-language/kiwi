@@ -62,28 +62,7 @@ public interface NativeObject extends ClassInstance {
     }
 
     @Override
-    default void tryClearUnknownField(long klassTag, int tag) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    default org.metavm.object.instance.core.Value getUnknownField(long klassTag, int tag) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Nullable
-    @Override
-    default org.metavm.object.instance.core.Value tryGetUnknown(long klassId, int tag) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     default void ensureAllFieldsInitialized() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    default void setUnknown(long classTag, int fieldTag, org.metavm.object.instance.core.Value value) {
         throw new UnsupportedOperationException();
     }
 

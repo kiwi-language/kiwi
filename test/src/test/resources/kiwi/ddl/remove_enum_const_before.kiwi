@@ -1,0 +1,7 @@
+package ddl
+
+enum Option {
+    op1,
+    op2,
+    ;
+}

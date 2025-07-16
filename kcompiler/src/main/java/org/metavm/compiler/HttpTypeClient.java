@@ -14,6 +14,11 @@ public class HttpTypeClient implements TypeClient {
     }
 
     @Override
+    public void secretDeploy(long appId, String mvaPath) {
+        CompilerHttpUtils.upload("/internal-api/deploy/" + appId + appId, mvaPath, new TypeReference<Void>() {});
+    }
+
+    @Override
     public void login(String loginName, String password) {
         CompilerHttpUtils.post("/login", new LoginRequest(Constants.PLATFORM_APP_ID, loginName, password),
                 new TypeReference<LoginInfo>() {

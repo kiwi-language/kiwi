@@ -229,7 +229,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     public void cancel() {
         if(cancelled)
             throw new IllegalStateException("The commit has already been cancelled");
-        if(!state.isMigrating())
+        if(!state.isPreparing())
             throw new IllegalStateException("Cannot cancel a prepared commit");
         cancelled = true;
     }

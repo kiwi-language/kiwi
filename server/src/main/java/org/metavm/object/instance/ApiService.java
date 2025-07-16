@@ -330,12 +330,20 @@ public class ApiService extends ApplicationStatusAware {
         };
     }
 
+    private ClassType getApiType(ClassInstance instance) {
+        var type = instance.getInstanceType();
+        var superType = type.getSuperType();
+        if (superType != null && superType.isEnum())
+            return superType;
+        return type;
+    }
+
     private Map<String, Object> formatObject(ClassInstance instance,
                                              boolean includeSummary,
                                              boolean includeFields ,
                                              boolean includeChildren) {
         var map = new LinkedHashMap<String, Object>();
-        var type = instance.getInstanceType();
+        var type = getApiType(instance);
         if (type.isBean()) {
             var beanName = Objects.requireNonNull(type.getKlass().getAttribute(AttributeNames.BEAN_NAME),
                     () -> "Bean name not found for class: " + type.getKlass().getQualifiedName());

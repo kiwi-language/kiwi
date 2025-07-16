@@ -34,8 +34,8 @@ value class ProductKind(
         return this.name
     }
 
-    priv fn __name__(name: string, ordinal: int) -> string {
-        return name
+    priv fn __name__() -> string {
+        return "Unknown"
     }
 
 }

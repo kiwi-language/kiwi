@@ -1,6 +1,7 @@
 package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ReadonlyList;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.ddl.Commit;
@@ -495,10 +496,6 @@ public class Instances {
                                @Nullable RedirectStatus redirectStatus,
                                IInstanceContext context) {
         if (instance instanceof ClassInstance clsInst) {
-            if (clsInst.getInstanceKlass().getState() == ClassTypeState.REMOVING) {
-                context.remove(clsInst);
-                return;
-            }
             for (Field field : newFields) {
                 var k = clsInst.getInstanceType().asSuper(field.getDeclaringType());
                 if (k != null) {
@@ -579,6 +576,17 @@ public class Instances {
         }
     }
 
+    public static void remove(Iterable<Instance> instances, IInstanceContext context) {
+        for (Instance instance : instances) {
+            if (instance instanceof ClassInstance clsInst) {
+                if (clsInst.getInstanceKlass().getState() == ClassTypeState.REMOVING) {
+                    context.remove(clsInst);
+                    return;
+                }
+            }
+        }
+    }
+
     private static void handleValueToEntityConversion(MvClassInstance instance, Klass klass, IInstanceContext context) {
         instance.transformReference((r, isChild, type) -> {
             if (type.isAssignableFrom(klass.getType())) {
@@ -597,13 +605,23 @@ public class Instances {
                 if (r.get() instanceof ClassInstance object && object.getInstanceType().asSuper(klass) != null) {
                     if (!object.isRemoved())
                         object.setRemoved();
-                    var r1 =  object.copy(t -> null).getReference();
+                    var r1 =  object.copy(getCopyType(object.getInstanceType()), t -> null).getReference();
                     Utils.require(r1 instanceof ValueReference);
                     return r1;
                 }
             }
             return r;
         });
+    }
+
+    private static ClassType getCopyType(@NotNull ClassType type) {
+        var t = type;
+        while (t != null && t.getKlass().getState() == ClassTypeState.REMOVING)
+            t = t.getSuperType();
+        if (t == null || t.isAbstract())
+            throw new IllegalStateException(
+                    "Can not copy instance of type " + type.getTypeDesc() + " because it is abstract or removed");
+        return t;
     }
 
     private static void handleEnumConversion(MvInstance instance, Klass enumClass, @Nullable RedirectStatus redirectStatus, IInstanceContext context) {
@@ -668,17 +686,18 @@ public class Instances {
         if (initMethod != null) {
             if (initMethod.getParameters().isEmpty())
                 return field.getType().fromStackValue(Flows.invoke(initMethod.getRef(), instance, List.of(), context));
-            else if (initMethod.getParameterTypes().equals(List.of(Types.getStringType(), Types.getIntType()))) {
-                return field.getType().fromStackValue(Flows.invoke(
-                        initMethod.getRef(),
-                        instance,
-                        List.of(
-                                instance.getUnknownField(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag()),
-                                instance.getUnknownField(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag())
-                        ),
-                        context
-                ));
-            } else
+//            else if (initMethod.getParameterTypes().equals(List.of(Types.getStringType(), Types.getIntType()))) {
+//                return field.getType().fromStackValue(Flows.invoke(
+//                        initMethod.getRef(),
+//                        instance,
+//                        List.of(
+////                                instance.getUnknownField(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag()),
+////                                instance.getUnknownField(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag())
+//                        ),
+//                        context
+//                ));
+//            }
+            else
                 throw new IllegalStateException("Invalid initializer method: " + initMethod.getSignatureString());
         } else if (field.getInitializer() != null)
             return field.getType().fromStackValue(Flows.invoke(field.getInitializer().getRef(), instance, List.of(), context));
@@ -688,8 +707,8 @@ public class Instances {
 
     public static void convertField(ClassInstance instance, Field field, IInstanceContext context) {
         if (DebugEnv.traceDDL) {
-            log.trace("Converting field {} for instance {}, original tag: {}, tag: {}, type: {}",
-                    field.getQualifiedName(), instance, field.getOriginalTag(), field.getTag(), field.getType().getTypeDesc());
+            log.trace("Converting field {} for instance {}, tag: {}, type: {}",
+                    field.getQualifiedName(), instance, field.getTag(), field.getType().getTypeDesc());
         }
         var convertedValue = computeConvertedFieldValue(instance, field, context);
         instance.setField(field, convertedValue);
@@ -707,8 +726,11 @@ public class Instances {
 
     public static Value computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {
         var converter = requireNonNull(findTypeConverter(field));
-        var originalValue = instance.getUnknownField(field.getDeclaringType().getTag(), field.getOriginalTag());
-        return field.getType().fromStackValue(Flows.invoke(converter.getRef(), instance, List.of(originalValue), context));
+        var originalValue = instance.getField(field);
+        if (field.getType().isInstance(originalValue))
+            return originalValue;
+        else
+            return field.getType().fromStackValue(Flows.invoke(converter.getRef(), instance, List.of(originalValue), context));
     }
 
     private static void initializeSuper(ClassInstance instance, Klass klass, IInstanceContext context) {
