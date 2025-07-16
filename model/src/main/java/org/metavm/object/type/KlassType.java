@@ -160,9 +160,10 @@ public class KlassType extends ClassType {
     }
 
     public TypeMetadata getTypeMetadata() {
-        if (typeMetadata == null) {
-            typeMetadata = getKlass().getTypeMetadata(getAllTypeArguments());
-        }
+        if (typeMetadata == null)
+            typeMetadata = getKlass().getConstantPool().parameterize(getAllTypeArguments());
+        else
+            typeMetadata.ensureUptodate();
         return typeMetadata;
     }
 

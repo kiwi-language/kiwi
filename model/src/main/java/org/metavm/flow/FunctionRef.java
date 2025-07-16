@@ -53,7 +53,7 @@ public class FunctionRef extends FlowRef {
 
     @Override
     protected TypeMetadata getTypeMetadata0() {
-        return getRawFlow().getTypeMetadata(getTypeArguments());
+        return getRawFlow().getConstantPool().parameterize(getTypeArguments());
     }
 
     @Override

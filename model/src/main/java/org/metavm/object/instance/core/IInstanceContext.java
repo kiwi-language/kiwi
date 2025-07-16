@@ -228,15 +228,11 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
         return Klasses.loadKlasses(this);
     }
 
-    void setParameterizedMap(ParameterizedMap map);
-
     <T extends Entity> List<T> query(EntityIndexQuery<T> query);
 
     long count(EntityIndexQuery<?> query);
 
     boolean containsUniqueKey(IndexDef<?> indexDef, Value... values);
-
-    ParameterizedMap getParameterizedMap();
 
     default @Nullable Klass findKlassByQualifiedName(String qualifiedName) {
         return selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualifiedName));

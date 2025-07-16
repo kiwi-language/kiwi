@@ -93,17 +93,6 @@ public abstract class DefContext implements IInstanceContext, TypeRegistry {
 
 
     @Override
-    public void setParameterizedMap(ParameterizedMap map) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ParameterizedMap getParameterizedMap() {
-        throw new UnsupportedOperationException();
-    }
-
-
-    @Override
     public <T extends Entity> List<T> query(EntityIndexQuery<T> query) {
         return List.of();
     }

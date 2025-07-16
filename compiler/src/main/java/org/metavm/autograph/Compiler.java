@@ -171,12 +171,6 @@ public class Compiler {
                     if (tracing)
                         logger.trace("Processing class {}", t.getCanonicalText());
                      typeResolver.resolve(t, stage.stage);
-                    if (stage.stage == ResolutionStage.DECLARATION) {
-                        var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS),
-                                () -> "Cannot find MvClass for " + TranspileUtils.getQualifiedName(Objects.requireNonNull(t.resolve())));
-                        if (klass.isTemplate())
-                            klass.updateParameterized();
-                    }
                 });
             }
         }

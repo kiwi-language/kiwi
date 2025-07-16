@@ -86,4 +86,8 @@ public class DummyCallable implements Callable, ConstantScope {
         };
     }
 
+    @Override
+    public List<TypeVariable> getAllTypeParameters() {
+        return List.of();
+    }
 }

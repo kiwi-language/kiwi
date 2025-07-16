@@ -106,6 +106,8 @@ public abstract class FlowRef implements GenericDeclarationRef, Writable, Callab
     public TypeMetadata getTypeMetadata() {
         if(typeMetadata == null)
             typeMetadata = getTypeMetadata0();
+        else
+            typeMetadata.ensureUptodate();
         return typeMetadata;
     }
 

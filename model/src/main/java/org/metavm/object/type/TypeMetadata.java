@@ -20,4 +20,5 @@ public interface TypeMetadata {
 
     int size();
 
+    void ensureUptodate();
 }

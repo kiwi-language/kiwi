@@ -49,7 +49,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final Set<ClassInstance> reindexSet = new HashSet<>();
     private final Set<ClassInstance> searchReindexSet = new HashSet<>();
 
-    private ParameterizedMap parameterizedMap;
     private final transient WeakReference<IInstanceContext> enclosingEntityContext;
     private final boolean tracing = DebugEnv.traceContextActivity;
 
@@ -805,15 +804,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 return false ;
         }
         return containsUniqueKey(createIndexKey(indexDef, values));
-    }
-    @Override
-    public ParameterizedMap getParameterizedMap() {
-        return parameterizedMap;
-    }
-
-    @Override
-    public void setParameterizedMap(ParameterizedMap parameterizedMap) {
-        this.parameterizedMap = parameterizedMap;
     }
 
     @Override
