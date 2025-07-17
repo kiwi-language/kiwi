@@ -41,7 +41,7 @@ public class DiagTest extends TestCase {
                 """);
         assertEquals(1, diags.size());
         assertEquals("""
-                dummy.kiwi:3: Cannot find constructor in enum Option with given argument types: int, string
+                dummy.kiwi:3: Cannot resolve function with given argument types: int, string
                         op1(1, "a")
                         ^""", diags.head().toString());
     }

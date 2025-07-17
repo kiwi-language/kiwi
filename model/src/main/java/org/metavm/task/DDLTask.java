@@ -14,7 +14,6 @@ import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -60,7 +59,7 @@ public class DDLTask extends ScanTask implements IDDLTask {
     }
 
     @Override
-    protected void onFailure(IInstanceContext context, IInstanceContext taskContext) {
+    protected void onFailure(IInstanceContext taskContext) {
         var commit = getCommit();
         if (commit.getState() != CommitState.ABORTING) {
             commit.setState(CommitState.ABORTING);
@@ -80,7 +79,7 @@ public class DDLTask extends ScanTask implements IDDLTask {
 
     @Override
     public boolean isMigrating() {
-        return commitState == CommitState.MIGRATING;
+        return commitState == CommitState.MIGRATING || commitState == CommitState.REMOVING;
     }
 
     @Override

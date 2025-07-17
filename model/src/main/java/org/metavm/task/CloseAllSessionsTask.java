@@ -41,7 +41,7 @@ public class CloseAllSessionsTask extends Task {
     }
 
     @Override
-    protected boolean run0(IInstanceContext platformContext, IInstanceContext taskContext) {
+    protected boolean run1(IInstanceContext platformContext, IInstanceContext taskContext) {
         try (var context = platformContext.createSame(appId)) {
             var objects = context.scan(cursor, BATCH_SIZE).instances();
             if(objects.isEmpty())

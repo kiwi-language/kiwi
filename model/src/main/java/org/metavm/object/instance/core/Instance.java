@@ -177,7 +177,7 @@ public interface Instance extends Message, Identifiable {
     }
 
     default Instance copy(Function<ClassType, Id> idSupplier) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     private boolean isSeparateChild() {

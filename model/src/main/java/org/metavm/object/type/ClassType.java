@@ -525,4 +525,7 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
         return !getKlass().isValueKlass();
     }
 
+    public boolean isAnonymous() {
+        return getKlass().isAnonymous();
+    }
 }

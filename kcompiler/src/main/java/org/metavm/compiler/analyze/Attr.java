@@ -108,12 +108,7 @@ public class Attr extends StructuralNodeVisitor {
         for (Expr argument : enumConstDecl.getArguments())
             attrExpr(argument, PrimitiveType.ANY).resolve();
         var clazz = enumConstDecl.getActualClass();
-        var argTypes = enumConstDecl.getArguments().map(Expr::getType);
-        var init = resolveInit(clazz, argTypes);
-        if (init != null)
-            enumConstDecl.setInit(init);
-        else
-            log.error(enumConstDecl, Errors.cantFindConstructor(clazz, argTypes));
+        enumConstDecl.setInit(clazz.getPrimaryInit());
         if (enumConstDecl.getDecl() != null) {
             enumConstDecl.getDecl().accept(this);
         }

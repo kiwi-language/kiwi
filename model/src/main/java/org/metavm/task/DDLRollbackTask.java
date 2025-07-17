@@ -32,7 +32,7 @@ public class DDLRollbackTask extends Task {
     }
 
     @Override
-    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
+    protected boolean run1(IInstanceContext context, IInstanceContext taskContext) {
         return true;
     }
 

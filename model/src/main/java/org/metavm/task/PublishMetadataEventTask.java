@@ -64,7 +64,7 @@ public class PublishMetadataEventTask extends Task {
     }
 
     @Override
-    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
+    protected boolean run1(IInstanceContext context, IInstanceContext taskContext) {
         if(!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty()) {
             Hooks.PUBLISH_APP_EVENT.accept(new TypeChangeEvent(context.getAppId(),
                     version,

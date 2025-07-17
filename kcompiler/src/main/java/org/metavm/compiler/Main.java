@@ -1,5 +1,6 @@
 package org.metavm.compiler;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.application.rest.dto.ApplicationDTO;
 import org.metavm.common.Page;
@@ -210,6 +211,11 @@ public class Main {
         typeClient.deploy(getAppId(), targetDir.resolve("target.mva").toString());
     }
 
+    private void secretDeploy(TypeClient typeClient, Path targetDir) {
+        Utils.ensureDirectoryExists(selectedEnv);
+        typeClient.secretDeploy(getAppId(), targetDir.resolve("target.mva").toString());
+    }
+
     private List<ApplicationDTO> listApps() {
         var page = CompilerHttpUtils.get("/app", new TypeReference<Page<ApplicationDTO>>() {});
         System.out.println("applications:");
@@ -351,6 +357,7 @@ public class Main {
                     ensureLoggedIn();
                     deploy();
                 }
+                case "secret-deploy" -> secretDeploy();
                 default -> usage();
             }
         }
@@ -361,9 +368,16 @@ public class Main {
         }
     }
 
-    void deploy() throws IOException {
+    @SneakyThrows
+    void deploy() {
         if (build())
             deploy(new HttpTypeClient(), targetRoot);
+    }
+
+    @SneakyThrows
+    void secretDeploy() {
+        if (build())
+            secretDeploy(new HttpTypeClient(), targetRoot);
     }
 
     boolean build() throws IOException {

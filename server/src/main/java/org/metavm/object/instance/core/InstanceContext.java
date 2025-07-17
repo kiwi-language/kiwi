@@ -121,9 +121,10 @@ public class InstanceContext extends BufferingInstanceContext {
         }
         unfrozen(() -> {
             for (Refcount refcount : patch.refcountChange()) {
-                if (DebugEnv.traceContextFinish)
-                    log.trace("Adding {} refcount to instance {}", refcount.getCount(), refcount.getTarget());
                 var target = (ClassInstance) internalGet(refcount.getTarget());
+                if (DebugEnv.traceContextFinish)
+                    log.trace("Adding {} refcount to instance {}, original refcount: {}",
+                            refcount.getCount(), refcount.getTarget(), target.getRefcount());
                 target.incRefcount(refcount.getCount());
             }
         });
@@ -241,12 +242,27 @@ public class InstanceContext extends BufferingInstanceContext {
         return Utils.join(path, this::getInstanceDesc, "/");
     }
 
+    @Override
+    public void validate() {
+        validateRemoval(buildPatch());
+    }
+
     private void validateRemoval(Patch patch) {
         for (VersionRT delete : patch.entityChange().deletes()) {
             var inst = (ClassInstance) internalGet(delete.id());
-            if (inst.getRefcount() > 0 && !inst.isValue())
+            if (inst.getRefcount() > 0 && !isEffectiveValue(inst))
                 throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(inst.getReference()));
         }
+    }
+
+    private boolean isEffectiveValue(ClassInstance instance) {
+        var k = instance.getInstanceKlass();
+        while (k != null) {
+            if (k.isValueKlass())
+                return true;
+            k = k.getSuperKlass();
+        }
+        return false;
     }
 
     @Override
@@ -337,6 +353,25 @@ public class InstanceContext extends BufferingInstanceContext {
                         inserts.add(tree.toInstancePO(appId));
                 }
                 changes = ChangeList.of(inserts, patch.treeChanges().updates(), patch.treeChanges().deletes());
+                if (DebugEnv.traceContextFinish) {
+                    log.trace("Saving instances in migration task. Inserts: {}, updates: {}, deletes: {}",
+                            changes.inserts().size(), changes.updates().size(), changes.deletes().size());
+                    log.trace("Inserts:");
+                    for (InstancePO insert : changes.inserts()) {
+                        var i = internalGet(PhysicalId.of(insert.getId(), 0));
+                        log.trace("{}, refcount: {}", i, ((ClassInstance) i).getRefcount());
+                    }
+                    log.trace("Updates:");
+                    for (InstancePO update : changes.updates()) {
+                        var i = internalGet(PhysicalId.of(update.getId(), 0));
+                        log.trace("{}, refcount: {}", i, ((ClassInstance) i).getRefcount());
+                    }
+                    log.trace("Deletes:");
+                    for (InstancePO delete : changes.deletes()) {
+                        var i = (ClassInstance) internalGet(PhysicalId.of(delete.getId(), 0));
+                        log.trace("{}, refcount: {}", i, i.getRefcount());
+                    }
+                }
             }
             else
                 changes = patch.treeChanges().toChangeList();

@@ -1,0 +1,13 @@
+package enums
+
+enum ProductStatus {
+    ACTIVE,
+    UNAVAILABLE,
+    ;
+}
+
+class Product(var name: string) {
+
+    var status = ProductStatus.ACTIVE
+
+}

@@ -19,7 +19,6 @@ import java.io.Closeable;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -69,6 +68,9 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     }
 
     void loadTree(long id);
+
+    default void validate() {
+    }
 
     TypeDefProvider getTypeDefProvider();
 

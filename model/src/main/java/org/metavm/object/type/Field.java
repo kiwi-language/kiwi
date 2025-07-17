@@ -361,11 +361,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         this.tag = tag;
     }
 
-    public void changeTag(int tag) {
-        originalTag = this.tag;
-        this.tag = tag;
-    }
-
     @Override
     public boolean isStatic() {
         return _static;
@@ -407,11 +402,7 @@ public class Field extends AttributedElement implements Property, ITypeDef {
     }
 
     public int getOriginalTag() {
-        return originalTag;
-    }
-
-    public void clearOriginalTag() {
-        originalTag = -1;
+        return tag;
     }
 
     public int getOffset() {
@@ -585,7 +576,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         map.put("tag", this.getTag());
         var sourceTag = this.getSourceTag();
         if (sourceTag != null) map.put("sourceTag", sourceTag);
-        map.put("originalTag", this.getOriginalTag());
         map.put("offset", this.getOffset());
         map.put("since", this.getSince());
         map.put("flags", this.getFlags());

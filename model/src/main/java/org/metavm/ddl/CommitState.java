@@ -1,6 +1,7 @@
 package org.metavm.ddl;
 
 import org.metavm.api.Entity;
+import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.task.DDLTask;
@@ -8,11 +9,13 @@ import org.metavm.task.SimpleDDLTask;
 import org.metavm.task.Task;
 import org.metavm.task.Tasks;
 import org.metavm.util.Constants;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.metavm.object.instance.core.Instance.log;
 import static org.metavm.task.DDLTask.DISABLE_DELAY;
 
 @Entity
@@ -20,12 +23,9 @@ public enum CommitState {
     MIGRATING(0) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
+            if (DebugEnv.traceMigration)
+                log.trace("Running migrating");
             Instances.migrate(instances, commit, context);
-        }
-
-        @Override
-        public boolean isMigrating() {
-            return true;
         }
 
         @Override
@@ -44,7 +44,30 @@ public enum CommitState {
             return Constants.DDL_SESSION_TIMEOUT;
         }
     },
-    SUBMITTING(1) {
+    REMOVING(1) {
+        @Override
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
+            if (DebugEnv.traceMigration) {
+                log.trace("Running removing");
+                for (Instance instance : instances) {
+                    if (instance instanceof ClassInstance clsInst)
+                        log.trace("Instance {}, tree ID: {}, version: {}, refcount: {}",
+                                clsInst,
+                                clsInst.tryGetTreeId(),
+                                clsInst.getVersion(),
+                                clsInst.getRefcount());
+                }
+            }
+            Instances.remove(instances, context);
+        }
+
+        @Override
+        public long getSessionTimeout() {
+            return Constants.DDL_SESSION_TIMEOUT;
+        }
+
+    },
+    SUBMITTING(2) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
             Commit.cleanupRemovingClassesHook.accept(context.getAppId());
@@ -54,11 +77,6 @@ public enum CommitState {
         public void onCompletion(Commit commit) {
             if(!commit.isCancelled())
                 commit.submit();
-        }
-
-        @Override
-        public boolean isMigrating() {
-            return true;
         }
 
         @Override
@@ -133,8 +151,8 @@ public enum CommitState {
         return values()[ordinal() + 1];
     }
 
-    public boolean isMigrating() {
-        return false;
+    public final boolean isPreparing() {
+        return code < COMPLETED.code();
     }
 
     public long getSessionTimeout() {
@@ -163,7 +181,7 @@ public enum CommitState {
 
     public void transition(Commit commit, IInstanceContext taskContext) {
         CommitState nextState;
-        if(isMigrating() && commit.isCancelled())
+        if(isPreparing() && commit.isCancelled())
             nextState = CommitState.ABORTING;
         else {
             onCompletion(commit);

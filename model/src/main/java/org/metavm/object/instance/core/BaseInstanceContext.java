@@ -530,7 +530,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             log.trace("Adding instance {} to context", instance.tryGetId());
         Utils.require(instance.getContext() == null);
         instance.setContext(this);
-        if (instance.tryGetId() == null && instance.isValue())
+        if (!(instance.tryGetId() instanceof PhysicalId))
             return;
         Utils.require(instance.getNext() == null && instance.getPrev() == null);
         Utils.require(!instance.isRemoved(),

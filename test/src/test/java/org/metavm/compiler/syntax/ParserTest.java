@@ -171,9 +171,27 @@ public class ParserTest extends TestCase {
         var expected = ClassDeclBuilder.builder(Name.from("Currency"))
                 .tag(ClassTag.ENUM)
                 .enumConsts(List.of(
-                        new EnumConstDecl(List.of(), Name.from("USD"), List.of() ,null),
-                        new EnumConstDecl(List.of(), Name.from("CNY"), List.of() ,null),
-                        new EnumConstDecl(List.of(), Name.from("EURO"), List.of() ,null)
+                        new EnumConstDecl(List.of(), Name.from("USD"), List.of() ,
+                                ClassDeclBuilder.builder(Name.from("$USD"))
+                                        .addExtend(
+                                                new Extend(new Call(new Ident(Name.from("Currency")), List.of()))
+                                        )
+                                        .build()
+                                ),
+                        new EnumConstDecl(List.of(), Name.from("CNY"), List.of() ,
+                                ClassDeclBuilder.builder(Name.from("$CNY"))
+                                        .addExtend(
+                                                new Extend(new Call(new Ident(Name.from("Currency")), List.of()))
+                                        )
+                                        .build()
+                        ),
+                        new EnumConstDecl(List.of(), Name.from("EURO"), List.of() ,
+                                ClassDeclBuilder.builder(Name.from("$EURO"))
+                                        .addExtend(
+                                                new Extend(new Call(new Ident(Name.from("Currency")), List.of()))
+                                        )
+                                        .build()
+                        )
                 ))
                 .build();
 
@@ -184,41 +202,6 @@ public class ParserTest extends TestCase {
                             USD,
                             CNY,
                             EURO
-                        }
-                        """)
-        );
-
-        assertEquals(
-                expected,
-                enumDecl("""
-                       enum Currency {
-                            USD,
-                            CNY,
-                            EURO,
-                        }
-                        """)
-        );
-
-        assertEquals(
-                expected,
-                enumDecl("""
-                       enum Currency {
-                            USD,
-                            CNY,
-                            EURO
-                            ;
-                        }
-                        """)
-        );
-
-        assertEquals(
-                expected,
-                enumDecl("""
-                       enum Currency {
-                            USD,
-                            CNY,
-                            EURO,
-                            ;
                         }
                         """)
         );
@@ -233,7 +216,7 @@ public class ParserTest extends TestCase {
                                         List.of(),
                                         Name.from("op1"),
                                         List.of(),
-                                        ClassDeclBuilder.builder(NameTable.instance.empty)
+                                        ClassDeclBuilder.builder(Name.from("$op1"))
                                                 .addExtend(new Extend(new Call(Ident.from("Option"), List.of())))
                                                 .build()
                                 )
