@@ -268,7 +268,9 @@ public class Attr extends StructuralNodeVisitor {
             var type1 = condExpr.getTruePart().getType();
             var type2 = condExpr.getFalsePart().getType();
             Type type;
-            if (type1 instanceof PrimitiveType pt1 && type2 instanceof PrimitiveType pt2) {
+            if (type1 == type2)
+                type = type1;
+            else if (type1 instanceof PrimitiveType pt1 && type2 instanceof PrimitiveType pt2) {
                 if (pt1.widensTo(pt2))
                     type = pt2;
                 else if(pt2.widensTo(pt1))

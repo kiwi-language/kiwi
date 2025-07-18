@@ -1,0 +1,11 @@
+package condexpr
+
+@Bean
+class Lab {
+
+    fn maxGt(a: int, b: int) -> bool {
+        var max = a > b ? a : b
+        return max > 0
+    }
+
+}

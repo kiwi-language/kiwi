@@ -165,4 +165,16 @@ public class KiwiTest2 extends KiwiTestBase {
         ));
     }
 
+    public void testCondExprSameType() {
+        deploy("kiwi/condexpr/condexpr_same_type.kiwi");
+        assertEquals(
+                true,
+                callMethod(
+                        ApiNamedObject.of("lab"),
+                        "maxGt",
+                        List.of(1, 2)
+                )
+        );
+    }
+
 }
