@@ -160,6 +160,8 @@ public enum ErrorCode {
 
     // Compiler
     RAW_TYPES_NOT_SUPPORTED(1201, "Raw types are not supported"),
+    DEPLOY_FAILED(1202, "{}"),
+
 
     // API
     INVALID_REQUEST_METHOD(1501, "Invalid request method"),
@@ -182,7 +184,7 @@ public enum ErrorCode {
     ILLEGAL_QUERY(1801, "Illegal query"),
 
     // Persistence
-    RETRY_FAILED(2001, "Retry failed")
+    RETRY_FAILED(2001, "Retry failed"),
 
     ;
 

@@ -1516,9 +1516,9 @@ Content-Type: application/json
 
 
 ###
-GET https://api.metavm.tech/platform-user?pageSize=100
+GET https://api.metavm.tech/platform-user?pageSize=100&searchText=tiedanli
 X-App-ID: 2
-Cookie: __token_2__=cad13707-13c8-44d7-92fb-259bd6d20695
+Cookie: __token_2__=4cc67433-5ec9-4da6-8e8a-c09479edddac
 
 ###
 POST http://localhost:8080/api/service/sequence-analysis-service/analyze-sequence
