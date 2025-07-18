@@ -1,5 +1,7 @@
 package org.metavm.compiler.util;
 
+import lombok.SneakyThrows;
+import org.metavm.common.ErrorCode;
 import org.metavm.common.Result;
 import org.metavm.compiler.HttpTypeClient;
 import org.metavm.user.rest.dto.LoginInfo;
@@ -108,6 +110,22 @@ public class CompilerHttpUtils {
         }
         catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @SneakyThrows
+    public static void deploy(long appId, String filePath) {
+        var uri = new URI(host + "/internal-api/deploy/" + appId);
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/octet-stream")
+                .POST(HttpRequest.BodyPublishers.ofFile(Paths.get(filePath)))
+                .build();
+        var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() != 200) {
+            var errorResp = Utils.readJSONString(resp.body(), Result.class);
+            throw new BusinessException(ErrorCode.DEPLOY_FAILED, errorResp.getMessage());
         }
     }
 

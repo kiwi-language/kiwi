@@ -251,7 +251,7 @@ public class Code {
     public void castPrim(int sourceTag, Type targetType) {
         var sourceCode = sourceTag - TypeTags.TAG_INT;
         var targetCode = targetType.getTag() - TypeTags.TAG_INT;
-        var offset = targetCode > sourceCode ? targetCode - 1 : sourceCode;
+        var offset = targetCode > sourceCode ? targetCode - 1 : targetCode;
         var code = INT_TO_LONG + 3 * sourceCode + offset;
         code(code);
         state.pop();

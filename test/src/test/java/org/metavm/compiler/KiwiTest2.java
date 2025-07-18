@@ -138,4 +138,31 @@ public class KiwiTest2 extends KiwiTestBase {
         assertEquals(id, found);
     }
 
+    public void testDoubleToIntCast() {
+        deploy("kiwi/cast/primitive_cast.kiwi");
+        assertEquals(
+                1.0,
+                callMethod(
+                ApiNamedObject.of("lab"),
+                "intToDouble",
+                List.of(1)
+        ));
+
+        assertEquals(
+                1,
+                callMethod(
+                        ApiNamedObject.of("lab"),
+                        "doubleToInt",
+                        List.of(1.0)
+         ));
+
+        assertEquals(
+                1L,
+                callMethod(
+                        ApiNamedObject.of("lab"),
+                        "floatToLong",
+                        List.of(1.0)
+        ));
+    }
+
 }

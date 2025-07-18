@@ -1,0 +1,18 @@
+package cast
+
+@Bean
+class Lab {
+
+    fn intToDouble(value: int) -> double {
+        return value as double
+    }
+
+    fn doubleToInt(value: double) -> int {
+        return value as int
+    }
+
+    fn floatToLong(value: float) -> long {
+        return value as long
+    }
+
+}
