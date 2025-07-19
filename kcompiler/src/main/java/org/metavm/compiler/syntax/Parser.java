@@ -360,9 +360,9 @@ public class Parser {
     }
 
     private Expr asExpr() {
-        var pos = pos();
         var expr = prefixExpr();
         while (is(AS)) {
+            var pos = pos();
             nextToken();
             var type = type();
             expr = new CastExpr(type, expr).setPos(pos);

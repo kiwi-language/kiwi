@@ -24,7 +24,7 @@ public record SearchQuery(
     }
 
     public int size() {
-        return pageSize + extra;
+        return Math.min(pageSize + extra, 999);
     }
 
     public int end() {

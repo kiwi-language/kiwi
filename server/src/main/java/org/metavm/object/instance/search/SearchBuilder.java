@@ -25,7 +25,7 @@ public class SearchBuilder {
 
     public static SearchSourceBuilder build(SearchQuery query) {
         SearchSourceBuilder builder = new SearchSourceBuilder();
-        builder.from(query.from()).size(query.size());
+        builder.from(query.from()).size(Math.min(query.size(), 999));
         builder.query(QueryBuilders.queryStringQuery(buildQueryString(query)));
         builder.sort(FieldNames.ID, SortOrder.DESC);
         return builder;

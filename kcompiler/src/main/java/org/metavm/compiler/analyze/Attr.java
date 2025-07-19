@@ -624,7 +624,7 @@ public class Attr extends StructuralNodeVisitor {
             if (Traces.traceAttr) {
                 logger.trace("Trying init: {}", init.getText());
             }
-            if (m.getParamTypes().matches(argumentTypes, this::isApplicable)) {
+            if (m.getParamTypes().matches(argumentTypes, Types::isApplicable)) {
                 return m;
             }
         }
@@ -632,13 +632,7 @@ public class Attr extends StructuralNodeVisitor {
     }
 
     private boolean isApplicable(List<Type> types1, List<Type> types2) {
-        return types1.matches(types2, this::isApplicable);
-    }
-
-    private boolean isApplicable(Type parameterType, Type argumentType) {
-        if (parameterType.isAssignableFrom(argumentType))
-            return true;
-        return widensTo(argumentType, parameterType);
+        return types1.matches(types2, Types::isApplicable);
     }
 
     private boolean isOverride(MethodRef override, MethodRef overridden) {
@@ -646,16 +640,6 @@ public class Attr extends StructuralNodeVisitor {
                 && overridden.getDeclType() != override.getDeclType()
                 && overridden.getDeclType().isAssignableFrom(override.getDeclType())
                 && override.getParamTypes().equals(overridden.getParamTypes());
-    }
-
-    private boolean widensTo(Type t1, Type t2) {
-        if (t1 instanceof PrimitiveType pt1) {
-            if (t2 instanceof PrimitiveType pt2)
-                return pt1.widensTo(pt2);
-            else if (t2 instanceof UnionType ut)
-                return ut.alternatives().anyMatch(alt -> widensTo(t1, alt));
-        }
-        return false;
     }
 
 }

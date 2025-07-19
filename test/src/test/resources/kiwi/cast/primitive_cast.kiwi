@@ -3,6 +3,14 @@ package cast
 @Bean
 class Lab {
 
+    fn intToInt(value: int) -> int {
+        return value as int
+    }
+
+    fn longToInt(value: long) -> int {
+        return value as int
+    }
+
     fn intToDouble(value: int) -> double {
         return value as double
     }

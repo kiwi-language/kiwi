@@ -371,19 +371,15 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         var tracing = this.tracing;
         var fieldInfo = Objects.requireNonNull(this.fieldInfo);
         if(tracing) log.trace("Field {} updated", field.getQualifiedName());
-        if(!field.isStatic() && !field.getType().isAssignableFrom(fieldInfo.type)) {
-            addTypeChangedField(field);
-        }
-        if(fieldInfo.state != field.getState()) {
-            if(fieldInfo.state == MetadataState.REMOVED) {
-                if (field.isStatic())
-                    addNewStaticField(field);
-                else {
-                    addNewField(field);
-                    if (tracing) log.trace("Resurrecting removed field {}", field.getQualifiedName());
-                }
+        if(fieldInfo.state != field.getState() && fieldInfo.state == MetadataState.REMOVED) {
+            if (field.isStatic())
+                addNewStaticField(field);
+            else {
+                addNewField(field);
+                if (tracing) log.trace("Resurrecting removed field {}", field.getQualifiedName());
             }
-        }
+        } else if (!field.isStatic() && !field.getType().isAssignableFrom(fieldInfo.type))
+            addTypeChangedField(field);
         if (field.isEnumConstant() && (!fieldInfo.name.equals(field.getName()) || fieldInfo.ordinal != field.getOrdinal()))
             addModifiedEnumConstant(field);
         getContext().updateMemoryIndex(field);
