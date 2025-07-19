@@ -140,6 +140,15 @@ public class KiwiTest2 extends KiwiTestBase {
 
     public void testDoubleToIntCast() {
         deploy("kiwi/cast/primitive_cast.kiwi");
+
+        assertEquals(
+                1,
+                callMethod(
+                        ApiNamedObject.of("lab"),
+                        "longToInt",
+                        List.of(1)
+                ));
+
         assertEquals(
                 1.0,
                 callMethod(
@@ -163,6 +172,14 @@ public class KiwiTest2 extends KiwiTestBase {
                         "floatToLong",
                         List.of(1.0)
         ));
+
+        assertEquals(
+                1,
+                callMethod(
+                        ApiNamedObject.of("lab"),
+                        "intToInt",
+                        List.of(1)
+                ));
     }
 
     public void testCondExprSameType() {
@@ -175,6 +192,28 @@ public class KiwiTest2 extends KiwiTestBase {
                         List.of(1, 2)
                 )
         );
+    }
+
+    public void testIntLongCompare() {
+        deploy("kiwi/widening/int_long_cmp.kiwi");
+        assertEquals(
+                true,
+                callMethod(
+                        ApiNamedObject.of("lab"),
+                        "le",
+                        List.of(1, 2)
+                )
+        );
+    }
+
+    public void testSearchPageSizeLimit() {
+        deploy("kiwi/search/search.kiwi");
+        saveInstance("search.SearchFoo", Map.of(
+                "name", "Foo"
+        ));
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r = apiClient.search("search.SearchFoo", Map.of(), 1, 10000);
+        assertEquals(1, r.total());
     }
 
 }

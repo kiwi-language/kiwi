@@ -76,6 +76,8 @@ public class Check extends StructuralNodeVisitor {
         var field = fieldDecl.getElement();
         if (field.getDeclClass().getSummaryField() == field && field.getType() != Types.instance.getStringType())
             log.error(fieldDecl, Errors.summaryFieldMustBeString);
+        if (!field.getType().isNullable() && fieldDecl.getInitial() == null)
+            log.error(fieldDecl, Errors.fieldNotInitialized);
         return super.visitFieldDecl(fieldDecl);
     }
 
@@ -90,6 +92,19 @@ public class Check extends StructuralNodeVisitor {
         return super.visitClassParamDecl(classParamDecl);
     }
 
+
+    @Override
+    public Void visitCastExpr(CastExpr castExpr) {
+        var sourceType = castExpr.expr().getType();
+        var targetType = castExpr.type().getType();
+        if (!Types.isApplicable(sourceType, targetType) && !Types.isApplicable(targetType, sourceType)) {
+            log.error(castExpr, Errors.illegalCast(
+                    castExpr.expr().getType().getTypeText(),
+                    castExpr.type().getType().getTypeText()
+            ));
+        }
+        return super.visitCastExpr(castExpr);
+    }
 
     private static final Set<ModifierTag> CLASS_PARAM_ALLOWED_MODS = EnumSet.of(PUB, PROT, PRIV);
     private static final Set<ModifierTag> FIELD_ALLOWED_MODS = EnumSet.of(PUB, PROT, PRIV, STATIC, DELETED);

@@ -24,7 +24,7 @@ public abstract class KiwiTestBase extends TestCase  {
     EntityContextFactory entityContextFactory;
     protected TypeManager typeManager;
     SchedulerAndWorker schedulerAndWorker;
-    private ApiClient apiClient;
+    protected ApiClient apiClient;
     protected  Id userId;
 
     @Override

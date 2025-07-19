@@ -85,6 +85,22 @@ public class Types {
         return ErrorType.instance;
     }
 
+    public static boolean isApplicable(Type parameterType, Type argumentType) {
+        if (parameterType.isAssignableFrom(argumentType))
+            return true;
+        return widensTo(argumentType, parameterType);
+    }
+
+    private static boolean widensTo(Type t1, Type t2) {
+        if (t1 instanceof PrimitiveType pt1) {
+            if (t2 instanceof PrimitiveType pt2)
+                return pt1.widensTo(pt2);
+            else if (t2 instanceof UnionType ut)
+                return ut.alternatives().anyMatch(alt -> widensTo(t1, alt));
+        }
+        return false;
+    }
+
     private Clazz createStringClass() {
         var clazz = new Clazz(ClassTag.CLASS, NameTable.instance.string, Access.PUBLIC, BuiltinClassScope.instance) {
 

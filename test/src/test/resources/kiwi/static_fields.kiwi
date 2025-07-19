@@ -1,10 +1,6 @@
 class UpdateStaticFoo {
 
-    priv static var value: int
-
-    static {
-        UpdateStaticFoo.value = 0
-    }
+    priv static var value = 0
 
     static fn set(value: int) {
         UpdateStaticFoo.value = value

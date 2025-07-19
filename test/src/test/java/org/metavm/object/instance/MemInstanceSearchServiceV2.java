@@ -28,6 +28,8 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
 
     @Override
     public Page<Id> search(SearchQuery query) {
+        if(query.size() > 999)
+            throw new IllegalArgumentException("Page size cannot exceed 999");
         List<Id> result = new ArrayList<>();
         doSearch(query.appId(), query, result);
         if (query.includeBuiltin())

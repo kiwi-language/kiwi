@@ -298,6 +298,41 @@ public class DiagTest extends TestCase {
                                 ^""", log.getDiags().getFirst().toString());
     }
 
+    public void testIllegalCast() {
+        compile("""
+                class Product(var name: string) {
+                
+                    class SKU(var variant: string, var stock: int)
+                    
+                    fn getSkus() -> SKU[] {
+                        return children as SKU[]
+                    }
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:6: Illegal cast from any[] to Product.SKU[]
+                            return children as SKU[]
+                                            ^""",
+                log.getDiags().getFirst().toString());
+    }
+
+    public void testFieldNotInitialized() {
+        compile("""
+                class User(var name: string) {
+                    var passwordHash: string
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:2: Field not initialized
+                        var passwordHash: string
+                            ^""",
+                log.getDiags().getFirst().toString()
+        );
+    }
+
     private List<Diag> compile(String text) {
         log.setSourceFile(new DummySourceFile(text));
         var parser = new Parser(

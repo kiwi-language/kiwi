@@ -1,0 +1,10 @@
+package widening
+
+@Bean
+class Lab {
+
+    fn le(v1: long, v2: int) -> bool {
+        return v1 <= v2
+    }
+
+}

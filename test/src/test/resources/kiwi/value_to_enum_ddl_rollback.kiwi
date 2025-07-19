@@ -37,5 +37,4 @@ value class ProductKind(
     priv fn __name__() -> string {
         return "Unknown"
     }
-
 }
