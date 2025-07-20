@@ -30,6 +30,7 @@ public class ApiController {
     private final ApiAdapter apiAdapter;
 
     public static final String HEADER_REFRESH_POLICY = "X-Refresh-Policy";
+    public static final String CALL_RETURN_OBJECT = "X-Return-Full-Object";
     public static final String REFRESH_POLICY_NONE = "none";
 
     public ApiController(ApiAdapter apiAdapter) {
@@ -49,12 +50,14 @@ public class ApiController {
             var refreshPolicy = servletRequest.getHeader(HEADER_REFRESH_POLICY);
             if (!REFRESH_POLICY_NONE.equalsIgnoreCase(refreshPolicy))
                 ContextUtil.setWaitForSearchSync(true);
+            var callReturnObject = "true".equalsIgnoreCase(servletRequest.getHeader(CALL_RETURN_OBJECT));
             initContextAppId(servletRequest);
             var httpReq = buildHttpRequest(servletRequest);
             var httpResp = new HttpResponseImpl();
             var r = Result.success(apiAdapter.handlePost(
                     servletRequest.getRequestURI(),
                     Objects.requireNonNullElse(requestBody, Map.of()),
+                    callReturnObject,
                     httpReq,
                     httpResp
             ));

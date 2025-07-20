@@ -69,7 +69,7 @@ public class ApiService extends ApplicationStatusAware {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public Object handleMethodCall(Object receiver, String methodCode, Object rawArguments, HttpRequest request, HttpResponse response) {
+    public Object handleMethodCall(Object receiver, String methodCode, Object rawArguments, boolean returnFullObject, HttpRequest request, HttpResponse response) {
         ensureApplicationActive();
         try (var context = newContext()) {
             Value result;
@@ -88,7 +88,7 @@ public class ApiService extends ApplicationStatusAware {
             } else
                 throw invalidRequestBody("Invalid receiver");
             context.finish();
-            return formatValue(result, false, false);
+            return formatValue(result, returnFullObject, returnFullObject);
         }
     }
 
@@ -321,7 +321,7 @@ public class ApiService extends ApplicationStatusAware {
                             yield formatObject(clsInst, true, false, false);
                     }
                     case ArrayInstance array -> {
-                        yield formatArray(array, includeChildren);
+                        yield formatArray(array, asValue, includeChildren);
                     }
                     case null, default -> throw new IllegalStateException("Unrecognized DurableInstance: " + resolved);
                 }
@@ -385,9 +385,9 @@ public class ApiService extends ApplicationStatusAware {
         return map;
     }
 
-    private List<Object> formatArray(ArrayInstance arrayInstance, boolean excludingChildren) {
+    private List<Object> formatArray(ArrayInstance arrayInstance, boolean asValue, boolean excludingChildren) {
         var list = new ArrayList<>();
-        arrayInstance.forEach(e -> list.add(formatValue(e, false, excludingChildren)));
+        arrayInstance.forEach(e -> list.add(formatValue(e, asValue, excludingChildren)));
         return list;
     }
 

@@ -109,7 +109,7 @@ public class ObjectController {
         if (!(requestBody.get("method") instanceof String methodName))
             throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "missing or incorrect method");
         if (args instanceof List<?> || args instanceof Map<?,?>) {
-            var r = apiService.handleMethodCall(receiver, methodName, args, request, response);
+            var r = apiService.handleMethodCall(receiver, methodName, args, false, request, response);
             saveResponse(response, servletResponse);
             return Result.success(r);
         } else

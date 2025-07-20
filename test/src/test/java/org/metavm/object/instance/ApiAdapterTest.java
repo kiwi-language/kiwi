@@ -54,7 +54,7 @@ public class ApiAdapterTest extends TestCase {
                         "loginName", "demo",
                         "password", "123456"
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         ));
         var user = apiClient.getObject(Id.parse(id));
@@ -70,7 +70,7 @@ public class ApiAdapterTest extends TestCase {
                         "id", id,
                         "loginName", "demo1"
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         ));
         var user = apiClient.getObject(Id.parse(id));
@@ -89,7 +89,7 @@ public class ApiAdapterTest extends TestCase {
                 Map.of(
                         "newlyChangedId", appId
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         );
         assertEquals(1, r.items().size());
@@ -133,7 +133,7 @@ public class ApiAdapterTest extends TestCase {
                         "quantity", 1,
                         "couponId", ""
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         ));
         var order = getObject(orderId.toString());
@@ -149,7 +149,7 @@ public class ApiAdapterTest extends TestCase {
                         "price", "100",
                         "stock", "100"
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         ));
         var product = getObject(id);
@@ -171,7 +171,7 @@ public class ApiAdapterTest extends TestCase {
                                 )
                         )
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         ));
         var product = apiClient.getObject(Id.parse(id));
@@ -198,7 +198,7 @@ public class ApiAdapterTest extends TestCase {
                         "userId", id.toString(),
                         "password", "123456"
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         ));
         assertEquals(true, r);
@@ -214,7 +214,7 @@ public class ApiAdapterTest extends TestCase {
                         "name", "MacBook",
                         "price", List.of(10000, 150000)
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         );
         assertEquals(1, result.total());
@@ -230,7 +230,7 @@ public class ApiAdapterTest extends TestCase {
                         "name", "MacBook",
                         "page", 2
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         );
         assertEquals(0, result1.items().size());
@@ -250,7 +250,7 @@ public class ApiAdapterTest extends TestCase {
                         "page", 1,
                         "newlyChangedId", id2
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         );
         assertEquals(2, result2.items().size());
@@ -269,7 +269,7 @@ public class ApiAdapterTest extends TestCase {
                 Map.of(
                         "ownerId", userId
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         );
         assertEquals(1, r.total());
@@ -295,7 +295,7 @@ public class ApiAdapterTest extends TestCase {
                         "includeChildren", true,
                         "newlyChangedId", id
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         );
         assertEquals(1, r.total());
@@ -351,7 +351,7 @@ public class ApiAdapterTest extends TestCase {
         var msg = TestUtils.doInTransaction(() -> apiAdapter.handlePost(
                 "/api/beans/foo-service/greet",
                 Map.of(),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         ));
         assertEquals("Hello", msg);
@@ -365,7 +365,7 @@ public class ApiAdapterTest extends TestCase {
                 Map.of(
                         "productId", id
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         ));
         var product = getObject(id);
@@ -376,7 +376,7 @@ public class ApiAdapterTest extends TestCase {
                 Map.of(
                         "status", "ACTIVE"
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         ));
         assertEquals(id, found);
@@ -391,7 +391,7 @@ public class ApiAdapterTest extends TestCase {
                         "name", "demo",
                         "ownerId", userId
                 ),
-                mockHttpRequest(),
+                false, mockHttpRequest(),
                 mockHttpResponse()
         ));
         var app = getObject(appId);
@@ -441,7 +441,7 @@ public class ApiAdapterTest extends TestCase {
             TestUtils.doInTransaction(() -> apiAdapter.handlePost(
                     "/api/index/blog-service/vote",
                     Map.of("blogId", blogId, "userId", userId),
-                    mockHttpRequest(),
+                    false, mockHttpRequest(),
                     mockHttpResponse()
             ));
         } finally {

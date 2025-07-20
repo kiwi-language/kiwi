@@ -122,7 +122,7 @@ public class CompilationTask {
         }
     }
 
-    public void generateApi() {
+    public void generateApi(boolean retFullObj) {
         var classes = List.<Clazz>builder();
         files.forEach(f -> {
             for (var classDecl : f.getClassDeclarations()) {
@@ -130,7 +130,7 @@ public class CompilationTask {
             }
         });
         var c = classes.build();
-        var api = new ApiGenerator().generate(c);
+        var api = new ApiGenerator(retFullObj).generate(c);
         var apiBuildDir = buildDir.getParent().resolve("apigen");
         Utils.writeFile(apiBuildDir.resolve("api.ts"), api.getBytes(StandardCharsets.UTF_8));
     }
