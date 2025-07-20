@@ -409,6 +409,31 @@ public class ApiAdapterTest extends TestCase {
         assertEquals(List.of(userId), app.get("memberIds"));
     }
 
+    public void testMultiGet() {
+        deploy(("kiwi/children.kiwi"));
+        var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "Shoes",
+                "SKU", List.of(
+                        Map.of(
+                                "variant", "40",
+                                "price", 100,
+                                "stock", 100
+                        )
+                )
+        ))).toString();
+        var product = (Map<?, ?>) ((List<?>) apiAdapter.handlePost("/api/product/_multi-get",
+                Map.of("ids", List.of(productId)),
+                true,
+                mockHttpRequest(),
+                mockHttpResponse()
+        )).getFirst();
+        assertEquals("Shoes", product.get("name"));
+        var skus = (List<?>) product.get("skus");
+        assertEquals(1, skus.size());
+        var sku = (Map<?, ?>) skus.getFirst();
+        assertEquals("40", sku.get("variant"));
+    }
+
     public void testShadowedChildren() {
         deploy("kiwi/blog.kiwi");
         var blogId = saveInstance("Blog", Map.of(

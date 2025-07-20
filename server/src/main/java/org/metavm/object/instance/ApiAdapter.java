@@ -67,9 +67,10 @@ public class ApiAdapter extends EntityContextFactoryAware {
                         r.total()
                 );
             } else if (path.suffix.equals("_multi-get")) {
-                if (requestBody.get("ids") instanceof List<?> ids)
-                    return apiService.multiGet((List) ids, true, true);
-                else
+                if (requestBody.get("ids") instanceof List<?> ids) {
+                    List<Map<String, Object>> objects = apiService.multiGet((List) ids, false, false);
+                    return Utils.map(objects, m -> transformResultObject(m, path.classType));
+                } else
                     throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
             } else {
                 var methodName = NamingUtils.pathToName(path.suffix);
