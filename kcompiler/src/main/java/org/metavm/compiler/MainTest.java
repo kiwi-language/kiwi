@@ -9,7 +9,7 @@ public class MainTest {
         var main = new Main(Path.of("/Users/leen/workspace/kiwi_test"));
         main.initializeHttpClient();
         main.ensureLoggedIn();
-        main.generateApi();
+        main.generateApi(false);
     }
 
 }

@@ -62,20 +62,24 @@ public class ApiClient {
     }
 
     public @Nullable Object callMethod(Object qualifier, String methodName, List<Object> arguments) {
-        return callMethod0(qualifier, methodName, transformArgs(arguments));
+        return callMethod(qualifier, methodName, arguments, false);
+    }
+
+    public @Nullable Object callMethod(Object qualifier, String methodName, List<Object> arguments, boolean returnObject) {
+        return callMethod0(qualifier, methodName, transformArgs(arguments), returnObject);
     }
 
     public @Nullable Object callMethod(Object receiver, String methodName, Map<String, Object> arguments) {
         var transformedArgs = new HashMap<String, Object>();
         arguments.forEach((name, value) -> transformedArgs.put(name, transformArgs(value)));
-        return callMethod0(receiver, methodName, transformedArgs);
+        return callMethod0(receiver, methodName, transformedArgs, false);
     }
 
-    private @Nullable Object callMethod0(Object receiver, String methodName, Object arguments) {
+    private @Nullable Object callMethod0(Object receiver, String methodName, Object arguments, boolean returnObject) {
         var uri = "/object/invoke";
         var req = makeRequest("POST", uri);
         var resp = new HttpResponseImpl();
-        var rs = apiService.handleMethodCall(transformArgs(receiver), methodName, arguments, req, resp);
+        var rs = apiService.handleMethodCall(transformArgs(receiver), methodName, arguments, returnObject, req, resp);
         processResponse(resp);
         return ApiObject.convertValue(rs);
     }

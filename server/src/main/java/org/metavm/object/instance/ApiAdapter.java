@@ -43,7 +43,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
     }
 
     @SneakyThrows
-    public Object handlePost(String uri, Map<String, Object> requestBody, HttpRequest httpRequest, HttpResponse httpResponse) {
+    public Object handlePost(String uri, Map<String, Object> requestBody, boolean retFullObj, HttpRequest httpRequest, HttpResponse httpResponse) {
         ClassType type;
         if ((type = parseGetClassType(uri)) != null) {
             var o = transformRequestObject(requestBody, type);
@@ -66,6 +66,11 @@ public class ApiAdapter extends EntityContextFactoryAware {
                         Utils.map(r.items(), i -> transformResultValue(i, path.classType)),
                         r.total()
                 );
+            } else if (path.suffix.equals("_multi-get")) {
+                if (requestBody.get("ids") instanceof List<?> ids)
+                    return apiService.multiGet((List) ids, true, true);
+                else
+                    throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
             } else {
                 var methodName = NamingUtils.pathToName(path.suffix);
                 var method = resolveMethod(path.classType, methodName, requestBody);
@@ -75,6 +80,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
                             invokeReq.receiver,
                             methodName,
                             invokeReq.arguments,
+                            retFullObj,
                             httpRequest,
                             httpResponse
                     );

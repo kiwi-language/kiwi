@@ -2,6 +2,8 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.application.Application;
 import org.metavm.common.ErrorCode;
@@ -13,6 +15,7 @@ import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -234,6 +237,24 @@ public class ApiServiceTest extends TestCase {
         assertNotNull(objects1.getFirst().get("summary"));
         assertNull(objects1.getFirst().get("children"));
         assertNull(objects1.getFirst().get("field"));
+    }
+
+    public void testReturnFullObject() {
+        deploy("kiwi/shopping.kiwi");
+        var productId = saveInstance("Product", Map.of(
+                "name", "Shoes", "price", 100, "stock", 100
+        ));
+        var order = TestUtils.doInTransaction(() -> apiClient.callMethod(
+                ApiNamedObject.of("orderService"),
+                "placeOrder",
+                Arrays.asList(
+                        productId,
+                        1,
+                        null
+                ),
+                true
+        ));
+        MatcherAssert.assertThat(order, CoreMatchers.instanceOf(ApiObject.class));
     }
 
     private void deploy(String source) {

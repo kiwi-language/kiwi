@@ -14,7 +14,7 @@ public class ApiGeneratorTest extends TestCase {
     @SneakyThrows
     public void test() {
         var clazz = Mocks.createShoppingClasses();
-        var text = new ApiGenerator().generate(clazz);
+        var text = new ApiGenerator(true).generate(clazz);
         log.info(text);
     }
 
@@ -22,7 +22,7 @@ public class ApiGeneratorTest extends TestCase {
     @SneakyThrows
     public static void main(String[] args) {
         var clazz = Mocks.createShoppingClasses();
-        var text = new ApiGenerator().generate(clazz);
+        var text = new ApiGenerator(true).generate(clazz);
         Files.writeString(
                 Path.of("/Users/leen/develop/page-works/1/src/api.ts"),
                 text

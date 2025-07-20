@@ -18,20 +18,20 @@ public class ApiGenUtils {
             return clazz.getName().toString();
     }
 
-    public static String getApiType(Type type) {
+    public static String getApiType(Type type, boolean fullObject) {
         return switch (type) {
             case PrimitiveType primitiveType -> getApiPrimType(primitiveType);
             case StringType ignored -> "string";
             case ClassType classType -> {
-                var apiClsName = classType.getClazz().isEntity() ? "string" : getApiClass(classType.getClazz());
+                var apiClsName = classType.getClazz().isEntity() && !fullObject ? "string" : getApiClass(classType.getClazz());
                 if (classType.getTypeArguments().isEmpty())
                     yield apiClsName;
                 else
                     yield apiClsName + "<" + Utils.join(classType.getTypeArguments(), Type::getTypeText) + ">";
             }
-            case ArrayType arrayType -> getApiType(arrayType.getElementType()) + "[]";
+            case ArrayType arrayType -> getApiType(arrayType.getElementType(), fullObject) + "[]";
             case UnionType unionType -> unionType.alternatives().stream()
-                            .map(ApiGenUtils::getApiType).sorted().collect(Collectors.joining(" | "));
+                            .map(t -> getApiType(t, fullObject)).sorted().collect(Collectors.joining(" | "));
             default -> throw new IllegalStateException("Type " + type.getTypeText() + " is not supported in API");
         };
     }

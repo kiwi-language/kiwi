@@ -7,6 +7,8 @@ import org.metavm.util.InflectUtil;
 import org.metavm.util.NamingUtils;
 import org.metavm.util.Utils;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,6 +22,11 @@ public class ApiGenerator {
     private final Set<String> generatedTypes = new HashSet<>();
     private final Set<String> generatedFuncs = new HashSet<>();
     private final ApiWriter apiWriter = new ApiWriter();
+    private final boolean retFullObj;
+
+    public ApiGenerator(boolean retFullObj) {
+        this.retFullObj = retFullObj;
+    }
 
     public String generate(List<Clazz> rootClasses) {
         generateImports();
@@ -34,9 +41,11 @@ public class ApiGenerator {
     }
 
     private void generateFuncs(List<Clazz> rootClasses) {
+        apiWriter.writeln("const RETURN_FULL_OBJECT = " + retFullObj);
         apiWriter.writeln(Templates.CALL_API);
         apiWriter.writeln("export const api = {\n");
         apiWriter.indent();
+        apiWriter.writeln(Templates.UPLOAD_API);
         for (var cls : rootClasses) {
             generateFuncs(cls);
         }
@@ -76,17 +85,16 @@ public class ApiGenerator {
             var fieldNames = new HashSet<String>();
             for (Field field : cls.getFields()) {
                 if (field.isPublic() && !field.isStatic()) {
-                    if (!initParamsNames.contains(field.getName()))
-                        apiWriter.writeln("// Not needed for creation");
-                    writeVariable(field, fieldNames);
+                    var comment = !initParamsNames.contains(field.getName()) ? "Not needed for creation" : null;
+                    writeVariable(field, false, fieldNames, comment);
                     if (field.getType().getUnderlyingType() instanceof ClassType ct && isEntityType(ct)) {
                         var nullable = field.getType() instanceof UnionType;
                         var summaryField = ct.getClazz().getSummaryField();
                         if (summaryField != null) {
                             var fName = field.getName() + firstCharToUpperCase(summaryField.getName().toString());
                             if (fieldNames.add(fName)) {
-                                apiWriter.writeln("// Available in response but not needed in request");
-                                apiWriter.writeln(fName + (nullable ? "?: string" : ": string"));
+                                apiWriter.write(fName + (nullable ? "?: string" : ": string"));
+                                apiWriter.writeln(" // Available in response but not needed in request");
                             }
                         }
                     }
@@ -174,11 +182,10 @@ public class ApiGenerator {
                     apiWriter.writeln("min" + fName + "?: number");
                     apiWriter.writeln("max" + fName + "?: number");
                 }
-                writeVariable(field, true, fieldNames);
+                writeVariable(field, true, fieldNames, null);
             }
         }
-        apiWriter.writeln("// 1-based page number");
-        apiWriter.writeln("page?: number");
+        apiWriter.writeln("page?: number // 1-based page number");
         apiWriter.writeln("pageSize?: number");
         apiWriter.deIndent();
         apiWriter.writeln("}");
@@ -213,14 +220,23 @@ public class ApiGenerator {
         apiWriter.writeln(firstCharsToLowerCase(getApiClass(clazz)) + "Id: string");
     }
 
-    private void writeVariable(Variable variable, Set<String> fieldNamex) {
-        writeVariable(variable, false, fieldNamex);
+    private void writeVariable(Variable variable, Set<String> fieldName) {
+        writeVariable(variable, false, fieldName, null);
     }
 
-    private void writeVariable(Variable variable, boolean optional, Set<String> fieldNames) {
+    private void writeVariable(Variable variable, boolean optional, Set<String> fieldNames, @Nullable String comment) {
         var varName = transformFieldName(variable.getName().toString(), variable.getType());
-        if (fieldNames.add(varName))
-            apiWriter.writeln(varName + (optional ? "?: " :  ": ") + getApiType(variable.getType()));
+        if (fieldNames.add(varName)) {
+            apiWriter.write(varName + (optional ? "?: " : ": ") + getApiType(variable.getType(), false));
+            var comments = new ArrayList<String>();
+            if (isEntityType(variable.getType()))
+                comments.add("ID of " + getApiType(variable.getType().getUnderlyingType(), true));
+            if (!comments.isEmpty())
+                apiWriter.write(" // " + String.join(". ", comments));
+            if (comment != null)
+                comments.add(comment);
+            apiWriter.writeln();
+        }
     }
 
     private String transformFieldName(String name, Type type) {
@@ -237,7 +253,8 @@ public class ApiGenerator {
             return;
         if (clazz.isTopLevel() && !clazz.isBean()) {
             generateSave(clazz);
-            generateRetrieve(clazz);
+            generateGet(clazz);
+            generateMultiGet(clazz);
             generateDelete(clazz);
             generateSearch(clazz);
         }
@@ -254,13 +271,30 @@ public class ApiGenerator {
         return NamingUtils.nameToPath(name.toString());
     }
 
-    private void generateRetrieve(Clazz clazz) {
+    private void generateGet(Clazz clazz) {
         var funcName = "get" + getApiClass(clazz);
         if (generatedFuncs.add(funcName)) {
             apiWriter.writeln(String.format(
                     """
                             %s: (id: string): Promise<%s> => {
                                 return callApi<%s>(`/api/%s/${id}`, 'GET')
+                            },
+                            """,
+                    funcName,
+                    getApiClass(clazz),
+                    getApiClass(clazz),
+                    toPath(clazz.getQualName())
+            ));
+        }
+    }
+
+    private void generateMultiGet(Clazz clazz) {
+        var funcName = "multiGet" + getApiClass(clazz);
+        if (generatedFuncs.add(funcName)) {
+            apiWriter.writeln(String.format(
+                    """
+                            %s: (ids: string[]): Promise<%s[]> => {
+                                return callApi<%s[]>('/api/%s/_multi-get', 'POST', {ids})
                             },
                             """,
                     funcName,
@@ -332,8 +366,8 @@ public class ApiGenerator {
                             },
                             """,
                     funcName,
-                    getApiType(method.getRetType()),
-                    getApiType(method.getRetType()),
+                    getApiType(method.getRetType(), retFullObj),
+                    getApiType(method.getRetType(), retFullObj),
                     toPath(method.getQualName())
             ));
         } else {
@@ -345,8 +379,8 @@ public class ApiGenerator {
                             """,
                     funcName,
                     getRequestClsName(method),
-                    getApiType(method.getRetType()),
-                    getApiType(method.getRetType()),
+                    getApiType(method.getRetType(), retFullObj),
+                    getApiType(method.getRetType(), retFullObj),
                     toPath(method.getQualName())
             ));
         }

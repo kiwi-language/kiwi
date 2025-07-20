@@ -1531,3 +1531,31 @@ Content-Type: application/json
     "sequenceType": "PROTEIN"
   }
 }
+
+###
+POST http://localhost:8080/api/domain/profile/_multi-get
+Content-Type: application/json
+X-App-ID: 1000108000
+
+{
+  "ids": [
+    "01d8c4e3b90700"
+  ]
+}
+
+###
+POST http://localhost:8080/api/service/matching-service/get-recommendations
+Content-Type: application/json
+X-App-ID:
+
+{"profileId":"01a6c2e3b90700"}
+
+###
+POST http://localhost:8080/api/todo-service/create
+Content-Type: application/json
+X-Call-Return-Object: true
+X-App-ID: 1000110007
+
+{
+  "title": "test"
+}

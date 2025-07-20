@@ -43,14 +43,14 @@ public class Main {
         selectedEnv = getEnvPath("default");
     }
 
-    public boolean generateApi() {
+    public boolean generateApi(boolean retFullObj) {
         if (!ensureSourceAvailable())
             return false;
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();
         if (task.getErrorCount() == 0) {
-            task.generateApi();
+            task.generateApi(retFullObj);
             return true;
         }
         else
@@ -352,7 +352,10 @@ public class Main {
                     deleteEnv(args[1]);
                 }
                 case "build" -> build();
-                case "gen-api" -> generateApi();
+                case "gen-api" -> {
+                    var retFullObj = args.length >= 2 && args[1].equals("--return-full-object");
+                    generateApi(retFullObj);
+                }
                 case "deploy" -> {
                     ensureLoggedIn();
                     deploy();
