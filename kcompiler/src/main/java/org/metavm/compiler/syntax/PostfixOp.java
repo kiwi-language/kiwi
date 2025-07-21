@@ -1,9 +1,7 @@
 package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.generate.Code;
-import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Type;
-import org.metavm.compiler.type.UnionType;
 
 public enum PostfixOp {
     INC("++") {
@@ -11,11 +9,21 @@ public enum PostfixOp {
         public void apply(Type type, Code code) {
             code.inc(type);
         }
+
+        @Override
+        public boolean check(Type type) {
+            return type.isNumeric();
+        }
     },
     DEC("--") {
         @Override
         public void apply(Type type, Code code) {
             code.dec(type);
+        }
+
+        @Override
+        public boolean check(Type type) {
+            return type.isNumeric();
         }
     },
     NONNULL("!!") {
@@ -27,6 +35,11 @@ public enum PostfixOp {
         @Override
         public void apply(Type type, Code code) {
             code.nonnull();
+        }
+
+        @Override
+        public boolean check(Type type) {
+            return true;
         }
     };
 
@@ -46,5 +59,7 @@ public enum PostfixOp {
     }
 
     public abstract void apply(Type type, Code code);
+
+    public abstract boolean check(Type type);
 
 }

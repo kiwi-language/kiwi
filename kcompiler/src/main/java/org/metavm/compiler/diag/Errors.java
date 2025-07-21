@@ -82,6 +82,14 @@ public class Errors {
         return create("expected", a);
     }
 
+    public static Error operatorCantBeApplied(String op, String type) {
+        return create("operator.cant.be.applied1", op, type);
+    }
+
+    public static Error operatorCantBeApplied(String op, String lhsType, String rhsType) {
+        return create("operator.cant.be.applied2", op, lhsType, rhsType);
+    }
+
     public static Error expected2(Object a1, Object a2) {
         return create("expected2", a1, a2);
     }

@@ -101,6 +101,14 @@ public class Types {
         return false;
     }
 
+    public static boolean isNumeric(Type type) {
+        return type instanceof PrimitiveType pt && PrimitiveType.NUMERIC_TYPES.contains(pt);
+    }
+
+    public static boolean isInteger(Type type) {
+        return type instanceof PrimitiveType pt && PrimitiveType.INTEGER_TYPES.contains(pt);
+    }
+
     private Clazz createStringClass() {
         var clazz = new Clazz(ClassTag.CLASS, NameTable.instance.string, Access.PUBLIC, BuiltinClassScope.instance) {
 

@@ -93,7 +93,6 @@ public class Check extends StructuralNodeVisitor {
         return super.visitClassParamDecl(classParamDecl);
     }
 
-
     @Override
     public Void visitCastExpr(CastExpr castExpr) {
         var sourceType = castExpr.expr().getType();
@@ -105,6 +104,43 @@ public class Check extends StructuralNodeVisitor {
             ));
         }
         return super.visitCastExpr(castExpr);
+    }
+
+    @Override
+    public Void visitBinaryExpr(BinaryExpr binaryExpr) {
+        var op = binaryExpr.op();
+        var lhsType = binaryExpr.lhs().getType();
+        var rhsType = binaryExpr.rhs().getType();
+        if (!op.check(lhsType, rhsType)) {
+            log.error(binaryExpr, Errors.operatorCantBeApplied(
+                    op.op(),
+                    lhsType.getTypeText(),
+                    rhsType.getTypeText()
+            ));
+        }
+        return super.visitBinaryExpr(binaryExpr);
+    }
+
+    @Override
+    public Void visitPrefixExpr(PrefixExpr prefixExpr) {
+        if (!prefixExpr.op().check(prefixExpr.x().getType())) {
+            log.error(prefixExpr.x(), Errors.operatorCantBeApplied(
+                    prefixExpr.op().op(),
+                    prefixExpr.x().getType().getTypeText()
+            ));
+        }
+        return super.visitPrefixExpr(prefixExpr);
+    }
+
+    @Override
+    public Void visitPostfixExpr(PostfixExpr postfixExpr) {
+        if (!postfixExpr.op().check(postfixExpr.x().getType())) {
+            log.error(postfixExpr.x(), Errors.operatorCantBeApplied(
+                    postfixExpr.op().op(),
+                    postfixExpr.x().getType().getTypeText()
+            ));
+        }
+        return super.visitPostfixExpr(postfixExpr);
     }
 
     @Override

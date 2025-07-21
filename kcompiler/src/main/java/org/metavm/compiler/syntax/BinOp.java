@@ -8,7 +8,8 @@ import org.metavm.compiler.type.Types;
 
 import java.util.EnumSet;
 
-import static org.metavm.compiler.syntax.BinOpFlag.*;
+import static org.metavm.compiler.syntax.BinOpFlag.ARITHMETIC;
+import static org.metavm.compiler.syntax.BinOpFlag.COMPARISON;
 
 public enum BinOp {
     MUL("*", EnumSet.of(ARITHMETIC)) {
@@ -16,17 +17,33 @@ public enum BinOp {
         public void apply(Type type, Code code) {
             code.mul(type);
         }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isNumeric() && rhsType.isNumeric();
+        }
     },
     DIV("/", EnumSet.of(ARITHMETIC)) {
         @Override
         public void apply(Type type, Code code) {
             code.div(type);
         }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isNumeric() && rhsType.isNumeric();
+        }
     },
     ADD("+", EnumSet.of(ARITHMETIC)) {
         @Override
         public void apply(Type type, Code code) {
             code.add(type);
+        }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isNumeric() && rhsType.isNumeric()
+                    || lhsType == Types.instance.getStringType() || rhsType == Types.instance.getStringType();
         }
 
         @Override
@@ -42,11 +59,21 @@ public enum BinOp {
         public void apply(Type type, Code code) {
             code.sub(type);
         }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isNumeric() && rhsType.isNumeric();
+        }
     },
     MOD("%", EnumSet.of(ARITHMETIC)) {
         @Override
         public void apply(Type type, Code code) {
             code.rem(type);
+        }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isNumeric() && rhsType.isNumeric();
         }
     },
     GT(">", EnumSet.of(ARITHMETIC)) {
@@ -54,6 +81,11 @@ public enum BinOp {
         public void apply(Type type, Code code) {
             code.compare(type);
             code.gt();
+        }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isNumeric() && rhsType.isNumeric();
         }
 
         @Override
@@ -72,6 +104,11 @@ public enum BinOp {
             code.compare(type);
             code.ge();
         }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isNumeric() && rhsType.isNumeric();
+        }
     },
     LT("<", EnumSet.of(COMPARISON)) {
         @Override
@@ -83,6 +120,11 @@ public enum BinOp {
         public void apply(Type type, Code code) {
             code.compare(type);
             code.lt();
+        }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isNumeric() && rhsType.isNumeric();
         }
 
     },
@@ -98,6 +140,11 @@ public enum BinOp {
             code.le();
         }
 
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isNumeric() && rhsType.isNumeric();
+        }
+
     },
     EQ("==", EnumSet.of(COMPARISON)) {
         @Override
@@ -108,6 +155,11 @@ public enum BinOp {
         @Override
         public void apply(Type type, Code code) {
             code.compareEq(type);
+        }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return true;
         }
 
     },
@@ -122,11 +174,21 @@ public enum BinOp {
             code.compareNe(type);
         }
 
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return true;
+        }
+
     },
     BIT_AND("&", EnumSet.of(ARITHMETIC)) {
         @Override
         public void apply(Type type, Code code) {
             code.bitAnd(type);
+        }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isInteger() && rhsType.isInteger();
         }
     },
     BIT_OR("|", EnumSet.of(ARITHMETIC)) {
@@ -134,11 +196,21 @@ public enum BinOp {
         public void apply(Type type, Code code) {
             code.bitOr(type);
         }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isInteger() && rhsType.isInteger();
+        }
     },
     BIT_XOR("^", EnumSet.of(ARITHMETIC)) {
         @Override
         public void apply(Type type, Code code) {
             code.bitXor(type);
+        }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isInteger() && rhsType.isInteger();
         }
     },
     SHL("<<", EnumSet.of(ARITHMETIC)) {
@@ -146,11 +218,21 @@ public enum BinOp {
         public void apply(Type type, Code code) {
             code.shl(type);
         }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isInteger() && rhsType.isInteger() && rhsType != PrimitiveType.LONG;
+        }
     },
     SHR(">>", EnumSet.of(ARITHMETIC)) {
         @Override
         public void apply(Type type, Code code) {
             code.shr(type);
+        }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isInteger() && rhsType.isInteger() && rhsType != PrimitiveType.LONG;
         }
     },
     USHR(">>>", EnumSet.of(ARITHMETIC)) {
@@ -158,17 +240,32 @@ public enum BinOp {
         public void apply(Type type, Code code) {
             code.ushr(type);
         }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isInteger() && rhsType.isInteger() && rhsType != PrimitiveType.LONG;
+        }
     },
     AND("&&", EnumSet.noneOf(BinOpFlag.class)) {
         @Override
         public void apply(Type type, Code code) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isBool() && rhsType.isBool();
+        }
     },
     OR("||", EnumSet.noneOf(BinOpFlag.class)) {
         @Override
         public void apply(Type type, Code code) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean check(Type lhsType, Type rhsType) {
+            return lhsType.isBool() && rhsType.isBool();
         }
     }
 
@@ -207,5 +304,7 @@ public enum BinOp {
     }
 
     public abstract void apply(Type type, Code code);
+
+    public abstract boolean check(Type lhsType, Type rhsType);
 
 }

@@ -352,6 +352,78 @@ public class DiagTest extends TestCase {
                 );
     }
 
+    public void testLtOperandTypeCheck() {
+        compile("""
+                class Lab {
+                
+                    fn le(s1: string, s2: string) -> bool {
+                        return s1 < s2
+                    }
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:4: Operator '<' cannot be applied to 'string', 'string'
+                            return s1 < s2
+                                   ^""",
+                log.getDiags().getFirst().toString());
+    }
+
+    public void testAddOperandTypeCheck() {
+        compile("""
+                class Lab {
+                
+                    fn add(s1: any, s2: any) -> any {
+                        return s1 + s2
+                    }
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:4: Operator '+' cannot be applied to 'any', 'any'
+                            return s1 + s2
+                                   ^""",
+                log.getDiags().getFirst().toString());
+    }
+
+    public void testPrefixOpTypeCheck() {
+        compile("""
+                class Lab {
+                
+                    fn inc(s: string) -> string {
+                        return !s
+                    }
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:4: Operator '!' cannot be applied to 'string'
+                            return !s
+                                    ^""",
+                log.getDiags().getFirst().toString());
+    }
+
+    public void testPostfixOpTypeCheck() {
+        compile("""
+                class Lab {
+                
+                    fn inc(s: string) -> string {
+                        return s++
+                    }
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:4: Operator '++' cannot be applied to 'string'
+                            return s++
+                                   ^""",
+                log.getDiags().getFirst().toString());
+    }
+
     private List<Diag> compile(String text) {
         log.setSourceFile(new DummySourceFile(text));
         var parser = new Parser(
