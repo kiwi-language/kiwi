@@ -50,6 +50,8 @@ public class Errors {
 
     public static final Error cantResolveFunc = create("cant.resolve.func");
 
+    public static final Error illegalUseOfType = create("illegal.use.of.type");
+
     public static Error cantResolve(Expr expr) {
         return expr instanceof Ident ? cantResolveSymbol : cantResolveExpr;
     }
