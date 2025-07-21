@@ -7,6 +7,7 @@ import org.metavm.compiler.element.LocalVar;
 import org.metavm.compiler.element.Project;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.ClassType;
+import org.metavm.compiler.type.Type;
 import org.metavm.compiler.type.Types;
 
 import java.util.EnumSet;
@@ -104,6 +105,25 @@ public class Check extends StructuralNodeVisitor {
             ));
         }
         return super.visitCastExpr(castExpr);
+    }
+
+    @Override
+    public Void visitClassTypeNode(ClassTypeNode classTypeNode) {
+        return null;
+    }
+
+    @Override
+    public Void visitExpr(Expr expr) {
+        if (expr.getElement() instanceof Type)
+            log.error(expr, Errors.illegalUseOfType);
+        return super.visitExpr(expr);
+    }
+
+    @Override
+    public Void visitSelectorExpr(SelectorExpr selectorExpr) {
+        if (selectorExpr.getElement() instanceof Type)
+            log.error(selectorExpr, Errors.illegalUseOfType);
+        return null;
     }
 
     private static final Set<ModifierTag> CLASS_PARAM_ALLOWED_MODS = EnumSet.of(PUB, PROT, PRIV);

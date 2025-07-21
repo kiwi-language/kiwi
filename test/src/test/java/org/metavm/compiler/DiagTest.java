@@ -333,6 +333,25 @@ public class DiagTest extends TestCase {
         );
     }
 
+    public void testIllegalUseOfType() {
+        compile("""
+                class Lab {
+                    
+                    fn getClass() -> any {
+                        return Lab
+                    }
+                    
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:4: Illegal use of type
+                            return Lab
+                                   ^""",
+                log.getDiags().getFirst().toString()
+                );
+    }
+
     private List<Diag> compile(String text) {
         log.setSourceFile(new DummySourceFile(text));
         var parser = new Parser(
