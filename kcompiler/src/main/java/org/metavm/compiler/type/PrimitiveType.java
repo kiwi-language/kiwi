@@ -11,6 +11,9 @@ import org.metavm.util.NamingUtils;
 
 import javax.annotation.Nullable;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import static org.metavm.compiler.type.TypeTags.*;
 import static org.metavm.util.WireTypes.*;
 
@@ -122,6 +125,14 @@ public enum PrimitiveType implements Type {
     PASSWORD(PASSWORD_TYPE, TAG_PASSWORD),
 
     ;
+
+    public static final Set<PrimitiveType> NUMERIC_TYPES = EnumSet.of(
+            BYTE, SHORT, INT, LONG, FLOAT, DOUBLE, CHAR
+    );
+
+    public static final Set<PrimitiveType> INTEGER_TYPES = EnumSet.of(
+            BYTE, SHORT, INT, LONG, CHAR
+    );
 
     private final int constantTag;
     private final int tag;

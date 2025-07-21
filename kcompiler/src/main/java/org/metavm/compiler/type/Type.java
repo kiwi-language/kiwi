@@ -58,4 +58,20 @@ public interface Type extends Constant {
         return false;
     }
 
+    default boolean isNumeric() {
+        return Types.isNumeric(this);
+    }
+
+    default boolean isInteger() {
+        return Types.isInteger(this);
+    }
+
+    default boolean isBool() {
+        return this == PrimitiveType.BOOL;
+    }
+
+    default boolean isString() {
+        return this == Types.instance.getStringType();
+    }
+
 }

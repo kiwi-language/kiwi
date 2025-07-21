@@ -9,16 +9,31 @@ public enum PrefixOp {
         public void apply(Type type, Code code) {
             code.inc(type);
         }
+
+        @Override
+        public boolean check(Type type) {
+            return type.isNumeric();
+        }
     },
     DEC("--") {
         @Override
         public void apply(Type type, Code code) {
             code.dec(type);
         }
+
+        @Override
+        public boolean check(Type type) {
+            return type.isNumeric();
+        }
     },
     POS("+") {
         @Override
         public void apply(Type type, Code code) {
+        }
+
+        @Override
+        public boolean check(Type type) {
+            return type.isNumeric();
         }
     },
     NEGATE("-") {
@@ -26,17 +41,32 @@ public enum PrefixOp {
         public void apply(Type type, Code code) {
             code.neg(type);
         }
+
+        @Override
+        public boolean check(Type type) {
+            return type.isNumeric();
+        }
     },
     NOT("!") {
         @Override
         public void apply(Type type, Code code) {
             code.not();
         }
+
+        @Override
+        public boolean check(Type type) {
+            return type.isBool();
+        }
     },
     BIT_NOT("~") {
         @Override
         public void apply(Type type, Code code) {
             code.bitNot(type);
+        }
+
+        @Override
+        public boolean check(Type type) {
+            return type.isInteger();
         }
     },
 
@@ -57,4 +87,7 @@ public enum PrefixOp {
     }
 
     public abstract void apply(Type type, Code code);
+
+    public abstract boolean check(Type type);
+
 }
