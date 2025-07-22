@@ -14,5 +14,9 @@ public class EncodingUtilsTest extends TestCase {
         assertEquals("0102", EncodingUtils.bytesToHex(new byte[]{1, 2}));
     }
 
+    public void testSecureHash() {
+        EncodingUtils.secureHash("leen$", null);
+    }
+
 
 }

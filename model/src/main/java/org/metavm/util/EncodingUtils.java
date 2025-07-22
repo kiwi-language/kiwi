@@ -126,7 +126,13 @@ public class EncodingUtils {
         var digest = getMessageDigest("SHA-256");
         if(salt != null)
             digest.update(decodeBase64(salt));
-        var hashedBytes = digest.digest(decodeBase64(value));
+        byte[] bytes;
+        try {
+            bytes = decodeBase64(value);
+        } catch (IllegalArgumentException e) {
+            bytes = value.getBytes(StandardCharsets.UTF_8);
+        }
+        var hashedBytes = digest.digest(bytes);
         return encodeBase64(hashedBytes);
     }
 
