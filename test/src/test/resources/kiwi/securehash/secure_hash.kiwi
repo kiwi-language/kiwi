@@ -1,0 +1,8 @@
+@Bean
+class Lab {
+
+    fn secureHash(s: string) -> string {
+        return secureHash(s)
+    }
+
+}
