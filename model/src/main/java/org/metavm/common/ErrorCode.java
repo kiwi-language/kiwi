@@ -107,6 +107,7 @@ public enum ErrorCode {
     ILLEGAL_ARGUMENT1(441, "Invalid function call argument: {}"),
     ILLEGAL_ARGUMENT2(442, "Invalid argument '{}' in flow {} for parameter {}:{}"),
     INCORRECT_ARGUMENT_COUNT(443, "Flow {} expects {} arguments but got {}"),
+    INDEX_KEY_COMPUTE_ERROR(444, "Failed to compute index key: {}, error: {}"),
 
     // expression
     EXPRESSION_INVALID(501, "Invalid expression: {}"),

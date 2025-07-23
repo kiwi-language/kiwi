@@ -17,7 +17,8 @@ public class Mocks {
                 createCouponClass(proj),
                 createOrderStatusClass(proj),
                 createOrderClass(proj),
-                createOrderService(proj)
+                createOrderService(proj),
+                createFileClass(proj)
         );
     }
 
@@ -291,6 +292,26 @@ public class Mocks {
         );
         createInit(cls, List.of(title, discount, product));
         new Method("redeem", Access.PUBLIC, false, false, false, cls);
+        return cls;
+    }
+
+    private static Clazz createFileClass(Project proj) {
+        var cls = ClazzBuilder.newBuilder(Name.from("File"), proj.getRootPackage()).build();
+        var nameField = new Field(
+                "name",
+                Types.instance.getStringType(),
+                Access.PUBLIC,
+                false,
+                cls
+        );
+        var urlField = new Field(
+                "url",
+                Types.instance.getStringType(),
+                Access.PUBLIC,
+                false,
+                cls
+        );
+        createInit(cls, List.of(nameField, urlField));
         return cls;
     }
 

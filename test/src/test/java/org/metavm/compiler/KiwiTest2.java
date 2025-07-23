@@ -1,5 +1,6 @@
 package org.metavm.compiler;
 
+import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.ApiNamedObject;
 import org.metavm.util.BusinessException;
@@ -214,6 +215,16 @@ public class KiwiTest2 extends KiwiTestBase {
         TestUtils.waitForEsSync(schedulerAndWorker);
         var r = apiClient.search("search.SearchFoo", Map.of(), 1, 10000);
         assertEquals(1, r.total());
+    }
+
+    public void testIndexKeyComputeError() {
+        deploy("kiwi/index/index_key_compute_error.kiwi");
+        try {
+            saveInstance("index.Task", Map.of());
+            fail("Should have failed");
+        } catch (BusinessException e) {
+            assertSame(ErrorCode.INDEX_KEY_COMPUTE_ERROR, e.getErrorCode());
+        }
     }
 
 }

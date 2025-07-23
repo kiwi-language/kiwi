@@ -73,6 +73,7 @@ public class NameTable {
     public final Name parent = get("parent");
     public final Name children = get("children");
     public final Name id = get("id");
+    public final Name File = get("File");
 
     private NameTable() {
     }

@@ -2,6 +2,7 @@ package org.metavm.compiler.apigen;
 
 import org.metavm.compiler.element.Clazz;
 import org.metavm.compiler.element.Method;
+import org.metavm.compiler.element.NameTable;
 import org.metavm.compiler.type.*;
 import org.metavm.object.type.StringType;
 import org.metavm.util.NamingUtils;
@@ -15,7 +16,7 @@ public class ApiGenUtils {
         if (clazz.getScope() instanceof Clazz encl && !clazz.getName().toString().startsWith(encl.getName().toString()))
             return getApiClass(encl) + clazz.getName();
         else
-            return clazz.getName().toString();
+            return clazz.getName() == NameTable.instance.File ? "MyFile" : clazz.getName().toString();
     }
 
     public static String getApiType(Type type, boolean fullObject) {
