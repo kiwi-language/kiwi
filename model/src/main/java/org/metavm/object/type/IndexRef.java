@@ -1,6 +1,7 @@
 package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.common.ErrorCode;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.Entity;
 import org.metavm.entity.Writable;
@@ -8,10 +9,7 @@ import org.metavm.flow.Flows;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.WireTypes;
+import org.metavm.util.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,11 +79,15 @@ public class IndexRef implements org.metavm.entity.Reference, Writable {
         if (instance instanceof MvClassInstance clsInst) {
             var method = getRawIndex().getMethod();
             if (method != null) {
-                var entityContext = ContextUtil.getEntityContext();
-                var values = method.isStatic() ?
-                                Indexes.getIndexValues(this, requireNonNull(Flows.execute(method.getRef(), null, List.of(clsInst.getReference()), entityContext).ret())) :
-                                Indexes.getIndexValues(this, requireNonNull(Flows.execute(declaringType.getMethod(method), clsInst, List.of(), entityContext).ret()));
-                action.accept(new IndexKeyRT(getRawIndex(), values));
+                try {
+                    var entityContext = ContextUtil.getEntityContext();
+                    var values = method.isStatic() ?
+                            Indexes.getIndexValues(this, requireNonNull(Flows.invoke(method.getRef(), null, List.of(clsInst.getReference()), entityContext))) :
+                            Indexes.getIndexValues(this, requireNonNull(Flows.invoke(declaringType.getMethod(method), clsInst, List.of(), entityContext)));
+                    action.accept(new IndexKeyRT(getRawIndex(), values));
+                } catch (BusinessException e) {
+                    throw new BusinessException(ErrorCode.INDEX_KEY_COMPUTE_ERROR, getRawIndex().getQualifiedName(), e.getMessage());
+                }
             } else {
                 throw new IllegalStateException("Index creator is missing");
             }

@@ -1,0 +1,9 @@
+package index
+
+class Task {
+
+    var operator: string?
+
+    static val operatorIdx = Index<string, Task>(false, t -> t.operator!!)
+
+}
