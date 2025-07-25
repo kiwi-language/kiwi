@@ -3,6 +3,7 @@ package org.metavm.object.instance.core;
 import com.google.common.primitives.UnsignedBytes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.metavm.common.ErrorCode;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.*;
 
@@ -41,7 +42,7 @@ public abstract class Id implements Comparable<Id> {
             return readId(new InstanceInput(new ByteArrayInputStream(EncodingUtils.hexToBytes(str))));
         }
         catch (Exception e) {
-            throw new InternalException("Failed to parse id: " + str, e);
+            throw new BusinessException(ErrorCode.INVALID_ID, str);
         }
     }
 
