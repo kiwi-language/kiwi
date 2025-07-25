@@ -140,6 +140,26 @@ public class ApiAdapterTest extends TestCase {
         assertEquals(100.0, order.getDouble("totalPrice"), 0.01);
     }
 
+    public void testIdParsingErrorMsg() {
+        deploy("kiwi/shopping.kiwi");
+        try {
+            TestUtils.doInTransaction(() -> apiAdapter.handlePost(
+                    "/api/order-service/place-order",
+                    Map.of(
+                            "productId", "product",
+                            "quantity", 1,
+                            "couponId", ""
+                    ),
+                    false, mockHttpRequest(),
+                    mockHttpResponse()
+            ));
+            fail("Invalid ID should throw an exception");
+        } catch (BusinessException e) {
+            assertSame(ErrorCode.INVALID_ID, e.getErrorCode());
+            assertEquals("Invalid ID: product", e.getMessage());
+        }
+    }
+
     public void testAutomaticTypeConversion() {
         deploy("kiwi/shopping.kiwi");
         var id = (String) TestUtils.doInTransaction(() -> apiAdapter.handlePost(
