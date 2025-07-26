@@ -1,7 +1,5 @@
 package index
 
-import java.util.List
-
 class Foo(
     priv var name: string,
     priv var seq: int,
@@ -42,7 +40,7 @@ class Foo(
         return seqIndex.count(min, max)
     }
 
-    static fn queryBySeq(min: int, max: int) -> List<Foo> {
+    static fn queryBySeq(min: int, max: int) -> Foo[] {
         return seqIndex.query(min, max)
     }
 

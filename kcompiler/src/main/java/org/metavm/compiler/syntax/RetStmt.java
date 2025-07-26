@@ -50,6 +50,11 @@ public final class RetStmt extends Stmt {
     }
 
     @Override
+    public RetStmt setPos(int pos) {
+        return (RetStmt) super.setPos(pos);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
         if (obj == null || obj.getClass() != this.getClass()) return false;

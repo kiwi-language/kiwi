@@ -85,10 +85,10 @@ public class Types {
         return ErrorType.instance;
     }
 
-    public static boolean isApplicable(Type parameterType, Type argumentType) {
-        if (parameterType.isAssignableFrom(argumentType))
+    public static boolean isConvertible(Type sourceType, Type targetType) {
+        if (targetType.isAssignableFrom(sourceType))
             return true;
-        return widensTo(argumentType, parameterType);
+        return widensTo(sourceType, targetType);
     }
 
     private static boolean widensTo(Type t1, Type t2) {

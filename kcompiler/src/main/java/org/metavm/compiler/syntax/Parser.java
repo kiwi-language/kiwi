@@ -1326,11 +1326,12 @@ public class Parser {
 
     private RetStmt retStmt() {
         var ln = line();
+        var pos = pos();
         accept(RETURN);
         if (isOneOf(EOF, SEMICOLON) || line() != ln)
-            return new RetStmt(null);
+            return new RetStmt(null).setPos(pos);
         else
-            return new RetStmt(expr());
+            return new RetStmt(expr()).setPos(pos);
     }
 
     private int line() {

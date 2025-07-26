@@ -72,35 +72,31 @@ public class Attr extends StructuralNodeVisitor {
 
     @Override
     public Void visitLocalVarDecl(LocalVarDecl localVarDecl) {
-        var v = localVarDecl.getElement();
-        var initial = localVarDecl.getInitial();
-        if (initial != null)
-            attrExpr(initial, v.getType()).resolve();
-        if (localVarDecl.getType() == null) {
-            if (initial == null) {
-                log.error(localVarDecl, Errors.variableMustTypedOrInitialized);
-                v.setType(ErrorType.instance);
-            } else
-                v.setType(initial.getType());
-        }
+        processVariable(localVarDecl);
         return null;
     }
 
     @Override
     public Void visitFieldDecl(FieldDecl fieldDecl) {
-        var field = fieldDecl.getElement();
-        var initial = fieldDecl.getInitial();
-        if (initial != null)
-            attrExpr(initial, field.getType()).resolve();
-        if (fieldDecl.getType() == null) {
-            if (initial == null) {
-                log.error(fieldDecl, Errors.variableMustTypedOrInitialized);
-                field.setType(ErrorType.instance);
-            }
-            else
-                field.setType(initial.getType());
-        }
+        processVariable(fieldDecl);
         return null;
+    }
+
+    private void processVariable(VariableDecl<?> decl) {
+        var v = decl.getElement();
+        var initial = decl.getInitial();
+        if (initial != null)
+            attrExpr(initial, v.getType()).resolve();
+        if (v.getType() instanceof DeferredType) {
+            if (initial == null) {
+                log.error(decl, Errors.variableMustTypedOrInitialized);
+                v.setType(ErrorType.instance);
+            } else if (initial.getType().isVoid()) {
+                log.error(initial, Errors.voidInitializer);
+                v.setType(ErrorType.instance);
+            } else
+                v.setType(initial.getType());
+        }
     }
 
     @Override
@@ -224,8 +220,7 @@ public class Attr extends StructuralNodeVisitor {
         if (element instanceof Variable variable && variable.getType() instanceof DeferredType) {
             var templateVar = variable instanceof FieldInst fieldInst ? fieldInst.field() : variable;
             var varDecl = (VariableDecl<?>) templateVar.getNode();
-            attrExpr(Objects.requireNonNull(varDecl.getInitial()), Types.instance.getNullableAny()).resolve();
-            templateVar.setType(Objects.requireNonNull(varDecl.getInitial()).getType());
+            processVariable(varDecl);
         }
     }
 
@@ -624,7 +619,7 @@ public class Attr extends StructuralNodeVisitor {
             if (Traces.traceAttr) {
                 logger.trace("Trying init: {}", init.getText());
             }
-            if (m.getParamTypes().matches(argumentTypes, Types::isApplicable)) {
+            if (m.getParamTypes().matches(argumentTypes, (parameterType, argumentType) -> Types.isConvertible(argumentType, parameterType))) {
                 return m;
             }
         }
@@ -632,7 +627,7 @@ public class Attr extends StructuralNodeVisitor {
     }
 
     private boolean isApplicable(List<Type> types1, List<Type> types2) {
-        return types1.matches(types2, Types::isApplicable);
+        return types1.matches(types2, (parameterType, argumentType) -> Types.isConvertible(argumentType, parameterType));
     }
 
     private boolean isOverride(MethodRef override, MethodRef overridden) {

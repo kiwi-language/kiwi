@@ -22,7 +22,7 @@ class AnonymousClassWithField {
         }
     }
 
-    static fn test(s: string) -> string {
+    static fn test(s: string) -> any {
         var it = iterator(s)
         return it.hasNext() ? it.next() : null
     }

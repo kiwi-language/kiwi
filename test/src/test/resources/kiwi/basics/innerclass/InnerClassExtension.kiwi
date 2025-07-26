@@ -16,7 +16,7 @@ class InnerClassExtension(priv val value0: int) {
                 return value0 + value1 + value2 + value3 + value4
             }
 
-            fn value1() -> int {
+            fn getValue1() -> int {
                 return value1
             }
 
