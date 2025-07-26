@@ -1,0 +1,11 @@
+package arrays
+
+@Bean
+class Lab {
+
+    fn sort(a: int[]) -> int[] {
+        a.sort((i1, i2) -> i1 < i2 ? -1 : i1 == i2 ? 0 : 1)
+        return a
+    }
+
+}

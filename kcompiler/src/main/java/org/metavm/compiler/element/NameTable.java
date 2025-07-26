@@ -52,6 +52,7 @@ public class NameTable {
     public final Name qualIndex = get("org.metavm.api.Index");
     public final Name forEach = get("forEach");
     public final Name action = get("action");
+    public final Name comparator = get("comparator");
     public final Name a = get("a");
     public final Name mapper = get("mapper");
     public final Name R = get("R");
@@ -74,6 +75,7 @@ public class NameTable {
     public final Name children = get("children");
     public final Name id = get("id");
     public final Name File = get("File");
+    public final Name sort = get("sort");
 
     private NameTable() {
     }

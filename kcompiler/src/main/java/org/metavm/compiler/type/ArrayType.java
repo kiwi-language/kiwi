@@ -52,6 +52,13 @@ public final class ArrayType implements Type, Comparable<ArrayType> {
             )
             .build();
 
+    public static final Method sortMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.sort)
+            .addParam(
+                    NameTable.instance.comparator,
+                    Types.instance.getFuncType(List.of(arrayClass.getTypeParams().head(), arrayClass.getTypeParams().head()), PrimitiveType.INT)
+            )
+            .build();
+
     public static final Method mapMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.map).build();
 
     static {
