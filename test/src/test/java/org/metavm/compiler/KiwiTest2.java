@@ -1,5 +1,6 @@
 package org.metavm.compiler;
 
+import com.google.protobuf.Api;
 import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.ApiNamedObject;
@@ -225,6 +226,18 @@ public class KiwiTest2 extends KiwiTestBase {
         } catch (BusinessException e) {
             assertSame(ErrorCode.INDEX_KEY_COMPUTE_ERROR, e.getErrorCode());
         }
+    }
+
+    public void testSort() {
+        deploy("kiwi/arrays/sort.kiwi");
+        var r = callMethod(
+                ApiNamedObject.of("lab"),
+                "sort",
+                List.of(List.of(
+                        3, 2, 1
+                ))
+        );
+        assertEquals(List.of(1, 2, 3), r);
     }
 
 }

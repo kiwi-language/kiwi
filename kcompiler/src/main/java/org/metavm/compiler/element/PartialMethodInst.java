@@ -172,8 +172,12 @@ public class PartialMethodInst extends ElementBase implements MethodRef, FuncIns
             var func = project.getRootPackage().getFunction(NameTable.instance.forEach);
             var funcInst = func.getInst(declType.getTypeArguments());
             code.invokeFunction(funcInst);
-        }
-        else if (isStatic())
+        } else if (method == ArrayType.sortMethod) {
+            var project = env.getProject();
+            var func = project.getRootPackage().getFunction(NameTable.instance.sort);
+            var funcInst = func.getInst(declType.getTypeArguments());
+            code.invokeFunction(funcInst);
+        } else if (isStatic())
             code.invokeStatic(this);
         else if(getAccess() == Access.PRIVATE || isInit())
             code.invokeSpecial(this);

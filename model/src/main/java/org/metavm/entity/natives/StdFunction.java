@@ -446,6 +446,20 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(null);
             }
     ),
+    sort(
+            "void sort<E>(E[] a, (E, E)->int c)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var array = args.getFirst().resolveArray();
+                var c = args.get(1);
+                var comparator = (FunctionValue) c;
+                array.sort((e1, e2) -> Instances.toInt(
+                        Flows.invoke(comparator, List.of(e1,e2), callContext)
+                ));
+                return FlowExecResult.of(null);
+            }
+    ),
     copyOfArray(
             "(T|null)[] copyOfArray<T>((T|null)[] array, int newLength)",
             false,
