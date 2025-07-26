@@ -424,6 +424,40 @@ public class DiagTest extends TestCase {
                 log.getDiags().getFirst().toString());
     }
 
+    public void testIncompatibleTypes() {
+        compile("""
+                class Lab {
+                
+                    fn test() -> int {
+                        return set()
+                    }
+                    
+                    fn set() {}
+                    
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:4: Incompatible types: void cannot be converted to int
+                            return set()
+                                   ^""", log.getDiags().getFirst().toString());
+    }
+
+    public void testVoidInitializer() {
+        compile("""
+                class Lab {
+                
+                    fn test() {
+                        var a = set()
+                    }
+                    
+                    fn set() {}
+                    
+                }
+                """);
+        log.flush();
+    }
+
     private List<Diag> compile(String text) {
         log.setSourceFile(new DummySourceFile(text));
         var parser = new Parser(

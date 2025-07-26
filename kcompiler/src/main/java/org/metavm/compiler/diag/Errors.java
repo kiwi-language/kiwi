@@ -16,6 +16,7 @@ public class Errors {
     public static final Error misplacedIndexField = create("misplaced.index.field");
     public static final Error reservedFieldName = create("reserved.field.name");
     public static final Error fieldNotInitialized = create("field.not.initialized");
+    public static final Error voidInitializer = create("void.initializer");
 
     public static Error ambiguousReference(String matches)  {
         return create("ambiguous.reference", matches);
@@ -113,5 +114,9 @@ public class Errors {
 
     public static Error illegalCast(String from, String to) {
         return create("illegal.cast", from, to);
+    }
+
+    public static Error incompatibleTypes(String sourceType, String targetType) {
+        return create("incompatible.types", sourceType, targetType);
     }
 }

@@ -11,7 +11,7 @@ class WorkOrder(
         var location = Location.nameIdx.getFirst(locName)
         if (location == null)
             location = Location(locName)
-        return location
+        return location!!
     }
 
 }

@@ -68,7 +68,24 @@ public class Check extends StructuralNodeVisitor {
             if (local.getExecutable() != env.currentExecutable())
                 log.error(assignExpr, Errors.cantModifyCapturedVar);
         }
+        if (!Types.isConvertible(assignExpr.rhs().getType(), assignExpr.lhs().getType())) {
+            log.error(assignExpr, Errors.incompatibleTypes(
+                    assignExpr.rhs().getType().getTypeText(),
+                    assignExpr.lhs().getType().getTypeText()
+            ));
+        }
         return super.visitAssignExpr(assignExpr);
+    }
+
+    @Override
+    public Void visitReturnStmt(RetStmt retStmt) {
+        if (retStmt.result() != null && !Types.isConvertible(retStmt.result().getType(), retStmt.getType())) {
+            log.error(retStmt.result(), Errors.incompatibleTypes(
+                    retStmt.result().getType().getTypeText(),
+                    retStmt.getType().getTypeText()
+            ));
+        }
+        return super.visitReturnStmt(retStmt);
     }
 
     @Override
@@ -97,7 +114,7 @@ public class Check extends StructuralNodeVisitor {
     public Void visitCastExpr(CastExpr castExpr) {
         var sourceType = castExpr.expr().getType();
         var targetType = castExpr.type().getType();
-        if (!Types.isApplicable(sourceType, targetType) && !Types.isApplicable(targetType, sourceType)) {
+        if (!Types.isConvertible(targetType, sourceType) && !Types.isConvertible(sourceType, targetType)) {
             log.error(castExpr, Errors.illegalCast(
                     castExpr.expr().getType().getTypeText(),
                     castExpr.type().getType().getTypeText()

@@ -41,7 +41,7 @@ class UserService(
         return LoginResult(token, user)
     }
 
-    fn directLogin(user: User) -> Token {
+    fn directLogin(user: User) -> string {
         var session = Session(user, now() + TOKEN_TTL)
         print("User " + user.name + " logged in")
         return session.token
