@@ -70,7 +70,7 @@ public abstract class KiwiProjectTestBase extends TestCase {
     protected void compile(String path) {
         var srcDir = Path.of(path, "src");
         var targetDir = Path.of(path, "target");
-        var task = new CompilationTask(Utils.listFilePathsRecursively(srcDir, ".kiwi"), targetDir);
+        var task = CompilationTaskBuilder.newBuilder(Utils.listFilePathsRecursively(srcDir, ".kiwi"), targetDir).build();
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();

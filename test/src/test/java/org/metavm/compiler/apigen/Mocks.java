@@ -177,6 +177,13 @@ public class Mocks {
                 false,
                 cls
         );
+        var couponField = new Field(
+                "coupon",
+                Types.instance.getNullableType(proj.getClass("Coupon")),
+                Access.PUBLIC,
+                false,
+                cls
+        );
         new Field(
                 "status",
                 proj.getClass("OrderStatus"),
@@ -184,7 +191,7 @@ public class Mocks {
                 false,
                 cls
         );
-        createInit(cls, List.of(priceField));
+        createInit(cls, List.of(priceField, couponField));
         var itemCls = new Clazz(
                 ClassTag.CLASS,
                 "OrderItem",

@@ -13,6 +13,7 @@ import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -502,6 +503,77 @@ public class ApiAdapterTest extends TestCase {
         } catch (BusinessException e) {
             assertEquals("User has already voted for this blog", e.getMessage());
         }
+    }
+
+    public void testRangeSearch() {
+        deploy("kiwi/shopping.kiwi");
+        saveProduct();
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r = (SearchResult) apiAdapter.handlePost(
+                "/api/product/_search",
+                Map.of(
+                        "minPrice", 10000,
+                        "maxPrice", 15000
+                ),
+                true,
+                mockHttpRequest(),
+                mockHttpResponse()
+        );
+        assertEquals(1, r.total());
+
+        var r1 = (SearchResult) apiAdapter.handlePost(
+                "/api/product/_search",
+                Map.of(
+                        "minPrice", 5000,
+                        "maxPrice", 10000
+                ),
+                true,
+                mockHttpRequest(),
+                mockHttpResponse()
+        );
+        assertEquals(0, r1.total());
+    }
+
+    public void testSearchSearchWithArray() {
+        deploy("kiwi/shopping.kiwi");
+        var id = Id.parse(saveProduct());
+        var orderService = ApiNamedObject.of("orderService");
+        var orderId1 = callMethod(
+                orderService,
+                "placeOrder",
+                Arrays.asList(id, 1, null)
+        );
+        callMethod(
+                orderService,
+                "confirmOrder",
+                List.of(orderId1)
+        );
+        var orderId2 = callMethod(
+                orderService,
+                "placeOrder",
+                Arrays.asList(id, 1, null)
+        );
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r1 = (SearchResult) apiAdapter.handlePost(
+                "/api/order/_search",
+                Map.of(
+                        "status", "PENDING"
+                ),
+                true,
+                mockHttpRequest(),
+                mockHttpResponse()
+        );
+        assertEquals(1, r1.total());
+        var r2 = (SearchResult) apiAdapter.handlePost(
+                "/api/order/_search",
+                Map.of(
+                        "status", List.of("PENDING", "CONFIRMED")
+                ),
+                true,
+                mockHttpRequest(),
+                mockHttpResponse()
+        );
+        assertEquals(2, r2.total());
     }
 
     private Object callMethod(Object receiver, String methodName, List<Object> args) {

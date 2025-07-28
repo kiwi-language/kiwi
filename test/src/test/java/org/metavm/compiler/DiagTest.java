@@ -7,6 +7,7 @@ import org.metavm.compiler.diag.Diag;
 import org.metavm.compiler.diag.DiagFactory;
 import org.metavm.compiler.element.Project;
 import org.metavm.compiler.file.DummySourceFile;
+import org.metavm.compiler.syntax.File;
 import org.metavm.compiler.syntax.Lexer;
 import org.metavm.compiler.syntax.Parser;
 import org.metavm.compiler.util.List;
@@ -458,14 +459,55 @@ public class DiagTest extends TestCase {
         log.flush();
     }
 
+    public void testAiLint() {
+        compileWithAiLint("""
+                class Lab(
+                    var lab: string,
+                    var labId: string,
+                    var labs: string
+                ) {
+                }
+                """);
+        assertEquals(3, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:4: Variable name matches the plural form of a class name but its type is not the array type of the class, such confusing naming is not allowed
+                        var labs: string
+                            ^""",
+                log.getDiags().getFirst().toString());
+        assertEquals("""
+                dummy.kiwi:3: Variable name ending with 'Id' is not allowed
+                        var labId: string,
+                            ^""",
+                log.getDiags().get(1).toString());
+        assertEquals("""
+                dummy.kiwi:2: Variable name matches a class name but its type is not the class, such confusing naming is not allowed
+                        var lab: string,
+                            ^""",
+                log.getDiags().getLast().toString());
+    }
+
+    private List<Diag> compileWithAiLint(String text) {
+        var file = parse(text);
+        compile(file);
+        SenseLint.run(List.of(file), log);
+        return log.getDiags();
+    }
+
     private List<Diag> compile(String text) {
+        compile(parse(text));
+        return log.getDiags();
+    }
+
+    private File parse(String text) {
         log.setSourceFile(new DummySourceFile(text));
         var parser = new Parser(
                 log,
                 new Lexer(log, text.toCharArray(), text.length())
         );
-        var file = parser.file();
+        return parser.file();
+    }
 
+    private void compile(File file) {
         var project = new Project();
         MockEnter.enterStandard(project);
         new Enter(project, log).enter(List.of(file));
@@ -475,7 +517,6 @@ public class DiagTest extends TestCase {
         file.accept(new IdentAttr(project, log));
         file.accept(new Attr(project, log));
         file.accept(new Check(project, log));
-        return log.getDiags();
     }
 
 }

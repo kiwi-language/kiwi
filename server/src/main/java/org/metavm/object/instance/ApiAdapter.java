@@ -200,7 +200,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
 
     private Map<String, Object> transformRequestObject(Map<String, Object> map, ClassType type) {
         var id = map.get(KEY_ID) instanceof String s ? s : null;
-        var fields = id == null ? transformRequestObjectArgs(map, type) : transformRequestObjectFields(map, type);
+        var fields = id == null ? transformRequestObjectArgs(map, type) : transformRequestObjectFields(map, type, false);
         var children = new HashMap<String, Object>();
         for (ClassType ik : type.getInnerClassTypes()) {
             var childFieldName = getChildFieldName(ik.getName());
@@ -276,7 +276,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
     ) {}
 
     private SearchRequest buildSearchRequest(Map<String, Object> requestBody, ClassType type) {
-        var criteria = transformRequestObjectFields(requestBody, type);
+        var criteria = transformRequestObjectFields(requestBody, type, true);
         var page = requestBody.get(KEY_PAGE) instanceof Integer p ? p : 1;
         var pageSize = requestBody.get(KEY_PAGE_SIZE) instanceof Integer p ? p : 20;
         var newlyCreated = requestBody.get(KEY_NEWLY_CHANGED_ID) instanceof String s ? s : null;
@@ -316,16 +316,70 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return InflectUtil.pluralize(firstCharsToLowerCase(childTypeName));
     }
 
-    private Map<String, Object> transformRequestObjectFields(Map<String, Object> map, ClassType type) {
+    private Map<String, Object> transformRequestObjectFields(Map<String, Object> map, ClassType type, boolean forSearch) {
         var fields = new HashMap<String, Object>();
         type.forEachField(field -> {
             if (field.isPublic()) {
                 var value = map.get(transformFieldName(field.getName(), field.getPropertyType()));
-                if (value != null)
-                    fields.put(field.getName(), transformRequestValue(value, field.getPropertyType()));
+                var concreteFieldType = field.getPropertyType().getUnderlyingType();
+                if (value != null) {
+                    var t = concreteFieldType instanceof ClassType && value instanceof List ?
+                            Types.getArrayType(field.getPropertyType()) : field.getPropertyType();
+                    fields.put(field.getName(), transformRequestValue(value, t));
+                } else if (forSearch && concreteFieldType.isNumber()) {
+                    var minFieldName = "min" + NamingUtils.firstCharToUpperCase(field.getName());
+                    var maxFieldName = "max" + NamingUtils.firstCharToUpperCase(field.getName());
+                    if (map.containsKey(minFieldName) || map.containsKey(maxFieldName)) {
+                        var min = map.get(minFieldName);
+                        if (min == null)
+                            min = getMinValue((PrimitiveType) concreteFieldType);
+                        else if (!(min instanceof Number))
+                            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+                        var max = map.get(maxFieldName);
+                        if (max == null)
+                            max = getMaxValue((PrimitiveType) concreteFieldType);
+                        else if (!(max instanceof Number))
+                            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+                        fields.put(field.getName(), List.of(min, max));
+                    }
+                }
             }
         });
         return fields;
+    }
+
+    private Object getMinValue(PrimitiveType type) {
+        if (type == PrimitiveType.byteType)
+            return Byte.MIN_VALUE;
+        else if (type == PrimitiveType.shortType)
+            return Short.MIN_VALUE;
+        else if (type == PrimitiveType.intType)
+            return Integer.MIN_VALUE;
+        else if (type == PrimitiveType.longType)
+            return Long.MIN_VALUE;
+        else if (type == PrimitiveType.floatType)
+            return Float.MIN_VALUE;
+        else if (type == PrimitiveType.doubleType)
+            return Double.MIN_VALUE;
+        else
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+    }
+
+    private Object getMaxValue(PrimitiveType type) {
+        if (type == PrimitiveType.byteType)
+            return Byte.MAX_VALUE;
+        else if (type == PrimitiveType.shortType)
+            return Short.MAX_VALUE;
+        else if (type == PrimitiveType.intType)
+            return Integer.MAX_VALUE;
+        else if (type == PrimitiveType.longType)
+            return Long.MAX_VALUE;
+        else if (type == PrimitiveType.floatType)
+            return Float.MAX_VALUE;
+        else if (type == PrimitiveType.doubleType)
+            return Double.MAX_VALUE;
+        else
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
     }
 
     private ClassType parseGetClassType(String uri) {

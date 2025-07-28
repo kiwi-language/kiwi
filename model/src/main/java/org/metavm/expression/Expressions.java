@@ -1,13 +1,15 @@
 package org.metavm.expression;
 
 import org.metavm.flow.Node;
-import org.metavm.object.instance.core.PrimitiveValue;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.instance.rest.*;
-import org.metavm.object.type.*;
-import org.metavm.util.*;
+import org.metavm.object.type.Field;
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.Property;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
+import org.metavm.util.ValueUtils;
 
-import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -178,10 +180,7 @@ public class Expressions {
         return new BinaryExpression(
                 BinaryOperator.IN,
                 propertyExpr(field),
-                new ArrayExpression(
-                        Utils.map(values, ConstantExpression::new),
-                        Types.getAnyArrayType()
-                )
+                new ConstantExpression(Instances.arrayValue(new ArrayList<>(values)))
         );
     }
 
