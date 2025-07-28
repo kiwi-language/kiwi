@@ -14,10 +14,7 @@ import org.metavm.compiler.file.FileManager;
 import org.metavm.compiler.file.PathSourceFile;
 import org.metavm.compiler.generate.ClassFileWriter;
 import org.metavm.compiler.generate.Gen;
-import org.metavm.compiler.syntax.ClassDecl;
-import org.metavm.compiler.syntax.File;
-import org.metavm.compiler.syntax.Lexer;
-import org.metavm.compiler.syntax.Parser;
+import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.util.CompilerUtils;
 import org.metavm.compiler.util.List;
 import org.metavm.flow.KlassOutput;
@@ -39,6 +36,8 @@ public class CompilationTask {
     private List<File> files = List.nil();
     private final Project project = new Project();
     private final FileManager fileManager = new FileManager();
+    private final boolean aiLint;
+
     private final DefaultLog log = new DefaultLog(
             new PathSourceFile(Path.of(""), fileManager),
             DiagFactory.instance,
@@ -47,9 +46,10 @@ public class CompilationTask {
     );
 
 
-    public CompilationTask(Collection<Path> paths, Path buildDir) {
+    public CompilationTask(Collection<Path> paths, Path buildDir, boolean aiLint) {
         this.paths = List.from(paths);
         this.buildDir = buildDir;
+        this.aiLint = aiLint;
     }
 
     public List<File> parse() {
@@ -94,6 +94,8 @@ public class CompilationTask {
                 log.setSourceFile(file.getSourceFile());
                 file.accept(new Check(project, log));
             }
+            if (aiLint)
+                SenseLint.run(files, log);
             return project;
         }
         finally {

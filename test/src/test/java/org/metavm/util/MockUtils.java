@@ -2,6 +2,7 @@ package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.CompilationTask;
+import org.metavm.compiler.CompilationTaskBuilder;
 import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.MockEnter;
 import org.metavm.entity.StdKlass;
@@ -236,7 +237,7 @@ public class MockUtils {
     }
 
     public static InputStream compile(String source) {
-        var task = new CompilationTask(List.of(Path.of(TestUtils.getResourcePath(source))), Path.of(TestConstants.TARGET));
+        var task = CompilationTaskBuilder.newBuilder(List.of(Path.of(TestUtils.getResourcePath(source))), Path.of(TestConstants.TARGET)).build();
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();

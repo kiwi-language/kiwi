@@ -1,0 +1,19 @@
+class Product(
+    var name: string,
+    var price: Price,
+    var owner: User
+)
+
+class User(var name)
+
+enum Currency {
+    CNY,
+    USD,
+    EURO,
+    ;
+}
+
+value class Price(
+    val amount: double,
+    var currency: Currency
+)

@@ -30,11 +30,19 @@ public class ApiGenUtils {
                 else
                     yield apiClsName + "<" + Utils.join(classType.getTypeArguments(), Type::getTypeText) + ">";
             }
-            case ArrayType arrayType -> getApiType(arrayType.getElementType(), fullObject) + "[]";
+            case ArrayType arrayType -> toTsArrayType(arrayType.getElementType(), fullObject);
             case UnionType unionType -> unionType.alternatives().stream()
                             .map(t -> getApiType(t, fullObject)).sorted().collect(Collectors.joining(" | "));
             default -> throw new IllegalStateException("Type " + type.getTypeText() + " is not supported in API");
         };
+    }
+
+    public static String toTsArrayType(Type elemType, boolean fullObject) {
+        var elementTsType = getApiType(elemType, fullObject);
+        if (elemType instanceof IntersectionType || elemType instanceof UnionType || elemType instanceof FuncType)
+            return "(" + elementTsType + ")[]";
+        else
+            return elementTsType + "[]";
     }
 
     private static String getApiPrimType(PrimitiveType primitiveType) {

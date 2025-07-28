@@ -48,7 +48,7 @@ public class CompilerTest extends TestCase {
 
     public void test() {
         var source = TestUtils.getResourcePath("kiwi/shopping.kiwi");
-        var task = new CompilationTask(List.of(Path.of(source)), Path.of(TestConstants.TARGET));
+        var task = CompilationTaskBuilder.newBuilder(List.of(Path.of(source)), Path.of(TestConstants.TARGET)).build();
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();

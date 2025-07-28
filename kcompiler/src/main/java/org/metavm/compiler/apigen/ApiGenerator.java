@@ -86,7 +86,7 @@ public class ApiGenerator {
             for (Field field : cls.getFields()) {
                 if (field.isPublic() && !field.isStatic()) {
                     var comment = !initParamsNames.contains(field.getName()) ? "Not needed for creation" : null;
-                    writeVariable(field, false, fieldNames, comment);
+                    writeVariable(field, false, fieldNames, false, comment);
                     if (field.getType().getUnderlyingType() instanceof ClassType ct && isEntityType(ct)) {
                         var nullable = field.getType() instanceof UnionType;
                         var summaryField = ct.getClazz().getSummaryField();
@@ -182,7 +182,8 @@ public class ApiGenerator {
                     apiWriter.writeln("min" + fName + "?: number");
                     apiWriter.writeln("max" + fName + "?: number");
                 }
-                writeVariable(field, true, fieldNames, null);
+                else
+                    writeVariable(field, true, fieldNames, true, null);
             }
         }
         apiWriter.writeln("page?: number // 1-based page number");
@@ -194,7 +195,7 @@ public class ApiGenerator {
 
     private boolean isSearchable(Type type) {
         var ut = type.getUnderlyingType();
-        if (ut instanceof ClassType ct && ct.getClazz().isValue())
+        if (ut instanceof ClassType ct && ct.getClazz().isValue() && ct != Types.instance.getStringType())
             return false;
         return !(ut instanceof ArrayType);
     }
@@ -221,16 +222,20 @@ public class ApiGenerator {
     }
 
     private void writeVariable(Variable variable, Set<String> fieldName) {
-        writeVariable(variable, false, fieldName, null);
+        writeVariable(variable, false, fieldName, false, null);
     }
 
-    private void writeVariable(Variable variable, boolean optional, Set<String> fieldNames, @Nullable String comment) {
-        var varName = transformFieldName(variable.getName().toString(), variable.getType());
+    private void writeVariable(Variable variable, boolean optional, Set<String> fieldNames, boolean forSearch, @Nullable String comment) {
+        var varType = variable.getType();
+        var varName = transformFieldName(variable.getName().toString(), varType);
         if (fieldNames.add(varName)) {
-            apiWriter.write(varName + (optional ? "?: " : ": ") + getApiType(variable.getType(), false));
+            var t = getApiType(forSearch ? varType.getUnderlyingType() : varType, false);
+            if (forSearch && varType.getUnderlyingType() instanceof ClassType ct && !ct.isValue())
+                t = t + " | " + ApiGenUtils.toTsArrayType(varType.getUnderlyingType(), false);
+            apiWriter.write(varName + (optional ? "?: " : ": ") + t);
             var comments = new ArrayList<String>();
-            if (isEntityType(variable.getType()))
-                comments.add("ID of " + getApiType(variable.getType().getUnderlyingType(), true));
+            if (isEntityType(varType))
+                comments.add("ID of " + getApiType(varType.getUnderlyingType(), true));
             if (!comments.isEmpty())
                 apiWriter.write(" // " + String.join(". ", comments));
             if (comment != null)

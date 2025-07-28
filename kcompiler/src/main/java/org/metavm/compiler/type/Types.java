@@ -110,7 +110,7 @@ public class Types {
     }
 
     private Clazz createStringClass() {
-        var clazz = new Clazz(ClassTag.CLASS, NameTable.instance.string, Access.PUBLIC, BuiltinClassScope.instance) {
+        var clazz = new Clazz(ClassTag.VALUE, NameTable.instance.string, Access.PUBLIC, BuiltinClassScope.instance) {
 
             @Override
             public Name getQualName() {

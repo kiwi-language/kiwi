@@ -13,14 +13,12 @@ import org.metavm.util.Constants;
 import org.metavm.util.TypeReference;
 import org.metavm.util.Utils;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,31 +28,41 @@ public class Main {
     public final Path home;
     private final Path envFile;
     private Path selectedEnv;
-    private final CompilationTask task;
+    private final Path sourceRoot;
     private final Path targetRoot;
 
-    public Main(Path root) throws IOException {
-        var sourceRoot = root.resolve("src");
+    public Main(Path root) {
+        sourceRoot = root.resolve("src");
         this.targetRoot = root.resolve("target");
-        var sources = listFilePathsRecursively(sourceRoot);
-        task = new CompilationTask(sources, targetRoot);
         home = root.resolve(".metavm");
         envFile = home.resolve(".env");
         selectedEnv = getEnvPath("default");
     }
 
-    public boolean generateApi(boolean retFullObj) {
+    boolean generateApi(List<Option> options) {
         if (!ensureSourceAvailable())
             return false;
+        var task = createTask(options);
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();
         if (task.getErrorCount() == 0) {
-            task.generateApi(retFullObj);
+            task.generateApi(options.stream().anyMatch(op -> op.kind == OptionKind.RETURN_FULL_OBJECT));
             return true;
-        }
-        else
+        } else
             return false;
+    }
+
+    @SneakyThrows
+    private CompilationTask createTask(List<Option> options) {
+        var aiLint = false;
+        for (Option option : options) {
+            if (option.kind == OptionKind.SENSE_LINT)
+                aiLint = true;
+        }
+        return CompilationTaskBuilder.newBuilder(listFilePathsRecursively(sourceRoot), targetRoot)
+                .withAiLint(aiLint)
+                .build();
     }
 
     void ensureLoggedIn() {
@@ -351,41 +359,87 @@ public class Main {
                     }
                     deleteEnv(args[1]);
                 }
-                case "build" -> build();
-                case "gen-api" -> {
-                    var retFullObj = args.length >= 2 && args[1].equals("--return-full-object");
-                    generateApi(retFullObj);
-                }
+                case "build" -> build(parseOptions(args));
+                case "gen-api" -> generateApi(parseOptions(args));
                 case "deploy" -> {
                     ensureLoggedIn();
-                    deploy();
+                    deploy(parseOptions(args));
                 }
-                case "secret-deploy" -> secretDeploy();
+                case "secret-deploy" -> secretDeploy(parseOptions(args));
                 default -> usage();
             }
         }
-        catch (CompilationException e) {
+        catch (InvalidUsageException e) {
+            System.err.println("Error: " + e.getMessage());
+            usage();
+        } catch (CompilationException e) {
             System.err.println("Error: " + e.getMessage());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private List<Option> parseOptions(String[] args) {
+        var options = new ArrayList<Option>();
+        for (int i = 1; i < args.length; i++) {
+            String arg = args[i];
+            if (arg.startsWith("--")) {
+                String optionName = arg.substring(2);
+                OptionKind kind;
+                try {
+                    kind = OptionKind.valueOf(optionName.toUpperCase().replace('-', '_'));
+                } catch (IllegalArgumentException e) {
+                    throw new InvalidUsageException("Unknown option: " + arg);
+                }
+                String optionArg = null;
+                if (kind.hasArg) {
+                    if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
+                        optionArg = args[++i];
+                    } else {
+                        throw new InvalidUsageException("Option '" + arg + "' requires an argument");
+                    }
+                }
+                options.add(new Option(kind, optionArg));
+            } else {
+                throw new InvalidUsageException("Unknown option: " + arg);
+            }
+        }
+        return options;
+    }
+
+    record Option(OptionKind kind, @Nullable String arg) {
+    }
+
+    enum OptionKind {
+
+        SENSE_LINT(false),
+        RETURN_FULL_OBJECT(false),
+
+        ;
+
+        private final boolean hasArg;
+
+        OptionKind(boolean hasArg) {
+            this.hasArg = hasArg;
+        }
+    }
+
     @SneakyThrows
-    void deploy() {
-        if (build())
+    void deploy(List<Option> options) {
+        if (build(options))
             deploy(new HttpTypeClient(), targetRoot);
     }
 
     @SneakyThrows
-    void secretDeploy() {
-        if (build())
+    void secretDeploy(List<Option> options) {
+        if (build(options))
             secretDeploy(new HttpTypeClient(), targetRoot);
     }
 
-    boolean build() throws IOException {
+    boolean build(List<Option> options) throws IOException {
         if (!ensureSourceAvailable())
             return false;
+        var task = createTask(options);
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();
@@ -419,6 +473,12 @@ public class Main {
                     .filter(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".kiwi"))
                     .map(Path::toAbsolutePath) // Convert Path to absolute Path
                     .collect(Collectors.toList());
+        }
+    }
+
+    private class InvalidUsageException extends RuntimeException {
+        public InvalidUsageException(String message) {
+            super(message);
         }
     }
 

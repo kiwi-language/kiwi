@@ -186,24 +186,30 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
     }
 
     private void checkForDDL() {
+        var deployLog = new DeployLog();
         for (Field field : newFields) {
             if (Instances.findFieldInitializer(field, fromEnumKlasses.contains(field.getDeclaringType())) == null
                     && field.getInitializer() == null && Instances.getDefaultValue(field, context) == null)
-                throw new BusinessException(ErrorCode.MISSING_FIELD_MIGRATION_FUNC, field.getQualifiedName());
+                deployLog.addDiag(DeployError.newFieldMissingMigrationFunc(field.getQualifiedName()));
         }
         for (Field field : typeChangedFields) {
             if (Instances.findTypeConverter(field) == null)
-                throw new BusinessException(ErrorCode.MISSING_TYPE_CONVERTER, field.getQualifiedName());
+                deployLog.addDiag(DeployError.typeChangedFieldMissingMigrationFunc(field.getQualifiedName()));
         }
         for (var klass : changingSuperKlasses) {
             if (Instances.findSuperInitializer(klass) == null) {
                 var superClass = Objects.requireNonNull(klass.getSuperType()).getKlass();
                 for (Field field : superClass.getAllFields()) {
                     if(Instances.getDefaultValue(field, context) == null)
-                        throw new BusinessException(ErrorCode.MISSING_SUPER_INITIALIZER, klass.getName());
+                        deployLog.addDiag(DeployError.superChangedClassMissingMigrationFunc(klass.getQualifiedName()));
                 }
             }
         }
+        if (deployLog.isError())
+            throw new BusinessException(
+                    ErrorCode.DEPLOY_FAILED,
+                    deployLog.getMessage()
+            );
     }
 
     public void applyDDLToEnumConstants() {

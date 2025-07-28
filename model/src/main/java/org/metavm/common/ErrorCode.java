@@ -175,9 +175,6 @@ public enum ErrorCode {
 
     // DDL
     COMMIT_RUNNING(1601, "Commit is in progress"),
-    MISSING_FIELD_MIGRATION_FUNC(1602, "Migration function is missing for new field {}"),
-    MISSING_TYPE_CONVERTER(1603, "Type conversion function is missing for type-changed field {}"),
-    MISSING_SUPER_INITIALIZER(1604, "Super class migration function is missing class {}"),
 
     // schema
     UNSUPPORTED_SCHEMA(1701, "Unsupported schema: {}"),

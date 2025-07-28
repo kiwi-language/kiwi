@@ -223,7 +223,7 @@ public class DDLTest extends TestCase {
             Assert.fail("Should have thrown exception");
         } catch (BusinessException e) {
             Assert.assertEquals(
-                    ResultUtil.formatMessage(ErrorCode.MISSING_FIELD_MIGRATION_FUNC, "Product.description"),
+                    "Migration function is missing for new field: Product.description",
                     e.getMessage()
             );
         }
@@ -945,6 +945,22 @@ public class DDLTest extends TestCase {
         assemble("kiwi/ddl/delete_class_and_referring_field_after.kiwi");
         var product = getObject(id);
         assertEquals("MacBook Pro", product.get("name"));
+    }
+
+    public void testDeploymentError() {
+        assemble("kiwi/ddl/deploy_error_before.kiwi");
+        try {
+            assemble("kiwi/ddl/deploy_error_after.kiwi");
+            fail("Deployment should have failed");
+        } catch (BusinessException e) {
+            assertSame(ErrorCode.DEPLOY_FAILED, e.getErrorCode());
+            assertEquals(
+                    """
+                            Migration function is missing for new field: Product.owner
+                            Migration function is missing for type-changed field: Product.price""",
+                    e.getMessage()
+            );
+        }
     }
 
     public void testRenameField() {

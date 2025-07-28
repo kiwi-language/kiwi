@@ -252,7 +252,7 @@ public class ApiService extends ApplicationStatusAware {
                     else {
                         fields.add(new InstanceQueryField(
                                 field,
-                                resolveValue(value, field.getType(), false, null, entityContext),
+                                resolveValue(value, value instanceof List ? Types.getArrayType(field.getType()) : field.getType(), false, null, entityContext),
                                 null,
                                 null
                         ));
