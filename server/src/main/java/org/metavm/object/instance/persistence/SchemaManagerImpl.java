@@ -74,8 +74,14 @@ public class SchemaManagerImpl implements SchemaManager {
         var connection = getConnection();
         try (var stmt = connection.createStatement()) {
             log.info("Start switching table");
-            stmt.addBatch(String.format("drop table instance_%d", appId));
-            stmt.addBatch(String.format("drop table index_entry_%d", appId));
+            stmt.addBatch(String.format("drop table if exists instance_bak_%d", appId));
+            stmt.addBatch(String.format("drop table if exists index_entry_bak_%d", appId));
+            stmt.addBatch(
+                    String.format("alter table instance_%d rename to instance_bak_%d", appId, appId)
+            );
+            stmt.addBatch(
+                    String.format("alter table index_entry_%d rename to index_entry_bak_%d", appId, appId)
+            );
             stmt.addBatch(
                     String.format("alter table instance_tmp_%d rename to instance_%d", appId, appId)
             );
