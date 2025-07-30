@@ -27,7 +27,8 @@ public class ApplicationManagerTest extends TestCase {
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
         schedulerAndWorker = bootResult.schedulerAndWorker();
-        var entityQueryService = new EntityQueryService(bootResult.instanceSearchService());
+        var searchService = bootResult.instanceSearchService();
+        var entityQueryService = new EntityQueryService(searchService);
         var verificationCodeService = new VerificationCodeService(bootResult.entityContextFactory(), new MockEmailService());
         var loginService = new LoginService(bootResult.entityContextFactory());
         applicationManager = new ApplicationManager(
@@ -43,7 +44,8 @@ public class ApplicationManagerTest extends TestCase {
                 verificationCodeService,
                 bootResult.idProvider(),
                 entityQueryService,
-                bootResult.schemaManager()
+                bootResult.schemaManager(),
+                searchService
         );
         platformUserManager = new PlatformUserManager(
                 bootResult.entityContextFactory(),
@@ -90,7 +92,6 @@ public class ApplicationManagerTest extends TestCase {
         var r1 = applicationManager.list(1, 20, "metavm", ContextUtil.getUserId(),null);
         assertEquals(0, r1.total());
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
-        TestUtils.waitForEsSync(schedulerAndWorker);
         try {
             applicationManager.get(id);
             fail("Should have been removed");

@@ -57,7 +57,12 @@ public class Check extends StructuralNodeVisitor {
 
     @Override
     public Void visitLambdaExpr(LambdaExpr lambdaExpr) {
-        try (var ignored = env.enterScope(lambdaExpr, lambdaExpr.getElement())) {
+        var lambda = lambdaExpr.getElement();
+        try (var ignored = env.enterScope(lambdaExpr, lambda)) {
+            if (lambdaExpr.body() instanceof Expr expr
+                    && !lambda.getRetType().isVoid()
+                    && !Types.isConvertible(expr.getType(), lambda.getRetType()))
+                log.error(expr, Errors.incompatibleTypes(expr.getType().getTypeText(), lambda.getRetType().getTypeText()));
             return super.visitLambdaExpr(lambdaExpr);
         }
     }

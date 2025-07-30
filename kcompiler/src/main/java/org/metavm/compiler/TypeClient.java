@@ -6,6 +6,8 @@ public interface TypeClient {
 
     void secretDeploy(long appId, String mvaFile);
 
+    void revert(long appId);
+
     void login(String loginName, String password);
 
     boolean ping();

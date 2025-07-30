@@ -9,6 +9,7 @@ import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.search.SearchSync;
+import org.metavm.task.MigratingSyncSearchTask;
 import org.metavm.task.SyncSearchTask;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.DebugEnv;
@@ -55,7 +56,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
 
     @Transactional
     @Override
-    public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext) {
+    public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext, boolean migrating) {
         if (ContextUtil.isWaitForEsSync()) {
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                         @Override
@@ -68,7 +69,10 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         } else {
             try (var context = newContext(appId);
                     var ignored = ContextUtil.getProfiler().enter("createSearchSyncTask")) {
-                context.bind(new SyncSearchTask(context.allocateRootId(), idsToIndex, idsToRemove));
+                if (migrating)
+                    context.bind(new MigratingSyncSearchTask(context.allocateRootId(), idsToIndex, idsToRemove));
+                else
+                    context.bind(new SyncSearchTask(context.allocateRootId(), idsToIndex, idsToRemove));
                 context.finish();
             }
         }
@@ -82,7 +86,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             transactionOperations.executeWithoutResult(s -> {
                 try (var context = newContext(appId, builder -> builder.timeout(0))) {
                     var commit = context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
-                    if (commit != null/* && commit.getState().isMigrating()*/) {
+                    if (commit != null) {
                         if (tracing) {
                             logger.trace("Migrating instances in real time. commit state: {}, appId: {}, instanceIds: {}",
                                     commit.getState().name(), appId, Utils.join(instanceIds, Id::toString));

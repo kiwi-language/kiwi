@@ -24,8 +24,6 @@ import java.util.function.Consumer;
 
 public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository, CallContext, Iterable<Instance>, TypeDefProvider, RedirectStatusProvider, EntityRepository {
 
-    IInstanceContext createSame(long appId);
-
     void setLockMode(LockMode mode);
 
     LockMode getLockMode();
@@ -99,8 +97,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     void batchRemove(Collection<Instance> instances);
 
     boolean remove(Instance instance);
-
-    IInstanceContext createSame(long appId, TypeDefProvider typeDefProvider);
 
     boolean isMigrating();
 

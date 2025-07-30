@@ -77,17 +77,29 @@ public class MemMapperRegistry implements MapperRegistry {
     }
 
     public void removeInstanceMapper(long appId, String table) {
+        if (!tryRemoveInstanceMapper(appId, table))
+            throw new InternalException("Table " + table + "_" + appId + " doesn't exist");
+    }
+
+    public boolean tryRemoveInstanceMapper(long appId, String table) {
         var tableName = table + "_" + appId;
         if (!tableNames.remove(tableName))
-            throw new InternalException("Table " + tableName + " doesn't exist");
+            return false;
         instanceMappers.remove(new TableKey(appId, table));
+        return true;
     }
 
     public void removeIndexEntryMapper(long appId, String table) {
+        if (!tryRemoveIndexEntryMapper(appId, table))
+            throw new InternalException("Table " + table + "_" + appId + " doesn't exist");
+    }
+
+    public boolean tryRemoveIndexEntryMapper(long appId, String table) {
         var tableName = table + "_" + appId;
         if (!tableNames.remove(tableName))
-            throw new InternalException("Table " + tableName + " doesn't exist");
+            return false;
         indexEntryMappers.remove(new TableKey(appId, table));
+        return true;
     }
 
     public MemMapperRegistry copy() {

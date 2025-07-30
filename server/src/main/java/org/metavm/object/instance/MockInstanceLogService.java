@@ -20,7 +20,7 @@ public class MockInstanceLogService implements InstanceLogService {
     }
 
     @Override
-    public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext) {
+    public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext, boolean migrating) {
 
     }
 

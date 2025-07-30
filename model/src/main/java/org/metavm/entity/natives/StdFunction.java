@@ -460,6 +460,16 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(null);
             }
     ),
+    reverse(
+            "void reverse<E>(E[] a)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var array = args.getFirst().resolveArray();
+                array.reverse();
+                return FlowExecResult.of(null);
+            }
+    ),
     copyOfArray(
             "(T|null)[] copyOfArray<T>((T|null)[] array, int newLength)",
             false,
@@ -538,17 +548,6 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var length = ((IntValue) args.get(4)).value;
                 for(int i = srcPos, j = destPos, k = 0; k < length; i++, j++, k++)
                     dest.setElement(j, src.getElement(i));
-                return FlowExecResult.of(null);
-            }
-    ),
-    reverse(
-            "void reverse(java.util.List<[never, any]> list)",
-            false,
-            List.of(ReflectionUtils.getMethod(Collections.class, "reverse", List.class)),
-            (func, args, callContext) -> {
-                var list = args.getFirst().resolveObject();
-                var nat = Instances.getListNative(list);
-                nat.reverse();
                 return FlowExecResult.of(null);
             }
     ),

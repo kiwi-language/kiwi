@@ -175,6 +175,8 @@ public enum ErrorCode {
 
     // DDL
     COMMIT_RUNNING(1601, "Commit is in progress"),
+    REVERSION_FAILED(1602, "Reversion failed: {}"),
+    NO_BACKUP(1603, "No backup found for appId {}"),
 
     // schema
     UNSUPPORTED_SCHEMA(1701, "Unsupported schema: {}"),

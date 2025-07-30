@@ -486,6 +486,22 @@ public class DiagTest extends TestCase {
                 log.getDiags().getLast().toString());
     }
 
+    public void testIncompatibleLambdaBodyExpr() {
+        compile("""
+                class Lab(var tags: int[]) {
+                    
+                    static val tagIdx = Index<int, Lab>(false, l -> l.tags)
+                    
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:3: Incompatible types: int[] cannot be converted to int
+                        static val tagIdx = Index<int, Lab>(false, l -> l.tags)
+                                                                          ^""",
+                log.getDiags().getFirst().toString());
+    }
+
     private List<Diag> compileWithAiLint(String text) {
         var file = parse(text);
         compile(file);

@@ -147,4 +147,5 @@ public class EntityRegistry {
     public static final int TAG_TestTask = 99;
     public static final int TAG_AstSimpleProduct = 100;
     public static final int TAG_EntityBar = 101;
+    public static final int TAG_MigratingSearchSyncTask = 102;
 }

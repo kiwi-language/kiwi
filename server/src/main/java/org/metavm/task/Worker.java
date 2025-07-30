@@ -2,8 +2,11 @@ package org.metavm.task;
 
 //import org.metavm.ddl.DefContextUtils;
 
+import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionOperations;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -109,7 +113,9 @@ public class Worker extends EntityContextFactoryAware {
             var appTasks = new ArrayList<Task>();
             futures.forEach(f -> {
                 try {
-                    appTasks.add(f.get());
+                    var t = f.get();
+                    if (t != null)
+                        appTasks.add(t);
                 } catch (InterruptedException e) {
                     throw new InternalException("Should not happen", e);
                 } catch (ExecutionException e) {
@@ -120,12 +126,16 @@ public class Worker extends EntityContextFactoryAware {
         }
     }
 
-    private Task runTask(ShadowTask shadowTask) {
+    private @Nullable Task runTask(ShadowTask shadowTask) {
         var tracing = DebugEnv.traceTaskExecution;
         return transactionOperations.execute(s -> {
-            try (var appContext = newContext(shadowTask.getAppId())) {
-                var appTask = appContext.getEntity(Task.class, shadowTask.getAppTaskId());
-                appContext.setTimeout(appTask.getTimeout());
+            if (isAppRemoved(shadowTask.getAppId())) {
+                removeShadowTask(shadowTask.getId());
+                return null;
+            }
+            try (var taskCtx = newContext(shadowTask.getAppId())) {
+                var appTask = taskCtx.getEntity(Task.class, shadowTask.getAppTaskId());
+                taskCtx.setTimeout(appTask.getTimeout());
                 boolean terminated;
                 try {
                     if (appTask.isMigrating())
@@ -133,14 +143,14 @@ public class Worker extends EntityContextFactoryAware {
                     var parentContext = shadowTask.getAppId() != Constants.ROOT_APP_ID ?
                                 metaContextCache.get(shadowTask.getAppId(), appTask.isMigrating()/*Utils.safeCall(appTask.getMetaWAL(), Instance::getId)*/) :
                                             ModelDefRegistry.getDefContext();
-                    try (var walContext = entityContextFactory.newContext(shadowTask.getAppId(), parentContext,
+                    try (var exeCtx = entityContextFactory.newContext(shadowTask.getAppId(), parentContext,
                             builder -> builder
                                     .relocationEnabled(appTask.isRelocationEnabled())
                                     .migrating(appTask.isMigrating())
                                     .timeout(appTask.getTimeout()))) {
-                        terminated = runTask0(appTask, walContext, appContext);
+                        terminated = runTask0(appTask, exeCtx, taskCtx);
                         if(!appTask.isFailed())
-                            walContext.finish();
+                            exeCtx.finish();
                         if(terminated)
                             logger.info("Task {}-{} completed successfully", shadowTask.getAppId(), appTask.getTitle());
                     }
@@ -154,20 +164,41 @@ public class Worker extends EntityContextFactoryAware {
                         ContextUtil.setDDL(false);
                 }
                 if (terminated) {
-                    if (tracing)
-                        logger.trace("Removing shadow task {}", shadowTask.getId());
-                    try (var context = newPlatformContext()) {
-                        context.remove(context.getEntity(ShadowTask.class, shadowTask.getId()));
-                        context.finish();
-                    }
+                    removeShadowTask(shadowTask.getId());
                 }
                 if (tracing)
                     logger.trace("After running task {}. task ID: {}, terminated: {}",
                             appTask.getTitle(), appTask.getId(), terminated);
-                appContext.finish();
+                taskCtx.finish();
                 return appTask;
             }
         });
+    }
+
+    private boolean isAppRemoved(long appId) {
+        try (var context = newPlatformContext()) {
+            try {
+                context.get(PhysicalId.of(appId, 0));
+                return false;
+            } catch (BusinessException e) {
+                if (e.getErrorCode() == ErrorCode.INSTANCE_NOT_FOUND)
+                    return true;
+                throw e;
+            }
+        }
+    }
+
+    private void removeShadowTask(Id id) {
+        if (DebugEnv.traceTaskExecution)
+            logger.trace("Removing shadow task {}", id);
+        try (var context = newPlatformContext()) {
+            try {
+                context.remove(context.getEntity(ShadowTask.class, id));
+            } catch (Exception e) {
+                logger.error("Failed to remove shadow task", e);
+            }
+            context.finish();
+        }
     }
 
     private boolean runTask0(Task appTask, IInstanceContext executionContext, IInstanceContext taskContext) {

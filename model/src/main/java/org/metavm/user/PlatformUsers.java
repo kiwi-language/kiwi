@@ -24,19 +24,6 @@ public class PlatformUsers {
                     )
             );
         }
-        try (var context = platformContext.createSame(app.getTreeId())) {
-            for (PlatformUser platformUser : platformUsers) {
-                var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, Instances.stringInstance(platformUser.getStringId()));
-                if (user != null) {
-                    user.setState(UserState.DETACHED);
-                    var sessions = context.selectByKey(Session.IDX_USER_STATE,
-                            user.getReference(),
-                            Instances.intInstance(SessionState.ACTIVE.code()));
-                    sessions.forEach(Session::close);
-                }
-            }
-            context.finish();
-        }
         var eventQueue = platformContext.getEventQueue();
         if (eventQueue != null) {
             platformContext.registerCommitCallback(() -> {

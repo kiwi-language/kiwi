@@ -30,6 +30,7 @@ public class SearchSync {
             Hooks.SEARCH_BULK.accept(
                     new SearchSyncRequest(
                             context.getAppId(),
+                            context.isMigrating(),
                             changed,
                             new ArrayList<>(removedIds),
                             waitUtilRefresh

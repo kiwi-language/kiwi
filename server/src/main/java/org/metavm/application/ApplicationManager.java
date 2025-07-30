@@ -12,6 +12,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.persistence.SchemaManager;
+import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.type.GlobalKlassTagAssigner;
 import org.metavm.object.type.KlassSourceCodeTagAssigner;
 import org.metavm.object.type.KlassTagAssigner;
@@ -44,6 +45,7 @@ public class ApplicationManager extends ApplicationStatusAware {
 
     private final EntityQueryService entityQueryService;
     private final SchemaManager schemaManager;
+    private final InstanceSearchService instanceSearchService;
 
     public ApplicationManager(EntityContextFactory entityContextFactory,
                               RoleManager roleManager,
@@ -51,7 +53,7 @@ public class ApplicationManager extends ApplicationStatusAware {
                               VerificationCodeService verificationCodeService,
                               EntityIdProvider idService,
                               EntityQueryService entityQueryService,
-                              SchemaManager schemaManager) {
+                              SchemaManager schemaManager, InstanceSearchService instanceSearchService) {
         super(entityContextFactory);
         this.roleManager = roleManager;
         this.platformUserManager = platformUserManager;
@@ -59,6 +61,7 @@ public class ApplicationManager extends ApplicationStatusAware {
         this.idService = idService;
         this.entityQueryService = entityQueryService;
         this.schemaManager = schemaManager;
+        this.instanceSearchService = instanceSearchService;
     }
 
     public Page<ApplicationDTO> list(int page, int pageSize, String searchText, Id userId, @Nullable Long newlyCreatedId) {
@@ -160,6 +163,7 @@ public class ApplicationManager extends ApplicationStatusAware {
             platformUserManager.joinApplication(owner, application, platformContext);
             setupApplication(application.getTreeId(), platformContext);
         }
+        instanceSearchService.createIndex(id, false);
         return application;
     }
 

@@ -11,7 +11,6 @@ import org.metavm.object.instance.StoreTreeSource;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.VersionRT;
-import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.*;
 import org.metavm.util.LinkedList;
 import org.slf4j.Logger;
@@ -110,7 +109,7 @@ public class InstanceContext extends BufferingInstanceContext {
         headContext.clear();
         patch.trees().forEach(headContext::add);
         try (var ignored = getProfiler().enter("postProcess")) {
-            postProcess();
+            postProcess(patch);
         }
         finished = true;
     }
@@ -315,28 +314,15 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    private void registerTransactionSynchronization() {
+    private void postProcess(Patch patch) {
         if (skipPostprocessing)
             return;
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        postProcess();
-                    }
-                }
-        );
+        postProcess0(patch);
     }
 
-    private void postProcess() {
-        if (skipPostprocessing)
-            return;
-        postProcess0();
-    }
-
-    private void postProcess0() {
+    private void postProcess0(Patch patch) {
         for (ContextPlugin plugin : plugins) {
-            plugin.postProcess(this);
+            plugin.postProcess(this, patch);
         }
     }
 
@@ -401,31 +387,6 @@ public class InstanceContext extends BufferingInstanceContext {
                 action.run();
             }
         });
-    }
-
-    @Override
-    public IInstanceContext createSame(long appId) {
-        return createSame(appId, getTypeDefProvider());
-    }
-
-    @Override
-    public IInstanceContext createSame(long appId, TypeDefProvider typeDefProvider) {
-        return new InstanceContext(
-                appId,
-                instanceStore,
-                idInitializer,
-                executor,
-                plugins,
-                getParent(),
-                childrenLazyLoading,
-                cache,
-                eventQueue,
-                isReadonly(),
-                skipPostprocessing,
-                relocationEnabled,
-                migrating,
-                getTimeout()
-        );
     }
 
     @Override

@@ -76,6 +76,7 @@ public class NameTable {
     public final Name id = get("id");
     public final Name File = get("File");
     public final Name sort = get("sort");
+    public final Name reverse = get("reverse");
 
     private NameTable() {
     }

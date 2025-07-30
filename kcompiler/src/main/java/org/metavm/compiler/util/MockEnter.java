@@ -55,6 +55,7 @@ public class MockEnter {
         createRequireFunc(rootPkg);
         createForEachFunc(rootPkg);
         createSortFunc(rootPkg);
+        createReverseFunc(rootPkg);
         createMapFunc(rootPkg);
         createPrintFunc(project);
         createConcatFunc(rootPkg);
@@ -770,6 +771,16 @@ public class MockEnter {
         );
         new Param(NameTable.instance.comparator,
                 Types.instance.getFuncType(List.of(typeVar, typeVar), PrimitiveType.VOID),
+                func
+        );
+    }
+
+    private static void createReverseFunc(Package rootPkg) {
+        var func = new FreeFunc(NameTable.instance.reverse, rootPkg);
+        var typeVar = new TypeVar(NameTable.instance.E, PrimitiveType.ANY, func);
+        new Param(
+                NameTable.instance.a,
+                Types.instance.getArrayType(typeVar),
                 func
         );
     }

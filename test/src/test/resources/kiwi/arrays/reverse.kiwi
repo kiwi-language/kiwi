@@ -1,0 +1,11 @@
+package arrays
+
+@Bean
+class Lab {
+
+    fn reverse(a: int[]) -> int[] {
+        a.reverse()
+        return a
+    }
+
+}

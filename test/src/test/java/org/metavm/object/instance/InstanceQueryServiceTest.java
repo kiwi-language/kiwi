@@ -38,6 +38,7 @@ public class InstanceQueryServiceTest extends TestCase {
         instanceSearchService = new MemInstanceSearchServiceV2();
         instanceQueryService = new InstanceQueryService(instanceSearchService);
         instanceRepository = new MockInstanceRepository();
+        instanceSearchService.createIndex(TestConstants.APP_ID, false);
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 

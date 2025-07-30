@@ -7,6 +7,7 @@ import java.util.List;
 
 public record SearchSyncRequest(
         long appId,
+        boolean migrating,
         List<ClassInstance> changedInstances,
         List<Id> removedInstanceIds,
         boolean waitUtilRefresh

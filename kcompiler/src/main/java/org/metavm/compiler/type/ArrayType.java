@@ -59,6 +59,8 @@ public final class ArrayType implements Type, Comparable<ArrayType> {
             )
             .build();
 
+    public static final Method reverseMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.reverse).build();
+
     public static final Method mapMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.map).build();
 
     static {

@@ -2,6 +2,9 @@ package org.metavm.object.instance.persistence;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.common.ErrorCode;
+import org.metavm.util.BusinessException;
+import org.metavm.util.Hooks;
 import org.metavm.util.Utils;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
@@ -19,6 +22,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
     public SchemaManagerImpl(DataSource dataSource) {
         this.dataSource = dataSource;
+        Hooks.DROP_TABLES = this::dropAllTables;
     }
 
     @SneakyThrows
@@ -66,7 +70,6 @@ public class SchemaManagerImpl implements SchemaManager {
         }
     }
 
-    //            stmt.executeUpdate(String.format("drop table instance_%d, index_entry_%d", appId, appId));
     @SneakyThrows
     @Override
     public void switchTable(long appId) {
@@ -95,6 +98,48 @@ public class SchemaManagerImpl implements SchemaManager {
         }
     }
 
+    @Override
+    @SneakyThrows
+    public void revert(long appId) {
+        var connection = getConnection();
+        try (var stmt = connection.createStatement()) {
+            connection.setAutoCommit(false);
+            log.info("Start rollback");
+            var checkSql = String.format("select count(*) from information_schema.tables where table_name = 'instance_bak_%d'", appId);
+            var rs = stmt.executeQuery(checkSql);
+            if (!rs.next() || rs.getInt(1) == 0) {
+                throw new BusinessException(
+                        ErrorCode.REVERSION_FAILED,
+                        "No backup instance table found for appId " + appId
+                );
+            }
+            checkSql = String.format("select count(*) from information_schema.tables where table_name = 'index_entry_bak_%d'", appId);
+            rs = stmt.executeQuery(checkSql);
+            if (!rs.next() || rs.getInt(1) == 0) {
+                throw new BusinessException(
+                        ErrorCode.REVERSION_FAILED,
+                        "No backup index entry table found for appId " + appId
+                );
+            }
+            stmt.addBatch(String.format("drop table if exists instance_%d", appId));
+            stmt.addBatch(String.format("drop table if exists index_entry_%d", appId));
+            stmt.addBatch(
+                    String.format("alter table instance_bak_%d rename to instance_%d", appId, appId)
+            );
+            stmt.addBatch(
+                    String.format("alter table index_entry_bak_%d rename to index_entry_%d", appId, appId)
+            );
+            stmt.executeBatch();
+            connection.commit();
+            log.info("Finished rollback");
+        } catch (SQLException e) {
+            log.error("Error during rollback", e);
+        } finally {
+            returnConnection(connection);
+        }
+
+    }
+
     @SneakyThrows
     @Override
     public void dropTmpTables(long appId) {
@@ -103,6 +148,24 @@ public class SchemaManagerImpl implements SchemaManager {
             stmt.executeUpdate(String.format("drop table instance_tmp_%d, index_entry_tmp_%d", appId, appId));
         }
         finally {
+            returnConnection(connection);
+        }
+    }
+
+    @SneakyThrows
+    @Override
+    public void dropAllTables(long appId) {
+        var connection = getConnection();
+        try (var stmt = connection.createStatement())  {
+            connection.setAutoCommit(false);
+            stmt.addBatch(String.format("drop table if exists instance_%d", appId));
+            stmt.addBatch(String.format("drop table if exists instance_tmp_%d", appId));
+            stmt.addBatch(String.format("drop table if exists instance_bak_%d", appId));
+            stmt.addBatch(String.format("drop table if exists index_entry_%d", appId));
+            stmt.addBatch(String.format("drop table if exists index_entry_tmp_%d", appId));
+            stmt.addBatch(String.format("drop table if exists index_entry_bak_%d", appId));
+            stmt.executeBatch();
+        } finally {
             returnConnection(connection);
         }
     }

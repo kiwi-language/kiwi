@@ -3,7 +3,7 @@ package index
 
 class Foo {
 
-    class Child(var name) {
+    class Child(var name: string) {
 
         static var nameIdx = Index<string, Child>(true, c -> c.name)
 

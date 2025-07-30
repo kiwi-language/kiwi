@@ -28,13 +28,14 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
         TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
         memInstanceSearchServiceV2 = new MemInstanceSearchServiceV2();
+        memInstanceSearchServiceV2.createIndex(TestConstants.APP_ID, false);
     }
 
     public void test() {
         var fooTypes = MockUtils.createFooTypes(true);
         var foo = MockUtils.createFoo(fooTypes, this::nextRootId);
         var fooType = fooTypes.fooType().getType();
-        memInstanceSearchServiceV2.bulk(new SearchSyncRequest(TestConstants.APP_ID, List.of(foo), List.of(), true));
+        memInstanceSearchServiceV2.bulk(new SearchSyncRequest(TestConstants.APP_ID, false, List.of(foo), List.of(), true));
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
                 Set.of(fooType.toExpression()),
@@ -71,7 +72,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
         var livingBeingTypes = MockUtils.createLivingBeingTypes(true);
         var humanType = livingBeingTypes.humanType().getType();
         var human = MockUtils.createHuman(livingBeingTypes, nextRootId());
-        memInstanceSearchServiceV2.bulk(new SearchSyncRequest(TestConstants.APP_ID, List.of(human), List.of(), true));
+        memInstanceSearchServiceV2.bulk(new SearchSyncRequest(TestConstants.APP_ID, false, List.of(human), List.of(), true));
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
                 Set.of(humanType.toExpression()),

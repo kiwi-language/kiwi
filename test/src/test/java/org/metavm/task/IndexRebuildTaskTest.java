@@ -9,7 +9,7 @@ import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.*;
 
-public class IndexRebuildJobTest extends TestCase {
+public class IndexRebuildTaskTest extends TestCase {
 
     private EntityContextFactory entityContextFactory;
     private SchedulerAndWorker schedulerAndWorker;
@@ -46,6 +46,8 @@ public class IndexRebuildJobTest extends TestCase {
             }
         });
         instanceSearchService.clear();
+        instanceSearchService.createSystemIndices();
+        instanceSearchService.createIndex(TestConstants.APP_ID, false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
                 var job2 = context.getEntity(IndexRebuildTask.class, task.getId());

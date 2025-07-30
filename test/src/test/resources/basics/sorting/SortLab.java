@@ -17,10 +17,6 @@ public class SortLab {
         return foos;
     }
 
-    public void reverseFoos() {
-        Collections.reverse(this.foos);
-    }
-
     public void sortFoos() {
         this.foos.sort(ComparableFoo::compareTo);
     }

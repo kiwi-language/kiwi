@@ -168,10 +168,10 @@ public class ApiGenerator {
     }
 
     private void generateSearchRequest(Clazz cls) {
-        var typeName = getApiClass(cls) + "Request";
+        var typeName = "Search" + getApiClass(cls) + "Request";
         if (!generatedTypes.add(typeName))
             return;
-        apiWriter.writeln("export interface Search" + typeName +  " {");
+        apiWriter.writeln("export interface " + typeName +  " {");
         apiWriter.indent();
         var fieldNames = new HashSet<String>();
         for (Field field : cls.getFields()) {

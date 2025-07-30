@@ -53,6 +53,12 @@ public class Main {
             return false;
     }
 
+    void revert() {
+        Utils.ensureDirectoryExists(selectedEnv);
+        var typeClient = new HttpTypeClient();
+        typeClient.revert(getAppId());
+    }
+
     @SneakyThrows
     private CompilationTask createTask(List<Option> options) {
         var aiLint = false;
@@ -269,8 +275,11 @@ public class Main {
 
     private void usage() {
         System.out.println("Usage: ");
+        System.out.println("kiwi build");
         System.out.println("kiwi deploy");
         System.out.println("kiwi redeploy");
+        System.out.println("kiwi gen-api");
+        System.out.println("kiwi revert");
         System.out.println("kiwi clear");
         System.out.println("kiwi host <host>");
         System.out.println("kiwi login");
@@ -361,6 +370,7 @@ public class Main {
                 }
                 case "build" -> build(parseOptions(args));
                 case "gen-api" -> generateApi(parseOptions(args));
+                case "revert" -> revert();
                 case "deploy" -> {
                     ensureLoggedIn();
                     deploy(parseOptions(args));

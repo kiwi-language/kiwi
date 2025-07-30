@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
+import org.metavm.ddl.DeployService;
 import org.metavm.entity.*;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.IndexKeyRT;
@@ -31,6 +32,7 @@ public class DDLTest extends TestCase {
     private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
     private MetaContextCache metaContextCache;
+    private DeployService deployService;
 
     @Override
     protected void setUp() throws Exception {
@@ -42,6 +44,11 @@ public class DDLTest extends TestCase {
                 new InstanceQueryService(bootResult.instanceSearchService())));
         schedulerAndWorker  = bootResult.schedulerAndWorker();
         metaContextCache = bootResult.metaContextCache();
+        deployService = new DeployService(
+                bootResult.schemaManager(),
+                bootResult.instanceSearchService(),
+                bootResult.entityContextFactory()
+        );
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -52,6 +59,7 @@ public class DDLTest extends TestCase {
         apiClient = null;
         schedulerAndWorker = null;
         metaContextCache = null;
+        deployService = null;
     }
 
     public void testDDL() {
@@ -965,6 +973,20 @@ public class DDLTest extends TestCase {
 
     public void testRenameField() {
 
+    }
+
+    public void testRevert() {
+        assemble("kiwi/ddl/revert_before.kiwi");
+        var id = saveInstance("ddl.Product", Map.of(
+                "name", "Shoes",
+                "stock", 100
+        ));
+        assemble("kiwi/ddl/revert_after.kiwi");
+        var product = getObject(id);
+        assertNull(product.get("stock"));
+        deployService.revert(TestConstants.APP_ID);
+        product = getObject(id);
+        assertEquals(100, product.get("stock"));
     }
 
     private void assemble(String fileName) {

@@ -11,6 +11,6 @@ public interface ContextPlugin {
 
     void afterSaving(EntityChange<VersionRT> change, IInstanceContext context);
 
-    default void postProcess(IInstanceContext context) {}
+    default void postProcess(IInstanceContext context, Patch patch) {}
 
 }

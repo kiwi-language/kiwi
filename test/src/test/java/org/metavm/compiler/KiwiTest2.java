@@ -1,6 +1,5 @@
 package org.metavm.compiler;
 
-import com.google.protobuf.Api;
 import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.ApiNamedObject;
@@ -238,6 +237,18 @@ public class KiwiTest2 extends KiwiTestBase {
                 ))
         );
         assertEquals(List.of(1, 2, 3), r);
+    }
+
+    public void testReverse(){
+        deploy("kiwi/arrays/reverse.kiwi");
+        var r = callMethod(
+                ApiNamedObject.of("lab"),
+                "reverse",
+                List.of(List.of(
+                        1, 2, 3
+                ))
+        );
+        assertEquals(List.of(3, 2, 1), r);
     }
 
 }
