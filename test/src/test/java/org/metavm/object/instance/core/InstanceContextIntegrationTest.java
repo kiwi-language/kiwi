@@ -8,6 +8,7 @@ import org.metavm.ddl.Commit;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.instance.InstanceStore;
 import org.metavm.object.instance.persistence.SchemaManager;
+import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.type.KlassSourceCodeTagAssigner;
 import org.metavm.object.type.KlassTagAssigner;
 import org.metavm.user.PlatformUser;
@@ -21,18 +22,21 @@ public class InstanceContextIntegrationTest extends TestCase {
 
     private EntityContextFactory entityContextFactory;
     private SchemaManager schemaManager;
+    private InstanceSearchService instanceSearchService;
 
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
         entityContextFactory = bootResult.entityContextFactory();
         schemaManager = bootResult.schemaManager();
+        instanceSearchService = bootResult.instanceSearchService();
     }
 
     @Override
     protected void tearDown() throws Exception {
         entityContextFactory = null;
         schemaManager = null;
+        instanceSearchService = null;
     }
 
     public void test() {
@@ -58,6 +62,7 @@ public class InstanceContextIntegrationTest extends TestCase {
     public void testMigration() {
         schemaManager.createInstanceTable(APP_ID, "instance_tmp");
         schemaManager.createIndexEntryTable(APP_ID, "index_entry_tmp");
+        instanceSearchService.createIndex(APP_ID, true);
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = entityContextFactory.newContext(APP_ID, b -> b.migrating(true))) {
                 context.loadKlasses();

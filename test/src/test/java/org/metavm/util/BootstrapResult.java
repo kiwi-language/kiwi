@@ -10,6 +10,7 @@ import org.metavm.object.instance.persistence.SchemaManager;
 import org.metavm.object.type.MemAllocatorStore;
 import org.metavm.object.type.MemColumnStore;
 import org.metavm.object.type.MemTypeTagStore;
+import org.metavm.object.type.TypeManager;
 import org.metavm.task.TaskManager;
 
 public record BootstrapResult(
@@ -28,6 +29,7 @@ public record BootstrapResult(
         MemMapperRegistry mapperRegistry,
         SchemaManager schemaManager,
         CommitService commitService,
+        TypeManager typeManager,
         Id userId
 
 ) {

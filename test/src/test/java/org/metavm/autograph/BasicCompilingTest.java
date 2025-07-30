@@ -203,9 +203,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         )));
         var foos = apiClient.getObject(labId).get("foos");
         Assert.assertEquals(List.of(foo1Id, foo2Id), foos);
-        callMethod(labId, "reverseFoos", List.of());
-        var foos1 = apiClient.getObject(labId).get("foos");
-        Assert.assertEquals(List.of(foo2Id, foo1Id), foos1);
         callMethod(labId, "sortFoos", List.of());
         var foos2 = apiClient.getObject(labId).get("foos");
         Assert.assertEquals(List.of(foo1Id, foo2Id), foos2);

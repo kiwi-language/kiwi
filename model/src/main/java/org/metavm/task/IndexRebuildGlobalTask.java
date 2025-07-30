@@ -1,16 +1,17 @@
 package org.metavm.task;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
 import org.metavm.application.Application;
 import org.metavm.api.Entity;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
+import org.metavm.util.Hooks;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
@@ -20,13 +21,14 @@ import java.util.function.Consumer;
 
 @NativeEntity(31)
 @Entity
+@Slf4j
 public class IndexRebuildGlobalTask extends GlobalTask {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
     public IndexRebuildGlobalTask(Id id) {
-        super(id, "Index rebuild boot");
+        super(id, "IndexRebuildGlobalTask");
     }
 
     @Generated
@@ -35,8 +37,9 @@ public class IndexRebuildGlobalTask extends GlobalTask {
     }
 
     @Override
-    protected void processApplication(IInstanceContext context, Application application) {
-        context.bind(new IndexRebuildTask(context.allocateRootId()));
+    protected void processApplication(Application application) {
+        Hooks.CREATE_INDEX_IF_NOT_EXISTS.accept(application.getTreeId());
+        Hooks.CREATE_INDEX_REBUILD_TASK.accept(application.getTreeId());
     }
 
     @Override

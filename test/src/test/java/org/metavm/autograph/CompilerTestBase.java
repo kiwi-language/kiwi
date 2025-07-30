@@ -73,8 +73,9 @@ public abstract class CompilerTestBase extends TestCase  {
         entityContextFactory = bootResult.entityContextFactory();
         schedulerAndWorker = bootResult.schedulerAndWorker();
         metaContextCache = bootResult.metaContextCache();
-        var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
-        typeManager = new TypeManager(bootResult.entityContextFactory(), new BeanManager(), new MockSchemaManager(bootResult.mapperRegistry()));
+        var searchService = bootResult.instanceSearchService();
+        var instanceQueryService = new InstanceQueryService(searchService);
+        typeManager = new TypeManager(bootResult.entityContextFactory(), new BeanManager(), new MockSchemaManager(bootResult.mapperRegistry()), searchService);
         typeClient = new MockTypeClient(typeManager, executor, new MockTransactionOperations());
         FlowSavingContext.initConfig();
         var entityQueryService = new EntityQueryService(bootResult.instanceSearchService());
@@ -84,7 +85,7 @@ public abstract class CompilerTestBase extends TestCase  {
         platformUserManager = new PlatformUserManager(entityContextFactory,
                 loginService, entityQueryService, new MockEventQueue(), verificationCodeService);
         applicationManager = new ApplicationManager(entityContextFactory, roleManager, platformUserManager,
-                verificationCodeService, bootResult.idProvider(), entityQueryService, bootResult.schemaManager());
+                verificationCodeService, bootResult.idProvider(), entityQueryService, bootResult.schemaManager(), searchService);
         var apiService = new ApiService(entityContextFactory, bootResult.metaContextCache(), instanceQueryService);
         apiClient = new ApiClient(apiService);
         ContextUtil.resetProfiler();

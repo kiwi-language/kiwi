@@ -1,0 +1,5 @@
+package ddl
+
+class Product(
+    var name: string
+)

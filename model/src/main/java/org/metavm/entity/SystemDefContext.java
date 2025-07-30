@@ -285,11 +285,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         return profiler;
     }
 
-    @Override
-    public IInstanceContext createSame(long appId) {
-        throw new UnsupportedOperationException();
-    }
-
     public IdentityContext getIdentityContext() {
         return identityContext;
     }
@@ -415,11 +410,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     public boolean remove(Instance instance) {
         batchRemove(List.of(instance));
         return true;
-    }
-
-    @Override
-    public IInstanceContext createSame(long appId, TypeDefProvider typeDefProvider) {
-        return null;
     }
 
     @Override

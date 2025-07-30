@@ -15,6 +15,7 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.persistence.SchemaManager;
+import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +39,13 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
     private final BeanManager beanManager;
 
     private final SchemaManager schemaManager;
+    private final InstanceSearchService instanceSearchService;
 
-    public TypeManager(EntityContextFactory entityContextFactory, BeanManager beanManager, SchemaManager schemaManager) {
+    public TypeManager(EntityContextFactory entityContextFactory, BeanManager beanManager, SchemaManager schemaManager, InstanceSearchService instanceSearchService) {
         super(entityContextFactory);
         this.beanManager = beanManager;
         this.schemaManager = schemaManager;
+        this.instanceSearchService = instanceSearchService;
         Commit.cleanupRemovingClassesHook = this::cleanupRemovingClasses;
     }
 
@@ -64,6 +67,7 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
         ensureApplicationActive();
         schemaManager.createInstanceTable(ContextUtil.getAppId(), "instance_tmp");
         schemaManager.createIndexEntryTable(ContextUtil.getAppId(), "index_entry_tmp");
+        instanceSearchService.createIndex(ContextUtil.getAppId(), true);
         SaveTypeBatch batch;
         try (var context = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT))) {
             ContextUtil.setDDL(true);

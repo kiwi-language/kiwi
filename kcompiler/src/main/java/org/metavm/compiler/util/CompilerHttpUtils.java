@@ -129,6 +129,20 @@ public class CompilerHttpUtils {
         }
     }
 
+    @SneakyThrows
+    public static void revert(long appId) {
+        var uri = new URI(host + "/internal-api/deploy/revert/" + appId);
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(uri)
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() != 200) {
+            var errorResp = Utils.readJSONString(resp.body(), Result.class);
+            throw new BusinessException(ErrorCode.DEPLOY_FAILED, errorResp.getMessage());
+        }
+    }
+
     public static <R> R get(String path, TypeReference<R> responseTypeRef) {
         try {
             var uri = new URI(host + path);

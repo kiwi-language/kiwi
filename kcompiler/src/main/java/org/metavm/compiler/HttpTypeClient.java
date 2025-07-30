@@ -19,6 +19,11 @@ public class HttpTypeClient implements TypeClient {
     }
 
     @Override
+    public void revert(long appId) {
+        CompilerHttpUtils.revert(appId);
+    }
+
+    @Override
     public void login(String loginName, String password) {
         CompilerHttpUtils.post("/login", new LoginRequest(Constants.PLATFORM_APP_ID, loginName, password),
                 new TypeReference<LoginInfo>() {

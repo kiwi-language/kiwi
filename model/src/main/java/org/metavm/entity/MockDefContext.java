@@ -192,11 +192,6 @@ public class MockDefContext extends DefContext {
     }
 
     @Override
-    public IInstanceContext createSame(long appId, TypeDefProvider typeDefProvider) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public List<Reference> selectByKey(IndexKeyRT indexKey) {
         throw new UnsupportedOperationException();
     }
@@ -285,11 +280,6 @@ public class MockDefContext extends DefContext {
 
     @Override
     public boolean containsUniqueKey(IndexDef<?> indexDef, Value... values) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public IInstanceContext createSame(long appId) {
         throw new UnsupportedOperationException();
     }
 

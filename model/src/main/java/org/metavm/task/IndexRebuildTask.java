@@ -1,5 +1,6 @@
 package org.metavm.task;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
@@ -8,6 +9,7 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.search.SearchSync;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
@@ -20,13 +22,14 @@ import java.util.function.Consumer;
 
 @NativeEntity(41)
 @Entity
+@Slf4j
 public class IndexRebuildTask extends ScanTask {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    protected IndexRebuildTask(Id id) {
-        super(id, "Index rebuild");
+    public IndexRebuildTask(Id id) {
+        super(id, "IndexRebuildTask");
     }
 
     @Generated
@@ -36,7 +39,9 @@ public class IndexRebuildTask extends ScanTask {
 
     @Override
     protected void process(List<Instance> batch, IInstanceContext context, IInstanceContext taskContext) {
-        batch.forEach(Instance::incVersion);
+        var rootIds = batch.stream().filter(i -> i.isRoot() && !i.isValue())
+                .map(Instance::getId).toList();
+        SearchSync.sync(rootIds, List.of(), false, context);
     }
 
     @Override

@@ -38,13 +38,11 @@ public abstract class GlobalTask extends EntityScanTask<Application> {
     @Override
     protected void processModels(IInstanceContext context, List<Application> applications) {
         for (Application application : applications) {
-            var appContext = context.createSame(application.getTreeId());
-            processApplication(appContext, application);
-            appContext.finish();
+            processApplication(application);
         }
     }
 
-    protected abstract void processApplication(IInstanceContext context, Application application);
+    protected abstract void processApplication(Application application);
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
