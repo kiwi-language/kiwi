@@ -42,8 +42,8 @@ public class MockSchemaManager implements SchemaManager  {
 
     @Override
     public void dropTmpTables(long appId) {
-        mapperRegistry.removeInstanceMapper(appId, "instance_tmp");
-        mapperRegistry.removeIndexEntryMapper(appId, "index_entry_tmp");
+        mapperRegistry.tryRemoveInstanceMapper(appId, "instance_tmp");
+        mapperRegistry.tryRemoveIndexEntryMapper(appId, "index_entry_tmp");
     }
 
     @Override

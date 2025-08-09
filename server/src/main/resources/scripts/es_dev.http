@@ -1,4 +1,4 @@
-GET http://localhost:7002/instance/_search?routing=-1
+GET http://localhost:7002/instance-main-1000007115/_search
 Accept: application/json
 Content-Type: application/json
 Authorization: Basic elastic 85263670
@@ -6,7 +6,7 @@ Authorization: Basic elastic 85263670
 {
   "query": {
     "query_string": {
-      "query": "appId:\\-d"
+      "query": "appId:1000007115"
     }
   }
 }
@@ -26,3 +26,37 @@ Authorization: Basic elastic 85263670
 DELETE http://localhost:7002/instance
 Content-Type: application/json
 Authorization: Basic elastic 85263670
+
+###
+###
+GET http://localhost:7002/_cat/aliases
+Authorization: Basic elastic 85263670
+
+###
+###
+POST http://localhost:7002/_aliases
+Authorization: Basic elastic 85263670
+Content-Type: application/json
+
+{
+  "actions": [
+    {
+      "remove": {
+        "index": "instance-1000177006-v11",
+        "alias": "instance-tmp-1000177006"
+      }
+    }
+  ]
+}
+
+
+###
+PUT http://localhost:7002/_cluster/settings
+Authorization: Basic elastic 85263670
+Content-Type: application/json
+
+{
+  "persistent": {
+    "cluster.max_shards_per_node": 2000
+  }
+}

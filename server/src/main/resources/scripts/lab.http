@@ -1561,8 +1561,17 @@ X-App-ID: 1000110007
 }
 
 ###
-POST http://localhost:8080/bootstrap/rebuild-index
+POST http://localhost:7003/bootstrap/rebuild-index
 
 
 ###
 POST http://localhost:8080/internal-api/deploy/revert/1000143029
+
+###
+
+POST http://localhost:7003/internal-api/user/issue-token
+Content-Type: application/json
+
+{
+  "userId": "018ce7e9b90700"
+}

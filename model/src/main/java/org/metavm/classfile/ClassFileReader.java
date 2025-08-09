@@ -65,6 +65,7 @@ public class ClassFileReader {
             klass.setQualifiedName(qualName);
             klass.setName(name);
             klass.incVersion();
+            klass.ensureValidFieldTags();
             if (listener != null) listener.beforeKlassUpdate(klass);
         }
         klass.disableMethodTableBuild();
@@ -196,7 +197,7 @@ public class ClassFileReader {
         }
         else {
             field = FieldBuilder.newBuilder(name, klass, typeIndex)
-                    .sourceTag(sourceTag)
+                    .sourceTag(Objects.requireNonNullElseGet(sourceTag, klass::nextFieldSourceCodeTag))
                     .isStatic((flags & Field.FLAG_STATIC) != 0)
                     .build();
         }

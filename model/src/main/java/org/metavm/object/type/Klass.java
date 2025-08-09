@@ -1601,6 +1601,19 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         return nextFieldTag++;
     }
 
+    // This method is used to correct corrupted data
+    public void ensureValidFieldTags() {
+        var maxFieldTag = 0;
+        var maxSourceFieldTag = 0;
+        for (Field field : fields) {
+            maxFieldTag = Math.max(maxFieldTag, field.getTag() + 1);
+            if (field.getSourceTag() != null)
+                maxSourceFieldTag = Math.max(maxSourceFieldTag, field.getSourceTag() + 1);
+        }
+        nextFieldTag = Math.max(nextFieldTag, maxFieldTag);
+        nextFieldSourceCodeTag = Math.max(nextFieldSourceCodeTag, maxSourceFieldTag);
+    }
+
     public int getNextFieldTag() {
         return nextFieldTag;
     }

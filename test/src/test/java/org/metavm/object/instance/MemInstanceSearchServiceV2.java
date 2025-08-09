@@ -97,6 +97,13 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
             removeIndex(tmpIndex);
     }
 
+    @Override
+    public void deleteTmpIndex(long appId) {
+        var tmpIndex = findIndex(TMP_ALIAS_PREFIX, appId);
+        if (tmpIndex != null)
+            removeIndex(tmpIndex);
+    }
+
     private void removeAlias(MemSearchIndex index, String alias) {
         if (indexMap.get(alias) == index)
             removeIndexName(alias);

@@ -145,7 +145,7 @@ public class SchemaManagerImpl implements SchemaManager {
     public void dropTmpTables(long appId) {
         var connection = getConnection();
         try (var stmt = connection.createStatement()) {
-            stmt.executeUpdate(String.format("drop table instance_tmp_%d, index_entry_tmp_%d", appId, appId));
+            stmt.executeUpdate(String.format("drop table if exists instance_tmp_%d, index_entry_tmp_%d", appId, appId));
         }
         finally {
             returnConnection(connection);

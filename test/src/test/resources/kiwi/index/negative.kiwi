@@ -1,0 +1,25 @@
+package index
+
+class Player(
+    var score: int
+) {
+
+    static val scoreIdx = Index<int, Player>(false, p -> -p.score)
+
+}
+
+@Bean
+class PlayerService {
+
+    fn getLeaderBoard() -> Player[] {
+        var leaders = new Player[]
+        var r = Player.scoreIdx.query(-10000000, 0)
+        for (p in r) {
+            leaders.append(p)
+            if (leaders.length > 10)
+                break
+        }
+        return leaders
+    }
+
+}

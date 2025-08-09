@@ -12,7 +12,7 @@ public class IndexKeyWriter extends InstanceOutput {
         if (l >= 0)
             l |= 0x8000000000000000L;
         else
-            l = ~l;
+            l &= ~0x8000000000000000L;;
         writeFixedLongBE(l);
     }
 

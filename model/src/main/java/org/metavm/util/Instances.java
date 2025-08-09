@@ -581,7 +581,6 @@ public class Instances {
             if (instance instanceof ClassInstance clsInst) {
                 if (clsInst.getInstanceKlass().getState() == ClassTypeState.REMOVING) {
                     context.remove(clsInst);
-                    return;
                 }
             }
         }

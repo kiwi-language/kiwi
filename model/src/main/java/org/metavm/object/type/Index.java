@@ -63,7 +63,7 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
 
     @Override
     public String getDefaultMessage() {
-        return "Duplicate field";
+        return "Duplicate unique index key";
     }
 
     public Type getType() {
