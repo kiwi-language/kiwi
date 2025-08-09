@@ -1,6 +1,13 @@
 package ddl
 
-enum Option {
-    op1,
+class Product(
+    var name: string,
+    var kind: ProductKind
+)
+
+enum ProductKind {
+    ELECTRONICS,
+    CLOTHING,
+    OTHER
     ;
 }

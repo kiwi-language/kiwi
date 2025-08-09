@@ -84,7 +84,7 @@ public class KlassTest extends TestCase {
         Assert.assertEquals(nameField.getName(), f.getName());
         Assert.assertEquals(nameField.getType(), f.getType());
         Assert.assertEquals(nameField.getFlags(), f.getFlags());
-        Assert.assertEquals(nameField.getSourceTag(), f.getSourceTag());
+        Assert.assertNotNull(f.getSourceTag());
 
         Assert.assertEquals(fooKlass.getMethods().size(), k.getMethods().size());
         for (Method method : k.getMethods()) {

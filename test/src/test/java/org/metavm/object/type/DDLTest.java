@@ -912,7 +912,24 @@ public class DDLTest extends TestCase {
 
     public void testRemoveEnumClass() {
         assemble("kiwi/ddl/remove_enum_cls_before.kiwi");
+        var id = saveInstance("ddl.Product", Map.of(
+                "name", "Shoes",
+                "kind", ApiNamedObject.of(
+                        "ddl.ProductKind", "CLOTHING"
+                )
+        ));
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var pk = context.getKlassByQualifiedName("ddl.ProductKind");
+            var sft = StaticFieldTable.getInstance(pk.getType(), context);
+            sft.getEnumConstants().forEach(ec -> {
+                logger.debug("ec: {}", ec.getId());
+            });
+        }
         assemble("kiwi/ddl/remove_enum_cls_after.kiwi");
+        assemble("kiwi/ddl/remove_enum_cls_after.kiwi");
+        var product = getObject(id);
+        assertNull(product.get("kind"));
     }
 
     public void testRemoveUsedEnumConst() {

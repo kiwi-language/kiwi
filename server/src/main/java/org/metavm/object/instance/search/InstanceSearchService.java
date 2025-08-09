@@ -14,6 +14,8 @@ public interface InstanceSearchService {
 
     void deleteAllIndices(long appId);
 
+    void deleteTmpIndex(long appId);
+
     void revert(long appId);
 
     Page<Id> search(SearchQuery query);

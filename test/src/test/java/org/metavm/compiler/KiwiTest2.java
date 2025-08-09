@@ -251,4 +251,17 @@ public class KiwiTest2 extends KiwiTestBase {
         assertEquals(List.of(3, 2, 1), r);
     }
 
+    public void testNegativeIndexKey() {
+        deploy("kiwi/index/negative.kiwi");
+        saveInstance("index.Player", Map.of(
+                "score", 100
+        ));
+        var leaders = (List<?>) callMethod(
+                ApiNamedObject.of("playerService"),
+                "getLeaderBoard",
+                List.of()
+        );
+        assertEquals(1, leaders.size());
+    }
+
 }

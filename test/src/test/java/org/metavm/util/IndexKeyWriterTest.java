@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import com.google.common.primitives.UnsignedBytes;
 import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -8,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Consumer;
 
 public class IndexKeyWriterTest extends TestCase {
@@ -53,6 +55,45 @@ public class IndexKeyWriterTest extends TestCase {
         Assert.assertEquals(1L, values.get(2).value);
         Assert.assertEquals(2L, values.get(3).value);
     }
+
+    public void testNegativeInt() {
+        var bout = new ByteArrayOutputStream();
+        var writer = new IndexKeyWriter(bout);
+        writer.writeInt(-1);
+
+        var bout1 = new ByteArrayOutputStream();
+        var writer1 = new IndexKeyWriter(bout1);
+        writer1.writeInt(-2);
+
+        var r = UnsignedBytes.lexicographicalComparator().compare(bout.toByteArray(), bout1.toByteArray());
+        assertTrue(r > 0);
+    }
+
+    public void testNegativeDouble() {
+        var rand = new Random();
+        for (int i = 0; i < 10000; i++) {
+            var bout = new ByteArrayOutputStream();
+            var writer = new IndexKeyWriter(bout);
+            var d1 = rand.nextDouble() * rand.nextInt();
+            writer.writeDouble(d1);
+
+            var bout1 = new ByteArrayOutputStream();
+            var writer1 = new IndexKeyWriter(bout1);
+            var d2 = rand.nextDouble() + rand.nextInt();
+            writer1.writeDouble(d2);
+
+            var r = UnsignedBytes.lexicographicalComparator().compare(bout.toByteArray(), bout1.toByteArray());
+            assertEquals(
+                    normalizeCompareResult(Double.compare(d1, d2)),
+                    normalizeCompareResult(r)
+            );
+        }
+    }
+
+    private int normalizeCompareResult(int r) {
+        return r / Math.abs(r);
+    }
+
 
     private record LongValue(
             long value,

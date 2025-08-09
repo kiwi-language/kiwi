@@ -120,7 +120,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
             if (requestBody.get(idField) instanceof String id)
                 receiver = Map.of("id", id);
             else
-                throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+                throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "Missing receiver ID in request body");
         }
         var args = new HashMap<String, Object>();
         method.getParameters().forEach(param -> {

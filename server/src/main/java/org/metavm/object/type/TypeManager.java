@@ -65,6 +65,8 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
     @Transactional
     public String deploy(InputStream in) {
         ensureApplicationActive();
+        instanceSearchService.deleteTmpIndex(ContextUtil.getAppId());
+        schemaManager.dropTmpTables(ContextUtil.getAppId());
         schemaManager.createInstanceTable(ContextUtil.getAppId(), "instance_tmp");
         schemaManager.createIndexEntryTable(ContextUtil.getAppId(), "index_entry_tmp");
         instanceSearchService.createIndex(ContextUtil.getAppId(), true);

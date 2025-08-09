@@ -311,8 +311,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         private final List<Field> enumConstants;
         private final ClassType superType;
         private final boolean searchable;
-        private int nextFieldTag;
-        private int nextFieldSourceTag;
 
         KlassInfo(ClassKind kind, boolean searchable, ClassType superType,  List<Field> fields,
                   List<Field> enumConstants, int nextFieldTag, int nextFieldSourceTag,
@@ -322,8 +320,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
             this.superType = superType;
             this.fields = new ArrayList<>(fields);
             this.enumConstants = new ArrayList<>(enumConstants);
-            this.nextFieldTag = nextFieldTag;
-            this.nextFieldSourceTag = nextFieldSourceTag;
             this.parent = parent;
         }
 
@@ -340,13 +336,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
             );
         }
 
-        int nextFieldTag() {
-            return nextFieldTag++;
-        }
-
-        int nextFieldSourceTag() {
-            return nextFieldSourceTag++;
-        }
     }
 
     private FieldInfo fieldInfo;
@@ -356,9 +345,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
     public void onFieldCreate(Field field) {
         if (tracing) log.trace("New field created: {}", field.getQualifiedName());
         context.bind(field);
-        field.initTag(Objects.requireNonNull(klassInfo).nextFieldTag());
-        if(field.getSourceTag() == null)
-            field.setSourceTag(klassInfo.nextFieldSourceTag());
         if(field.isStatic())
             addNewStaticField(field);
         else if (field.getDeclaringType().isPersisted())
@@ -414,8 +400,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
     public void onKlassCreate(Klass klass) {
         if (tracing) log.trace("Klass '{}' ({}) created", klass.getName(), klass.getId());
         var klassInfo = Objects.requireNonNull(this.klassInfo);
-        klass.setNextFieldTag(klassInfo.nextFieldTag);
-        klass.setNextFieldSourceCodeTag(klassInfo.nextFieldSourceTag);
         klasses.add(klass);
         context.updateMemoryIndex(klass);
         if(klass.getTag() == TypeTags.DEFAULT) {
@@ -436,8 +420,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         var tracing = this.tracing;
         klasses.add(klass);
         var klassInfo = Objects.requireNonNull(this.klassInfo);
-        klass.setNextFieldTag(klassInfo.nextFieldTag);
-        klass.setNextFieldSourceCodeTag(klassInfo.nextFieldSourceTag);
         if (tracing) log.trace("Klass '{}' updated", klass.getName());
         var prevKind = klassInfo.kind;
         var newKind = klass.getKind();

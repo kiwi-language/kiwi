@@ -36,10 +36,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -149,6 +146,16 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     }
 
     @Override
+    public void deleteTmpIndex(long appId) {
+        var tmpAlias = TMP_ALIAS_PREFIX + appId;
+        var oldTmpIndexName = getIndicesForAlias(tmpAlias);
+        if (!oldTmpIndexName.isEmpty()) {
+            log.info("App [{}]: Found old tmp index {} (alias: {}). Deleting it now", appId, oldTmpIndexName, tmpAlias);
+            deleteIndex(oldTmpIndexName.toArray(String[]::new));
+        }
+    }
+
+    @Override
     public void switchAlias(long appId) {
         String mainAlias = MAIN_ALIAS_PREFIX + appId;
         String tmpAlias = TMP_ALIAS_PREFIX + appId;
@@ -212,8 +219,8 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     }
 
     @SneakyThrows
-    private void deleteIndex(String name) {
-        DeleteIndexRequest deleteRequest = new DeleteIndexRequest(name);
+    private void deleteIndex(String...names) {
+        DeleteIndexRequest deleteRequest = new DeleteIndexRequest(names);
         restHighLevelClient.indices().delete(deleteRequest, RequestOptions.DEFAULT);
     }
 
@@ -275,20 +282,27 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     }
 
-    @SneakyThrows
+
+
     private String getIndexForAlias(String aliasName) {
+        var indexNames = getIndicesForAlias(aliasName);
+        if (indexNames.isEmpty())
+            return null;
+        if (indexNames.size() > 1)
+            throw new RuntimeException("Critical error: Alias '" + aliasName + "' points to multiple indices: " + indexNames);
+        return indexNames.stream().findFirst().orElse(null);
+    }
+
+    @SneakyThrows
+    private Collection<String> getIndicesForAlias(String aliasName) {
         GetAliasesRequest request = new GetAliasesRequest(aliasName);
         try {
             var response = restHighLevelClient.indices().getAlias(request, RequestOptions.DEFAULT);
-            Set<String> indexNames = response.getAliases().keySet();
-            if (indexNames.size() > 1) {
-                throw new RuntimeException("Critical error: Alias '" + aliasName + "' points to multiple indices: " + indexNames);
-            }
-            return indexNames.stream().findFirst().orElse(null);
+            return response.getAliases().keySet();
         } catch (ElasticsearchStatusException e) {
             if (e.status() == RestStatus.NOT_FOUND) {
                 // This is expected if the alias doesn't exist yet.
-                return null;
+                return List.of();
             }
             throw e;
         }
