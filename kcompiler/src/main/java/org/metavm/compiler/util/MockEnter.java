@@ -67,6 +67,7 @@ public class MockEnter {
         createSumDouble(rootPkg);
         createSecureHashFunc(rootPkg);
         createSecureRandomFunc(rootPkg);
+        createUuidFunc(rootPkg);
         createGetContextFunc(rootPkg);
         createSetContextFunc(rootPkg);
         createRandomFunc(rootPkg);
@@ -873,6 +874,11 @@ public class MockEnter {
     private static void createSecureRandomFunc(Package rootPkg) {
         var func = new FreeFunc(Name.from("secureRandom"), rootPkg);
         new Param(Name.from("length"), PrimitiveType.INT, func);
+        func.setRetType(Types.instance.getStringType());
+    }
+
+    private static void createUuidFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("uuid"), rootPkg);
         func.setRetType(Types.instance.getStringType());
     }
 

@@ -19,10 +19,10 @@ public class TypeController {
     }
 
     @PostMapping("/deploy/{appId}")
-    public Result<Void> deploy(HttpServletRequest servletRequest, @PathVariable("appId") long appId) throws IOException {
+    public Result<String> deploy(HttpServletRequest servletRequest, @PathVariable("appId") long appId) throws IOException {
         typeManager.ensureAppAccess(appId);
-        typeManager.deploy(appId, servletRequest.getInputStream());
-        return Result.voidSuccess();
+        var commitId = typeManager.deploy(appId, servletRequest.getInputStream());
+        return Result.success(commitId);
     }
 
     @PostMapping("/source-tag")

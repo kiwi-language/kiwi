@@ -502,6 +502,60 @@ public class DiagTest extends TestCase {
                 log.getDiags().getFirst().toString());
     }
 
+    public void testDupVariableDef() {
+        compile("""
+                class Lab {
+                    var name: string?
+                    var name: string?
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:3: Variable 'name' is already defined in the scope
+                        var name: string?
+                            ^""",  log.getDiags().getFirst().toString());
+    }
+
+    public void testDupLocalVar() {
+        compile("""
+                class Lab {
+                    
+                    fn test() {
+                        {
+                            var a = 1
+                        }
+                        var a = 1
+                        {
+                            var a = 1
+                        }
+                    }
+                    
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:9: Variable 'a' is already defined in the scope
+                                var a = 1
+                                    ^""", log.getDiags().getFirst().toString());
+    }
+
+    public void testDupMethod() {
+        compile("""
+                class Lab {
+                    
+                    fn test(s: string) {}
+                    
+                    fn test(s: string) {}
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:3: Function 'test(Class java.lang.String)' is already defined in the scope
+                        fn test(s: string) {}
+                           ^""", log.getDiags().getFirst().toString());
+    }
+
     private List<Diag> compileWithAiLint(String text) {
         var file = parse(text);
         compile(file);

@@ -1,6 +1,7 @@
 package org.metavm.compiler;
 
 import org.metavm.compiler.util.CompilerHttpUtils;
+import org.metavm.ddl.CommitState;
 import org.metavm.user.rest.dto.LoginInfo;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.Constants;
@@ -9,13 +10,18 @@ import org.metavm.util.TypeReference;
 public class HttpTypeClient implements TypeClient {
 
     @Override
-    public void deploy(long appId, String mvaPath) {
-        CompilerHttpUtils.upload("/type/deploy/" + appId, mvaPath, new TypeReference<Void>() {});
+    public String deploy(long appId, String mvaPath) {
+        return CompilerHttpUtils.upload("/type/deploy/" + appId, mvaPath, new TypeReference<>() {});
     }
 
     @Override
-    public void secretDeploy(long appId, String mvaPath) {
-        CompilerHttpUtils.deploy(appId, mvaPath);
+    public String secretDeploy(long appId, String mvaPath) {
+        return CompilerHttpUtils.deploy(appId, mvaPath);
+    }
+
+    @Override
+    public String getDeployStatus(long appId, String deployId) {
+        return CompilerHttpUtils.get2("/internal-api/deploy/status/" + appId + "/" + deployId, new TypeReference<>() {});
     }
 
     @Override

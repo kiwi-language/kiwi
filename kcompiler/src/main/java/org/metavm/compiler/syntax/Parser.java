@@ -1084,8 +1084,8 @@ public class Parser {
     }
 
     MethodDecl method(List<Annotation> annotations, List<Modifier> mods) {
-        var pos = pos();
         accept(FN);
+        var pos = pos();
         var name = ident();
         if (Traces.traceParsing)
             logger.trace("Parsing method {}", name);

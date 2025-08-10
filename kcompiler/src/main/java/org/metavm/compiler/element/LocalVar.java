@@ -70,6 +70,11 @@ public class LocalVar extends ElementBase implements Variable {
             code.storeContextSlot(env.getContextIndex(executable), index);
     }
 
+    @Override
+    public VariableScope getScope() {
+        return executable;
+    }
+
     public void setType(Type type) {
         this.type = type;
     }

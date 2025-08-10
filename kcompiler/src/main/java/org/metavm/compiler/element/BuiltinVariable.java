@@ -9,11 +9,13 @@ import java.util.function.Consumer;
 
 public final class BuiltinVariable extends ElementBase implements Variable {
 
+    private final VariableScope scope;
     private final Name name;
     private final Element element;
     private Type type;
 
-    public BuiltinVariable(Name name, @Nullable Element element, Type type) {
+    public BuiltinVariable(VariableScope scope, Name name, @Nullable Element element, Type type) {
+        this.scope = scope;
         this.name = name;
         this.element = element;
         this.type = type;
@@ -68,6 +70,11 @@ public final class BuiltinVariable extends ElementBase implements Variable {
     @Override
     public void store(Code code, Env env) {
 
+    }
+
+    @Override
+    public VariableScope getScope() {
+        return scope;
     }
 
     @Override

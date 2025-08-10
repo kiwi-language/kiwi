@@ -134,7 +134,7 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
     }
 
     public String getSignature() {
-        return getQualName()+ "(" + getParamTypes().join(",") + ")";
+        return getName() + "(" + getParamTypes().join(",") + ")";
     }
 
     public String getInternalName(@Nullable Func current) {
@@ -250,6 +250,6 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
 
     @Override
     public String toString() {
-        return getSignature();
+        return declClass.getQualName() + "." + getSignature();
     }
 }

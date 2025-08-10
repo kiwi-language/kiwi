@@ -47,7 +47,7 @@ public class Extend extends Node {
         var method = (MethodRef) call.getElement();
         return NodeMaker.callExpr(
                 NodeMaker.selectorExpr(
-                        NodeMaker.ref(new BuiltinVariable(Name.super_(), null, method.getDeclType())),
+                        NodeMaker.ref(new BuiltinVariable(method.getDeclType(), Name.super_(), null, method.getDeclType())),
                         call.getElement()
                 ),
                 call.getArguments()
