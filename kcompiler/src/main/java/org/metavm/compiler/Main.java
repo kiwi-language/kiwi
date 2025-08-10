@@ -7,6 +7,7 @@ import org.metavm.common.Page;
 import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.CompilerHttpUtils;
 import org.metavm.compiler.util.MockEnter;
+import org.metavm.ddl.CommitState;
 import org.metavm.user.rest.dto.LoginInfo;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.Constants;
@@ -24,6 +25,10 @@ import java.util.stream.Stream;
 
 @Slf4j
 public class Main {
+
+    private static final String ANSI_ERASE_LINE = "\u001B[2K";
+
+    private static final String CARRIAGE_RETURN = "\r";
 
     public final Path home;
     private final Path envFile;
@@ -220,14 +225,46 @@ public class Main {
         }
     }
 
-    private void deploy(TypeClient typeClient, Path targetDir) {
+    private void deploy(TypeClient typeClient, Path targetDir, boolean printDeployStatus) {
         Utils.ensureDirectoryExists(selectedEnv);
-        typeClient.deploy(getAppId(), targetDir.resolve("target.mva").toString());
+        var deployId = typeClient.deploy(getAppId(), targetDir.resolve("target.mva").toString());
+        System.out.println("Deploy ID: " + deployId);
+        if (printDeployStatus)
+            printDeployStatus(typeClient, getAppId(), deployId);
     }
 
-    private void secretDeploy(TypeClient typeClient, Path targetDir) {
+    private void secretDeploy(TypeClient typeClient, Path targetDir, boolean printDeployStatus) {
         Utils.ensureDirectoryExists(selectedEnv);
-        typeClient.secretDeploy(getAppId(), targetDir.resolve("target.mva").toString());
+        var deployId = typeClient.secretDeploy(getAppId(), targetDir.resolve("target.mva").toString());
+        System.out.println("Deploy is running, ID: " + deployId);
+        if (printDeployStatus)
+            printDeployStatus(typeClient, getAppId(), deployId);
+    }
+
+    @SneakyThrows
+    private void printDeployStatus(TypeClient typeClient, long appId, String deployId) {
+        for (;;) {
+            var status = CommitState.valueOf(typeClient.getDeployStatus(appId, deployId));
+            var s = switch (status) {
+                case MIGRATING -> "Migrating";
+                case REMOVING -> "Removing";
+                case SUBMITTING -> "Submitting";
+                case COMPLETED -> "Completed";
+                case ABORTING -> "Aborting";
+                case ABORTED -> "Aborted";
+            };
+            System.out.print(CARRIAGE_RETURN + ANSI_ERASE_LINE + "Deploy status: " + s);
+            System.out.flush();
+            if (status == CommitState.COMPLETED || status == CommitState.ABORTED) {
+                System.out.println();
+                break;
+            }
+            Thread.sleep(1000L);
+        }
+    }
+
+    private void deployStatus(String deployId) {
+        printDeployStatus(new HttpTypeClient(), getAppId(), deployId);
     }
 
     private List<ApplicationDTO> listApps() {
@@ -290,6 +327,7 @@ public class Main {
         System.out.println("kiwi create-env <env>");
         System.out.println("kiwi set-env <env>");
         System.out.println("kiwi delete-env <env>");
+        System.out.println("kiwi deploy-status <deploy-id>");
     }
 
     public static void main(String[] args) throws IOException {
@@ -376,6 +414,11 @@ public class Main {
                     deploy(parseOptions(args));
                 }
                 case "secret-deploy" -> secretDeploy(parseOptions(args));
+                case "deploy-status" -> {
+                    if (args.length < 2)
+                        throw new InvalidUsageException("Deploy ID is required");
+                    deployStatus(args[1]);
+                }
                 default -> usage();
             }
         }
@@ -424,6 +467,7 @@ public class Main {
 
         SENSE_LINT(false),
         RETURN_FULL_OBJECT(false),
+        STATUS(false),
 
         ;
 
@@ -436,14 +480,16 @@ public class Main {
 
     @SneakyThrows
     void deploy(List<Option> options) {
+        var printDeployStatus = options.stream().anyMatch(opt -> opt.kind == OptionKind.STATUS);
         if (build(options))
-            deploy(new HttpTypeClient(), targetRoot);
+            deploy(new HttpTypeClient(), targetRoot, printDeployStatus);
     }
 
     @SneakyThrows
     void secretDeploy(List<Option> options) {
+        var printDeployStatus = options.stream().anyMatch(opt -> opt.kind == OptionKind.STATUS);
         if (build(options))
-            secretDeploy(new HttpTypeClient(), targetRoot);
+            secretDeploy(new HttpTypeClient(), targetRoot, printDeployStatus);
     }
 
     boolean build(List<Option> options) throws IOException {

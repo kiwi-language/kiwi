@@ -66,6 +66,10 @@ public class ElementTable {
         return map.get(name, e -> true);
     }
 
+    public MultiMap.Entry<Name, Element> lookupEntry(Name name) {
+        return map.getEntry(name);
+    }
+
     public Iterable<Element> lookupAll(Name name, Predicate<Element> filter) {
         return map.get(name, filter);
     }

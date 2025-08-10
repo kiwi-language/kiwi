@@ -18,4 +18,6 @@ public interface Variable extends ValueElement {
 
     void store(Code code, Env env);
 
+    VariableScope getScope();
+
 }

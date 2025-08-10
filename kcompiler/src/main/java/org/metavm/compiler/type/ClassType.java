@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public interface ClassType extends Type, Element, Comparable<ClassType> {
+public interface ClassType extends Type, Element, Comparable<ClassType>, VariableScope {
     
     Logger log = LoggerFactory.getLogger(ClassType.class);
     
@@ -148,16 +148,16 @@ public interface ClassType extends Type, Element, Comparable<ClassType> {
         getMethods().forEach(table::add);
         getClazz().getEnumConstants().forEach(table::add);
         getFields().forEach(table::add);
-        table.add(new BuiltinVariable(NameTable.instance.this_, null, this));
+        table.add(new BuiltinVariable(this, NameTable.instance.this_, null, this));
         var s = getSuperType();
         if (s != null)
-            table.add(new BuiltinVariable(NameTable.instance.super_, null, s));
+            table.add(new BuiltinVariable(this, NameTable.instance.super_, null, s));
         if (isEntity()) {
             ClassType owner;
             if (!isStatic() && (owner = getOwner()) != null)
-                table.add(new BuiltinVariable(NameTable.instance.parent, null, owner));
-            table.add(new BuiltinVariable(NameTable.instance.children, null, Types.instance.getAnyArray()));
-            table.add(new BuiltinVariable(NameTable.instance.id, null, Types.instance.getStringType()));
+                table.add(new BuiltinVariable(this, NameTable.instance.parent, null, owner));
+            table.add(new BuiltinVariable(this, NameTable.instance.children, null, Types.instance.getAnyArray()));
+            table.add(new BuiltinVariable(this, NameTable.instance.id, null, Types.instance.getStringType()));
         }
         table.freeze();
         if (Traces.traceElementTable)

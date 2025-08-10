@@ -2,9 +2,11 @@ package org.metavm.compiler;
 
 public interface TypeClient {
 
-    void deploy(long appId, String mvaFile);
+    String deploy(long appId, String mvaFile);
 
-    void secretDeploy(long appId, String mvaFile);
+    String secretDeploy(long appId, String mvaFile);
+
+    String getDeployStatus(long appId, String deployId);
 
     void revert(long appId);
 

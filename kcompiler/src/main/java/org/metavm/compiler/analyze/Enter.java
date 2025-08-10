@@ -114,13 +114,14 @@ public class Enter {
             var mods = parseModifiers(fieldDecl.getMods());
             if (isReservedFieldName(fieldDecl.getName()))
                 log.error(fieldDecl, Errors.reservedFieldName);
+            var cls = (Clazz) currentElement();
             var field = new Field(
                     fieldDecl.getName(),
                     DeferredType.instance,
                     mods.access,
                     mods.static_,
                     mods.deleted,
-                    (Clazz) currentElement()
+                    cls
             );
             if (traceEntering)
                 logger.trace("Entering field {}", field.getQualifiedName());

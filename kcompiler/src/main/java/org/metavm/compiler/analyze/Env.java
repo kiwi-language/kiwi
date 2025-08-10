@@ -7,6 +7,7 @@ import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.Type;
 import org.metavm.compiler.type.Types;
+import org.metavm.compiler.util.MultiMap;
 
 import javax.annotation.Nullable;
 import java.util.EnumSet;
@@ -78,6 +79,11 @@ public class Env {
 
     Iterable<Element> lookupAll(Name name) {
         return table.lookupAll(name);
+    }
+
+
+    MultiMap.Entry<Name, Element> lookupEntry(Name name) {
+        return table.lookupEntry(name);
     }
 
     <E extends Element> Iterator<E> lookupAll(Name name, Class<E> clazz) {

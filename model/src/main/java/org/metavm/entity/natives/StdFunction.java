@@ -228,8 +228,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var replacement = Instances.toJavaString(args.get(2));
                 return FlowExecResult.of(Instances.stringInstance(str.replace(target, replacement)));
             }),
-    randomUUID(
-            "string randomUUID()",
+    uuid(
+            "string uuid()",
             true,
             List.of(ReflectionUtils.getMethod(UUIDUtils.class, "randomUUID")),
             (func, args, ctx) -> FlowExecResult.of(Instances.stringInstance(UUID.randomUUID().toString()))

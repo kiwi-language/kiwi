@@ -79,6 +79,14 @@ public class Errors {
 
     public static final Error cantModifyCapturedVar = create("cant.modify.captured.var");
 
+    public static Error variableAlreadyDefined(String name) {
+        return create("variable.already.defined", name);
+    }
+
+    public static Error functionAlreadyDefined(String signature) {
+        return create("function.already.defined", signature);
+    }
+
     public static Error expected(Object a) {
         return create("expected", a);
     }

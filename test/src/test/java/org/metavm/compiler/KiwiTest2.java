@@ -1,5 +1,7 @@
 package org.metavm.compiler;
 
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.ApiNamedObject;
@@ -262,6 +264,16 @@ public class KiwiTest2 extends KiwiTestBase {
                 List.of()
         );
         assertEquals(1, leaders.size());
+    }
+
+    public void testUUID() {
+        deploy("kiwi/uuid/uuid.kiwi");
+        var uuid = callMethod(
+                ApiNamedObject.of("lab"),
+                "generateUUID",
+                List.of()
+        );
+        MatcherAssert.assertThat(uuid, CoreMatchers.instanceOf(String.class));
     }
 
 }

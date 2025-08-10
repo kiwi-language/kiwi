@@ -36,4 +36,10 @@ public class DeployService extends EntityContextFactoryAware {
         }
     }
 
+    public CommitState getDeployStatus(long appId, String commitId) {
+        try (var context = newContext(appId)) {
+            var commit = context.getCommit(commitId);
+            return commit.getState();
+        }
+    }
 }

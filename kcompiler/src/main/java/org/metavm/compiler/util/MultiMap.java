@@ -103,6 +103,12 @@ public class MultiMap<K, V> {
         };
     }
 
+    public Entry<K, V> getEntry(K key) {
+        var i = index(key);
+        var e = table[i];
+        return e == null ? nil() : e;
+    }
+
     public void put(K key, V value) {
         ensureCapacity();
         size++;
@@ -239,7 +245,7 @@ public class MultiMap<K, V> {
         return sb.toString();
     }
 
-    private record Entry<K, V>(K key, V value, Entry<K, V> next) {
+    public record Entry<K, V>(K key, V value, Entry<K, V> next) {
 
         Entry<K, V> remove(V value) {
             if (next == null)
@@ -262,6 +268,10 @@ public class MultiMap<K, V> {
                 return that;
             else
                 return new Entry<>(key, value, next.concat(that));
+        }
+
+        public boolean isNil() {
+            return next == null;
         }
 
     }

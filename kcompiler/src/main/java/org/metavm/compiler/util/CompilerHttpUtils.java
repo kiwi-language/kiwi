@@ -114,7 +114,7 @@ public class CompilerHttpUtils {
     }
 
     @SneakyThrows
-    public static void deploy(long appId, String filePath) {
+    public static String deploy(long appId, String filePath) {
         var uri = new URI(host + "/internal-api/deploy/" + appId);
         HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(uri)
@@ -123,10 +123,20 @@ public class CompilerHttpUtils {
                 .POST(HttpRequest.BodyPublishers.ofFile(Paths.get(filePath)))
                 .build();
         var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        return processResponse(resp, new TypeReference<>() {});
+    }
+
+    private static <R> R processResponse(HttpResponse<String> resp, TypeReference<R> typeRef) {
         if (resp.statusCode() != 200) {
             var errorResp = Utils.readJSONString(resp.body(), Result.class);
             throw new BusinessException(ErrorCode.DEPLOY_FAILED, errorResp.getMessage());
         }
+        if (typeRef.getType() == String.class)
+            //noinspection unchecked
+            return (R) resp.body();
+        else
+            //noinspection unchecked
+            return (R) Utils.readJSONString(resp.body(), typeRef.getGenericType());
     }
 
     @SneakyThrows
@@ -159,6 +169,24 @@ public class CompilerHttpUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static <R> R get2(String path, TypeReference<R> typeRef) {
+        try {
+            var uri = new URI(host + path);
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Accept", "application/json")
+                    .header("Content-Type", "application/json")
+                    .header(Headers.X_APP_ID, "2")
+                    .GET()
+                    .build();
+            var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            return processResponse(resp, typeRef);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     private static <R> R processResult(String responseStr, TypeReference<R> responseTypeRef) {
         //noinspection unchecked

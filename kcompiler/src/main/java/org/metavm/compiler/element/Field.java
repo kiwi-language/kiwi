@@ -73,6 +73,11 @@ public class Field extends ElementBase implements Member, FieldRef {
         instances.forEach(FieldInst::onFieldTypeChange);
     }
 
+    @Override
+    public VariableScope getScope() {
+        return declaringClass;
+    }
+
     public Access getAccess() {
         return access;
     }

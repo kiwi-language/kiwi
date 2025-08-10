@@ -13,7 +13,7 @@ public class Templates {
             }
  
             export interface UploadResult {
-                path: string
+                url: string
             }
             
             export class ApiError extends Error {
@@ -91,7 +91,7 @@ public class Templates {
             upload: async (file: File): Promise<UploadResult> => {
                 let formData = new FormData()
                 formData.append('file', file)
-                const response = await fetch('/files', {
+                const response = await fetch('/files/v2', {
                     method: 'POST',
                     headers: {
                         'X-App-ID': APP_ID + '',
