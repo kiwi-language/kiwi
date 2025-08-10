@@ -7,7 +7,7 @@ import org.metavm.compiler.util.List;
 import javax.annotation.Nullable;
 
 
-public interface Executable extends Element {
+public interface Executable extends Element, VariableScope {
 
     List<Param> getParams();
 

@@ -1,0 +1,10 @@
+package uuid
+
+@Bean
+class Lab {
+
+    fn generateUUID() -> string {
+        return uuid()
+    }
+
+}

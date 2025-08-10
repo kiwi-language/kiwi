@@ -31,8 +31,8 @@ public class IdentAttr extends StructuralNodeVisitor {
 
     @Override
     public Void visitForeachStmt(ForeachStmt foreachStmt) {
-        try (var scope = env.enterScope(foreachStmt)) {
-            scope.add(foreachStmt.getVar().getElement());
+        try (var ignored = env.enterScope(foreachStmt)) {
+            add(foreachStmt.getVar().getElement());
             return super.visitForeachStmt(foreachStmt);
         }
     }
@@ -49,12 +49,12 @@ public class IdentAttr extends StructuralNodeVisitor {
 
     @Override
     public Void visitDeclStmt(DeclStmt declStmt) {
-        if (declStmt.getDecl().getElement() instanceof Variable) {
+        if (declStmt.getDecl().getElement() instanceof Variable v) {
             super.visitDeclStmt(declStmt);
-            env.currentScope().add(declStmt.getDecl().getElement());
+            add(v);
             return null;
         } else {
-            env.currentScope().add(declStmt.getDecl().getElement());
+            add(declStmt.getDecl().getElement());
             return super.visitDeclStmt(declStmt);
         }
     }
@@ -167,8 +167,8 @@ public class IdentAttr extends StructuralNodeVisitor {
 
     @Override
     public Void visitCatcher(Catcher catcher) {
-        try (var scope = env.enterScope(catcher)) {
-            scope.add(catcher.getParam().getElement());
+        try (var ignored = env.enterScope(catcher)) {
+            add(catcher.getParam().getElement());
             return super.visitCatcher(catcher);
         }
     }
@@ -183,16 +183,16 @@ public class IdentAttr extends StructuralNodeVisitor {
             clazz.getTable().forEach(e -> {
                 if (e instanceof Method m && m.isStatic() || e instanceof Clazz c && c.isStatic()
                         || e instanceof Field f && f.isStatic() && f.getDeclClass() != clazz)
-                    scope.add(e);
+                    add(e);
             });
             classDecl.enumConstants().forEach(ecd -> {
                 ecd.accept(this);
-                scope.add(ecd.getElement());
+                add(ecd.getElement());
             });
             classDecl.getMembers().forEach(node -> {
                 if (node instanceof FieldDecl fd && fd.getElement().isStatic()) {
                     fd.accept(this);
-                    scope.add(fd.getElement());
+                    add(fd.getElement());
                 }
             });
             classDecl.getMembers().forEach(node -> {
@@ -206,13 +206,13 @@ public class IdentAttr extends StructuralNodeVisitor {
         try (var scope = env.enterScope(classDecl)) {
             clazz.getTypeParams().forEach(scope::add);
             for (var paramDecl : classDecl.getParams()) {
-                scope.add(paramDecl.getElement());
+                add(paramDecl.getElement());
             }
             classDecl.getImplements().forEach(ext -> ext.accept(this));
             clazz.getTable().forEach(e -> {
                 if (e instanceof Field field && !field.isStatic() && field.getDeclClass() == clazz)
                     return;
-                scope.add(e);
+                add(e);
             });
             classDecl.getMembers().forEach(node -> {
                 if (node instanceof FieldDecl fieldDecl && !fieldDecl.getElement().isStatic()) {
@@ -220,7 +220,7 @@ public class IdentAttr extends StructuralNodeVisitor {
                     var e = env.lookupFirst(fieldDecl.getName());
                     if (e instanceof Param p && p.getExecutable() instanceof Method m && m.getDeclClass() == clazz)
                         return; // This field is shadowed by a class parameter
-                    scope.add(fieldDecl.getElement());
+                    add(fieldDecl.getElement());
                 } else if (node instanceof Init)
                     node.accept(this);
             });
@@ -274,6 +274,34 @@ public class IdentAttr extends StructuralNodeVisitor {
     public Void visitContinueStmt(ContinueStmt continueStmt) {
         continueStmt.setTarget(env.findJumpTarget(continueStmt.getLabel()));
         return null;
+    }
+
+    private void add(Element e) {
+        if (e instanceof Variable v && v.getNode() != null && v.getName() != NameTable.instance.children) {
+            var e1 = env.lookupEntry(v.getName());
+            while (!e1.isNil()) {
+                if (e1.value() instanceof Variable v1 && v1 != v) {
+                    if (v1.getScope() == v.getScope())
+                        log.error(v.getNode(), Errors.variableAlreadyDefined(v.getName().toString()));
+                    break;
+                }
+                e1 = e1.next();
+            }
+        } else if (e instanceof Method m && m.getNode() != null) {
+            var e1 = env.lookupEntry(m.getName());
+            while (!e1.isNil()) {
+                if (e1.value() instanceof Method m1 && m1 != m) {
+                    if (m1.getDeclClass() != m.getDeclClass())
+                        break;
+                    if (m1.getParamTypes().equals(m.getParamTypes())) {
+                        log.error(m.getNode(), Errors.functionAlreadyDefined(m.getSignature()));
+                        break;
+                    }
+                }
+                e1 = e1.next();
+            }
+        }
+        env.currentScope().add(e);
     }
 
     private static class MatchBindings {

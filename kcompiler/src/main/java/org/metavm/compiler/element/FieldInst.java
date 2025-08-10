@@ -57,6 +57,11 @@ public final class FieldInst extends ElementBase implements FieldRef {
     }
 
     @Override
+    public VariableScope getScope() {
+        return declaringType;
+    }
+
+    @Override
     public Field getElement() {
         return field;
     }
