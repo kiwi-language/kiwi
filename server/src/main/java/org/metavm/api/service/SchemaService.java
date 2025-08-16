@@ -24,9 +24,9 @@ public class SchemaService extends ApplicationStatusAware {
         super(entityContextFactory);
     }
 
-    public SchemaResponse getSchema() {
+    public SchemaResponse getSchema(long appId) {
         ensureApplicationActive();
-        try (var context = entityContextFactory.newContext()) {
+        try (var context = entityContextFactory.newContext(appId)) {
             context.loadKlasses();
             var refs = context.selectByKey(new IndexKeyRT(
                     Klass.IDX_ALL_FLAG.getIndex(),

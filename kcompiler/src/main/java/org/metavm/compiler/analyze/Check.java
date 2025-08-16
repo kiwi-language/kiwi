@@ -27,24 +27,33 @@ public class Check extends StructuralNodeVisitor {
 
     @Override
     public Void visitClassDecl(ClassDecl classDecl) {
-        if (classDecl.getElement().isInner())
-            checkMods(classDecl, INNER_CLASS_ALLOWED_MODS);
-        else
-            checkMods(classDecl, CLASS_ALLOWED_MODS);
-        var klass = classDecl.getElement();
-        for (Field field : klass.getFields()) {
-            if (field.getType() instanceof ClassType ct && ct.getClazz() == env.getProject().getIndexClass()) {
-                if (!field.isStatic())
-                    log.error(field.getNode(), Errors.nonStaticIndexField);
-                if (ct.getTypeArguments().getLast() instanceof ClassType valueType) {
-                    if (valueType.getClazz() != klass)
-                        log.error(field.getNode(), Errors.misplacedIndexField);
+        try (var ignored = env.enterScope(classDecl, classDecl.getElement())) {
+            if (classDecl.getElement().isInner())
+                checkMods(classDecl, INNER_CLASS_ALLOWED_MODS);
+            else
+                checkMods(classDecl, CLASS_ALLOWED_MODS);
+            var klass = classDecl.getElement();
+            for (Field field : klass.getFields()) {
+                if (field.getType() instanceof ClassType ct && ct.getClazz() == env.getProject().getIndexClass()) {
+                    if (!field.isStatic())
+                        log.error(field.getNode(), Errors.nonStaticIndexField);
+                    if (ct.getTypeArguments().getLast() instanceof ClassType valueType) {
+                        if (valueType.getClazz() != klass)
+                            log.error(field.getNode(), Errors.misplacedIndexField);
+                    } else
+                        log.error(field.getNode(), Errors.invalidIndexValueType);
                 }
-                else
-                    log.error(field.getNode(), Errors.invalidIndexValueType);
             }
+            return super.visitClassDecl(classDecl);
         }
-        return super.visitClassDecl(classDecl);
+    }
+
+    @Override
+    public Void visitInit(Init init) {
+        var constructor = env.currentClass().getPrimaryInit();
+        try (var ignored = env.enterScope(init, constructor)) {
+            return super.visitInit(init);
+        }
     }
 
     @Override
@@ -70,7 +79,7 @@ public class Check extends StructuralNodeVisitor {
     @Override
     public Void visitAssignExpr(AssignExpr assignExpr) {
         if (assignExpr.lhs().getElement() instanceof LocalVar local) {
-            if (local.getExecutable() != env.currentExecutable())
+           if (local.getExecutable() != env.currentExecutable())
                 log.error(assignExpr, Errors.cantModifyCapturedVar);
         }
         if (!Types.isConvertible(assignExpr.rhs().getType(), assignExpr.lhs().getType())) {
