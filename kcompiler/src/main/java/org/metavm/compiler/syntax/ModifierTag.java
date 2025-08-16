@@ -4,6 +4,7 @@ public enum ModifierTag {
     PUB,
     PRIV,
     PROT,
+    INTERNAL,
     STATIC,
     DELETED,
     ABSTRACT,

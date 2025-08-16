@@ -18,6 +18,7 @@ public class Errors {
     public static final Error fieldNotInitialized = create("field.not.initialized");
     public static final Error voidInitializer = create("void.initializer");
     public static Error cantAssignToImmutableValue = create("cant.assign.to.immutable.value");
+    public static final Error cyclicInheritance = create("cyclic.inheritance");
 
     public static Error ambiguousReference(String matches)  {
         return create("ambiguous.reference", matches);

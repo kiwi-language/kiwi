@@ -153,6 +153,14 @@ public class Types {
         new Param("index", PrimitiveType.INT, charAt);
         charAt.setRetType(PrimitiveType.CHAR);
 
+        var startsWith = new Method("startsWith", Access.PUBLIC, false, false, false, clazz);
+        new Param("s", getNullableType(clazz), startsWith);
+        startsWith.setRetType(PrimitiveType.BOOL);
+
+        var endsWith = new Method("endsWith", Access.PUBLIC, false, false, false, clazz);
+        new Param("s", getNullableType(clazz), endsWith);
+        endsWith.setRetType(PrimitiveType.BOOL);
+
         return clazz;
     }
 

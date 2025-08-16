@@ -72,6 +72,17 @@ public abstract class BeanDefinition extends org.metavm.entity.Entity {
 
     protected abstract ClassInstance createBean(BeanDefinitionRegistry registry, IInstanceContext context);
 
+    public void updateBean(BeanDefinitionRegistry registry) {
+        var bean = Objects.requireNonNull(getBean(), "Bean not initialized").resolveObject();
+        bean.getInstanceType().forEachField(f -> {
+            if (f.isPublic() && !f.isStatic()) {
+                if (registry.isDependency(f.getPropertyType())) {
+                    bean.setField(f.getRawField(), registry.getDependency(f.getPropertyType()));
+                }
+            }
+        });
+    }
+
     public abstract List<BeanDefinition> getDependencies(BeanDefinitionRegistry registry);
 
     @Nullable

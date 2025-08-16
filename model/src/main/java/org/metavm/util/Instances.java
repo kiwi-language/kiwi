@@ -351,9 +351,15 @@ public class Instances {
         return new ArrayType(AnyType.instance, ArrayKind.DEFAULT);
     }
 
-    public static ArrayInstance createArray(List<Value> instances) {
-        return new ArrayInstance(getAnyArrayType(), instances);
+    public static ArrayInstance createArray(List<? extends Value> instances) {
+        return createArray(getAnyArrayType(), instances);
     }
+
+
+    public static ArrayInstance createArray(ArrayType type, List<? extends Value> instances) {
+        return new ArrayInstance(type, instances);
+    }
+
 
     public static Type getBasicType(Class<?> javaClass) {
         return getBasicType(javaClass, defaultGetTypeFunc());

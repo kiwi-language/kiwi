@@ -12,4 +12,8 @@ public interface HttpRequest {
 
     @Nullable String getHeader(String name);
 
+    void setCurrentUser(Object currentUser);
+
+    Object getCurrentUser();
+
 }

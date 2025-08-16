@@ -1,6 +1,7 @@
 package org.metavm.compiler;
 
 import junit.framework.TestCase;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.MockEnter;
 import org.metavm.entity.EntityContextFactory;
@@ -16,9 +17,11 @@ import org.metavm.util.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public abstract class KiwiTestBase extends TestCase  {
 
     EntityContextFactory entityContextFactory;
@@ -99,9 +102,10 @@ public abstract class KiwiTestBase extends TestCase  {
     }
 
     private void compile(List<String> sources) {
-//        assembler.assemble(sources);
-//        assembler.generateClasses(TestConstants.TARGET);
-        var task = CompilationTaskBuilder.newBuilder(Utils.map(sources, Path::of), Path.of(TestConstants.TARGET)).build();
+        var sourcePaths = new ArrayList<Path>();
+        sources.forEach(s -> sourcePaths.add(Path.of(s)));
+        sourcePaths.addAll(additionalSourcePaths());
+        var task = CompilationTaskBuilder.newBuilder(sourcePaths, Path.of(TestConstants.TARGET)).build();
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();
@@ -109,6 +113,10 @@ public abstract class KiwiTestBase extends TestCase  {
             task.generate();
         else
             throw new CompilationException("Compilation failed");
+    }
+
+    protected List<Path> additionalSourcePaths() {
+        return List.of();
     }
 
     protected IInstanceContext newContext() {

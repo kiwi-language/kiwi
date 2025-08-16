@@ -18,8 +18,10 @@ import org.metavm.util.Utils;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,6 +69,41 @@ public class Main {
         typeClient.revert(getAppId());
     }
 
+    private Path findStdLibRoot() {
+        var stdlibCache = home.resolve("stdlib");
+        extractResourceDirectory("/stdlib", stdlibCache);
+        return stdlibCache;
+    }
+
+    @SneakyThrows
+    private void extractResourceDirectory(String resourceDir, Path targetDir) {
+        if (targetDir.resolve(".extracted").toFile().exists())
+            return;
+        if (Files.exists(targetDir))
+            Utils.clearDirectory(targetDir);
+        var url = Main.class.getResource(resourceDir);
+        if (url == null)
+            throw new CompilationException("Could not find the bundled standard library. The compiler JAR might be corrupted.");
+        var uri = url.toURI();
+        try (var fs = FileSystems.newFileSystem(uri, Map.of())) {
+            var resourceRoot = fs.getPath(resourceDir);
+            try (var stream = Files.walk(resourceRoot)) {
+                stream.forEach(sourcePath -> {
+                    var destPath = targetDir.resolve(resourceRoot.relativize(sourcePath).toString());
+                    try {
+                        if (Files.isDirectory(sourcePath))
+                            Files.createDirectories(destPath);
+                        else
+                            Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to extract resource: " + sourcePath, e);
+                    }
+                });
+            }
+        }
+        Files.createFile(targetDir.resolve(".extracted"));
+    }
+
     @SneakyThrows
     private CompilationTask createTask(List<Option> options) {
         var aiLint = false;
@@ -74,7 +111,9 @@ public class Main {
             if (option.kind == OptionKind.SENSE_LINT)
                 aiLint = true;
         }
-        return CompilationTaskBuilder.newBuilder(listFilePathsRecursively(sourceRoot), targetRoot)
+        var sourcePaths = new ArrayList<>(listFilePathsRecursively(sourceRoot));
+        sourcePaths.addAll(listFilePathsRecursively(findStdLibRoot().resolve("src")));
+        return CompilationTaskBuilder.newBuilder(sourcePaths, targetRoot)
                 .withAiLint(aiLint)
                 .build();
     }

@@ -390,7 +390,7 @@ public class Attr extends StructuralNodeVisitor {
         @Override
         public Resolver visitSelectorExpr(SelectorExpr selectorExpr) {
             var e = selectorExpr.x().accept(this).resolve(e0 ->
-                    e0 instanceof ClassType || e0 instanceof Variable ? e0 : null
+                    e0 instanceof Package || e0 instanceof ClassType || e0 instanceof Variable ? e0 : null
             );
             var table = switch (e) {
                 case ClassType ct -> ct.getTable();

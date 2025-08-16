@@ -116,7 +116,7 @@ public class Field extends ElementBase implements Member, FieldRef {
 
     @Override
     public void write(ElementWriter writer) {
-        if (access != Access.PACKAGE) {
+        if (access != Access.PUBLIC) {
             writer.write(access.name().toLowerCase());
             writer.write(" ");
         }

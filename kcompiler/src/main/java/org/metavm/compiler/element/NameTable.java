@@ -34,6 +34,8 @@ public class NameTable {
     public final Name Label = get("Label");
     public final Name Date = get("Date");
     public final Name Summary = get("Summary");
+    public final Name CurrentUser = get("CurrentUser");
+    public final Name AuthToken = get("Token");
     public final Name Bean = get("Bean");
     public final Name Configuration = get("Configuration");
     public final Name length = get("length");

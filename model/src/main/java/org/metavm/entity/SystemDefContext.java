@@ -95,7 +95,7 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         var id = stdIdProvider.getId(identity);
 //        if (DebugEnv.flag) {
             if (id == null)
-                throw new NullPointerException("Failed to get id for model: " + o);
+                throw new NullPointerException("Failed to get id for model: " + identity.name());
 //        }
         return id;
     }

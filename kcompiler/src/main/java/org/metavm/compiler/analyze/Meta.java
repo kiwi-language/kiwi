@@ -50,7 +50,8 @@ public class Meta extends StructuralNodeVisitor {
 
     @Override
     public Void visitParamDecl(ParamDecl paramDecl) {
-        paramDecl.getElement().setAttributes(parseAnnotations(paramDecl.getAnnotations()).attributes);
+        var r = parseAnnotations(paramDecl.getAnnotations());
+        paramDecl.getElement().setAttributes(r.attributes);
         return super.visitParamDecl(paramDecl);
     }
 
@@ -94,6 +95,7 @@ public class Meta extends StructuralNodeVisitor {
         var bean = false;
         var config = false;
         Integer tag = null;
+        String builtinParam = null;
         for (Annotation annotation : annotations) {
             var aName = annotation.getName();
             if (aName == NameTable.instance.Summary)
@@ -114,8 +116,12 @@ public class Meta extends StructuralNodeVisitor {
                 config = true;
             else if (aName == NameTable.instance.Date)
                 attrs.append(new Attribute(AttributeNames.NUMBER_FORMAT, NumberFormats.DATE));
+            else if (aName == NameTable.instance.CurrentUser)
+                attrs.append(new Attribute(AttributeNames.BUILTIN_PARAM, "CurrentUser"));
+            else if (aName == NameTable.instance.AuthToken)
+                attrs.append(new Attribute(AttributeNames.BUILTIN_PARAM, "AuthToken"));
         }
-        return new ParseResult(attrs.build(), summary, bean, config, tag);
+        return new ParseResult(attrs.build(), summary, bean, config, builtinParam, tag);
     }
 
     private record ParseResult(
@@ -123,6 +129,7 @@ public class Meta extends StructuralNodeVisitor {
             boolean summary,
             boolean bean,
             boolean config,
+            String builtinParam,
             Integer tag
     ) {}
 

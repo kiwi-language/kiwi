@@ -252,7 +252,8 @@ public class ApiServiceTest extends TestCase {
                         1,
                         null
                 ),
-                true
+                true,
+                Map.of()
         ));
         MatcherAssert.assertThat(order, CoreMatchers.instanceOf(ApiObject.class));
     }

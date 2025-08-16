@@ -33,7 +33,7 @@ public class SchemaService extends ApplicationStatusAware {
                     List.of(Instances.trueInstance())
             ));
             var klasses = Utils.map(refs, ref -> (Klass) ref.resolveObject());
-            var dtos = Utils.filterAndMap(klasses, k -> !k.isInner() && !k.isLocal(), this::buildClassDTO);
+            var dtos = Utils.filterAndMap(klasses, k -> !k.isInner() && !k.isLocal() && !k.isInterface(), this::buildClassDTO);
             return new SchemaResponse(dtos);
         }
     }
@@ -43,8 +43,7 @@ public class SchemaService extends ApplicationStatusAware {
         if (klass.getSuperType() != null)
             superTypes.add(buildClassTypeDTO(klass.getSuperType()));
         klass.getInterfaces().forEach(t -> superTypes.add(buildClassTypeDTO(t)));
-        var constructor = Utils.findRequired(klass.getMethods(), Method::isConstructor,
-                () -> "Class " + klass.getQualifiedName() + " is missing constructor");
+        var constructor = Utils.find(klass.getMethods(), Method::isConstructor);
         return new ClassDTO(
                 "public",
                 lowerName(klass.getKind()),
@@ -52,7 +51,7 @@ public class SchemaService extends ApplicationStatusAware {
                 klass.getName(),
                 klass.getQualifiedName(),
                 superTypes,
-                buildConstructorDTO(constructor),
+                Utils.safeCall(constructor, this::buildConstructorDTO),
                 Utils.filterAndMap(klass.getFields(), f -> !f.isEnumConstant(), this::buildFieldDTO),
                 Utils.filterAndMap(klass.getMethods(), m -> !m.isConstructor(), this::buildMethodDTO),
                 Utils.map(klass.getKlasses(), this::buildClassDTO),

@@ -66,7 +66,7 @@ public class Enter {
             var clazz = new Clazz(
                     ClassTag.valueOf(classDecl.tag().name()),
                     name,
-                    parseAccess(classDecl.getMods()),
+                    mods.access,
                     scope
             );
             if (mods.temp)
@@ -302,6 +302,7 @@ public class Enter {
                 case PUB -> access = Access.PUBLIC;
                 case PRIV ->  access = Access.PRIVATE;
                 case PROT -> access = Access.PROTECTED;
+                case INTERNAL -> access = Access.INTERNAL;
                 case STATIC -> static_ = true;
                 case ABSTRACT -> abstract_ = true;
                 case DELETED ->  deleted = true;
