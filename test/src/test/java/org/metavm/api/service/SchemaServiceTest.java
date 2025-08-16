@@ -32,8 +32,7 @@ public class SchemaServiceTest extends TestCase  {
 
     public void test() {
         deploy("display/display.kiwi");
-        ContextUtil.setAppId(TestConstants.APP_ID);
-        var scheme = schemaService.getSchema();
+        var scheme = schemaService.getSchema(TestConstants.APP_ID);
         assertEquals(2, scheme.classes().size());
         var productCls = Utils.findRequired(scheme.classes(), c -> c.name().equals("Product"));
         assertNull(productCls.beanName());
