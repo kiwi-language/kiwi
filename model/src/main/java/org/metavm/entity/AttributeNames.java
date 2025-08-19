@@ -7,4 +7,6 @@ public class AttributeNames {
 
     public static final String LABEL = "label";
 
+    public static final String NUMBER_FORMAT = "numberFormat";
+
 }

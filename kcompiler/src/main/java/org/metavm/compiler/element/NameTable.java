@@ -32,6 +32,7 @@ public class NameTable {
     public final Name Searchable = get("Searchable");
     public final Name Tag = get("Tag");
     public final Name Label = get("Label");
+    public final Name Date = get("Date");
     public final Name Summary = get("Summary");
     public final Name Bean = get("Bean");
     public final Name Configuration = get("Configuration");

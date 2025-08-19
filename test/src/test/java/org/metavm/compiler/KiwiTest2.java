@@ -3,6 +3,8 @@ package org.metavm.compiler;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.metavm.common.ErrorCode;
+import org.metavm.entity.AttributeNames;
+import org.metavm.entity.NumberFormats;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.ApiNamedObject;
 import org.metavm.util.BusinessException;
@@ -274,6 +276,30 @@ public class KiwiTest2 extends KiwiTestBase {
                 List.of()
         );
         MatcherAssert.assertThat(uuid, CoreMatchers.instanceOf(String.class));
+    }
+
+    public void testNullableIndexKey() {
+        deploy("kiwi/index/nullable_key.kiwi");
+        var id = saveInstance("index.Foo", Map.of());
+        saveInstance("index.Foo", Map.of());
+        var foo = getObject(id);
+        assertNull(foo.get("name"));
+        var id2 = callMethod(
+                ApiNamedObject.of("fooService"),
+                "findFooByName",
+                Map.of()
+        );
+        assertEquals(id, id2);
+    }
+
+    public void testDateAnnotation() {
+        deploy("kiwi/annotation/date.kiwi");
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var cls = context.getKlassByQualifiedName("annotation.Product");
+            var f = cls.getFieldByName("createdAt");
+            assertEquals(NumberFormats.DATE, f.getAttribute(AttributeNames.NUMBER_FORMAT));
+        }
     }
 
 }

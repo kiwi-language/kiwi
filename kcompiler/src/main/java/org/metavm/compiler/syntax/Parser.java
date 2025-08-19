@@ -653,6 +653,12 @@ public class Parser {
                 case NULL:
                 case RBRACKET:
                     break;
+                case QUES:
+                    if (depth == 1) {
+                        if (peekToken(it.get(), COMMA) || peekToken(it.get(), GT))
+                            return LtResult.TYPE_ARGS;
+                    }
+                    break;
                 case LBRACKET:
                     if (depth == 1) {
                         if (peekToken(it.get(), RBRACKET, COMMA) || peekToken(it.get(), RBRACKET, GT))
