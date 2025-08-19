@@ -1,0 +1,16 @@
+package index
+
+class Foo(var name: string?) {
+
+    static val nameIdx = Index<string?, Foo>(true, f -> f.name)
+
+}
+
+@Bean
+class FooService {
+
+    fn findFooByName(name: string?) -> Foo? {
+        return Foo.nameIdx.getFirst(name)
+    }
+
+}

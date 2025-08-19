@@ -1,0 +1,7 @@
+package annotation
+
+class Product(
+    var name: string,
+    @Date
+    var createdAt: long
+)

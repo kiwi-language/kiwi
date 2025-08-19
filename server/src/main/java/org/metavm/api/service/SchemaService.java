@@ -126,7 +126,8 @@ public class SchemaService extends ApplicationStatusAware {
                 field.getName(),
                 buildTypeDTO(field.getType()),
                 field == field.getDeclaringType().getTitleField(),
-                field.getLabel()
+                field.getLabel(),
+                field.getAttribute(AttributeNames.NUMBER_FORMAT)
         );
     }
 

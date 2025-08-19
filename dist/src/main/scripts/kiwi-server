@@ -37,16 +37,28 @@ JAVA_CMD="java"
 # Example: JAVA_OPTS="-Xms512m -Xmx1024m"
 JAVA_OPTS=""
 
+# === Debug Configuration (ADDED) ===
+# Port for the remote debugger to connect to
+JAVA_DEBUG_PORT="5005"
+# JDWP options:
+# transport=dt_socket: Use a socket for transport.
+# server=y: The JVM will listen for a debugger to attach.
+# suspend=n: The JVM will NOT wait for a debugger to attach before starting.
+# address=*:...: Listen on all network interfaces on the specified port.
+JAVA_DEBUG_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$JAVA_DEBUG_PORT"
+
+
 # === Functions ===
 
 # Function to print help message
-show_help() {
-  echo "Usage: kiwi-server {start|stop|restart|status|help}"
-  echo "  start    : Start the $APP_NAME"
-  echo "  stop     : Stop the $APP_NAME"
-  echo "  restart  : Restart the $APP_NAME"
-  echo "  status   : Check if $APP_NAME is running"
-  echo "  help     : Display this help message"
+show_help() { # <--- MODIFIED
+  echo "Usage: kiwi-server {start|start-debug|stop|restart|status|help}"
+  echo "  start         : Start the $APP_NAME"
+  echo "  start-debug   : Start the $APP_NAME in debug mode on port $JAVA_DEBUG_PORT"
+  echo "  stop          : Stop the $APP_NAME"
+  echo "  restart       : Restart the $APP_NAME"
+  echo "  status        : Check if $APP_NAME is running"
+  echo "  help          : Display this help message"
 }
 
 # Function to check if the server is currently running
@@ -72,7 +84,7 @@ is_running() {
 }
 
 # Function to start the server
-start_server() {
+start_server() { # <--- MODIFIED to accept a "debug" argument
   if is_running; then
     PID=$(cat "$PID_FILE")
     echo "$APP_NAME is already running (PID: $PID)."
@@ -90,13 +102,26 @@ start_server() {
   #     echo "Warning: Config file not found at $CONFIG_FILE" >&2
   # fi
 
-  echo "Starting $APP_NAME..."
+  # --- Start of Modification ---
+  # Initialize an empty string for the final JVM options
+  local effective_java_opts="$JAVA_OPTS"
+
+  if [ "$1" == "debug" ]; then
+    echo "Starting $APP_NAME in DEBUG MODE on port $JAVA_DEBUG_PORT..."
+    # Prepend the debug options to any other Java options
+    effective_java_opts="$JAVA_DEBUG_OPTS $JAVA_OPTS"
+  else
+    echo "Starting $APP_NAME..."
+  fi
+  # --- End of Modification ---
+
 
   # Construct the command
   # Use nohup to prevent SIGHUP when the terminal closes
   # Redirect stdout and stderr to the log file
   # Run in the background (&)
-  nohup $JAVA_CMD $JAVA_OPTS -jar "$JAR_FILE" -config "$CONFIG_FILE" >> "$LOG_FILE" 2>&1 &
+  # <--- MODIFIED to use the new effective_java_opts variable
+  nohup $JAVA_CMD $effective_java_opts -jar "$JAR_FILE" -config "$CONFIG_FILE" >> "$LOG_FILE" 2>&1 &
 
   # Get the PID of the background process
   PID=$!
@@ -185,6 +210,9 @@ fi
 case "$1" in
   start)
     start_server
+    ;;
+  start-debug) # <--- ADDED
+    start_server "debug"
     ;;
   stop)
     stop_server
