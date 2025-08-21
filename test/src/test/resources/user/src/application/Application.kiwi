@@ -9,7 +9,7 @@ import util.UserUtil
 
 class Application(
     var name: string,
-    val owner: User
+    var owner: User
 ) {
 
     static val MAX_NUM_ADMINS = 16

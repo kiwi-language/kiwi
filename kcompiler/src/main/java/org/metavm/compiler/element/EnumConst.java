@@ -10,7 +10,7 @@ public final class EnumConst extends Field implements FieldRef {
     private int ordinal;
 
     public EnumConst(Name name, int ordinal, Clazz declaringClass, Type type) {
-        super(name, declaringClass, Access.PUBLIC, true, false, declaringClass);
+        super(name, declaringClass, Access.PUBLIC, true, false, false, declaringClass);
         this.ordinal = ordinal;
         declaringClass.addEnumConstant(this);
     }

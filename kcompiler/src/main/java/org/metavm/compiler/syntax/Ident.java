@@ -2,6 +2,8 @@ package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.Element;
 import org.metavm.compiler.element.Name;
+import org.metavm.compiler.element.Variable;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.List;
 
 import java.util.Objects;
@@ -62,5 +64,13 @@ public class Ident extends Expr {
     @Override
     public int hashCode() {
         return Objects.hash(name, candidates);
+    }
+
+    @Override
+    public boolean isMutable() {
+        var e = getElement();
+        if (e == null)
+            throw new CompilationException("Expression not yet attributed: " + getText());
+        return e instanceof Variable v && v.isMutable();
     }
 }

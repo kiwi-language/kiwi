@@ -33,7 +33,7 @@ public final class ArrayType implements Type, Comparable<ArrayType> {
             .build();
 
     public static final Field lengthField = new Field(
-            NameTable.instance.length, PrimitiveType.INT, Access.PUBLIC, false, false, arrayClass
+            NameTable.instance.length, PrimitiveType.INT, Access.PUBLIC, false, false, false, arrayClass
     );
 
     public static final Method appendMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.append)

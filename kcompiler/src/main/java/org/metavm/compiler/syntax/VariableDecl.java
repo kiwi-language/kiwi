@@ -16,12 +16,14 @@ public abstract class VariableDecl<T extends Variable> extends ModifiedDecl<T> {
     private final Name name;
     @Nullable
     private Expr initial;
+    private final boolean mutable;
 
-    public VariableDecl(List<Annotation> annotations, @Nullable TypeNode type, Name name, @Nullable Expr initial) {
+    public VariableDecl(List<Annotation> annotations, @Nullable TypeNode type, Name name, @Nullable Expr initial, boolean mutable) {
         this.annotations = annotations;
         this.type = type;
         this.name = name;
         this.initial = initial;
+        this.mutable = mutable;
     }
 
     public List<Annotation> getAnnotations() {
@@ -76,4 +78,7 @@ public abstract class VariableDecl<T extends Variable> extends ModifiedDecl<T> {
         return Objects.hash(annotations, type, name, initial);
     }
 
+    public boolean isMutable() {
+        return mutable;
+    }
 }

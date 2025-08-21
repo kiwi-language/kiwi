@@ -12,7 +12,7 @@ public class Param extends LocalVar {
     }
 
     public Param(Name name, Type type, Executable executable) {
-        super(name, type, executable);
+        super(name, type, true, executable);
         executable.addParam(this);
     }
 

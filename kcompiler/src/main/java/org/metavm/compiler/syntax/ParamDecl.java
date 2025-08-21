@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 
 public final class ParamDecl extends VariableDecl<Param> {
     public ParamDecl(List<Annotation> annotations, @Nullable TypeNode type, Name name) {
-        super(annotations, type, name, null);
+        super(annotations, type, name, null, true);
     }
 
     @Override

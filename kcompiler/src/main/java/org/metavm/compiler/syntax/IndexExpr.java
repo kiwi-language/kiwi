@@ -53,4 +53,8 @@ public final class IndexExpr extends Expr {
         return Objects.hash(x, index);
     }
 
+    @Override
+    public boolean isMutable() {
+        return true;
+    }
 }

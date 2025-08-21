@@ -20,4 +20,5 @@ public interface Variable extends ValueElement {
 
     VariableScope getScope();
 
+    boolean isMutable();
 }

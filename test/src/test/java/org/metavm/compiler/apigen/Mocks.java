@@ -81,6 +81,7 @@ public class Mocks {
                 PrimitiveType.DOUBLE,
                 Access.PUBLIC,
                 false,
+                false,
                 cls
         );
         new Field(
@@ -88,12 +89,14 @@ public class Mocks {
                 proj.getClass("Currency"),
                 Access.PUBLIC,
                 false,
+                false,
                 cls
         );
         var summaryField = new Field(
                 "summary",
                 Types.instance.getStringType(),
                 Access.PRIVATE,
+                false,
                 false,
                 cls
         );
@@ -113,6 +116,7 @@ public class Mocks {
                 Types.instance.getStringType(),
                 Access.PUBLIC,
                 false,
+                true,
                 cls
         );
         cls.setSummaryField(nameField);
@@ -121,6 +125,7 @@ public class Mocks {
                 PrimitiveType.INT,
                 Access.PUBLIC,
                 false,
+                true,
                 cls
         );
         new Field(
@@ -128,6 +133,7 @@ public class Mocks {
                 proj.getClass("Money"),
                 Access.PUBLIC,
                 false,
+                true,
                 cls
         );
         new Field(
@@ -135,6 +141,7 @@ public class Mocks {
                 Types.instance.getNullableType(Types.instance.getStringType()),
                 Access.PUBLIC,
                 false,
+                true,
                 cls
         );
         createCanonicalInit(cls);
@@ -175,12 +182,14 @@ public class Mocks {
                 proj.getClass("Money"),
                 Access.PUBLIC,
                 false,
+                false,
                 cls
         );
         var couponField = new Field(
                 "coupon",
                 Types.instance.getNullableType(proj.getClass("Coupon")),
                 Access.PUBLIC,
+                false,
                 false,
                 cls
         );
@@ -189,6 +198,7 @@ public class Mocks {
                 proj.getClass("OrderStatus"),
                 Access.PUBLIC,
                 false,
+                true,
                 cls
         );
         createInit(cls, List.of(priceField, couponField));
@@ -203,6 +213,7 @@ public class Mocks {
                 PrimitiveType.INT,
                 Access.PUBLIC,
                 false,
+                false,
                 itemCls
         );
         var productField = new Field(
@@ -210,12 +221,14 @@ public class Mocks {
                 proj.getClass("Product"),
                 Access.PUBLIC,
                 false,
+                false,
                 itemCls
         );
         new Field(
                 "productName",
                 Types.instance.getStringType(),
                 Access.PUBLIC,
+                false,
                 false,
                 itemCls
         );
@@ -274,12 +287,14 @@ public class Mocks {
                 Types.instance.getStringType(),
                 Access.PUBLIC,
                 false,
+                false,
                 cls
         );
         var discount = new Field(
                 "discount",
                 PrimitiveType.DOUBLE,
                 Access.PUBLIC,
+                false,
                 false,
                 cls
         );
@@ -288,6 +303,7 @@ public class Mocks {
                 proj.getClass("Product"),
                 Access.PUBLIC,
                 false,
+                false,
                 cls
         );
         new Field(
@@ -295,6 +311,7 @@ public class Mocks {
                 PrimitiveType.BOOL,
                 Access.PUBLIC,
                 false,
+                true,
                 cls
         );
         createInit(cls, List.of(title, discount, product));
@@ -309,12 +326,14 @@ public class Mocks {
                 Types.instance.getStringType(),
                 Access.PUBLIC,
                 false,
+                false,
                 cls
         );
         var urlField = new Field(
                 "url",
                 Types.instance.getStringType(),
                 Access.PUBLIC,
+                false,
                 false,
                 cls
         );

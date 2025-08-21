@@ -8,8 +8,8 @@ import javax.annotation.Nullable;
 
 public final class LocalVarDecl extends VariableDecl<LocalVar> {
 
-    public LocalVarDecl(@Nullable TypeNode type, Name name, @Nullable Expr initial) {
-        super(List.nil(), type, name, initial);
+    public LocalVarDecl(@Nullable TypeNode type, Name name, @Nullable Expr initial, boolean mutable) {
+        super(List.nil(), type, name, initial, mutable);
     }
 
     @Override

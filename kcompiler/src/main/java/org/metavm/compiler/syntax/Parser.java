@@ -299,7 +299,7 @@ public class Parser {
             LocalVarDecl var = null;
             if (is(TokenKind.IDENT)) {
                 var varPos = pos();
-                var = new LocalVarDecl(type, ident(), null).setPos(varPos);
+                var = new LocalVarDecl(type, ident(), null, false).setPos(varPos);
             }
             expr = new IsExpr(expr, type, var).setPos(pos);
         }
@@ -1172,7 +1172,7 @@ public class Parser {
             accept(COLON);
             var type = type();
             accept(RPAREN);
-            var v = new LocalVarDecl(type, name, null);
+            var v = new LocalVarDecl(type, name, null, false);
             var catchBlock = block();
             catchers.append(new Catcher(v, catchBlock));
         }
@@ -1249,12 +1249,13 @@ public class Parser {
             case CLASS -> classDecl(annotations, mods);
             case INTERFACE -> interfaceDecl(annotations, mods);
             case ENUM -> enumDecl(annotations, mods);
-            case VAR, VAL -> localVar();
+            case VAR -> localVar(true);
+            case VAL -> localVar(false);
             default -> throw new IllegalStateException("Invalid start of declaration: " + tokenKind());
         };
     }
 
-    private LocalVarDecl localVar() {
+    private LocalVarDecl localVar(boolean mutable) {
         nextToken();
         var pos = pos();
         var name = ident();
@@ -1268,7 +1269,7 @@ public class Parser {
             nextToken();
             initial = expr();
         }
-        return new LocalVarDecl(type, name, initial).setPos(pos);
+        return new LocalVarDecl(type, name, initial, mutable).setPos(pos);
     }
 
 
@@ -1317,7 +1318,7 @@ public class Parser {
         var iterated = expr();
         accept(RPAREN);
         return new ForeachStmt(
-                new LocalVarDecl(type, name, null),
+                new LocalVarDecl(type, name, null, false),
                 iterated,
                 stmt()
         );
@@ -1402,9 +1403,9 @@ public class Parser {
     }
 
     private FieldDecl field(List<Annotation> annotations, List<Modifier> mods) {
-        var readonly = switch (tokenKind()) {
-            case VAR -> false;
-            case VAL ->  true;
+        var mutable = switch (tokenKind()) {
+            case VAR -> true;
+            case VAL ->  false;
             default -> throw new IllegalStateException("Not a field");
         };
         nextToken();
@@ -1425,7 +1426,8 @@ public class Parser {
                 annotations,
                 type,
                 name,
-                initial
+                initial,
+                mutable
         ).setPos(pos);
     }
 
@@ -1693,12 +1695,12 @@ public class Parser {
         var annotations = annotations();
         var mods = mods();
         boolean withField = false;
-        boolean readonly = false;
+        boolean mutable = true;
         switch (tokenKind()) {
             case VAL -> {
                 nextToken();
                 withField = true;
-                readonly = true;
+                mutable = false;
             }
             case VAR -> {
                 nextToken();
@@ -1716,7 +1718,7 @@ public class Parser {
                 mods,
                 annotations,
                 withField,
-                readonly,
+                mutable,
                 type,
                 name
         ).setPos(pos);

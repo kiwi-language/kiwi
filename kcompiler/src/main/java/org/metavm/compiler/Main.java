@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.application.rest.dto.ApplicationDTO;
 import org.metavm.common.Page;
+import org.metavm.compiler.apigen.ApiGenerator;
 import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.CompilerHttpUtils;
 import org.metavm.compiler.util.MockEnter;
@@ -52,7 +53,9 @@ public class Main {
         MockEnter.enterStandard(task.getProject());
         task.analyze();
         if (task.getErrorCount() == 0) {
-            task.generateApi(options.stream().anyMatch(op -> op.kind == OptionKind.RETURN_FULL_OBJECT));
+            var versionOp = Utils.find(options, o -> o.kind == OptionKind.VERSION);
+            var v = versionOp != null ? Long.parseLong(Objects.requireNonNull(versionOp.arg)) : ApiGenerator.CURRENT_VERSION;
+            task.generateApi(v);
             return true;
         } else
             return false;
@@ -466,7 +469,7 @@ public class Main {
     enum OptionKind {
 
         SENSE_LINT(false),
-        RETURN_FULL_OBJECT(false),
+        VERSION(true),
         STATUS(false),
 
         ;

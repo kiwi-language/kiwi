@@ -62,6 +62,11 @@ public final class FieldInst extends ElementBase implements FieldRef {
     }
 
     @Override
+    public boolean isMutable() {
+        return field.isMutable();
+    }
+
+    @Override
     public Field getElement() {
         return field;
     }

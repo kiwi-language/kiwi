@@ -9,7 +9,7 @@ class Message(
     @Summary 
     val title: string, 
     val kind: MessageKind, 
-    val target: any? 
+    var target: any?
 ) {
 
     static val targetIndex  = Index<any, Message>(false, m -> m.target)

@@ -121,6 +121,7 @@ public class Enter {
                     mods.access,
                     mods.static_,
                     mods.deleted,
+                    fieldDecl.isMutable(),
                     cls
             );
             if (traceEntering)
@@ -216,6 +217,7 @@ public class Enter {
                                 mods.access,
                                 false,
                                 mods.deleted,
+                                classParamDecl.isMutable(),
                                 clazz
                         )
                 );
@@ -226,7 +228,7 @@ public class Enter {
         @Override
         public Void visitLocalVarDecl(LocalVarDecl localVarDecl) {
             var exe = currentExecutable();
-            var variable = new LocalVar(localVarDecl.getName(), DeferredType.instance, exe);
+            var variable = new LocalVar(localVarDecl.getName(), DeferredType.instance, localVarDecl.isMutable(), exe);
             localVarDecl.setElement(variable);
             if (traceEntering) {
                 logger.trace("Entering local variable {}", variable.getName());

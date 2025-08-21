@@ -78,6 +78,11 @@ public final class BuiltinVariable extends ElementBase implements Variable {
     }
 
     @Override
+    public boolean isMutable() {
+        return false;
+    }
+
+    @Override
     public String toString() {
         return  name + ": " + type.getTypeText();
     }

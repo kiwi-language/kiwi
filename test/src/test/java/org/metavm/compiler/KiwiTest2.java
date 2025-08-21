@@ -1,5 +1,6 @@
 package org.metavm.compiler;
 
+import com.google.protobuf.Api;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.metavm.common.ErrorCode;
@@ -300,6 +301,19 @@ public class KiwiTest2 extends KiwiTestBase {
             var f = cls.getFieldByName("createdAt");
             assertEquals(NumberFormats.DATE, f.getAttribute(AttributeNames.NUMBER_FORMAT));
         }
+    }
+
+    public void testNewArrayWithElements() {
+        deploy("kiwi/arrays/new_array_with_elems.kiwi");
+        var r = callMethod(
+                ApiNamedObject.of("lab"),
+                "newArray",
+                List.of(1, 2)
+        );
+        assertEquals(
+                List.of(1, 2),
+                r
+        );
     }
 
 }

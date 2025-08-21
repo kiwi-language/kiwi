@@ -18,22 +18,24 @@ public class Field extends ElementBase implements Member, FieldRef {
     private Access access;
     private boolean static_;
     private boolean deleted;
+    private boolean mutable;
     private Integer sourceTag;
     private final Clazz declaringClass;
     private @Nullable Method initializer;
     private List<FieldInst> instances = List.nil();
     private List<Attribute> attributes = List.nil();
 
-    public Field(String name, Type type, Access access, boolean static_, Clazz declaringClass) {
-        this(NameTable.instance.get(name), type, access, static_, false, declaringClass);
+    public Field(String name, Type type, Access access, boolean static_, boolean mutable, Clazz declaringClass) {
+        this(NameTable.instance.get(name), type, access, static_, false, mutable, declaringClass);
     }
 
-    public Field(Name name, Type type, Access access, boolean static_, boolean deleted, Clazz declaringClass) {
+    public Field(Name name, Type type, Access access, boolean static_, boolean deleted,  boolean mutable, Clazz declaringClass) {
         this.name = name;
         this.type = type;
         this.access = access;
         this.static_ = static_;
         this.deleted = deleted;
+        this.mutable = mutable;
         this.declaringClass = declaringClass;
         declaringClass.addField(this);
     }
@@ -76,6 +78,11 @@ public class Field extends ElementBase implements Member, FieldRef {
     @Override
     public VariableScope getScope() {
         return declaringClass;
+    }
+
+    @Override
+    public boolean isMutable() {
+        return mutable;
     }
 
     public Access getAccess() {
