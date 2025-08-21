@@ -1,12 +1,10 @@
 package org.metavm.compiler.syntax;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.compiler.element.*;
+import org.metavm.compiler.element.Element;
+import org.metavm.compiler.element.ValueElement;
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Type;
-import org.metavm.compiler.type.Types;
-
-import javax.lang.model.element.VariableElement;
 
 @Slf4j
 public abstract class Expr extends Node {
@@ -45,4 +43,9 @@ public abstract class Expr extends Node {
     public Expr setPos(int pos) {
         return (Expr) super.setPos(pos);
     }
+
+    public boolean isMutable() {
+        return false;
+    }
+
 }

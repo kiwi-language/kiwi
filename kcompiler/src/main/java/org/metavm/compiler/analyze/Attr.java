@@ -251,7 +251,11 @@ public class Attr extends StructuralNodeVisitor {
 
         @Override
         public Resolver visitNewArrayExpr(NewArrayExpr newArrayExpr) {
-            newArrayExpr.setType(Types.instance.getArrayType(newArrayExpr.elementType().getType()));
+            var type = Types.instance.getArrayType(newArrayExpr.elementType().getType());
+            newArrayExpr.setType(type);
+            for (Expr element : newArrayExpr.getElements()) {
+                attrExpr(element, type.getElementType()).resolve();
+            }
             return new NullResolver();
         }
 

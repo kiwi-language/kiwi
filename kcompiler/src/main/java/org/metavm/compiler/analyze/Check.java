@@ -78,6 +78,8 @@ public class Check extends StructuralNodeVisitor {
 
     @Override
     public Void visitAssignExpr(AssignExpr assignExpr) {
+        if (!assignExpr.lhs().isMutable())
+            log.error(assignExpr.lhs(), Errors.cantAssignToImmutableValue);
         if (assignExpr.lhs().getElement() instanceof LocalVar local) {
            if (local.getExecutable() != env.currentExecutable())
                 log.error(assignExpr, Errors.cantModifyCapturedVar);

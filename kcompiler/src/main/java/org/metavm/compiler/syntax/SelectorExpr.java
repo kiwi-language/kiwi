@@ -1,6 +1,8 @@
 package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.Name;
+import org.metavm.compiler.element.Variable;
+import org.metavm.compiler.util.CompilationException;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -50,5 +52,13 @@ public final class SelectorExpr extends Expr {
     @Override
     public int hashCode() {
         return Objects.hash(x, sel);
+    }
+
+    @Override
+    public boolean isMutable() {
+        var e = getElement();
+        if (e == null)
+            throw new CompilationException("Expression not yet attributed: " + getText());
+        return e instanceof Variable v && v.isMutable();
     }
 }

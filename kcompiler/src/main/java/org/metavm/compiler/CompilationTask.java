@@ -3,6 +3,8 @@ package org.metavm.compiler;
 import lombok.SneakyThrows;
 import org.metavm.compiler.analyze.*;
 import org.metavm.compiler.apigen.ApiGenerator;
+import org.metavm.compiler.apigen.ApiGeneratorV1;
+import org.metavm.compiler.apigen.ApiGeneratorV3;
 import org.metavm.compiler.diag.DefaultLog;
 import org.metavm.compiler.diag.DiagFactory;
 import org.metavm.compiler.diag.DiagSource;
@@ -15,6 +17,7 @@ import org.metavm.compiler.file.PathSourceFile;
 import org.metavm.compiler.generate.ClassFileWriter;
 import org.metavm.compiler.generate.Gen;
 import org.metavm.compiler.syntax.*;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.CompilerUtils;
 import org.metavm.compiler.util.List;
 import org.metavm.flow.KlassOutput;
@@ -124,7 +127,7 @@ public class CompilationTask {
         }
     }
 
-    public void generateApi(boolean retFullObj) {
+    public void generateApi(long version) {
         var classes = List.<Clazz>builder();
         files.forEach(f -> {
             for (var classDecl : f.getClassDeclarations()) {
@@ -132,9 +135,20 @@ public class CompilationTask {
             }
         });
         var c = classes.build();
-        var api = new ApiGenerator(retFullObj).generate(c);
+        var api = getApiGenerator(version).generate(c);
         var apiBuildDir = buildDir.getParent().resolve("apigen");
         Utils.writeFile(apiBuildDir.resolve("api.ts"), api.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private ApiGenerator getApiGenerator(long version) {
+        if (version <= 2)
+            return new ApiGeneratorV1(version > 1);
+        else if (version == 3)
+            return new ApiGeneratorV3();
+        else
+            throw new CompilationException(
+                "Unsupported API version: " + version + ". Supported versions are 1, 2, and 3."
+            );
     }
 
     public Project getProject() {

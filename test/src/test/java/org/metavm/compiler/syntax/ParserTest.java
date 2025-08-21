@@ -60,7 +60,7 @@ public class ParserTest extends TestCase {
                                                 List.of(),
                                                 List.of(),
                                                 true,
-                                                false,
+                                                true,
                                                 new PrimitiveTypeNode(TypeTag.STRING),
                                                 Name.from("name")
                                         ),
@@ -68,7 +68,7 @@ public class ParserTest extends TestCase {
                                                 List.of(),
                                                 List.of(),
                                                 true,
-                                                false,
+                                                true,
                                                 new PrimitiveTypeNode(TypeTag.DOUBLE),
                                                 Name.from("price")
                                         ),
@@ -76,7 +76,7 @@ public class ParserTest extends TestCase {
                                                 List.of(),
                                                 List.of(),
                                                 true,
-                                                false,
+                                                true,
                                                 new PrimitiveTypeNode(TypeTag.INT),
                                                 Name.from("stock")
                                         )
@@ -256,7 +256,7 @@ public class ParserTest extends TestCase {
                                         List.of(new Modifier(ModifierTag.PRIV)),
                                         List.of(),
                                         true,
-                                        true,
+                                        false,
                                         new PrimitiveTypeNode(TypeTag.STRING),
                                         Name.from("name")
                                 ),
@@ -264,7 +264,7 @@ public class ParserTest extends TestCase {
                                         List.of(),
                                         List.of(),
                                         false,
-                                        false,
+                                        true,
                                         new PrimitiveTypeNode(TypeTag.INT),
                                         Name.from("value")
                                 )
@@ -601,7 +601,8 @@ public class ParserTest extends TestCase {
                                         new LocalVarDecl(
                                                 null,
                                                 Name.from("name"),
-                                                new Literal("Foo")
+                                                new Literal("Foo"),
+                                                true
                                         )
                                 )
                         )
@@ -705,7 +706,8 @@ public class ParserTest extends TestCase {
                                         new LocalVarDecl(
                                                 new ClassTypeNode(Ident.from("Exception")),
                                                 Name.from("e"),
-                                                null
+                                                null,
+                                                false
                                         ),
                                         new Block(List.of())
                                 )
@@ -915,7 +917,7 @@ public class ParserTest extends TestCase {
     public void testForeachStmt() {
         assertEquals(
                 new ForeachStmt(
-                        new LocalVarDecl(null, Name.from("e"), null),
+                        new LocalVarDecl(null, Name.from("e"), null, false),
                         Ident.from("list"),
                         new ExprStmt(
                                 new Call(

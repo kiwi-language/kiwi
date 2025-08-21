@@ -1,0 +1,10 @@
+package arrays
+
+@Bean
+class Lab {
+
+    fn newArray(a: int, b: int) -> int[] {
+        return new int[] {a, b}
+    }
+
+}

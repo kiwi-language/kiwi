@@ -12,15 +12,13 @@ public class ClassParamDecl extends VariableDecl<Param> {
 
     private List<Modifier> mods;
     private List<Annotation> annotations;
-    private boolean readonly;
     private boolean withField;
     private Field field;
 
-    public ClassParamDecl(List<Modifier> mods, List<Annotation> annotations, boolean withField, boolean readonly, @Nullable TypeNode type, Name name) {
-        super(List.nil(), type, name, null);
+    public ClassParamDecl(List<Modifier> mods, List<Annotation> annotations, boolean withField, boolean mutable, @Nullable TypeNode type, Name name) {
+        super(List.nil(), type, name, null, mutable);
         this.mods = mods;
         this.annotations = annotations;
-        this.readonly = readonly;
         this.withField = withField;
     }
 
@@ -31,7 +29,7 @@ public class ClassParamDecl extends VariableDecl<Param> {
             writer.write(" ");
         }
         if (withField)
-            writer.write(readonly ? "val " : "var ");
+            writer.write(isMutable() ? "var " : "val ");
         writer.write(getName());
         if (getType() != null) {
             writer.write(": ");
@@ -70,14 +68,6 @@ public class ClassParamDecl extends VariableDecl<Param> {
         this.withField = withField;
     }
 
-    public boolean isReadonly() {
-        return readonly;
-    }
-
-    public void setReadonly(boolean readonly) {
-        this.readonly = readonly;
-    }
-
     public Field getField() {
         return field;
     }
@@ -96,11 +86,11 @@ public class ClassParamDecl extends VariableDecl<Param> {
         if (this == object) return true;
         if (object == null || getClass() != object.getClass()) return false;
         ClassParamDecl that = (ClassParamDecl) object;
-        return readonly == that.readonly && withField == that.withField && Objects.equals(mods, that.mods) && Objects.equals(annotations, that.annotations) && Objects.equals(field, that.field);
+        return isMutable() == that.isMutable() && withField == that.withField && Objects.equals(mods, that.mods) && Objects.equals(annotations, that.annotations) && Objects.equals(field, that.field);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mods, annotations, readonly, withField, field);
+        return Objects.hash(mods, annotations, isMutable(), withField, field);
     }
 }

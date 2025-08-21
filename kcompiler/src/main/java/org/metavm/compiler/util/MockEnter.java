@@ -535,8 +535,8 @@ public class MockEnter {
         typeVar.setBound(clazz.getInst(List.of(typeVar)));
 
         var nullableStrType = Types.instance.getNullableString();
-        new Field("name", nullableStrType, Access.PRIVATE, false, clazz);
-        new Field("ordinal", PrimitiveType.INT, Access.PRIVATE, false, clazz);
+        new Field("name", nullableStrType, Access.PRIVATE, false, false, clazz);
+        new Field("ordinal", PrimitiveType.INT, Access.PRIVATE, false, false, clazz);
 
         var initMethod = new Method(Name.init(), Access.PUBLIC, false, false, true, clazz);
         new Param(Name.from("name"), nullableStrType, initMethod);

@@ -14,6 +14,6 @@ public class Traces {
 
     public static final boolean traceLower = false;
 
-    public static final boolean traceGeneration = false;
+    public static final boolean traceGeneration = true;
 
 }

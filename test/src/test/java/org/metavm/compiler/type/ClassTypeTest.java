@@ -18,13 +18,13 @@ public class ClassTypeTest extends TestCase {
         compareMethod.setRetType(PrimitiveType.INT);
 
         var baseClazz = new Clazz(ClassTag.CLASS, "Base", Access.PUBLIC, pkg);
-        var versionField = new Field("version", PrimitiveType.LONG, Access.PUBLIC, false, baseClazz);
+        var versionField = new Field("version", PrimitiveType.LONG, Access.PUBLIC, false, false, baseClazz);
 
         var fooClazz = new Clazz(ClassTag.CLASS, "Foo", Access.PUBLIC, pkg);
         var typeVar = new TypeVar("T", PrimitiveType.ANY, fooClazz);
         fooClazz.setInterfaces(List.of(baseClazz, comparableClazz.getInst(List.of(fooClazz))));
-        var nameField = new Field("name", Types.instance.getStringType(), Access.PRIVATE, false, fooClazz);
-        var valueField = new Field("value", typeVar, Access.PRIVATE, false, fooClazz);
+        var nameField = new Field("name", Types.instance.getStringType(), Access.PRIVATE, false, true, fooClazz);
+        var valueField = new Field("value", typeVar, Access.PRIVATE, false, true, fooClazz);
         var getValueMethod = new Method("getValue", Access.PUBLIC, false, false, false, fooClazz);
         getValueMethod.setRetType(typeVar);
 

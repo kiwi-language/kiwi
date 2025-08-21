@@ -15,10 +15,12 @@ public class LocalVar extends ElementBase implements Variable {
     private Type type;
     private int index = -1;
     private final Executable executable;
+    private final boolean mutable;
 
-    public LocalVar(Name name, Type type, @NotNull Executable executable) {
+    public LocalVar(Name name, Type type, boolean mutable, @NotNull Executable executable) {
         this.name = name;
         this.type = type;
+        this.mutable = mutable;
         this.executable = executable;
     }
 
@@ -73,6 +75,11 @@ public class LocalVar extends ElementBase implements Variable {
     @Override
     public VariableScope getScope() {
         return executable;
+    }
+
+    @Override
+    public boolean isMutable() {
+        return mutable;
     }
 
     public void setType(Type type) {

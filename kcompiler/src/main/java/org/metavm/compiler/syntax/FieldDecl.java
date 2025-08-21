@@ -16,9 +16,10 @@ public final class FieldDecl extends VariableDecl<Field> {
             List<Annotation> annotations,
             @Nullable TypeNode type,
             Name name,
-            @Nullable Expr initial
+            @Nullable Expr initial,
+            boolean mutable
     ) {
-        super(annotations, type, name, initial);
+        super(annotations, type, name, initial, mutable);
         this.mods = mods;
     }
 
@@ -73,4 +74,5 @@ public final class FieldDecl extends VariableDecl<Field> {
     public int hashCode() {
         return Objects.hash(mods);
     }
+
 }
