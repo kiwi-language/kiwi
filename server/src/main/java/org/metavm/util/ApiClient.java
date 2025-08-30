@@ -2,8 +2,10 @@ package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.entity.HttpCookie;
+import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
+import org.metavm.http.HttpHeaderImpl;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
@@ -62,22 +64,22 @@ public class ApiClient {
     }
 
     public @Nullable Object callMethod(Object qualifier, String methodName, List<Object> arguments) {
-        return callMethod(qualifier, methodName, arguments, false);
+        return callMethod(qualifier, methodName, arguments, false, Map.of());
     }
 
-    public @Nullable Object callMethod(Object qualifier, String methodName, List<Object> arguments, boolean returnObject) {
-        return callMethod0(qualifier, methodName, transformArgs(arguments), returnObject);
+    public @Nullable Object callMethod(Object qualifier, String methodName, List<Object> arguments, boolean returnObject, Map<String, String> headerMap) {
+        return callMethod0(qualifier, methodName, transformArgs(arguments), returnObject, headerMap);
     }
 
     public @Nullable Object callMethod(Object receiver, String methodName, Map<String, Object> arguments) {
         var transformedArgs = new HashMap<String, Object>();
         arguments.forEach((name, value) -> transformedArgs.put(name, transformArgs(value)));
-        return callMethod0(receiver, methodName, transformedArgs, false);
+        return callMethod0(receiver, methodName, transformedArgs, false, Map.of());
     }
 
-    private @Nullable Object callMethod0(Object receiver, String methodName, Object arguments, boolean returnObject) {
+    private @Nullable Object callMethod0(Object receiver, String methodName, Object arguments, boolean returnObject, Map<String, String> headerMap) {
         var uri = "/object/invoke";
-        var req = makeRequest("POST", uri);
+        var req = makeRequest("POST", uri, headerMap);
         var resp = new HttpResponseImpl();
         var rs = apiService.handleMethodCall(transformArgs(receiver), methodName, arguments, returnObject, req, resp);
         processResponse(resp);
@@ -111,10 +113,16 @@ public class ApiClient {
     }
 
     private HttpRequest makeRequest(String method, String uri) {
+        return makeRequest(method, uri, Map.of());
+    }
+
+    private HttpRequest makeRequest(String method, String uri, Map<String, String> headerMap) {
+        var headers = new ArrayList<HttpHeader>();
+        headerMap.forEach((n, v) -> headers.add(new HttpHeaderImpl(n, v)));
         return new HttpRequestImpl(
                 method,
                 uri,
-                List.of(),
+                headers,
                 cookies
         );
     }

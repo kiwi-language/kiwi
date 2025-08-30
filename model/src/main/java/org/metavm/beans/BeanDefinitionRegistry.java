@@ -11,16 +11,10 @@ import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Method;
 import org.metavm.flow.Parameter;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.KlassType;
+import org.metavm.object.type.*;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -40,6 +34,8 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
     private boolean allFlags = true;
 
     private transient List<BeanDefinition> interceptorDefinitions = new ArrayList<>();
+
+    private transient @Nullable BeanDefinition tokenValidatorDef;
 
     private List<BeanDefinition> beanDefinitions = new ArrayList<>();
 
@@ -79,8 +75,10 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
 
     private void addBeanDefinition(BeanDefinition beanDefinition) {
         beanDefinitions.add(beanDefinition);
-        if(isInterceptor(beanDefinition.getBeanType()))
+        if (isInterceptor(beanDefinition.getBeanType()))
             interceptorDefinitions.add(beanDefinition);
+        if (isTokenValidator(beanDefinition.getBeanType()))
+            tokenValidatorDef = beanDefinition;
     }
 
     public List<BeanDefinition> removeBeanDefByType(ClassType type) {
@@ -168,33 +166,63 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
                 }
                 continue;
             }
-            if (parameter.getType().getUnderlyingType() instanceof KlassType paramType) {
-                if (paramType.isList()) {
-                    if (paramType.getFirstTypeArgument() instanceof KlassType beanType) {
-                        var matchingBeans = getBeansOfType(beanType);
-                        var beanReferences = Utils.map(matchingBeans, Instance::getReference);
-                        arguments.add(Instances.createList(paramType, beanReferences).getReference());
-                    } else {
-                        throw new InternalException("Cannot autowire List: unsupported element type '" + paramType.getFirstTypeArgument() + "'.");
-                    }
-                } else {
-                    var beans = getBeansOfType(paramType);
-                    if (beans.isEmpty()) {
-                        throw new InternalException("No qualifying bean of type '" + paramType + "' found.");
-                    }
-                    if (beans.size() > 1) {
-                        throw new InternalException("Expected 1 bean of type '" + paramType + "', but found " + beans.size() + ".");
-                    }
-                    arguments.add(beans.getFirst().getReference());
-                }
-            } else {
+            if (isDependency(parameter.getType()))
+                arguments.add(getDependency(parameter.getType()));
+            else
                 throw new InternalException("Cannot resolve parameter: unsupported type '" + parameter.getType() + "' in method '" + method.getName() + "'.");
-            }
         }
         return arguments;
     }
+
+    public boolean isDependency(Type type) {
+        return isBeanType(type) || type instanceof ArrayType arrayType && isBeanType(arrayType.getElementType());
+    }
+
+    public Value getDependency(Type type) {
+        if (type.getUnderlyingType() instanceof KlassType paramType) {
+            if (paramType.isList()) {
+                if (paramType.getFirstTypeArgument() instanceof KlassType beanType) {
+                    var matchingBeans = getBeansOfType(beanType);
+                    var beanReferences = Utils.map(matchingBeans, Instance::getReference);
+                    return Instances.createList(paramType, beanReferences).getReference();
+                } else {
+                    throw new InternalException("Cannot autowire List: unsupported element type '" + paramType.getFirstTypeArgument() + "'.");
+                }
+            } else {
+                var beans = getBeansOfType(paramType);
+                if (beans.isEmpty()) {
+                    if (type.isNullable())
+                        return Instances.nullInstance();
+                    throw new InternalException("No qualifying bean of type '" + paramType + "' found.");
+                }
+                if (beans.size() > 1)
+                    throw new InternalException("Expected 1 bean of type '" + paramType + "', but found " + beans.size() + ".");
+                return beans.getFirst().getReference();
+            }
+        } else if (type.getUnderlyingType() instanceof ArrayType arrayType) {
+            if (arrayType.getElementType() instanceof KlassType beanType) {
+                var matchingBeans = getBeansOfType(beanType);
+                var beanReferences = Utils.map(matchingBeans, Instance::getReference);
+                return Instances.createArray(arrayType, beanReferences).getReference();
+            } else {
+                throw new InternalException("Cannot autowire List: unsupported element type '" + arrayType.getElementType() + "'.");
+            }
+        } else {
+            throw new InternalException("Not a dependency type: " + type);
+        }
+    }
+
+    public boolean isBeanType(Type type) {
+        return type.getUnderlyingType() instanceof ClassType ct && !getBeansOfType(ct).isEmpty();
+    }
+
     public List<ClassInstance> getInterceptors() {
         return Utils.map(interceptorDefinitions, BeanDefinition::resolveBean);
+    }
+
+    @Nullable
+    public ClassInstance getTokenValidator() {
+        return Utils.safeCall(tokenValidatorDef, BeanDefinition::resolveBean);
     }
 
     public List<BeanDefinition> getFlowDependencies(Flow flow) {
@@ -223,7 +251,23 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
         for (var beanDefinition : beanDefinitions) {
             if(StdKlass.interceptor.type().isAssignableFrom(beanDefinition.getBeanType()))
                 interceptorDefinitions.add(beanDefinition);
+            if (isTokenValidator(beanDefinition.getBeanType()))
+                tokenValidatorDef = beanDefinition;
         }
+    }
+
+    private static final String TOKEN_VALIDATOR = "security.TokenValidator";
+
+    private boolean isTokenValidator(ClassType type) {
+        if (Objects.equals(type.getKlass().getQualifiedName(), TOKEN_VALIDATOR))
+            return true;
+        if (type.getSuperType() != null && isTokenValidator(type.getSuperType()))
+            return true;
+        for (ClassType it : type.getInterfaces()) {
+            if (isTokenValidator(it))
+                return true;
+        }
+        return false;
     }
 
     @Override

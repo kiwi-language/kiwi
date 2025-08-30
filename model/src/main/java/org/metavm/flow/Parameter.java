@@ -17,10 +17,7 @@ import org.metavm.object.type.ITypeDef;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeMetadata;
-import org.metavm.util.DebugEnv;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
+import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -195,4 +192,9 @@ public class Parameter extends AttributedElement implements LocalKey, ITypeDef {
     protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
         super.buildSource(source);
     }
+
+    public BuiltinParam getBuiltinParam() {
+        return Utils.safeCall(getAttribute(AttributeNames.BUILTIN_PARAM), BuiltinParam::valueOf);
+    }
+
 }

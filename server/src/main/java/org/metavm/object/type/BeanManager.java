@@ -18,11 +18,13 @@ import java.util.*;
 public class BeanManager {
 
     public void createBeans(Collection<Klass> klasses, BeanDefinitionRegistry registry, IInstanceContext context) {
+        var existingBeanDefs = new ArrayList<>(registry.getBeanDefinitions());
         var defs = new ArrayList<BeanDefinition>();
         for (Klass k : klasses)
             createBeanDefinitions(k, defs, registry, context);
         defs.forEach(registry::registerBeanDefinition);
         initializeBeanDefinitions(defs, registry, context);
+        existingBeanDefs.forEach(def -> def.updateBean(registry));
     }
 
     public void removeBeans(Collection<Klass> klasses, BeanDefinitionRegistry registry, IInstanceContext context) {

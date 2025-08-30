@@ -9,13 +9,10 @@ import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
@@ -34,11 +31,12 @@ public class HttpRequestImpl implements HttpRequest, ValueObject, NativeEphemera
     public final String requestURI;
     private final Map<String, String> headers = new HashMap<>();
     private final Map<String, String> cookies = new HashMap<>();
+    private Object currentUser = Instances.nullInstance();
 
     public HttpRequestImpl(String method, String requestURI, List<HttpHeader> headers, List<HttpCookie> cookies) {
         this.method = method;
         this.requestURI = requestURI;
-        headers.forEach(h -> this.headers.put(h.name(), h.value()));
+        headers.forEach(h -> this.headers.put(h.name().toLowerCase(), h.value()));
         cookies.forEach(c -> this.cookies.put(c.name(), c.value()));
     }
 
@@ -65,7 +63,19 @@ public class HttpRequestImpl implements HttpRequest, ValueObject, NativeEphemera
     @Override
     @EntityFlow
     public String getHeader(String name) {
-        return headers.get(name);
+        return headers.get(name.toLowerCase());
+    }
+
+    @Override
+    @EntityFlow
+    public void setCurrentUser(Object currentUser) {
+        this.currentUser = currentUser;
+    }
+
+    @Override
+    @EntityFlow
+    public Object getCurrentUser() {
+        return currentUser;
     }
 
     @Override
@@ -93,6 +103,14 @@ public class HttpRequestImpl implements HttpRequest, ValueObject, NativeEphemera
         return h != null ? Instances.stringInstance(h) : Instances.nullInstance();
     }
 
+    public Value getCurrentUser(CallContext callContext) {
+        return (Value) getCurrentUser();
+    }
+
+    public Value setCurrentUser(Value currentUser, CallContext callContext) {
+        setCurrentUser(currentUser);
+        return Instances.nullInstance();
+    }
 
     @Override
     public void forEachReference(Consumer<Reference> action) {

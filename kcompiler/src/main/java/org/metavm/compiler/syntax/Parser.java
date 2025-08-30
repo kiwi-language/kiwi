@@ -82,6 +82,7 @@ public class Parser {
                 case PUB -> mod = new Modifier(ModifierTag.PUB);
                 case PRIV -> mod = new Modifier(ModifierTag.PRIV);
                 case PROT -> mod = new Modifier(ModifierTag.PROT);
+                case INTERNAL -> mod = new Modifier(ModifierTag.INTERNAL);
                 case STATIC -> mod = new Modifier(ModifierTag.STATIC);
                 case ABSTRACT -> mod = new Modifier(ModifierTag.ABSTRACT);
                 case DELETED -> mod = new Modifier(ModifierTag.DELETED);
@@ -862,14 +863,16 @@ public class Parser {
             return List.of();
         nextToken();
         var ext = List.<Extend>builder();
+        var pos = pos();
         var superType = classType();
         if (is(TokenKind.LPAREN))
-            ext.append(new Extend(new Call(superType.getExpr(), arguments())));
+            ext.append(new Extend(new Call(superType.getExpr(), arguments())).setPos(pos));
         else
-            ext.append(new Extend(superType.getExpr()));
+            ext.append(new Extend(superType.getExpr()).setPos(pos));
         while (is(COMMA)) {
             nextToken();
-            ext.append(new Extend(classType().getExpr()));
+            pos = pos();
+            ext.append(new Extend(classType().getExpr()).setPos(pos));
         }
         return ext.build();
     }

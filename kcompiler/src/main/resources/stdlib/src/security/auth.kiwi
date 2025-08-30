@@ -1,0 +1,11 @@
+package security
+
+import org.metavm.api.Interceptor
+import org.metavm.api.entity.HttpRequest
+import org.metavm.api.entity.HttpResponse
+
+interface TokenValidator {
+
+    abstract fn validate(token: string) -> any?
+
+}

@@ -316,4 +316,8 @@ public class KiwiTest2 extends KiwiTestBase {
         );
     }
 
+    public void testInternalAccess() {
+        deploy("kiwi/access/internal.kiwi");
+    }
+
 }

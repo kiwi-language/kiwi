@@ -195,18 +195,18 @@ public class Check extends StructuralNodeVisitor {
         return null;
     }
 
-    private static final Set<ModifierTag> CLASS_PARAM_ALLOWED_MODS = EnumSet.of(PUB, PROT, PRIV);
-    private static final Set<ModifierTag> FIELD_ALLOWED_MODS = EnumSet.of(PUB, PROT, PRIV, STATIC, DELETED);
+    private static final Set<ModifierTag> CLASS_PARAM_ALLOWED_MODS = EnumSet.of(PUB, PROT, PRIV, INTERNAL);
+    private static final Set<ModifierTag> FIELD_ALLOWED_MODS = EnumSet.of(PUB, PROT, PRIV, INTERNAL, STATIC, DELETED);
     private static final Set<ModifierTag> CLASS_ALLOWED_MODS = EnumSet.of(
-            PUB, ABSTRACT, VALUE, TEMP
+            PUB, INTERNAL, ABSTRACT, VALUE, TEMP
     );
 
     private static final Set<ModifierTag> INNER_CLASS_ALLOWED_MODS = EnumSet.of(
-            PUB, PROT, PRIV, ABSTRACT, VALUE, TEMP, STATIC
+            PUB, PROT, PRIV, INTERNAL, ABSTRACT, VALUE, TEMP, STATIC
     );
 
     private static final Set<ModifierTag> METHOD_ALLOWED_MODS = EnumSet.of(
-            PUB, PROT, PRIV, ABSTRACT, STATIC
+            PUB, PROT, PRIV, INTERNAL, ABSTRACT, STATIC
     );
 
     private void checkMods(ModifiedDecl<?> node, Set<ModifierTag> allowedMods) {

@@ -95,6 +95,7 @@ public enum TokenKind implements Formattable, Predicate<TokenKind> {
     PUB(true),
     PROT(true),
     PRIV(true),
+    INTERNAL(true),
     NATIVE(true),
     STATIC(true),
     DELETED(true),

@@ -118,7 +118,7 @@ public enum ErrorCode {
     ILLEGAL_SEARCH_CONDITION(505, "Invalid search condition"),
 
     // user
-    AUTH_FAILED(601, "Authorization failed"),
+    AUTH_FAILED(601, "Authentication failed"),
     LOGIN_NAME_NOT_FOUND(602, "Account '{}' not found"),
     INVALID_TOKEN(603, "Login expired, please log in again"),
     USER_NOT_FOUND(604, "User (ID: {}) not found"),

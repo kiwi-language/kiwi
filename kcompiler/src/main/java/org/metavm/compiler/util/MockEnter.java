@@ -480,6 +480,12 @@ public class MockEnter {
         var getHeader = new Method("getHeader", Access.PUBLIC, false, false, false, cls);
         new Param("name", Types.instance.getNullableString(), getHeader);
         getHeader.setRetType(Types.instance.getNullableString());
+
+        var setCurrentUser = new Method("setCurrentUser", Access.PUBLIC, false, false, false, cls);
+        new Param("currentUser", Types.instance.getNullableAny(), setCurrentUser);
+
+        var getCurrentUser = new Method("getCurrentUser", Access.PUBLIC, false, false, false, cls);
+        getCurrentUser.setRetType(Types.instance.getNullableAny());
     }
 
     private static void createHttpResponse(Project project) {

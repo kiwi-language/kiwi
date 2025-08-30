@@ -5,6 +5,7 @@ public enum Access {
     PACKAGE(2),
     PRIVATE(3),
     PROTECTED(4),
+    INTERNAL(5),
 
     ;
 

@@ -1,0 +1,70 @@
+package auth
+
+class User(
+    @Summary
+    var name: string,
+    password: string
+) {
+
+    static val nameIdx = Index<string, User>(true, u -> u.name)
+
+    priv var passwordHash = secureHash(password, null)
+
+    fn checkPassword(password: string) -> bool {
+        return passwordHash == secureHash(password, null)
+    }
+
+}
+
+class Session(
+    val user: User,
+    var expiry: long
+) {
+
+    val token = uuid()
+
+    static val tokenIdx = Index<string, Session>(true, s -> s.token)
+
+    fn isValid() -> bool {
+        return expiry > now()
+    }
+
+}
+
+value class LoginResult(
+    val successful: bool,
+    val token: string?
+)
+
+@Bean
+class UserService {
+
+    static val SESSION_TIMEOUT = 7 * 24 * 60 * 60 * 1000
+
+    fn login(name: string, password: string) -> LoginResult {
+        val user = User.nameIdx.getFirst(name)
+        if (user != null && user!!.checkPassword(password)) {
+            val session = Session(user!!, now() + SESSION_TIMEOUT)
+            return LoginResult(true, session.token)
+        } else
+            return LoginResult(false, null)
+    }
+
+    fn getUserName(@CurrentUser user: User) -> string {
+        return user.name
+    }
+
+}
+
+@Bean
+class TokenValidator: security.TokenValidator {
+
+    fn validate(token: string) -> any?  {
+        val session = Session.tokenIdx.getFirst(token)
+        if (session != null && session!!.isValid())
+            return session!!.user
+        else
+            return null
+    }
+
+}

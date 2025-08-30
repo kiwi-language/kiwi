@@ -32,6 +32,14 @@ public class Templates {
     public static final String CALL_API = """
         const API_BASE_URL = '';
 
+        let auth: string | undefined
+        
+        let token: string | undefined;
+        
+        export function setToken(newToken: string | undefined) {
+            token = newToken;
+        }
+
         async function callApi<T>(endpoint: string, method: string, body?: any): Promise<T> {
             const startTime = new Date();
             // Declare response and error variables outside the try block to access them in 'finally'
@@ -41,6 +49,10 @@ public class Templates {
             try {
                 const headers: HeadersInit = {'X-App-ID': APP_ID + '', 'X-Return-Full-Object': RETURN_FULL_OBJECT + '' };
 
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                
                 if (body !== undefined) {
                     headers['Content-Type'] = 'application/json';
                 }

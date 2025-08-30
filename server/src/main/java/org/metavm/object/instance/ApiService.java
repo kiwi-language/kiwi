@@ -56,9 +56,9 @@ public class ApiService extends ApplicationStatusAware {
         ensureApplicationActive();
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
-            var r = resolveMethod(klass, null, rawArguments, false, true, context);
             var self = ClassInstanceBuilder.newBuilder(klass, context.allocateRootId(klass)).build();
-            execute(r.method, self, r.arguments, request, response, context);
+            execute(() -> resolveMethod(klass, null, rawArguments, false, true, request, context),
+                    self, request, response, context);
             var result = self.getReference();
             context.bind(self);
             context.finish();
@@ -83,8 +83,8 @@ public class ApiService extends ApplicationStatusAware {
             } else if (receiver instanceof String s){
                 var klassName = s.contains(".") ? s : NamingUtils.firstCharToUpperCase(s);
                 var klass = getKlass(klassName, context);
-                var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
-                result = execute(r.method, null, r.arguments, request, response, context);
+                result = execute(() -> resolveMethod(klass, methodCode, rawArguments, true, false, request, context),
+                        null, request, response, context);
             } else
                 throw invalidRequestBody("Invalid receiver");
             context.finish();
@@ -106,9 +106,8 @@ public class ApiService extends ApplicationStatusAware {
                                         HttpRequest request,
                                         HttpResponse response,
                                         IInstanceContext context) {
-        var r = resolveMethod(self.getInstanceType(), methodCode, rawArguments, false, false, context);
-        var method = r.method;
-        return execute(method, self, r.arguments, request, response, context);
+        return execute(() -> resolveMethod(self.getInstanceType(), methodCode, rawArguments, false, false, request, context),
+                self, request, response, context);
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
@@ -116,24 +115,29 @@ public class ApiService extends ApplicationStatusAware {
         ensureApplicationActive();
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
-            var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
-            var inst = execute(r.method, null, r.arguments, request, response, context);
+            var inst = execute(
+                    () -> resolveMethod(klass, methodCode, rawArguments, true, false, request, context),
+                    null, request, response, context);
             context.finish();
             return formatValue(inst, false, false);
         }
     }
 
-    private Value execute(MethodRef method,
+    private Value execute(Supplier<ResolutionResult> resolve,
                           @Nullable ClassInstance self,
-                          List<Value> arguments,
                           HttpRequest request,
                           HttpResponse response,
                           IInstanceContext context) {
         return doIntercepted(
-                () -> handleExecutionResult(Flows.execute(method, self, Utils.map(arguments, Value::toStackValue), context)),
+                () -> {
+                    var r = resolve.get();
+                    return new ValueAndType(
+                            handleExecutionResult(Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context)),
+                            r.method.getReturnType()
+                    );
+                },
                 request,
                 response,
-                method.getReturnType(),
                 context
         );
     }
@@ -148,22 +152,49 @@ public class ApiService extends ApplicationStatusAware {
     }
 
 
-    private Value doIntercepted(Supplier<Value> action, HttpRequest request, HttpResponse response, Type returnType, IInstanceContext context) {
+    private Value doIntercepted(Supplier<ValueAndType> action, HttpRequest request, HttpResponse response, IInstanceContext context) {
         var registry = BeanDefinitionRegistry.getInstance(context);
         var beforeMethod = StdMethod.interceptorBefore.get();
         var afterMethod = StdMethod.interceptorAfter.get();
         var interceptors = registry.getInterceptors();
+        validateToken(registry, context, request);
         var reqInst = (Instance) request;
         var respInst = (Instance) response;
         for (ClassInstance interceptor : interceptors) {
             Flows.invokeVirtual(beforeMethod.getRef(), interceptor, List.of(reqInst.getReference(), respInst.getReference()), context);
         }
-        var result = action.get();
+        var valueAndType = action.get();
+        var result = valueAndType.value;
         for (ClassInstance interceptor : interceptors) {
             result = Objects.requireNonNull(Flows.invokeVirtual(afterMethod.getRef(), interceptor, List.of(reqInst.getReference(), respInst.getReference(), result), context));
         }
-        return returnType.fromStackValue(result);
+        return valueAndType.type.fromStackValue(result);
     }
+
+    private void validateToken(BeanDefinitionRegistry registry, IInstanceContext context, HttpRequest request) {
+        var tokenValidator = registry.getTokenValidator();
+        var tokenValidatorType = context.findKlassByQualifiedName("security.TokenValidator");
+        if (tokenValidatorType == null)
+            return;
+        var validateMethod = tokenValidatorType.getMethodByName("validate").getRef();
+        if (tokenValidator != null) {
+            var auth = request.getHeader("Authorization");
+            if (auth != null && auth.startsWith("Bearer ")) {
+                var token = auth.substring(7);
+                var currentUser = Flows.invokeVirtual(
+                        validateMethod, tokenValidator, List.of(
+                                Instances.stringInstance(token)
+                        ),
+                        context
+                );
+                if (currentUser != null && !currentUser.isNull())
+                    request.setCurrentUser(currentUser);
+            }
+        }
+
+    }
+
+    private record ValueAndType(Value value, Type type) {}
 
     private void ensureSuccessful(FlowExecResult result) {
         if (result.exception() != null)
@@ -223,10 +254,10 @@ public class ApiService extends ApplicationStatusAware {
                     var i = (Reference) r.resolved();
                     if (!context.containsInstance(i.get()))
                         context.bind(i.get());
-                    return i;
+                    return new ValueAndType(i, i.getValueType());
                 } else
                     return null;
-            }, request, response, AnyType.instance, context);
+            }, request, response, context);
             if (inst != null) {
                 context.finish();
                 return ((EntityReference) inst).getStringId();
@@ -397,7 +428,7 @@ public class ApiService extends ApplicationStatusAware {
         return list;
     }
 
-    private ResolutionResult resolveMethod(@NotNull ClassType klass, String methodCode, Object rawArguments, boolean _static, boolean constructor, IInstanceContext context) {
+    private ResolutionResult resolveMethod(@NotNull ClassType klass, String methodCode, Object rawArguments, boolean _static, boolean constructor, HttpRequest request, IInstanceContext context) {
         var methodRef = methodCode != null ?
                 TypeParser.parseSimpleMethodRef(methodCode, name -> getKlass(name, context).getKlass()) : null;
         var queue = new LinkedList<ClassType>();
@@ -408,7 +439,7 @@ public class ApiService extends ApplicationStatusAware {
                 if (method.isPublic() && !method.isAbstract() && (methodRef == null || methodRef.name().equals(method.getName()))
                         && _static == method.isStatic() && constructor == method.isConstructor()) {
                     method = methodRef != null ? method.getParameterized(methodRef.typeArguments()) : method;
-                    var resolvedArgs = tryResolveArguments(method, rawArguments, context);
+                    var resolvedArgs = tryResolveArguments(method, rawArguments, request, context);
                     if (resolvedArgs != null)
                         return new ResolutionResult(method, resolvedArgs);
                 }
@@ -428,35 +459,64 @@ public class ApiService extends ApplicationStatusAware {
         return rawArgument instanceof List<?> list ? list.size() : ((Map<?,?>) rawArgument).size();
     }
 
-    private List<Value> tryResolveArguments(MethodRef method, Object rawArguments, IInstanceContext context) {
+    private List<Value> tryResolveArguments(MethodRef method, Object rawArguments, HttpRequest request, IInstanceContext context) {
         var resolvedArgs = new ArrayList<Value>();
+        boolean authFailed = false;
         if (rawArguments instanceof List<?> rawArgList) {
-            if (rawArgList.size() != method.getParameterCount())
+            if (rawArgList.size() > method.getParameterCount())
                 return null;
-            for (int i = 0; i < method.getParameterCount(); i++) {
-                var r = tryResolveValue(rawArgList.get(i), method.getParameterType(i), false, null, context);
-                if (!r.successful())
-                    return null;
-                resolvedArgs.add(r.resolved());
-            }
-        }
-        else if (rawArguments instanceof Map<?,?> rawArgMap) {
-            for (ParameterRef parameter : method.getParameters()) {
-                var rawArg = rawArgMap.get(parameter.getName());
-                if (rawArg == null) {
-                    if (parameter.getType().isNullable()) {
-                        resolvedArgs.add(Instances.nullInstance());
-                        continue;
+            for (int i = 0, j = 0; i < method.getParameterCount(); i++) {
+                var param  = method.getParameters().get(i);
+                var builtinParam = param.getRawParameter().getBuiltinParam();
+                if (builtinParam != null) {
+                    switch (builtinParam) {
+                        case CurrentUser -> {
+                            var user = (Value) request.getCurrentUser();
+                            if (user.isNotNull())
+                                resolvedArgs.add(user);
+                            else
+                                authFailed = true;
+                        }
                     }
-                    else
+                } else {
+                    var r = tryResolveValue(rawArgList.get(j++), param.getType(), false, null, context);
+                    if (!r.successful())
                         return null;
+                    if (!authFailed)
+                        resolvedArgs.add(r.resolved());
                 }
-                var r = tryResolveValue(rawArg, parameter.getType(), false, null, context);
-                if (!r.successful())
-                    return null;
-                resolvedArgs.add(r.resolved());
+            }
+        } else if (rawArguments instanceof Map<?,?> rawArgMap) {
+            for (ParameterRef parameter : method.getParameters()) {
+                var builtinParam = parameter.getRawParameter().getBuiltinParam();
+                if (builtinParam != null) {
+                    switch (builtinParam) {
+                        case CurrentUser -> {
+                            var user = (Value) request.getCurrentUser();
+                            if (user.isNotNull())
+                                resolvedArgs.add(user);
+                            else
+                                authFailed = true;
+                        }
+                    }
+                } else {
+                    var rawArg = rawArgMap.get(parameter.getName());
+                    if (rawArg == null) {
+                        if (parameter.getType().isNullable()) {
+                            resolvedArgs.add(Instances.nullInstance());
+                            continue;
+                        } else
+                            return null;
+                    }
+                    var r = tryResolveValue(rawArg, parameter.getType(), false, null, context);
+                    if (!r.successful())
+                        return null;
+                    resolvedArgs.add(r.resolved());
+                }
             }
         }
+        if (authFailed)
+            throw new BusinessException(ErrorCode.AUTH_FAILED);
         return resolvedArgs;
     }
 

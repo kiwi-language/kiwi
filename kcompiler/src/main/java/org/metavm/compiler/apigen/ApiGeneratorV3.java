@@ -3,6 +3,7 @@ package org.metavm.compiler.apigen;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.List;
+import org.metavm.entity.AttributeNames;
 import org.metavm.util.InflectUtil;
 import org.metavm.util.NamingUtils;
 import org.metavm.util.Utils;
@@ -71,7 +72,7 @@ public class ApiGeneratorV3 implements ApiGenerator {
     }
 
     public void generateOrdinaryClass(Clazz cls) {
-        if (!cls.isBean() && generatedTypes.add(getApiClass(cls))) {
+        if (!cls.isBean() && !cls.isInterface() && generatedTypes.add(getApiClass(cls))) {
             var initParamsNames = Utils.mapToSet(requireNonNull(cls.getPrimaryInit()).getParams(), LocalVar::getName);
             apiWriter.writeln("export interface " + getApiClass(cls) + " {");
             apiWriter.indent();
@@ -108,7 +109,7 @@ public class ApiGeneratorV3 implements ApiGenerator {
         }
         if (cls.isValue())
             return;
-        if (cls.isTopLevel() && !cls.isBean()) {
+        if (cls.isTopLevel() && !cls.isBean() && !cls.isInterface()) {
             generateSearchRequest(cls);
             generateListView(cls);
         }
@@ -338,6 +339,8 @@ public class ApiGeneratorV3 implements ApiGenerator {
         var paramNameBuf = new StringBuilder("{");
         var first = true;
         for (Param param : method.getParams()) {
+            if (param.getAttributes().anyMatch(a -> a.name().equals(AttributeNames.BUILTIN_PARAM)))
+                continue;
             if (first)
                 first = false;
             else {

@@ -556,6 +556,17 @@ public class DiagTest extends TestCase {
                            ^""", log.getDiags().getFirst().toString());
     }
 
+    public void testCyclicInheritance() {
+        compile("""
+                class Lab: Lab {}
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals("""
+                dummy.kiwi:1: Cyclic inheritance
+                    class Lab: Lab {}
+                               ^""", log.getDiags().getFirst().toString());
+    }
+
     private List<Diag> compileWithAiLint(String text) {
         var file = parse(text);
         compile(file);

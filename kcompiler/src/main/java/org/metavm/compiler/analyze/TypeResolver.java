@@ -1,9 +1,9 @@
 package org.metavm.compiler.analyze;
 
-import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.diag.Errors;
 import org.metavm.compiler.diag.Log;
-import org.metavm.compiler.element.*;
 import org.metavm.compiler.element.Package;
+import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.PrimitiveType;
@@ -11,7 +11,6 @@ import org.metavm.compiler.type.Types;
 import org.metavm.compiler.util.List;
 import org.metavm.util.Utils;
 
-@Slf4j
 public class TypeResolver extends StructuralNodeVisitor {
 
     private final Env env;
@@ -170,6 +169,10 @@ public class TypeResolver extends StructuralNodeVisitor {
                     var superTypes = List.<ClassType>builder();
                     for (Extend ext : classDecl.getImplements()) {
                         if (ext.getType() instanceof ClassType st) {
+                            if (st.getClazz().isSubclassOf(clazz)) {
+                                env.getLog().error(ext, Errors.cyclicInheritance);
+                                continue;
+                            }
                             st.getClazz().getClasses().forEach(scope::add);
                             superTypes.append(st);
                         }
