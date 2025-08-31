@@ -1,0 +1,16 @@
+package adapter
+
+class Product(var name: string) {
+
+    static val nameIdx = Index<string, Product>(false, p -> p.name)
+
+}
+
+@Bean
+class Lab {
+
+    fn findProduct(name: string) -> any? {
+        return Product.nameIdx.getFirst(name)
+    }
+
+}
