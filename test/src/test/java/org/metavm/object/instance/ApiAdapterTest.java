@@ -576,6 +576,26 @@ public class ApiAdapterTest extends TestCase {
         assertEquals(2, r2.total());
     }
 
+    public void testAnyResult() {
+        deploy("kiwi/adapter/any_result.kiwi");
+        var id = saveInstance(
+                "adapter.Product",
+                Map.of(
+                        "name", "Shoes"
+                )
+        );
+        var shoes = (Map<?,?>) TestUtils.doInTransaction(() -> apiAdapter.handlePost(
+                "/api/adapter/lab/find-product",
+                Map.of(
+                        "name", "Shoes"
+                ),
+                true,
+                mockHttpRequest(),
+                mockHttpResponse()
+        ));
+        assertEquals(id, shoes.get("id"));
+    }
+
     private Object callMethod(Object receiver, String methodName, List<Object> args) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(receiver, methodName, args));
     }

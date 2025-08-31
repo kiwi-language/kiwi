@@ -9,6 +9,7 @@ import org.metavm.entity.AttributeNames;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.flow.MethodRef;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
@@ -39,7 +40,9 @@ public class ApiAdapter extends EntityContextFactoryAware {
 
     public Map<String, Object> handleGet(String uri) {
         var path = parsePath(uri);
-        return (Map<String, Object>) transformResultObject(apiService.getInstance(path.suffix()), path.classType);
+        try (var context = newContext()) {
+            return (Map<String, Object>) transformResultObject(apiService.getInstance(path.suffix()), context);
+        }
     }
 
     @SneakyThrows
@@ -62,14 +65,18 @@ public class ApiAdapter extends EntityContextFactoryAware {
                         Boolean.TRUE.equals(requestBody.get(KEY_INCLUDE_CHILDREN)),
                         searchReq.newlyCreated
                 );
-                return new SearchResult(
-                        Utils.map(r.items(), i -> transformResultValue(i, path.classType)),
-                        r.total()
-                );
+                try (var context = newContext()) {
+                    return new SearchResult(
+                            Utils.map(r.items(), i -> transformResultValue(i, context)),
+                            r.total()
+                    );
+                }
             } else if (path.suffix.equals("_multi-get")) {
                 if (requestBody.get("ids") instanceof List<?> ids) {
                     List<Map<String, Object>> objects = apiService.multiGet((List) ids, false, false);
-                    return Utils.map(objects, m -> transformResultObject(m, path.classType));
+                    try (var context = newContext()) {
+                        return Utils.map(objects, m -> transformResultObject(m, context));
+                    }
                 } else
                     throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
             } else {
@@ -85,7 +92,9 @@ public class ApiAdapter extends EntityContextFactoryAware {
                             httpRequest,
                             httpResponse
                     );
-                    return transformResultValue(r, method.getReturnType());
+                    try (var context = newContext()) {
+                        return transformResultValue(r, context);
+                    }
                 });
             }
         }
@@ -131,10 +140,10 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return new InvokeRequest(receiver, args);
     }
 
-    private Object transformResultValue(Object value, Type type) {
+    private Object transformResultValue(Object value, IInstanceContext context) {
         return switch (value) {
-            case Map map -> transformResultObject(map, (ClassType) type.getUnderlyingType());
-            case List list -> Utils.map(list, e -> transformResultValue(e, ((ArrayType) type.getUnderlyingType()).getElementType()));
+            case Map map -> transformResultObject(map, context);
+            case List list -> Utils.map(list, e -> transformResultValue(e, context));
             case null, default -> value;
         };
     }
@@ -224,10 +233,11 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return result;
     }
 
-    private Object transformResultObject(Map<String, Object> result, ClassType type) {
+    private Object transformResultObject(Map<String, Object> result, IInstanceContext context) {
         if (result.get("name") instanceof String name)
             return name;
         var id = (String) result.get("id");
+        var type = getKlass((String) result.get("type"), context);
         var fields = (Map<String, Object>) result.get("fields");
         if (fields == null)
             return Objects.requireNonNull(id);
@@ -238,7 +248,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
                 var value = fields.get(f.getName());
                 var fName = transformFieldName(f.getName(), f.getPropertyType());
                 if (value != null) {
-                    transformed.put(fName, transformResultValue(value, f.getPropertyType()));
+                    transformed.put(fName, transformResultValue(value, context));
                     if (isEntityType(f.getPropertyType())) {
                         var cls = ((ClassType) f.getPropertyType().getUnderlyingType()).getKlass();
                         if (cls.getTitleField() != null) {
@@ -258,7 +268,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
                     if (childObjects != null) {
                         transformed.put(
                                 childFieldName,
-                                Utils.map(childObjects, c -> transformResultObject(c, childType))
+                                Utils.map(childObjects, c -> transformResultObject(c, context))
                         );
                     } else
                         transformed.put(childFieldName, List.of());
@@ -266,6 +276,15 @@ public class ApiAdapter extends EntityContextFactoryAware {
             }
         }
         return transformed;
+    }
+
+    private ClassType getKlass(String classCode, IInstanceContext context) {
+        ParserTypeDefProvider typeDefProvider = name -> context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
+                Instances.stringInstance(name));
+        var type = (ClassType) new TypeParserImpl(typeDefProvider).parseType(classCode);
+        if (type == null)
+            throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, classCode);
+        return type;
     }
 
     private record SearchRequest(
