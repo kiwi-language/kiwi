@@ -15,6 +15,7 @@ import org.metavm.util.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -70,7 +71,9 @@ public abstract class KiwiProjectTestBase extends TestCase {
     protected void compile(String path) {
         var srcDir = Path.of(path, "src");
         var targetDir = Path.of(path, "target");
-        var task = CompilationTaskBuilder.newBuilder(Utils.listFilePathsRecursively(srcDir, ".kiwi"), targetDir).build();
+        var sourcePaths = new ArrayList<>(Utils.listFilePathsRecursively(srcDir, ".kiwi"));
+//        sourcePaths.addAll(Utils.listFilePathsRecursively(Path.of(TestUtils.getResourcePath("/stdlib")).resolve("src"), "kiwi"));
+        var task = CompilationTaskBuilder.newBuilder(sourcePaths, targetDir).build();
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();
