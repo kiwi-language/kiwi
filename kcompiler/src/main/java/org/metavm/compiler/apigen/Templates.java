@@ -45,10 +45,12 @@ public class Templates {
             // Declare response and error variables outside the try block to access them in 'finally'
             let response: Response | undefined;
             let errorOccurred: any;
-
+            // NEW: Variable to hold the response body for logging
+            let responseBodyForLogging: any;
+                
             try {
                 const headers: HeadersInit = {'X-App-ID': APP_ID + '', 'X-Return-Full-Object': RETURN_FULL_OBJECT + '' };
-
+                
                 if (token) {
                     headers['Authorization'] = `Bearer ${token}`;
                 }
@@ -56,29 +58,38 @@ public class Templates {
                 if (body !== undefined) {
                     headers['Content-Type'] = 'application/json';
                 }
-
+                
                 response = await fetch(`${API_BASE_URL}${endpoint}`, {
                     method,
                     headers,
                     body: body !== undefined ? JSON.stringify(body) : undefined
                 });
-
+                
                 if (!response.ok) {
                     const errorBody: ErrorResponse = await response.json();
+                    // NEW: Capture the error body for logging
+                    responseBodyForLogging = errorBody;
                     throw new ApiError(response, errorBody);
                 }
-
+                
                 if (response.status === 204) {
                     return undefined as T;
                 }
-
+                
                 const contentType = response.headers.get('content-type');
-
+                
                 if (contentType && contentType.includes('application/json')) {
-                    return await response.json() as T;
+                    // NEW: Capture the JSON body before returning
+                    const data = await response.json();
+                    responseBodyForLogging = data;
+                    return data as T;
                 }
-
-                return await response.text() as T;
+                
+                // NEW: Capture the text body before returning
+                const textData = await response.text();
+                responseBodyForLogging = textData;
+                return textData as T;
+                
             } catch (error) {
                 errorOccurred = error;
                 // Re-throw the error so the calling function can handle it
@@ -88,13 +99,21 @@ public class Templates {
                 const duration = endTime.getTime() - startTime.getTime();
                 const status = response ? response.status : 'FETCH_FAILED';
                 const outcome = errorOccurred ? `Error: ${errorOccurred.message}` : `Status: ${status}`;
-
+                
                 console.log(
                     `API Call: ${method} ${endpoint} | ` +
                     `Outcome: ${outcome} | ` +
                     `Duration: ${duration}ms | ` +
                     `Timestamps: ${startTime.toISOString()} -> ${endTime.toISOString()}`
                 );
+                
+                // NEW: Log the request and response bodies
+                if (body !== undefined) {
+                    console.log('Request Body:', body);
+                }
+                if (responseBodyForLogging !== undefined) {
+                    console.log('Response Body:', responseBodyForLogging);
+                }
             }
         }
         """;

@@ -116,14 +116,14 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
                 }
             }
             Instances.clearMarks(existingKlasses).forEach(k -> handleRemovedKlass(k, batch));
-            var beanDefReg = BeanDefinitionRegistry.getInstance(context);
-            beanManager.createBeans(klasses, beanDefReg, context);
             for (Klass newClass : batch.getNewKlasses()) {
                 if (!newClass.isInterface())
                     initClass(newClass, context);
             }
             batch.getNewStaticFields().forEach(idx -> idx.initialize(null, context));
             batch.applyDDLToEnumConstants();
+            var beanDefReg = BeanDefinitionRegistry.getInstance(context);
+            beanManager.createBeans(klasses, beanDefReg, context);
             return batch;
         } catch (IOException e) {
             throw new RuntimeException(e);
