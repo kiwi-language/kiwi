@@ -52,13 +52,13 @@ public class ApiGeneratorV3 implements ApiGenerator {
     public void generateTypes(List<Clazz> classes) {
         apiWriter.writeln(Templates.COMMON_DATA_STRUCTURES);
         for (Clazz cls : classes) {
-            if (cls.isPublic())
-                generateTypes(cls);
+            generateTypes(cls);
         }
     }
 
     public void generateTypes(Clazz cls) {
-        assert cls.isPublic();
+        if (!cls.isPublic() || cls.isInterface())
+            return;
         if (cls.isEnum())
             generateEnumClass(cls);
         else
@@ -72,7 +72,7 @@ public class ApiGeneratorV3 implements ApiGenerator {
     }
 
     public void generateOrdinaryClass(Clazz cls) {
-        if (!cls.isBean() && !cls.isInterface() && generatedTypes.add(getApiClass(cls))) {
+        if (!cls.isBean() && generatedTypes.add(getApiClass(cls))) {
             var initParamsNames = Utils.mapToSet(requireNonNull(cls.getPrimaryInit()).getParams(), LocalVar::getName);
             apiWriter.writeln("export interface " + getApiClass(cls) + " {");
             apiWriter.indent();
@@ -109,13 +109,12 @@ public class ApiGeneratorV3 implements ApiGenerator {
         }
         if (cls.isValue())
             return;
-        if (cls.isTopLevel() && !cls.isBean() && !cls.isInterface()) {
+        if (cls.isTopLevel() && !cls.isBean()) {
             generateSearchRequest(cls);
             generateListView(cls);
         }
         for (Clazz innerCls : cls.getClasses()) {
-            if (innerCls.isPublic())
-                generateTypes(innerCls);
+            generateTypes(innerCls);
         }
     }
 

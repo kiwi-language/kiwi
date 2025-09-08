@@ -57,13 +57,13 @@ public class ApiGeneratorV1 implements ApiGenerator {
     public void generateTypes(List<Clazz> classes) {
         apiWriter.writeln(Templates.COMMON_DATA_STRUCTURES);
         for (Clazz cls : classes) {
-            if (cls.isPublic())
-                generateTypes(cls);
+            generateTypes(cls);
         }
     }
 
     public void generateTypes(Clazz cls) {
-        assert cls.isPublic();
+        if (!cls.isPublic() || cls.isInterface())
+            return;
         if (cls.isEnum())
             generateEnumClass(cls);
         else
@@ -125,8 +125,7 @@ public class ApiGeneratorV1 implements ApiGenerator {
             }
         }
         for (Clazz innerCls : cls.getClasses()) {
-            if (innerCls.isPublic())
-                generateTypes(innerCls);
+            generateTypes(innerCls);
         }
     }
 
