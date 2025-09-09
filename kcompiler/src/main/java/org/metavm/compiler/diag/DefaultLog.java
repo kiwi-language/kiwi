@@ -100,6 +100,7 @@ public class DefaultLog implements Log {
         return source;
     }
 
+    @Override
     public void setSourceFile(SourceFile sourceFile) {
         source = new DiagSource(sourceFile, this);
     }

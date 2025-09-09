@@ -1,5 +1,6 @@
 package org.metavm.compiler.diag;
 
+import org.metavm.compiler.file.SourceFile;
 import org.metavm.compiler.util.List;
 
 public interface Log {
@@ -27,4 +28,5 @@ public interface Log {
 
     DiagSource getSource();
 
+    void setSourceFile(SourceFile sourceFile);
 }
