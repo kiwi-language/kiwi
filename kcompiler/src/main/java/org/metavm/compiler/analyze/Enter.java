@@ -31,7 +31,10 @@ public class Enter {
 
     public void enter(List<File> files) {
         var visitor = new EnterVisitor();
-        files.forEach(f -> f.accept(visitor));
+        files.forEach(f -> {
+            log.setSourceFile(f.getSourceFile());
+            f.accept(visitor);
+        });
     }
 
     public void enter(Node node, Element parent) {

@@ -1,6 +1,7 @@
 package org.metavm.compiler.diag;
 
 import org.metavm.compiler.file.DummySourceFile;
+import org.metavm.compiler.file.SourceFile;
 import org.metavm.compiler.util.List;
 
 public class DummyLog implements Log {
@@ -42,5 +43,10 @@ public class DummyLog implements Log {
     @Override
     public DiagSource getSource() {
         return new DiagSource(new DummySourceFile(""), this);
+    }
+
+    @Override
+    public void setSourceFile(SourceFile sourceFile) {
+
     }
 }
