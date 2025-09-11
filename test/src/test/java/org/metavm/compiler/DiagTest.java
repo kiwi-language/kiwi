@@ -567,6 +567,30 @@ public class DiagTest extends TestCase {
                                ^""", log.getDiags().getFirst().toString());
     }
 
+    public void testMissingTokenValidator() {
+        compile("""
+                class User(var name: string)
+                
+                
+                @Bean
+                class Lab {
+                
+                    fn getCurrentUser(@CurrentUser user: User) -> User {
+                        return user
+                    }
+                
+                }
+                """);
+        assertEquals(1, log.getDiags().size());
+        assertEquals(
+                """
+                        dummy.kiwi:7: A TokenValidator bean must be defined in order to use @CurrentUser annotation
+                                fn getCurrentUser(@CurrentUser user: User) -> User {
+                                                  ^""",
+                log.getDiags().getFirst().toString()
+        );
+    }
+
     private List<Diag> compileWithAiLint(String text) {
         var file = parse(text);
         compile(file);
@@ -597,7 +621,9 @@ public class DiagTest extends TestCase {
         file.accept(new TypeResolver(project, log));
         file.accept(new IdentAttr(project, log));
         file.accept(new Attr(project, log));
-        file.accept(new Check(project, log));
+        var check = new Check(project, log);
+        file.accept(check);
+        check.finalCheck();
     }
 
 }

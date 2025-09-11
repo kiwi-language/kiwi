@@ -80,6 +80,7 @@ public class NameTable {
     public final Name File = get("File");
     public final Name sort = get("sort");
     public final Name reverse = get("reverse");
+    public final Name QualTokenValidator = get("security.TokenValidator");
 
     private NameTable() {
     }

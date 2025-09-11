@@ -58,6 +58,7 @@ public abstract class VariableDecl<T extends Variable> extends ModifiedDecl<T> {
 
     @Override
     public void forEachChild(Consumer<Node> action) {
+        annotations.forEach(action);
         if (type != null)
             action.accept(type);
         if (initial != null)

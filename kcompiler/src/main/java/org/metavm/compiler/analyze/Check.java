@@ -4,11 +4,13 @@ import org.metavm.compiler.diag.Errors;
 import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.Field;
 import org.metavm.compiler.element.LocalVar;
+import org.metavm.compiler.element.NameTable;
 import org.metavm.compiler.element.Project;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.Type;
 import org.metavm.compiler.type.Types;
+import org.metavm.entity.AttributeNames;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -19,6 +21,9 @@ public class Check extends StructuralNodeVisitor {
 
     private final Log log;
     private final Env env;
+    private Annotation currentUserAnnotation;
+    private Annotation authTokenAnnotation;
+    private boolean tokenValidatorPresent;
 
     public Check(Project project, Log log) {
         this.log = log;
@@ -33,6 +38,11 @@ public class Check extends StructuralNodeVisitor {
             else
                 checkMods(classDecl, CLASS_ALLOWED_MODS);
             var klass = classDecl.getElement();
+            if (env.getProject().getTokenValidatorClass() != null &&
+                    env.getProject().getTokenValidatorClass().isAssignableFrom(klass) &&
+                    klass.getAttributes().anyMatch(a -> a.name().equals(AttributeNames.BEAN_NAME))) {
+                tokenValidatorPresent = true;
+            }
             for (Field field : klass.getFields()) {
                 if (field.getType() instanceof ClassType ct && ct.getClazz() == env.getProject().getIndexClass()) {
                     if (!field.isStatic())
@@ -127,6 +137,15 @@ public class Check extends StructuralNodeVisitor {
     }
 
     @Override
+    public Void visitAnnotation(Annotation annotation) {
+        if (annotation.getName() == NameTable.instance.CurrentUser)
+            currentUserAnnotation = annotation;
+        else if (annotation.getName() == NameTable.instance.AuthToken)
+            authTokenAnnotation = annotation;
+        return super.visitAnnotation(annotation);
+    }
+
+    @Override
     public Void visitCastExpr(CastExpr castExpr) {
         var sourceType = castExpr.expr().getType();
         var targetType = castExpr.type().getType();
@@ -213,6 +232,15 @@ public class Check extends StructuralNodeVisitor {
         for (Modifier mod : node.getMods()) {
             if (!allowedMods.contains(mod.tag()))
                 log.error(mod, Errors.modifierNotAllowedHere(mod.tag()));
+        }
+    }
+
+    public void finalCheck() {
+        if (!tokenValidatorPresent) {
+            if (currentUserAnnotation != null)
+                log.error(currentUserAnnotation, Errors.tokenValidatorRequired("CurrentUser"));
+            else if (authTokenAnnotation != null)
+                log.error(authTokenAnnotation, Errors.tokenValidatorRequired("AuthToken"));
         }
     }
 

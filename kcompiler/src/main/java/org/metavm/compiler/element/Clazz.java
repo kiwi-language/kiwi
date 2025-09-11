@@ -22,9 +22,9 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
 
     private ClassTag tag;
     private Name name;
+    private Name qualName;
     private Integer sourceTag;
     private Access access;
-    private String qualifiedName;
     private List<ClassType> interfaces = List.nil();
     private final ClassScope scope;
     private List<TypeVar> typeParams = List.nil();
@@ -329,8 +329,11 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
     }
 
     public Name getQualName() {
-        var scopeName = scope.getQualName();
-        return scopeName.isEmpty() ? name : scopeName.concat("." + name);
+        if (qualName == null) {
+            var scopeName = scope.getQualName();
+            qualName = scopeName.isEmpty() ? name : scopeName.concat("." + name);
+        }
+        return qualName;
     }
 
     @Override
