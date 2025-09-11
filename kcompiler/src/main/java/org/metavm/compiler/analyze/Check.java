@@ -6,6 +6,7 @@ import org.metavm.compiler.element.Field;
 import org.metavm.compiler.element.LocalVar;
 import org.metavm.compiler.element.NameTable;
 import org.metavm.compiler.element.Project;
+import org.metavm.compiler.file.SourceFile;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.Type;
@@ -13,6 +14,7 @@ import org.metavm.compiler.type.Types;
 import org.metavm.entity.AttributeNames;
 
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.metavm.compiler.syntax.ModifierTag.*;
@@ -21,8 +23,8 @@ public class Check extends StructuralNodeVisitor {
 
     private final Log log;
     private final Env env;
-    private Annotation currentUserAnnotation;
-    private Annotation authTokenAnnotation;
+    private Annotation authAnnotation;
+    private SourceFile authAnnotationFile;
     private boolean tokenValidatorPresent;
 
     public Check(Project project, Log log) {
@@ -138,10 +140,10 @@ public class Check extends StructuralNodeVisitor {
 
     @Override
     public Void visitAnnotation(Annotation annotation) {
-        if (annotation.getName() == NameTable.instance.CurrentUser)
-            currentUserAnnotation = annotation;
-        else if (annotation.getName() == NameTable.instance.AuthToken)
-            authTokenAnnotation = annotation;
+        if (annotation.getName() == NameTable.instance.CurrentUser || annotation.getName() == NameTable.instance.AuthToken) {
+            authAnnotation = annotation;
+            authAnnotationFile = log.getSource().file();
+        }
         return super.visitAnnotation(annotation);
     }
 
@@ -236,11 +238,9 @@ public class Check extends StructuralNodeVisitor {
     }
 
     public void finalCheck() {
-        if (!tokenValidatorPresent) {
-            if (currentUserAnnotation != null)
-                log.error(currentUserAnnotation, Errors.tokenValidatorRequired("CurrentUser"));
-            else if (authTokenAnnotation != null)
-                log.error(authTokenAnnotation, Errors.tokenValidatorRequired("AuthToken"));
+        if (!tokenValidatorPresent && authAnnotation != null) {
+            log.setSourceFile(Objects.requireNonNull(authAnnotationFile));
+            log.error(authAnnotation, Errors.tokenValidatorRequired(authAnnotation.getName().toString()));
         }
     }
 
