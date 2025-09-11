@@ -73,6 +73,11 @@ public class Annotation extends Node {
         return Objects.hash(name, attributes);
     }
 
+    @Override
+    public Annotation setPos(int pos) {
+        return (Annotation) super.setPos(pos);
+    }
+
     public static class Attribute extends Node {
         private Name name;
         private Expr value;

@@ -11,6 +11,7 @@ public class Project extends ElementBase implements Element {
 
     private final Package rootPackage = new Package(NameTable.instance.empty, null, this);
     private Clazz indexClass;
+    private Clazz TokenValidatorClass;
 
     public Package getRootPackage() {
         return rootPackage;
@@ -90,6 +91,14 @@ public class Project extends ElementBase implements Element {
 
     public void setIndexClass(Clazz indexClass) {
         this.indexClass = indexClass;
+    }
+
+    public Clazz getTokenValidatorClass() {
+        return TokenValidatorClass;
+    }
+
+    public void setTokenValidatorClass(Clazz tokenValidatorClass) {
+        TokenValidatorClass = tokenValidatorClass;
     }
 
     public void traceClasses() {

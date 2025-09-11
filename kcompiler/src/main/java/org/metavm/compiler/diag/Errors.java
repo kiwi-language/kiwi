@@ -20,6 +20,10 @@ public class Errors {
     public static Error cantAssignToImmutableValue = create("cant.assign.to.immutable.value");
     public static final Error cyclicInheritance = create("cyclic.inheritance");
 
+    public static Error tokenValidatorRequired(String annotation) {
+        return create("token.validator.required", annotation);
+    }
+
     public static Error ambiguousReference(String matches)  {
         return create("ambiguous.reference", matches);
     }

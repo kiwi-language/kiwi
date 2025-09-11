@@ -1443,6 +1443,7 @@ public class Parser {
     }
 
     Annotation annotation() {
+        var pos = pos();
         accept(AT);
         var name = ident();
         var attrs = List.<Annotation.Attribute>builder();
@@ -1457,7 +1458,7 @@ public class Parser {
             }
             accept(RPAREN);
         }
-        return new Annotation(name, attrs.build());
+        return new Annotation(name, attrs.build()).setPos(pos);
     }
 
     private Annotation.Attribute annotationAttr() {

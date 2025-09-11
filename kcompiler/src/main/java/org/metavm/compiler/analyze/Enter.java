@@ -72,6 +72,8 @@ public class Enter {
                     mods.access,
                     scope
             );
+            if (clazz.getQualName() == NameTable.instance.QualTokenValidator)
+                project.setTokenValidatorClass(clazz);
             if (mods.temp)
                 clazz.setEphemeral(true);
             if (mods.static_ || classDecl.tag() == org.metavm.compiler.syntax.ClassTag.ENUM

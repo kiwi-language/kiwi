@@ -93,10 +93,12 @@ public class CompilationTask {
                 log.setSourceFile(file.getSourceFile());
                 file.accept(new Attr(project, log));
             }
+            var check = new Check(project, log);
             for (File file : files) {
                 log.setSourceFile(file.getSourceFile());
-                file.accept(new Check(project, log));
+                file.accept(check);
             }
+            check.finalCheck();
             if (aiLint)
                 SenseLint.run(files, log);
             return project;
