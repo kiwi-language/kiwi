@@ -102,7 +102,8 @@ public class InstanceContext extends BufferingInstanceContext {
         if (DebugEnv.traceContextFinish) {
             logTreeChanges(patch.treeChanges());
         }
-        beforeSaving(patch);
+        var patchF = patch;
+        unfrozen(() -> beforeSaving(patchF));
         saveInstances(patch);
         afterSaving(patch);
         headContext.unfreeze();
