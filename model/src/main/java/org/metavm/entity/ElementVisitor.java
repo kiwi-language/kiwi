@@ -892,4 +892,8 @@ public abstract class ElementVisitor<R> {
     public R visitIdNode(IdNode idNode) {
         return visitNode(idNode);
     }
+
+    public R visitSetFieldNodeRefresh(SetFieldRefreshNode setFieldRefreshNode) {
+        return visitNode(setFieldRefreshNode);
+    }
 }

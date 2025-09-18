@@ -19,6 +19,7 @@ public class Bytecodes {
     public static final int INVOKE_STATIC = 13;
     public static final int GET_UNIQUE = 14;
     public static final int NEW = 15;
+    public static final int SET_FIELD_REFRESH = 16;
     public static final int SET_STATIC = 17;
     public static final int GENERIC_INVOKE_VIRTUAL = 18;
     public static final int GENERIC_INVOKE_SPECIAL = 19;

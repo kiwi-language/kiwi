@@ -26,6 +26,8 @@ public interface InstanceRepository extends InstanceProvider {
 
     <T extends Instance> T bind(T instance);
 
+    void updateMemoryIndex(ClassInstance instance);
+
     boolean remove(Instance instance);
 
     List<Id> filterAlive(List<Id> ids);

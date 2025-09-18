@@ -1,0 +1,8 @@
+package ddl
+
+class User(
+    var name: string,
+    var role: string
+) {
+
+}

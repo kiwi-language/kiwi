@@ -234,6 +234,8 @@ public class Method extends Flow implements Property {
                             closureContext,
                             callContext
                     );
+                } catch (BusinessException e) {
+                    throw e;
                 } catch (Exception e) {
                     logger.info("Failed to execute method {}", getQualifiedName());
 //                    logger.info(getText());

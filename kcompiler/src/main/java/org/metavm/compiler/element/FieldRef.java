@@ -46,4 +46,16 @@ public interface FieldRef extends Variable, Constant, MemberRef {
         else
             code.setField(this);
     }
+
+    @Override
+    default void storeRefresh(Code code, Env env) {
+        if (getElement() == ArrayType.lengthField)
+            throw new UnsupportedOperationException();
+        if (isStatic())
+            code.setStatic(this);
+        else
+            code.setFieldRefresh(this);
+    }
+
+
 }

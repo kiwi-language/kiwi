@@ -39,6 +39,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     private final @Nullable ClosureContext closureContext;
     private final List<ClassInstance> children = new ArrayList<>();
     public InstanceField[] fields;
+    private boolean initialized;
 
     public MvClassInstance(Id id,
                            @NotNull ClassType type,
@@ -338,6 +339,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             } else
                 customRead(requireNonNull(st.type.getReadObjectMethod()), slot);
         }
+        setInitialized();
         readChildren(input);
     }
 
@@ -776,6 +778,14 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     public void setType(Type type) {
         super.setType(type);
         klass = ((ClassType) type).getKlass();
+    }
+
+    public boolean isInitialized() {
+        return initialized;
+    }
+
+    public void setInitialized() {
+        initialized = true;
     }
 
     private static class FieldSubTable implements KlassDataSlot, Iterable<InstanceField> {
