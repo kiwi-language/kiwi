@@ -5,6 +5,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.InputStream;
 
 public interface DeployService {
+
     @Transactional
     String deploy(InputStream in);
+
+    String deploy(boolean noBackup, InputStream in);
+
 }

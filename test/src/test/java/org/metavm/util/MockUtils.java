@@ -213,10 +213,10 @@ public class MockUtils {
     }
 
     public static void assemble(String source, TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        assemble(source, typeManager, true, schedulerAndWorker);
+        assemble(source, typeManager, true, false, schedulerAndWorker);
     }
 
-    public static String assemble(String source, TypeManager typeManager, boolean waitForDDLDone, SchedulerAndWorker schedulerAndWorker) {
+    public static String assemble(String source, TypeManager typeManager, boolean waitForDDLDone, boolean noBackup, SchedulerAndWorker schedulerAndWorker) {
         ContextUtil.setAppId(TestConstants.APP_ID);
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
@@ -225,7 +225,7 @@ public class MockUtils {
 //            var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
             var commitId = TestUtils.doInTransaction(() -> {
                 try(var input = compile(source)) {
-                    return typeManager.deploy(input);
+                    return typeManager.deploy(noBackup, input);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

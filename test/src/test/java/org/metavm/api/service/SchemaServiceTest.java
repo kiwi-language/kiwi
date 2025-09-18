@@ -61,7 +61,7 @@ public class SchemaServiceTest extends TestCase  {
     }
 
     private void deploy(String source) {
-        MockUtils.assemble(SRC_DIR + source, typeManager, true, schedulerAndWorker);
+        MockUtils.assemble(SRC_DIR + source, typeManager, true, false, schedulerAndWorker);
     }
 
 }

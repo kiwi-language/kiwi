@@ -56,14 +56,20 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
     }
 
     @Transactional
-    public String deploy(long appId, InputStream in) {
+    public String deploy(long appId, boolean noBackup, InputStream in) {
         ContextUtil.setAppId(appId);
-        return deploy(in);
+        return deploy(noBackup, in);
     }
 
     @Override
     @Transactional
     public String deploy(InputStream in) {
+        return deploy(false, in);
+    }
+
+    @Override
+    @Transactional
+    public String deploy(boolean noBackup, InputStream in) {
         ensureApplicationActive();
         instanceSearchService.deleteTmpIndex(ContextUtil.getAppId());
         schemaManager.dropTmpTables(ContextUtil.getAppId());
@@ -74,7 +80,7 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
         try (var context = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT))) {
             ContextUtil.setDDL(true);
             try (var bufferingContext = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT).migrating(true))) {
-                batch = deploy(in, bufferingContext);
+                batch = deploy(noBackup, in, bufferingContext);
                 bufferingContext.finish();
             }
             var commit = context.bind(batch.buildCommit());
@@ -89,14 +95,14 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
         }
     }
 
-    public SaveTypeBatch deploy(InputStream input, IInstanceContext context) {
+    public SaveTypeBatch deploy(boolean noBackup, InputStream input, IInstanceContext context) {
         try (var zipIn = new ZipInputStream(input)) {
             var runningCommit = context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
             if (runningCommit != null)
                 throw new BusinessException(ErrorCode.COMMIT_RUNNING);
             var existingKlasses = context.loadKlasses();
             existingKlasses.forEach(Instance::setMarked);
-            var batch = SaveTypeBatch.create(context);
+            var batch = SaveTypeBatch.create(context, noBackup);
             ZipEntry zipEntry;
             while ((zipEntry = zipIn.getNextEntry()) != null) {
                 if (!zipEntry.isDirectory() && zipEntry.getName().endsWith(".mvclass"))

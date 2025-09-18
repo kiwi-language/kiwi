@@ -172,7 +172,7 @@ public enum CommitState {
     }
 
     public static CommitState fromCode(int code) {
-        return Utils.findRequired(values(), s -> s.code == code);
+        return Utils.findRequired(values(), s -> s.code == code, () -> "Cannot find CommitState for code: " + code);
     }
 
     public Task createTask(Commit commit, IInstanceContext context) {

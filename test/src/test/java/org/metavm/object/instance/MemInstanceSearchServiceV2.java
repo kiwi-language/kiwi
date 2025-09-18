@@ -73,16 +73,19 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
     @Override
-    public void switchAlias(long appId) {
-        var bakIndex = findIndex(BAK_ALIAS_PREFIX, appId);
-        if (bakIndex != null)
-            removeIndex(bakIndex);
+    public void switchAlias(long appId, boolean backup) {
+        if (backup) {
+            var bakIndex = findIndex(BAK_ALIAS_PREFIX, appId);
+            if (bakIndex != null)
+                removeIndex(bakIndex);
+        }
         var tmpIndex = getIndex(TMP_ALIAS_PREFIX, appId);
         var mainIndex = getIndex(MAIN_ALIAS_PREFIX, appId);
         removeAlias(tmpIndex, TMP_ALIAS_PREFIX + appId);
         addAlias(tmpIndex, MAIN_ALIAS_PREFIX + appId);
         removeAlias(mainIndex, MAIN_ALIAS_PREFIX + appId);
-        addAlias(mainIndex, BAK_ALIAS_PREFIX + appId);
+        if (backup)
+            addAlias(mainIndex, BAK_ALIAS_PREFIX + appId);
     }
 
     @Override

@@ -57,14 +57,21 @@ public class CommitService {
     }
 
     private void switchTable0(long appId, Id commitId) {
-        schemaManager.switchTable(appId);
+        var backup = !getCommit(appId, commitId).isNoBackup();
+        schemaManager.switchTable(appId, backup);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                instanceSearchService.switchAlias(appId);
+                instanceSearchService.switchAlias(appId, backup);
             }
         });
         terminateCommit(appId, commitId);
+    }
+
+    private Commit getCommit(long appId, Id id) {
+        try(var context = entityContextFactory.newContext(appId)) {
+            return context.getEntity(Commit.class, id);
+        }
     }
 
     private void terminateCommit(long appId, Id commitId) {

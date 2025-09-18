@@ -87,7 +87,7 @@ public class TypeManagerTest extends TestCase {
         ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
         ContextUtil.setUserId(userId);
         TestUtils.doInTransaction(() ->
-            typeManager.deploy(APP_ID, MockUtils.compile("kiwi/simple_shopping.kiwi"))
+            typeManager.deploy(APP_ID, false, MockUtils.compile("kiwi/simple_shopping.kiwi"))
         );
         TestUtils.waitForDDLCompleted(schedulerAndWorker);
         try (var context = entityContextFactory.newContext(APP_ID)) {

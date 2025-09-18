@@ -1039,12 +1039,30 @@ public class DDLTest extends TestCase {
         assertEquals("admin", role.get("name"));
     }
 
+    public void testNoBackup() {
+        assemble("kiwi/ddl/no_backup_0.kiwi");
+        var id = saveInstance("ddl.Product", Map.of("name", "Shoes"));
+        assemble("kiwi/ddl/no_backup_1.kiwi");
+        assemble("kiwi/ddl/no_backup_2.kiwi", true, true);
+        var product = getObject(id);
+        assertEquals(0, product.get("stock"));
+        assertEquals(0.0, product.get("price"));
+        deployService.revert(TestConstants.APP_ID);
+        var product1 = getObject(id);
+        assertNull(product1.get("stock"));
+        assertNull(product1.get("price"));
+    }
+
     private void assemble(String fileName) {
-        assemble(fileName, true);
+        assemble(fileName, true, false);
     }
 
     private String assemble(String fileName, boolean waitForDDLCompleted) {
-        return MockUtils.assemble(fileName, typeManager, waitForDDLCompleted, schedulerAndWorker);
+        return assemble(fileName, waitForDDLCompleted, false);
+    }
+
+    private String assemble(String fileName, boolean waitForDDLCompleted, boolean noBackup) {
+        return MockUtils.assemble(fileName, typeManager, waitForDDLCompleted, noBackup, schedulerAndWorker);
     }
 
     public ApiObject getObject(Id id) {

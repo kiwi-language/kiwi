@@ -20,8 +20,10 @@ public class DeployInternalApi {
 
     @SneakyThrows
     @PostMapping("/{appId}")
-    public String deploy(HttpServletRequest servletRequest, @PathVariable("appId") long appId) {
-        return typeManager.deploy(appId, servletRequest.getInputStream());
+    public String deploy(HttpServletRequest servletRequest, @PathVariable("appId") long appId,
+                         @RequestParam(value = "no-backup", defaultValue = "false") boolean noBackup
+                         ) {
+        return typeManager.deploy(appId, noBackup, servletRequest.getInputStream());
     }
 
     @GetMapping("/status/{appId}/{deployId}")

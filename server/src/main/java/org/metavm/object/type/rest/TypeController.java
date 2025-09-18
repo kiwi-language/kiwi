@@ -19,9 +19,10 @@ public class TypeController {
     }
 
     @PostMapping("/deploy/{appId}")
-    public Result<String> deploy(HttpServletRequest servletRequest, @PathVariable("appId") long appId) throws IOException {
+    public Result<String> deploy(HttpServletRequest servletRequest, @PathVariable("appId") long appId,
+                                 @RequestParam(value = "no-backup", defaultValue = "false") boolean noBackup) throws IOException {
         typeManager.ensureAppAccess(appId);
-        var commitId = typeManager.deploy(appId, servletRequest.getInputStream());
+        var commitId = typeManager.deploy(appId, noBackup, servletRequest.getInputStream());
         return Result.success(commitId);
     }
 

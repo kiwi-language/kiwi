@@ -1,6 +1,5 @@
 package org.metavm.compiler;
 
-import com.google.protobuf.Api;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.metavm.common.ErrorCode;
@@ -318,6 +317,14 @@ public class KiwiTest2 extends KiwiTestBase {
 
     public void testInternalAccess() {
         deploy("kiwi/access/internal.kiwi");
+    }
+
+    public void testDeleteChildrenWithDeps() {
+        deploy("kiwi/deletes/delete_children_with_deps_0.kiwi");
+        var id = saveInstance("deletes.App", Map.of("name", "test"));
+        assertEquals(2, getObject(id).getChildren("Module").size());
+        deploy("kiwi/deletes/delete_children_with_deps_1.kiwi");
+        assertEquals(0, getObject(id).getChildren("Module").size());
     }
 
 }

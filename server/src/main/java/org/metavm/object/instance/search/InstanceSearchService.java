@@ -10,7 +10,7 @@ public interface InstanceSearchService {
 
     void createIndexIfNotExists(long appId);
 
-    void switchAlias(long appId);
+    void switchAlias(long appId, boolean backup);
 
     void deleteAllIndices(long appId);
 

@@ -1,0 +1,23 @@
+package deletes
+
+class App(var name: string) {
+
+    {
+        for (i in 0...5) {
+            val kiwiMod = Module("kiwi", new Module[])
+            Module("web", new Module[] { kiwiMod })
+        }
+    }
+
+    class Module(
+        var name: string,
+        var dependencies: Module[]
+    )
+
+    fn __run__() {
+        for (c in children) {
+            delete c
+        }
+    }
+
+}
