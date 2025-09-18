@@ -988,6 +988,21 @@ public class DDLTest extends TestCase {
         }
     }
 
+    public void testManualAbortion() {
+        var commitId = assemble("kiwi/ddl_before.kiwi", false);
+        logger.debug("Commit ID: {}", commitId);
+        TestUtils.doInTransactionWithoutResult(() -> deployService.abortDeployment(TestConstants.APP_ID));
+        try (var context = newContext()) {
+            var commit = context.getCommit(commitId);
+            assertSame(CommitState.ABORTED, commit.getState());
+            assertFalse(commit.isRunning());
+        }
+        assemble("kiwi/ddl_before.kiwi");
+        var id = saveInstance("Inventory", Map.of("quantity", 100));
+        var inv = getObject(id);
+        assertEquals(100, inv.get("quantity"));
+    }
+
     public void testRenameField() {
 
     }

@@ -142,7 +142,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
 
     public void setState(CommitState state) {
         if(state.ordinal() <= this.state.ordinal())
-            throw new IllegalStateException("Invalid state transition from " + this.state + " to " + state);
+            throw new IllegalStateException("Invalid state transition from " + this.state + " to " + state + ". Commit ID: " + getId());
         this.state = state;
     }
 
