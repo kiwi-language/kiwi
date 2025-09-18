@@ -1021,6 +1021,24 @@ public class DDLTest extends TestCase {
         assertEquals(100, product.get("stock"));
     }
 
+    public void testNewInMigration() {
+        assemble("kiwi/ddl/new_in_migration_before.kiwi");
+        var id1  = saveInstance("ddl.User", Map.of(
+                "name", "leen",
+                "role", "admin"
+        ));
+        var id2 = saveInstance("ddl.User", Map.of(
+                "name", "lyq",
+                "role", "admin"
+        ));
+        assemble("kiwi/ddl/new_in_migration_after.kiwi");
+        var user1 = getObject(id1);
+        var user2 = getObject(id2);
+        assertEquals(user1.get("role"), user2.get("role"));
+        var role = getObject(user1.getId("role"));
+        assertEquals("admin", role.get("name"));
+    }
+
     private void assemble(String fileName) {
         assemble(fileName, true);
     }

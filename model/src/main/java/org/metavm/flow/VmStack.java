@@ -7,7 +7,6 @@ import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.*;
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
@@ -1075,6 +1074,11 @@ public class VmStack {
                                 pc += 5;
                             }
                             case Bytecodes.VOID_RETURN -> {
+                                if (callableRef instanceof MethodRef mr && mr.isConstructor()) {
+                                    var obj = stack[base].resolveMvObject();
+                                    obj.setInitialized();
+                                    callContext.instanceRepository().updateMemoryIndex(obj);
+                                }
                                 Arrays.fill(stack, base, base + code.getFrameSize(), null);
                                 if (fp == 0)
                                     return FlowExecResult.of(null);
@@ -1370,6 +1374,16 @@ public class VmStack {
                                 repository.remove(stack[--top].resolveObject());
                                 pc++;
                             }
+                            case Bytecodes.SET_FIELD_REFRESH -> {
+                                int fieldIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
+                                var field = (FieldRef) constants[fieldIndex];
+                                var value = stack[--top];
+                                var instance = stack[--top].resolveMvObject();
+                                instance.fields[field.getRawField().offset].value = field.getPropertyType().fromStackValue(value);
+                                if (instance.isInitialized())
+                                    callContext.instanceRepository().updateMemoryIndex(instance);
+                                pc += 3;
+                            }
                             default -> throw new IllegalStateException("Invalid bytecode: " + b);
                         }
                         continue;
@@ -1400,7 +1414,11 @@ public class VmStack {
                         return FlowExecResult.ofException(exception);
                     }
 
-                } catch (Exception e) {
+                }
+                catch (BusinessException e) {
+                    throw e;
+                }
+                catch (Exception e) {
                     throw new InternalException("Failed to execute node " + Bytecodes.getBytecodeName(b) +  " at " + pc
                             + " in flow " + code.getFlow().getQualifiedName(), e);
                 }

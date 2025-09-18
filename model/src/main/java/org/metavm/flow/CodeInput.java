@@ -205,6 +205,7 @@ public class CodeInput extends MvInput  {
             case Bytecodes.LT_ANCESTOR -> LoadAncestorTypeNode.read(this, name);
             case Bytecodes.DUP2 -> Dup2Node.read(this, name);
             case Bytecodes.DELETE -> DeleteNode.read(this, name);
+            case Bytecodes.SET_FIELD_REFRESH -> SetFieldRefreshNode.read(this, name);
             default -> throw new IllegalStateException("Unrecognized bytecode: " + code);
         };
         node.setOffset(offset);

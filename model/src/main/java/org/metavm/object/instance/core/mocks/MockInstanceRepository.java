@@ -2,10 +2,7 @@ package org.metavm.object.instance.core.mocks;
 
 import org.jetbrains.annotations.Nullable;
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceRepository;
-import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.*;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.Utils;
 
@@ -62,6 +59,11 @@ public class MockInstanceRepository implements InstanceRepository {
         if (id != null)
             instanceMap.put(id, instance);
         return instance;
+    }
+
+    @Override
+    public void updateMemoryIndex(ClassInstance instance) {
+
     }
 
     @Override

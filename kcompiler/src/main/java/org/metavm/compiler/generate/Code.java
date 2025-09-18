@@ -723,6 +723,12 @@ public class Code {
         state.push(Types.instance.getStringType());
     }
 
+    public void setFieldRefresh(FieldRef fieldRef) {
+        code(SET_FIELD_REFRESH);
+        constant(fieldRef);
+        state.pop(2);
+    }
+
     public class State {
         private Type[] stack;
         private int top;

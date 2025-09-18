@@ -1,0 +1,23 @@
+package ddl
+
+class User(
+    var name: string,
+    var role: Role
+) {
+
+    fn __role__(role: string) -> Role {
+        var r = Role.nameIdx.getFirst(role)
+        if (r == null)
+            r = Role(role)
+        return r!!
+    }
+
+}
+
+class Role(
+    var name: string
+) {
+
+    static val nameIdx = Index<string, Role>(true, r -> r.name)
+
+}

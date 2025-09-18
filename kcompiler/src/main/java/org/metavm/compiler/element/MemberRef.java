@@ -15,6 +15,10 @@ public interface MemberRef {
 
     void store(Code code, Env env);
 
+    default void storeRefresh(Code code, Env env) {
+        store(code, env);
+    }
+
     void invoke(Code code, Env env);
 
     Type getType();
