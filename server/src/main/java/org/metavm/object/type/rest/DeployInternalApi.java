@@ -34,4 +34,9 @@ public class DeployInternalApi {
         deployService.revert(appId);
     }
 
+    @PostMapping("/abort/{appId}")
+    public void abort(@PathVariable("appId") long appId) {
+        deployService.abortDeployment(appId);
+    }
+
 }

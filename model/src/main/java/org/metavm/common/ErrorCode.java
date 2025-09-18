@@ -177,6 +177,7 @@ public enum ErrorCode {
     COMMIT_RUNNING(1601, "Commit is in progress"),
     REVERSION_FAILED(1602, "Reversion failed: {}"),
     NO_BACKUP(1603, "No backup found for appId {}"),
+    NO_ONGOING_MIGRATION(1604, "No ongoing migration"),
 
     // schema
     UNSUPPORTED_SCHEMA(1701, "Unsupported schema: {}"),
