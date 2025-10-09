@@ -77,6 +77,7 @@ public class InstanceContextIntegrationTest extends TestCase {
                 context.bind(new Commit(
                         context.allocateRootId(),
                         APP_ID,
+                        false,
                         List.of(),
                         List.of(),
                         List.of(),

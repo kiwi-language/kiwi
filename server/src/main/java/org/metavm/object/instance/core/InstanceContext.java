@@ -11,8 +11,8 @@ import org.metavm.object.instance.StoreTreeSource;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.VersionRT;
-import org.metavm.util.*;
 import org.metavm.util.LinkedList;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.ToIntFunction;
 
 @Slf4j
 public class InstanceContext extends BufferingInstanceContext {
@@ -98,7 +99,7 @@ public class InstanceContext extends BufferingInstanceContext {
             applyRcChange(patch);
             patch = buildPatch();
         }
-        validateRemoval(patch);
+        validateRemoval(patch, i -> 0);
         if (DebugEnv.traceContextFinish) {
             logTreeChanges(patch.treeChanges());
         }
@@ -244,13 +245,18 @@ public class InstanceContext extends BufferingInstanceContext {
 
     @Override
     public void validate() {
-        validateRemoval(buildPatch());
+        var patch = buildPatch();
+        var id2rcChange = new HashMap<Id, Integer>();
+        for (Refcount refcount : patch.refcountChange()) {
+            id2rcChange.put(refcount.getTarget(), refcount.getCount());
+        }
+        validateRemoval(buildPatch(), inst -> id2rcChange.getOrDefault(inst.getId(), 0));
     }
 
-    private void validateRemoval(Patch patch) {
+    private void validateRemoval(Patch patch, ToIntFunction<ClassInstance> rcChangeFunc) {
         for (VersionRT delete : patch.entityChange().deletes()) {
             var inst = (ClassInstance) internalGet(delete.id());
-            if (inst.getRefcount() > 0 && !isEffectiveValue(inst))
+            if (inst.getRefcount() + rcChangeFunc.applyAsInt(inst) > 0 && !isEffectiveValue(inst))
                 throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(inst.getReference()));
         }
     }

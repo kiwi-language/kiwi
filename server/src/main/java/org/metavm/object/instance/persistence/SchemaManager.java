@@ -1,16 +1,13 @@
 package org.metavm.object.instance.persistence;
 
-import lombok.SneakyThrows;
-
 public interface SchemaManager {
 
     void createInstanceTable(long appId, String table);
 
     void createIndexEntryTable(long appId, String table);
 
-    void switchTable(long appId);
+    void switchTable(long appId, boolean backup);
 
-    @SneakyThrows
     void revert(long appId);
 
     void dropTmpTables(long appId);

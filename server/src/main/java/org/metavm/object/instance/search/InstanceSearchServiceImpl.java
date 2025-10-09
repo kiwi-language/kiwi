@@ -156,7 +156,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     }
 
     @Override
-    public void switchAlias(long appId) {
+    public void switchAlias(long appId, boolean backup) {
         String mainAlias = MAIN_ALIAS_PREFIX + appId;
         String tmpAlias = TMP_ALIAS_PREFIX + appId;
         String bakAlias = BAK_ALIAS_PREFIX + appId;
@@ -164,12 +164,14 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
         try {
             // --- Step 1: Remove the index with the alias instance-bak-{appId} if it exists ---
             log.info("App [{}]: Starting alias switch process. Step 1: Cleaning up old backup.", appId);
-            String oldBakIndexName = getIndexForAlias(bakAlias);
-            if (oldBakIndexName != null) {
-                log.info("App [{}]: Found old backup index '{}' (alias: {}). Deleting it now.", appId, oldBakIndexName, bakAlias);
-                deleteIndex(oldBakIndexName);
-            } else {
-                log.info("App [{}]: No old backup index found. Proceeding.", appId);
+            if (backup) {
+                String oldBakIndexName = getIndexForAlias(bakAlias);
+                if (oldBakIndexName != null) {
+                    log.info("App [{}]: Found old backup index '{}' (alias: {}). Deleting it now.", appId, oldBakIndexName, bakAlias);
+                    deleteIndex(oldBakIndexName);
+                } else {
+                    log.info("App [{}]: No old backup index found. Proceeding.", appId);
+                }
             }
 
             // --- Steps 2 & 3: Find indices and perform the atomic alias switch ---
@@ -198,7 +200,8 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
             // Step 2: Rename instance-service-{appId} to instance-bak-{appId}
             request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.REMOVE).index(mainIndexName).alias(mainAlias));
-            request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.ADD).index(mainIndexName).alias(bakAlias));
+            if (backup)
+                request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.ADD).index(mainIndexName).alias(bakAlias));
 
             // Step 3: Rename instance-tmp-{appId} to instance-service-{appId}
             request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.REMOVE).index(tmpIndexName).alias(tmpAlias));
@@ -211,6 +214,10 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
                 log.info("App [{}]: SWITCH COMPLETE. Main service is now on index '{}'. Old index '{}' is now the backup.", appId, tmpIndexName, mainIndexName);
             } else {
                 log.error("App [{}]: FAILED TO SWITCH ALIASES. The atomic operation was not acknowledged by the cluster.", appId);
+            }
+
+            if (!backup) {
+                deleteIndex(mainIndexName);
             }
 
         } catch (IOException e) {

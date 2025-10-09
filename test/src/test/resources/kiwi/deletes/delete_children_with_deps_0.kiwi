@@ -1,0 +1,15 @@
+package deletes
+
+class App(var name: string) {
+
+    {
+        val kiwiMod = Module("kiwi", new Module[])
+        Module("web", new Module[] { kiwiMod })
+}
+
+    class Module(
+        var name: string,
+        var dependencies: Module[]
+    )
+
+}

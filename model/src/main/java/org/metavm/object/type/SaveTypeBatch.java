@@ -17,8 +17,8 @@ import java.util.*;
 @Slf4j
 public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
 
-    public static SaveTypeBatch create(IInstanceContext context) {
-        return new SaveTypeBatch(context);
+    public static SaveTypeBatch create(IInstanceContext context, boolean noBackup) {
+        return new SaveTypeBatch(context, noBackup);
     }
 
     private final IInstanceContext context;
@@ -43,10 +43,12 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
     private final Set<Field> newStaticFields = new HashSet<>();
     private final Set<Field> removedEnumConstants = new HashSet<>();
     private final boolean tracing = DebugEnv.traceDeployment;
+    private final boolean noBackup;
 
 
-    private SaveTypeBatch(IInstanceContext context) {
+    private SaveTypeBatch(IInstanceContext context, boolean noBackup) {
         this.context = context;
+        this.noBackup = noBackup;
     }
 
     public void addNewField(Field field) {
@@ -167,6 +169,7 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         return new Commit(
                 PhysicalId.of(context.allocateTreeId(), 0),
                 context.getAppId(),
+                noBackup,
                 Utils.map(newFields, Entity::getStringId),
                 Utils.map(typeChangedFields, Entity::getStringId),
                 Utils.map(toChildFields, Entity::getStringId),

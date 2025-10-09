@@ -59,10 +59,12 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     private CommitState state = CommitState.MIGRATING;
     private boolean running = true;
     private boolean cancelled = false;
+    private boolean noBackup;
     private boolean submitted;
 
     public Commit(@NotNull Id id,
                   long appId,
+                  boolean noBackup,
                   List<String> newFieldIds,
                   List<String> convertingFieldIds,
                   List<String> toChildFieldIds,
@@ -80,6 +82,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
                   List<FieldChange> fieldChanges) {
         super(id);
         this.appId = appId;
+        this.noBackup = noBackup;
         this.newFieldIds.addAll(newFieldIds);
         this.convertingFieldIds.addAll(convertingFieldIds);
         this.toChildFieldIds.addAll(toChildFieldIds);
@@ -246,6 +249,10 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         return cancelled;
     }
 
+    public boolean isNoBackup() {
+        return noBackup;
+    }
+
     @Override
     public boolean shouldRedirect() {
         return state != CommitState.MIGRATING && state != CommitState.ABORTING && state != CommitState.ABORTED;
@@ -355,7 +362,12 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         this.runMethodIds = input.readList(input::readUTF);
         this.newIndexIds = input.readList(input::readUTF);
         this.searchEnabledKlassIds = input.readList(input::readUTF);
-        this.state = CommitState.fromCode(input.read());
+        int stateNum = (byte) input.read();
+        if (stateNum < 0) {
+            stateNum = -stateNum - 1;
+            noBackup = true;
+        }
+        this.state = CommitState.fromCode(stateNum);
         this.running = input.readBoolean();
         this.cancelled = input.readBoolean();
         this.submitted = input.readBoolean();
@@ -382,7 +394,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         output.writeList(runMethodIds, output::writeUTF);
         output.writeList(newIndexIds, output::writeUTF);
         output.writeList(searchEnabledKlassIds, output::writeUTF);
-        output.write(state.code());
+        output.write(noBackup ? -state.code() - 1 : state.code());
         output.writeBoolean(running);
         output.writeBoolean(cancelled);
         output.writeBoolean(submitted);

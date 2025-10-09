@@ -25,10 +25,15 @@ public class ApiGeneratorV3 implements ApiGenerator {
     private final ApiWriter apiWriter = new ApiWriter();
 
     public String generate(List<Clazz> rootClasses) {
+        writeComments();
         generateImports();
         generateTypes(rootClasses);
         generateFuncs(rootClasses);
         return apiWriter.toString();
+    }
+
+    private void writeComments() {
+        apiWriter.writeln("// This file is generated. DO NOT change.");
     }
 
     private void generateImports() {

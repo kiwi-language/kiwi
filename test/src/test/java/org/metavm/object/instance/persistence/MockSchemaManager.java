@@ -24,10 +24,12 @@ public class MockSchemaManager implements SchemaManager  {
     }
 
     @Override
-    public void switchTable(long appId) {
+    public void switchTable(long appId, boolean backup) {
         log.info("Switching tables for application {}", appId);
-        mapperRegistry.renameInstanceMapper(appId, "instance", "instance_bak");
-        mapperRegistry.renameIndexEntryMapper(appId, "index_entry", "index_entry_bak");
+        if (backup) {
+            mapperRegistry.renameInstanceMapper(appId, "instance", "instance_bak");
+            mapperRegistry.renameIndexEntryMapper(appId, "index_entry", "index_entry_bak");
+        }
         mapperRegistry.renameInstanceMapper(appId, "instance_tmp", "instance");
         mapperRegistry.renameIndexEntryMapper(appId, "index_entry_tmp", "index_entry");
     }
