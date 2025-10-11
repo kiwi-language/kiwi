@@ -17,6 +17,7 @@ import org.metavm.object.instance.ApiService;
 import org.metavm.user.LoginService;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
+import org.metavm.util.PersistenceUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -51,7 +52,7 @@ public class ObjectInternalApi {
         verify(request.appId());
         var httpRequest = createRequest(servletRequest);
         var response = new HttpResponseImpl();
-        return apiService.saveInstance(request.object(), httpRequest, response);
+        return PersistenceUtil.doWithRetries(() -> apiService.saveInstance(request.object(), httpRequest, response));
     }
 
     @PostMapping("/get")
@@ -89,7 +90,7 @@ public class ObjectInternalApi {
     @PostMapping("/delete")
     public void delete(@RequestBody DeleteRequest request) {
         verify(request.appId());
-        apiService.delete(request.id());
+        PersistenceUtil.doWithRetries(() -> apiService.delete(request.id()));
     }
 
     @PostMapping("/invoke")
@@ -99,7 +100,7 @@ public class ObjectInternalApi {
         var response = new HttpResponseImpl();
         var args = request.arguments();
         var receiver = request.receiver();
-        var r = apiService.handleMethodCall(receiver, request.method(), args, false, httpRequest, response);
+        var r = PersistenceUtil.doWithRetries(() -> apiService.handleMethodCall(receiver, request.method(), args, false, httpRequest, response));
         saveResponse(response, servletResponse);
         return r;
     }
