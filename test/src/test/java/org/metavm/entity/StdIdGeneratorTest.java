@@ -3,27 +3,23 @@ package org.metavm.entity;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
+import org.metavm.api.Index;
+import org.metavm.api.Interceptor;
+import org.metavm.api.entity.HttpCookie;
+import org.metavm.api.entity.HttpRequest;
 import org.metavm.flow.Function;
 import org.metavm.flow.Parameter;
-import org.metavm.object.type.IndexRef;
-import org.metavm.object.type.Klass;
+import org.metavm.http.HttpRequestImpl;
 import org.metavm.object.type.TypeVariable;
-import org.metavm.util.ReflectionUtils;
 
-import java.io.ObjectStreamConstants;
-import java.io.SerializablePermission;
-import java.lang.invoke.MethodHandles;
-import java.net.InterfaceAddress;
 import java.util.List;
-import java.util.Spliterator;
+import java.util.ServiceLoader;
 
 @Slf4j
 public class StdIdGeneratorTest extends TestCase {
 
     public static final List<Class<?>> testClasses = List.of(
-            Entity.class, MethodHandles.class, Spliterator.OfDouble.class,
-            InterfaceAddress.class, ObjectStreamConstants.class, SerializablePermission.class,
-            IndexRef.class
+            Index.class, Interceptor.class, HttpRequestImpl.class, HttpRequest.class, HttpCookie.class
     );
 
     public static final List<ModelIdentity> identities = List.of(
@@ -42,10 +38,11 @@ public class StdIdGeneratorTest extends TestCase {
         for (var identity : identities) {
             Assert.assertNotNull("ID not found for " + identity, generator.getId(identity));
         }
-        for (Class<?> k : EntityUtils.getModelClasses()) {
-            Assert.assertNotNull(generator.getId(k));
+        var builders = ServiceLoader.load(StdKlassBuilder.class, StdIdGeneratorTest.class.getClassLoader());
+        for (var b : builders) {
+            Assert.assertNotNull(generator.getId(b.getJavaClass()));
         }
-        var indexId = generator.getId(ReflectionUtils.getField(Klass.class, "UNIQUE_QUALIFIED_NAME"));
+        var indexId = generator.getId(ModelIdentity.create(org.metavm.object.type.Index.class, "org.metavm.object.type.Klass.UNIQUE_QUALIFIED_NAME"));
         Assert.assertNotNull(indexId);
     }
 

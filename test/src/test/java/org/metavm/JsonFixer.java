@@ -1,17 +1,12 @@
 package org.metavm;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.metavm.util.LinkedList;
-import org.metavm.util.Utils;
+import org.jsonk.Jsonk;
 import org.metavm.util.TestUtils;
 
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class JsonFixer {
 
@@ -20,15 +15,14 @@ public class JsonFixer {
 
     public static final String OUTPUT = "/Users/leen/workspace/kiwi/test.json";
 
-    private static LinkedList<String> nameStack = new LinkedList<>();
+    private static final LinkedList<String> nameStack = new LinkedList<>();
 
     public static void main(String[] args) throws IOException {
         char[] buffer = new char[1024 * 1024];
         try (var reader = new FileReader(FILE); var writer = new FileWriter(OUTPUT)) {
             int n = reader.read(buffer);
             String jsonStr = new String(buffer, 0, n);
-            var map = Utils.readJSONString(jsonStr, new TypeReference<Map<String, Object>>() {
-            });
+            var map = Jsonk.fromJson(jsonStr, Map.class);
             fixMap(map);
             writer.write(TestUtils.toJSONString(map));
         }

@@ -1,16 +1,15 @@
 package org.metavm.object.instance;
 
 import org.metavm.common.Page;
+import org.metavm.jdbc.TransactionCallback;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.instance.search.SearchQuery;
-import org.metavm.util.Hooks;
-import org.metavm.util.SearchSyncRequest;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.metavm.jdbc.TransactionStatus;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -33,14 +32,14 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
 
     public MemInstanceSearchServiceV2() {
         Hooks.SEARCH_BULK = this::bulk;
-        Hooks.DROP_INDICES = appId -> TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        Hooks.DROP_INDICES = appId -> TransactionStatus.registerCallback(new TransactionCallback() {
 
             @Override
             public void afterCommit() {
                 deleteAllIndices(appId);
             }
         });
-        Hooks.CREATE_INDEX_IF_NOT_EXISTS = appId -> TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        Hooks.CREATE_INDEX_IF_NOT_EXISTS = appId -> TransactionStatus.registerCallback(new TransactionCallback() {
 
             @Override
             public void afterCommit() {

@@ -2,15 +2,17 @@ package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.Generated;
-import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Index;
 import org.metavm.object.type.Klass;
-import org.metavm.util.*;
+import org.metavm.util.DebugEnv;
+import org.metavm.util.IdentitySet;
+import org.metavm.util.InternalException;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -37,7 +39,7 @@ public class EntityMemoryIndex {
     }
 
     public void save(Object object) {
-        var klass = EntityUtils.getRealType(object.getClass());
+        var klass = object.getClass();
         if (entities.add(object)) {
             typeIndex.computeIfAbsent(klass, k -> new ArrayList<>()).add(object);
         }
@@ -51,7 +53,7 @@ public class EntityMemoryIndex {
     }
 
     public void remove(Object object) {
-        var klass = EntityUtils.getRealType(object.getClass());
+        var klass = object.getClass();
         var objects = typeIndex.get(klass);
         if (objects != null)
             objects.remove(object);
@@ -64,13 +66,9 @@ public class EntityMemoryIndex {
         index.remove(indexDef.getType().cast(object));
     }
 
-    private List<IndexDef<?>> getIndexDefList(Class<?> klass) {
-        List<IndexDef<?>> indexDefList = new ArrayList<>();
-        ReflectionUtils.forEachField(klass, f -> {
-            if (Modifier.isStatic(f.getModifiers()) && f.getType() == IndexDef.class)
-                indexDefList.add((IndexDef<?>) Objects.requireNonNull(ReflectionUtils.get(null, f)));
-        });
-        return indexDefList;
+    private List<IndexDef<?>> getIndexDefList(Class<?> cl) {
+        var klass = StdKlassRegistry.instance.getKlass(cl);
+        return Utils.map(klass.getIndices(), Index::getIndexDef);
     }
 
     public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, List<Value> values) {
@@ -206,24 +204,6 @@ public class EntityMemoryIndex {
 
         public static final Object MAX_OBJECT = new Entity(TmpId.random()) {
 
-            public int getEntityTag() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Generated
-            public static void visitBody(StreamVisitor visitor) {
-            }
-
-            @Generated
-            @Override
-            public void readBody(MvInput input, Entity parent) {
-            }
-
-            @Generated
-            @Override
-            public void writeBody(MvOutput output) {
-            }
-
             @Override
             public void forEachChild(Consumer<? super Instance> action) {
 
@@ -232,16 +212,6 @@ public class EntityMemoryIndex {
             @Override
             public void forEachValue(Consumer<? super Instance> action) {
 
-            }
-
-            @Override
-            protected void buildJson(Map<String, Object> map) {
-
-            }
-
-            @Override
-            protected void buildSource(Map<String, Value> source) {
-                
             }
 
             @Override

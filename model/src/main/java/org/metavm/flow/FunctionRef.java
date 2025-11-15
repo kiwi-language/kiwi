@@ -6,9 +6,7 @@ import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.FunctionRefKey;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
 import org.metavm.object.type.ITypeDef;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeMetadata;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
@@ -21,9 +19,6 @@ import java.util.function.Consumer;
 
 @Entity
 public class FunctionRef extends FlowRef {
-
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     public static FunctionRef create(Function rawFlow, List<Type> typeArguments) {
         if(typeArguments.equals(rawFlow.getDefaultTypeArguments()))
@@ -127,11 +122,6 @@ public class FunctionRef extends FlowRef {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitFunctionRef(this);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

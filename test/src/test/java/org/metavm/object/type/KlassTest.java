@@ -5,30 +5,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.classfile.ClassFileReader;
 import org.metavm.classfile.ClassFileWriter;
-import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.mocks.MockEntityRepository;
 import org.metavm.flow.KlassInput;
 import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Method;
-import org.metavm.object.instance.core.Id;
 import org.metavm.util.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Objects;
 
 @Slf4j
 public class KlassTest extends TestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
-    }
 
     public void testIO() {
         var testKlasses = MockUtils.createTestKlasses();
@@ -134,8 +124,8 @@ public class KlassTest extends TestCase {
                 i -> {},
                 InstanceInput.UNSUPPORTED_REDIRECTION_SIGNAL_PROVIDER
         );
-        var k1 = in.readEntity(Klass.class, null);
-        var k2 = in.readEntity(Klass.class, null);
+        var k1 = (Klass) in.readEntity();
+        var k2 = (Klass) in.readEntity();
         Assert.assertEquals(fooKlass.getName(), k1.getName());
         Assert.assertEquals(supplierKlass.getName(), k2.getName());
 
@@ -147,13 +137,22 @@ public class KlassTest extends TestCase {
         };
 
         var visitor = new StreamVisitor(new ByteArrayInputStream(bout.toByteArray())) {
+
+//            @Override
+//            public void visitEntityBody(int tag, Id id, int refcount) {
+//                if (tag == EntityRegistry.TAG_Klass)
+//                    ref.klassCount++;
+//                else if (tag == EntityRegistry.TAG_Method)
+//                    ref.methodCount++;
+//                super.visitEntityBody(tag, id, refcount);
+//            }
+
             @Override
-            public void visitEntityBody(int tag, Id id, int refcount) {
-                if (tag == EntityRegistry.TAG_Klass)
+            public void visitEntityHead() {
+                var id = readId();
+                readInt();
+                if (id.isRoot())
                     ref.klassCount++;
-                else if (tag == EntityRegistry.TAG_Method)
-                    ref.methodCount++;
-                super.visitEntityBody(tag, id, refcount);
             }
 
             @Override
@@ -176,7 +175,7 @@ public class KlassTest extends TestCase {
         log.info("ClassType count: {}", ref.classTypeCount);
     }
 
-    public void testRebuildNodes() throws IOException {
+    public void testRebuildNodes() {
         var klasses = MockUtils.createTestKlasses();
         var fooKlass = klasses.getFirst();
         var method = fooKlass.getMethod(Method::isConstructor);

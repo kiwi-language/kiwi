@@ -34,11 +34,6 @@ X-App-ID: 2
 GET http://localhost:8080/platform-user/apps
 
 ###
-POST http://localhost:8080/platform-user/enter-app/1000006000
-Accept: application/json
-X-App-ID: 2
-
-###
 GET http://localhost:8080/type/field/0198a3ecc60d01b4d503
 Accept: application/json
 X-App-ID: 1816816338
@@ -1575,3 +1570,59 @@ Content-Type: application/json
 {
   "userId": "018ce7e9b90700"
 }
+
+###
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "appId": 2,
+  "loginName": "wizardleen",
+  "password": "123456"
+}
+
+###
+POST http://localhost:8080/internal-api/object/get
+Content-Type: application/json
+
+{
+  "appId": 1000061024,
+  "id": "019ee2ddb90700"
+}
+
+###
+###
+GET http://localhost:8080/app
+Authorization: Bearer 19db5d3f-c6ed-4694-8e09-f3a2bb9a2e19
+
+
+###
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "appId": 2,
+  "loginName": "demo",
+  "password": "123456"
+}
+
+###
+GET http://localhost:8080/ping
+
+###
+
+POST http://localhost:8081/auth/login-with-sso-code
+Accept: */*
+X-App-ID: 2
+Content-Type: application/json;charset=UTF-8
+
+{
+  "code": "qzzO6pAsr-KH4vgWPcaSYQ"
+}
+
+###
+GET http://localhost:8080/auth/get-login-info
+X-App-ID: 2
+
+###
+POST http://127.0.0.1:8080/system/test

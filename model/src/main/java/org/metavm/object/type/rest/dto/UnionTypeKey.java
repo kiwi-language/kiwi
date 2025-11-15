@@ -1,13 +1,13 @@
 package org.metavm.object.type.rest.dto;
 
-import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.type.UnionType;
+import org.jsonk.Json;
 import org.metavm.util.MvOutput;
 import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 import java.util.Set;
 
+@Json
 public record UnionTypeKey(Set<TypeKey> memberKeys) implements TypeKey {
     @Override
     public void write(MvOutput output) {
@@ -19,11 +19,6 @@ public record UnionTypeKey(Set<TypeKey> memberKeys) implements TypeKey {
     @Override
     public String toTypeExpression() {
         return Utils.join(memberKeys, TypeKey::toTypeExpression, "|");
-    }
-
-    @Override
-    public UnionType toType(TypeDefProvider typeDefProvider) {
-        return new UnionType(Utils.mapToSet(memberKeys, k -> k.toType(typeDefProvider)));
     }
 
     @Override

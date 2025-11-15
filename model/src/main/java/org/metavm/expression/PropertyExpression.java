@@ -1,15 +1,14 @@
 package org.metavm.expression;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Property;
 import org.metavm.object.type.PropertyRef;
 import org.metavm.object.type.Type;
@@ -21,11 +20,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public class PropertyExpression extends Expression {
 
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
+    @Getter
     private final Expression instance;
 
     private final PropertyRef propertyRef;
@@ -75,22 +74,13 @@ public class PropertyExpression extends Expression {
             }
             case NAME -> getProperty().getName();
         };
-        if((instance instanceof CursorExpression cursorExpression) && cursorExpression.getAlias() == null) {
-            return fieldsExpr;
-        }
-        else {
-            String instanceExpr = instance.build(symbolType, instance.precedence() > precedence(), relaxedCheck);
-            return instanceExpr + "." + fieldsExpr;
-        }
+        String instanceExpr = instance.build(symbolType, instance.precedence() > precedence(), relaxedCheck);
+        return instanceExpr + "." + fieldsExpr;
     }
 
     @Override
     public int precedence() {
         return 0;
-    }
-
-    public Expression getInstance() {
-        return instance;
     }
 
     @Override
@@ -128,22 +118,16 @@ public class PropertyExpression extends Expression {
         propertyRef.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("property", this.getProperty());
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("instance", this.getInstance().toJson());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_PropertyExpression);
         super.write(output);
         instance.write(output);
         output.writeValue(propertyRef);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new PropertyExpression(instance.accept(transformer), propertyRef);
     }
 }

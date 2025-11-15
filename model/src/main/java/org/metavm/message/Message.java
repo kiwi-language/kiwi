@@ -1,30 +1,23 @@
 package org.metavm.message;
 
-import org.metavm.annotation.NativeEntity;
-import org.metavm.api.EntityField;
+import lombok.Getter;
+import lombok.Setter;
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
-import org.metavm.entity.EntityRegistry;
+import org.metavm.api.EntityField;
+import org.metavm.wire.Wire;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.SearchField;
 import org.metavm.message.rest.dto.MessageDTO;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.user.User;
 import org.metavm.util.Instances;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@NativeEntity(56)
+@Wire(56)
 @Entity
 public class Message extends org.metavm.entity.Entity {
 
@@ -32,20 +25,21 @@ public class Message extends org.metavm.entity.Entity {
             1, message -> List.of(message.target));
 
     public static final SearchField<Message> esTitle =
-            SearchField.createTitle("s0", msg -> Instances.stringInstance(msg.title));
+            SearchField.createTitle(0, "s0", msg -> Instances.stringInstance(msg.title));
 
     public static final SearchField<Message> esReceiver =
-            SearchField.create("r0", msg -> msg.receiver);
+            SearchField.create(0, "r0", msg -> msg.receiver);
 
     public static final SearchField<Message> esRead =
-            SearchField.create("b0", msg -> Instances.booleanInstance(msg.read));
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+            SearchField.create(0, "b0", msg -> Instances.booleanInstance(msg.read));
 
-    private EntityReference receiver;
+    private final EntityReference receiver;
     @EntityField(asTitle = true)
-    private String title;
-    private MessageKind kind;
+    private final String title;
+    @Getter
+    private final MessageKind kind;
+    @Setter
+    @Getter
     private boolean read;
     private Value target;
 
@@ -57,29 +51,8 @@ public class Message extends org.metavm.entity.Entity {
         this.target = target;
     }
 
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitValue();
-        visitor.visitUTF();
-        visitor.visitByte();
-        visitor.visitBoolean();
-        visitor.visitValue();
-    }
-
     public User getReceiver() {
         return (User) receiver.get();
-    }
-
-    public MessageKind getKind() {
-        return kind;
-    }
-
-    public boolean isRead() {
-        return read;
-    }
-
-    public void setRead(boolean read) {
-        this.read = read;
     }
 
     @Nullable
@@ -114,51 +87,7 @@ public class Message extends org.metavm.entity.Entity {
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("receiver", this.getReceiver().getStringId());
-        map.put("kind", this.getKind().name());
-        map.put("read", this.isRead());
-        var target = this.getTarget();
-        if (target != null) map.put("target", target);
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_Message;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.receiver = (EntityReference) input.readValue();
-        this.title = input.readUTF();
-        this.kind = MessageKind.fromCode(input.read());
-        this.read = input.readBoolean();
-        this.target = input.readValue();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        output.writeValue(receiver);
-        output.writeUTF(title);
-        output.write(kind.code());
-        output.writeBoolean(read);
-        output.writeValue(target);
     }
 
     @Override

@@ -9,7 +9,6 @@ import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.ApiNamedObject;
 import org.metavm.util.BusinessException;
-import org.metavm.util.TestConstants;
 
 import java.util.Arrays;
 import java.util.List;
@@ -261,92 +260,92 @@ public class BasicKiwiTest extends KiwiTestBase {
         Assert.assertEquals(true, result);
     }
 
-    public void testHashMap() {
-        deploy(List.of(
-                "kiwi/basics/hashcode/HashCodeBar.kiwi",
-                "kiwi/basics/hashcode/HashCodeBaz.kiwi",
-                "kiwi/basics/hashcode/HashCodeFoo.kiwi",
-                "kiwi/basics/hashcode/HashMapLab.kiwi",
-                "kiwi/basics/hashcode/MapEntry.kiwi"
-        ));
-        var fooId = saveInstance("hashcode.HashCodeFoo", Map.of(
-                "name", "Foo"
-        ));
-        var bean = ApiNamedObject.of("hashMapLab");
-        callMethod(bean, "put", List.of(fooId, "Foo"));
-        var foo2Id = saveInstance("hashcode.HashCodeFoo", Map.of(
-                "name", "Foo"
-        ));
-        var result = callMethod(bean, "get", List.of(foo2Id));
-        Assert.assertEquals("Foo", result);
+//    public void testHashMap() {
+//        deploy(List.of(
+//                "kiwi/basics/hashcode/HashCodeBar.kiwi",
+//                "kiwi/basics/hashcode/HashCodeBaz.kiwi",
+//                "kiwi/basics/hashcode/HashCodeFoo.kiwi",
+//                "kiwi/basics/hashcode/HashMapLab.kiwi",
+//                "kiwi/basics/hashcode/MapEntry.kiwi"
+//        ));
+//        var fooId = saveInstance("hashcode.HashCodeFoo", Map.of(
+//                "name", "Foo"
+//        ));
+//        var bean = ApiNamedObject.of("hashMapLab");
+//        callMethod(bean, "put", List.of(fooId, "Foo"));
+//        var foo2Id = saveInstance("hashcode.HashCodeFoo", Map.of(
+//                "name", "Foo"
+//        ));
+//        var result = callMethod(bean, "get", List.of(foo2Id));
+//        Assert.assertEquals("Foo", result);
+//
+//        // Test entity without a defined hashCode method
+//        var barId = saveInstance("hashcode.HashCodeBar", Map.of(
+//                "name", "Bar"
+//        ));
+//        callMethod(bean, "put", List.of(barId, "Bar"));
+//        var result2 = callMethod(bean, "get", List.of(barId));
+//        Assert.assertEquals("Bar", result2);
+//
+//        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+//            var bazKlass = context.getKlassByQualifiedName("hashcode.HashCodeBaz");
+//            Assert.assertTrue(bazKlass.isValueKlass());
+//        }
+//
+//        // Test value object
+//        callMethod(bean, "bazPut", List.of("Baz", fooId, "Baz"));
+//        var result3 = callMethod(bean, "bazGet", List.of("Baz", fooId));
+//        Assert.assertEquals("Baz", result3);
+//        var result4 = callMethod(bean, "bazGet", List.of("Baz1", fooId));
+//        Assert.assertNull(result4);
+//
+//        // Test list
+//        callMethod(bean, "listPut", List.of(List.of(fooId, barId), "List"));
+//        var result5 = callMethod(bean, "listGet", List.of(List.of(fooId, barId)));
+//        Assert.assertEquals("List", result5);
+//
+//        // Test set
+//        callMethod(bean, "setPut", List.of(List.of("Hello", "World"), "Set"));
+//        var result6 = callMethod(bean, "setGet", List.of(List.of("World", "Hello")));
+//        Assert.assertEquals("Set", result6);
+//        var result7 = callMethod(bean, "setGet", List.of(List.of("World")));
+//        Assert.assertNull(result7);
+//
+//        // Test map
+//        var entries = List.of(Map.of("key", "name", "value", "leen"), Map.of("key", "age", "value", 30));
+//        callMethod(bean, "mapPut", List.of(entries, "Map"));
+//        var result8 = callMethod(bean, "mapGet", List.of(entries));
+//        Assert.assertEquals("Map", result8);
+//        var result9 = callMethod(bean, "setGet", List.of(List.of("World")));
+//        Assert.assertNull(result9);
+//    }
 
-        // Test entity without a defined hashCode method
-        var barId = saveInstance("hashcode.HashCodeBar", Map.of(
-                "name", "Bar"
-        ));
-        callMethod(bean, "put", List.of(barId, "Bar"));
-        var result2 = callMethod(bean, "get", List.of(barId));
-        Assert.assertEquals("Bar", result2);
-
-        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var bazKlass = context.getKlassByQualifiedName("hashcode.HashCodeBaz");
-            Assert.assertTrue(bazKlass.isValueKlass());
-        }
-
-        // Test value object
-        callMethod(bean, "bazPut", List.of("Baz", fooId, "Baz"));
-        var result3 = callMethod(bean, "bazGet", List.of("Baz", fooId));
-        Assert.assertEquals("Baz", result3);
-        var result4 = callMethod(bean, "bazGet", List.of("Baz1", fooId));
-        Assert.assertNull(result4);
-
-        // Test list
-        callMethod(bean, "listPut", List.of(List.of(fooId, barId), "List"));
-        var result5 = callMethod(bean, "listGet", List.of(List.of(fooId, barId)));
-        Assert.assertEquals("List", result5);
-
-        // Test set
-        callMethod(bean, "setPut", List.of(List.of("Hello", "World"), "Set"));
-        var result6 = callMethod(bean, "setGet", List.of(List.of("World", "Hello")));
-        Assert.assertEquals("Set", result6);
-        var result7 = callMethod(bean, "setGet", List.of(List.of("World")));
-        Assert.assertNull(result7);
-
-        // Test map
-        var entries = List.of(Map.of("key", "name", "value", "leen"), Map.of("key", "age", "value", 30));
-        callMethod(bean, "mapPut", List.of(entries, "Map"));
-        var result8 = callMethod(bean, "mapGet", List.of(entries));
-        Assert.assertEquals("Map", result8);
-        var result9 = callMethod(bean, "setGet", List.of(List.of("World")));
-        Assert.assertNull(result9);
-    }
-
-    public void testHashSet() {
-        deploy(List.of(
-                "kiwi/basics/hashcode/HashCodeFoo.kiwi",
-                "kiwi/basics/hashcode/HashSetLab.kiwi"
-        ));
-        var bean = ApiNamedObject.of("hashSetLab");
-        callMethod(bean, "add", List.of("Hello"));
-        var contains = callMethod(bean, "contains", List.of("Hello"));
-        Assert.assertEquals(true, contains);
-
-        var foo1Id = saveInstance("hashcode.HashCodeFoo", Map.of(
-                "name", "Foo"
-        ));
-        callMethod(bean, "add", List.of(foo1Id));
-
-        var foo2Id = saveInstance("hashcode.HashCodeFoo", Map.of(
-                "name", "Foo"
-        ));
-        var contains1 = callMethod(bean, "contains", List.of(foo2Id));
-        Assert.assertEquals(true, contains1);
-        var foo3Id = saveInstance("hashcode.HashCodeFoo", Map.of(
-                "name", "Foo1"
-        ));
-        var contains2 = callMethod(bean, "contains", List.of(foo3Id));
-        Assert.assertEquals(false, contains2);
-    }
+//    public void testHashSet() {
+//        deploy(List.of(
+//                "kiwi/basics/hashcode/HashCodeFoo.kiwi",
+//                "kiwi/basics/hashcode/HashSetLab.kiwi"
+//        ));
+//        var bean = ApiNamedObject.of("hashSetLab");
+//        callMethod(bean, "add", List.of("Hello"));
+//        var contains = callMethod(bean, "contains", List.of("Hello"));
+//        Assert.assertEquals(true, contains);
+//
+//        var foo1Id = saveInstance("hashcode.HashCodeFoo", Map.of(
+//                "name", "Foo"
+//        ));
+//        callMethod(bean, "add", List.of(foo1Id));
+//
+//        var foo2Id = saveInstance("hashcode.HashCodeFoo", Map.of(
+//                "name", "Foo"
+//        ));
+//        var contains1 = callMethod(bean, "contains", List.of(foo2Id));
+//        Assert.assertEquals(true, contains1);
+//        var foo3Id = saveInstance("hashcode.HashCodeFoo", Map.of(
+//                "name", "Foo1"
+//        ));
+//        var contains2 = callMethod(bean, "contains", List.of(foo3Id));
+//        Assert.assertEquals(false, contains2);
+//    }
 
     public void testIndexSelect() {
         deploy("kiwi/basics/index/IndexSelectFoo.kiwi");

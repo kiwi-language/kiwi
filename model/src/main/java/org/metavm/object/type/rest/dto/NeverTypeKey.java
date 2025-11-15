@@ -1,10 +1,10 @@
 package org.metavm.object.type.rest.dto;
 
-import org.metavm.object.type.NeverType;
-import org.metavm.object.type.TypeDefProvider;
+import org.jsonk.Json;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
+@Json
 public record NeverTypeKey() implements TypeKey {
     @Override
     public void write(MvOutput output) {
@@ -14,11 +14,6 @@ public record NeverTypeKey() implements TypeKey {
     @Override
     public String toTypeExpression() {
         return "never";
-    }
-
-    @Override
-    public NeverType toType(TypeDefProvider typeDefProvider) {
-        return NeverType.instance;
     }
 
     @Override

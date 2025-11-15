@@ -1,12 +1,12 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
-import org.metavm.entity.ConstraintDef;
+import org.metavm.common.ErrorCode;
+import org.metavm.util.BusinessException;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.expression.BinaryExpression;
 import org.metavm.expression.InstanceEvaluationContext;
 import org.metavm.expression.PropertyExpression;
@@ -17,32 +17,28 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.util.Instances;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
-@NativeEntity(32)
+@Getter
+@Wire(32)
 @Entity
 public class CheckConstraint extends Constraint {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
-    private Value condition;
-
-    private transient ConstraintDef<?> constraintDef;
+    private final Value condition;
 
     public CheckConstraint(@NotNull Id id, Klass type, String name, String message, Value condition) {
         super(id, type, name, message);
         this.condition = condition;
     }
 
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        Constraint.visitBody(visitor);
-        Value.visit(visitor);
+    public static BusinessException constraintCheckFailed(Instance instance, Constraint constraint) {
+        String reason = constraint.getMessage() != null ? constraint.getMessage() : constraint.getDefaultMessage();
+        throw new BusinessException(
+                ErrorCode.CONSTRAINT_CHECK_FAILED,
+                instance.getTitle(),
+                reason
+        );
     }
 
     @Override
@@ -69,20 +65,8 @@ public class CheckConstraint extends Constraint {
         return "";
     }
 
-    public Value getCondition() {
-        return condition;
-    }
-
     public boolean check(ClassInstance instance) {
         return Instances.isTrue(condition.evaluate(new InstanceEvaluationContext(instance)));
-    }
-
-    public ConstraintDef<?> getConstraintDef() {
-        return constraintDef;
-    }
-
-    public void setConstraintDef(ConstraintDef<?> constraintDef) {
-        this.constraintDef = constraintDef;
     }
 
     @Override
@@ -107,54 +91,8 @@ public class CheckConstraint extends Constraint {
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("defaultMessage", this.getDefaultMessage());
-        map.put("desc", this.getDesc());
-        map.put("condition", this.getCondition().toJson());
-        map.put("constraintDef", this.getConstraintDef());
-        var message = this.getMessage();
-        if (message != null) map.put("message", message);
-        map.put("name", this.getName());
-        map.put("qualifiedName", this.getQualifiedName());
-        map.put("declaringType", this.getDeclaringType().getStringId());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
     }
 
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_CheckConstraint;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        super.readBody(input, parent);
-        this.condition = Value.read(input);
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        super.writeBody(output);
-        condition.write(output);
-    }
-
-    @Override
-    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
-        super.buildSource(source);
-    }
 }

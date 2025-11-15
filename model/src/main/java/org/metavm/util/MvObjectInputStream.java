@@ -1,26 +1,19 @@
 package org.metavm.util;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.Entity;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
+import org.metavm.object.instance.core.*;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
 @Entity(ephemeral = true)
-public class MvObjectInputStream extends ObjectInputStream implements NativeEphemeralObject {
-
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+public class MvObjectInputStream implements NativeEphemeralObject {
 
     public static MvObjectInputStream create(InstanceInput input) {
         try {
@@ -30,15 +23,12 @@ public class MvObjectInputStream extends ObjectInputStream implements NativeEphe
         }
     }
 
+    @Getter
     private final transient InstanceInput input;
     private final transient InstanceState state = InstanceState.ephemeral(this);
 
     protected MvObjectInputStream(InstanceInput input) throws IOException {
         this.input = input;
-    }
-
-    public InstanceInput getInput() {
-        return input;
     }
 
     @Override
@@ -70,22 +60,6 @@ public class MvObjectInputStream extends ObjectInputStream implements NativeEphe
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-    }
-
-    @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("input", this.getInput());
-        map.put("objectInputFilter", this.getObjectInputFilter());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
     }
 
     @Override

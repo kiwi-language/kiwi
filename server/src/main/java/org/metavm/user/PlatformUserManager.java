@@ -8,15 +8,12 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.EntityQueryBuilder;
 import org.metavm.entity.EntityQueryService;
-import org.metavm.event.EventQueue;
-import org.metavm.event.rest.dto.JoinAppEvent;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.user.rest.dto.*;
 import org.metavm.util.*;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.metavm.context.Component;
+import org.metavm.context.sql.Transactional;
 
 import java.util.List;
 
@@ -27,15 +24,12 @@ public class PlatformUserManager extends EntityContextFactoryAware {
 
     private final EntityQueryService entityQueryService;
 
-    private final EventQueue eventQueue;
-
     private final VerificationCodeService verificationCodeService;
 
-    public PlatformUserManager(EntityContextFactory entityContextFactory, LoginService loginService, EntityQueryService entityQueryService, EventQueue eventQueue, VerificationCodeService verificationCodeService) {
+    public PlatformUserManager(EntityContextFactory entityContextFactory, LoginService loginService, EntityQueryService entityQueryService, VerificationCodeService verificationCodeService) {
         super(entityContextFactory);
         this.loginService = loginService;
         this.entityQueryService = entityQueryService;
-        this.eventQueue = eventQueue;
         this.verificationCodeService = verificationCodeService;
     }
 
@@ -66,7 +60,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readonly = true)
     public Page<UserDTO> list(int page, int pageSize, String searchText) {
         try (var context = newPlatformContext()) {
             var query = EntityQueryBuilder.newBuilder(User.class)
@@ -131,7 +125,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readonly = true)
     public List<ApplicationDTO> getApplications(String userId) {
         try (var context = newPlatformContext()) {
             var user = context.getEntity(PlatformUser.class, userId);
@@ -142,7 +136,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     @Transactional
     public LoginResult enterApp(long id) {
         try (var platformCtx = newPlatformContext()) {
-            var app = platformCtx.getEntity(Application.class, Constants.getAppId(id));
+            var app = platformCtx.getEntity(Application.class, Id.getAppId(id));
             var user = platformCtx.getEntity(PlatformUser.class, ContextUtil.getUserId());
             if (user.hasJoinedApplication(app)) {
                 ContextUtil.enterApp(id, null);
@@ -182,16 +176,6 @@ public class PlatformUserManager extends EntityContextFactoryAware {
                 }
                 context.finish();
             }
-        }
-        if (TransactionSynchronizationManager.isSynchronizationActive()
-                && app.getId().getTreeId() != Constants.PLATFORM_APP_ID
-                && app.getId().getTreeId() != Constants.ROOT_APP_ID) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    eventQueue.publishUserEvent(new JoinAppEvent(platformUser.getStringId(), app.getStringId()));
-                }
-            });
         }
     }
 
@@ -244,7 +228,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readonly = true)
     public UserDTO get(String id) {
         try (var context = newPlatformContext()) {
             return Utils.safeCall(context.getEntity(User.class, id), User::toDTO);

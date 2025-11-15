@@ -4,7 +4,6 @@ import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.event.EventQueue;
 import org.metavm.flow.Code;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
@@ -126,8 +125,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     @Nullable Consumer<Object> getBindHook();
 
     Instance getRemoved(Id id);
-
-    @Nullable EventQueue getEventQueue();
 
     InstanceInput createInstanceInput(InputStream stream);
 

@@ -3,24 +3,16 @@ package org.metavm.util;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.Entity;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
+import org.metavm.object.instance.core.*;
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
 @Entity(ephemeral = true)
-public class MvObjectOutputStream extends ObjectOutputStream implements NativeEphemeralObject {
-
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+public class MvObjectOutputStream implements NativeEphemeralObject {
 
     public static MvObjectOutputStream create(MarkingInstanceOutput output) {
         try {
@@ -99,21 +91,6 @@ public class MvObjectOutputStream extends ObjectOutputStream implements NativeEp
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-    }
-
-    @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("out", this.getOut());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
     }
 
     @Override

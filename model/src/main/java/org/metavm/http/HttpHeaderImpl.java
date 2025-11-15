@@ -1,24 +1,20 @@
 package org.metavm.http;
 
-import org.metavm.api.Entity;
 import org.metavm.api.EntityFlow;
 import org.metavm.api.entity.HttpHeader;
-import org.metavm.entity.natives.CallContext;
-import org.metavm.object.instance.core.*;
+import org.metavm.entity.StdKlassRegistry;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceState;
+import org.metavm.object.instance.core.NativeEphemeralObject;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
-import org.metavm.util.Instances;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
-@Entity
 public class HttpHeaderImpl implements HttpHeader, NativeEphemeralObject {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+    public static final Klass __klass__ = StdKlassRegistry.instance.getKlass(HttpHeaderImpl.class);
     private final transient InstanceState state = InstanceState.ephemeral(this);
 
     public final String name;
@@ -46,21 +42,8 @@ public class HttpHeaderImpl implements HttpHeader, NativeEphemeralObject {
         return value;
     }
 
-    public Value name(CallContext callContext) {
-        return Instances.stringInstance(name());
-    }
-
-    public Value value(CallContext callContext) {
-        return Instances.stringInstance(value());
-    }
-
-
     @Override
     public void forEachReference(Consumer<Reference> action) {
-    }
-
-    @Override
-    public void buildJson(Map<String, Object> map) {
     }
 
     @Override

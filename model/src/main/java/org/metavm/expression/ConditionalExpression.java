@@ -3,13 +3,11 @@ package org.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.BooleanValue;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.MvInput;
@@ -21,11 +19,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public class ConditionalExpression extends Expression {
-
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
 
     public static ConditionalExpression create(@NotNull Expression condition,
                                                @NotNull Expression trueValue,
@@ -136,18 +132,6 @@ public class ConditionalExpression extends Expression {
         type.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("condition", this.getCondition().toJson());
-        map.put("trueValue", this.getTrueValue().toJson());
-        map.put("falseValue", this.getFalseValue().toJson());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_ConditionalExpression);
@@ -156,5 +140,15 @@ public class ConditionalExpression extends Expression {
         trueValue.write(output);
         falseValue.write(output);
         output.writeValue(type);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new ConditionalExpression(
+                condition.accept(transformer),
+                trueValue.accept(transformer),
+                falseValue.accept(transformer),
+                type
+        );
     }
 }

@@ -6,7 +6,6 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Patch;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.type.CheckConstraint;
-import org.metavm.util.BusinessException;
 
 import java.util.List;
 
@@ -26,7 +25,7 @@ public class CheckConstraintPlugin implements ContextPlugin {
         List<CheckConstraint> constraints = instance.getInstanceKlass().getAllConstraints(CheckConstraint.class);
         for (CheckConstraint constraint : constraints) {
             if(!constraint.check(instance)) {
-                throw BusinessException.constraintCheckFailed(instance, constraint);
+                throw CheckConstraint.constraintCheckFailed(instance, constraint);
             }
         }
     }

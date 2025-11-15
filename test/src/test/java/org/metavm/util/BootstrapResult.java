@@ -8,7 +8,6 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.persistence.MemMapperRegistry;
 import org.metavm.object.instance.persistence.SchemaManager;
 import org.metavm.object.type.MemAllocatorStore;
-import org.metavm.object.type.MemColumnStore;
 import org.metavm.object.type.MemTypeTagStore;
 import org.metavm.object.type.TypeManager;
 import org.metavm.task.TaskManager;
@@ -19,7 +18,6 @@ public record BootstrapResult(
         EntityIdProvider idProvider,
         MemInstanceSearchServiceV2 instanceSearchService,
         MemAllocatorStore allocatorStore,
-        MemColumnStore columnStore,
         MemoryStdIdStore stdIdStore,
         MemTypeTagStore typeTagStore,
         MetaContextCache metaContextCache,

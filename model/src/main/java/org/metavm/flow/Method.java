@@ -1,59 +1,49 @@
 package org.metavm.flow;
 
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.natives.CallContext;
+import org.metavm.entity.natives.ExceptionNative;
 import org.metavm.entity.natives.NativeMethods;
-import org.metavm.entity.natives.RuntimeExceptionNative;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.metavm.wire.Parent;
+import org.metavm.wire.Wire;
 
 import javax.annotation.Nullable;
-import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-@NativeEntity(1)
+@Wire(1)
 @Entity
+@Slf4j
 public class Method extends Flow implements Property {
-
-    public static final Logger logger = LoggerFactory.getLogger(Method.class);
 
     private static final Pattern GETTER_PTN = Pattern.compile("(get|is)([A-Z][a-zA-Z0-9]*)");
     private static final Pattern SETTER_PTN = Pattern.compile("set([A-Z][a-zA-Z0-9]*)");
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
+    @Parent
     private @NotNull Klass declaringType;
     private boolean _static;
     private Access access;
     private boolean isConstructor;
     private boolean isAbstract;
+    @Getter
     private boolean hidden;
 
-    private transient String nativeName;
-    private transient volatile MethodHandle nativeHandle;
+    @Getter
+    private final transient NativeFunction nativeFunction;
 
     public Method(@NotNull Id id,
                   @NotNull Klass declaringType,
@@ -68,7 +58,7 @@ public class Method extends Flow implements Property {
                   boolean isStatic,
                   Access access,
                   boolean hidden,
-                  MetadataState state) {
+                  NativeFunction nativeFunction, MetadataState state) {
         super(id, name, isNative, isSynthetic, returnTypeIndex, List.of(), state);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
@@ -79,20 +69,11 @@ public class Method extends Flow implements Property {
         this.isAbstract = isAbstract;
         this.access = access;
         this.hidden = hidden;
+        this.nativeFunction = nativeFunction;
         var root = declaringType.getRoot();
         setParameters(Utils.map(parameters, p -> new Parameter(root.nextChildId(), p.name(), p.type(), this)));
         declaringType.addMethod(this);
         resetBody();
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        Flow.visitBody(visitor);
-        visitor.visitBoolean();
-        visitor.visitByte();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
     }
 
     public boolean isConstructor() {
@@ -166,17 +147,9 @@ public class Method extends Flow implements Property {
         resetBody();
     }
 
-    public boolean isHidden() {
-        return hidden;
-    }
-
     @JsonIgnore
     public String getQualifiedSignature() {
         return declaringType.getTypeDesc() + "." + getSignatureString();
-    }
-
-    public @Nullable FunctionType getStaticType() {
-        return getStaticType(getConstantPool());
     }
 
     public @Nullable FunctionType getStaticType(TypeMetadata typeMetadata) {
@@ -193,14 +166,12 @@ public class Method extends Flow implements Property {
 
     @Override
     public FlowExecResult execute(@Nullable Value self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext) {
-//        logger.debug("Executing method: {}, self: {}, arguments: {}",
-//                getQualifiedSignature(), self, arguments);
         try (var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName() + "." + getName())) {
             if (DebugEnv.debugging) {
-                logger.info("Method.execute: {}", this);
-                logger.info("Arguments: ");
-                arguments.forEach(arg -> debugLogger.info(arg.getText()));
-                logger.info(getText());
+                log.info("Method.execute: {}", this);
+                log.info("Arguments: ");
+                arguments.forEach(arg -> log.info(arg.getText()));
+                log.info(getText());
             }
             if (_static)
                 Utils.require(self == null);
@@ -237,7 +208,7 @@ public class Method extends Flow implements Property {
                 } catch (BusinessException e) {
                     throw e;
                 } catch (Exception e) {
-                    logger.info("Failed to execute method {}", getQualifiedName());
+                    log.info("Failed to execute method {}", getQualifiedName());
 //                    logger.info(getText());
                     throw new InternalException("Failed to execute method " + getQualifiedName(), e);
                 }
@@ -246,12 +217,11 @@ public class Method extends Flow implements Property {
                 var instance = result.ret().resolveObject();
                 var uninitializedField = instance.findUninitializedField(declaringType);
                 if (uninitializedField != null) {
-                    var exception = ClassInstance.allocate(TmpId.random(), StdKlass.runtimeException.get().getType());
-                    var exceptionNative = new RuntimeExceptionNative(exception);
-                    exceptionNative.RuntimeException(Instances.stringInstance(
+                    var exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.get().getType());
+                    ExceptionNative.Exception(exception, Instances.stringInstance(
                                     "Failed to instantiate " + instance.getInstanceType().getTypeDesc() + "，" +
-                                            "field " + uninitializedField.getName() + " was not initialized"),
-                            callContext);
+                                            "field " + uninitializedField.getName() + " was not initialized")
+                    );
                     return new FlowExecResult(null, exception);
                 }
             }
@@ -334,26 +304,21 @@ public class Method extends Flow implements Property {
         return super.hasBody() && !isAbstract;
     }
 
-    public static final int FLAG_CONSTRUCTOR = 8;
-    public static final int FLAG_ABSTRACT = 16;
-    public static final int FLAG_STATIC = 32;
-    public static final int FLAG_HIDDEN = 64;
-
     public int getFlags() {
         int flags = super.getFlags();
-        if(isConstructor) flags |= FLAG_CONSTRUCTOR;
-        if(isAbstract) flags |= FLAG_ABSTRACT;
-        if(_static) flags |= FLAG_STATIC;
-        if(hidden) flags |= FLAG_HIDDEN;
+        if(isConstructor) flags |= MethodFlags.FLAG_CONSTRUCTOR;
+        if(isAbstract) flags |= MethodFlags.FLAG_ABSTRACT;
+        if(_static) flags |= MethodFlags.FLAG_STATIC;
+        if(hidden) flags |= MethodFlags.FLAG_HIDDEN;
         return flags;
     }
 
     public void setFlags(int flags) {
         super.setFlags(flags);
-        isConstructor = (flags & FLAG_CONSTRUCTOR) != 0;
-        isAbstract = (flags & FLAG_ABSTRACT) != 0;
-        _static = (flags & FLAG_STATIC) != 0;
-        hidden = (flags & FLAG_HIDDEN) != 0;
+        isConstructor = (flags & MethodFlags.FLAG_CONSTRUCTOR) != 0;
+        isAbstract = (flags & MethodFlags.FLAG_ABSTRACT) != 0;
+        _static = (flags & MethodFlags.FLAG_STATIC) != 0;
+        hidden = (flags & MethodFlags.FLAG_HIDDEN) != 0;
         resetBody();
     }
 
@@ -376,27 +341,6 @@ public class Method extends Flow implements Property {
     }
 
 
-    @JsonIgnore
-    public String getNativeName() {
-        if (nativeName == null) {
-            if (!getParameters().isEmpty() && Utils.count(declaringType.getMethods(),
-                            m -> m.getName().equals(getName()) && m.getParameters().size() == getParameters().size()) > 1)
-                nativeName = getName() + "__" + Utils.join(getParameterTypes(), t -> t.getUnderlyingType().getName(), "_");
-            else
-                nativeName = getName();
-        }
-        return nativeName;
-    }
-
-    @JsonIgnore
-    public MethodHandle getNativeHandle() {
-        return nativeHandle;
-    }
-
-    public void setNativeHandle(MethodHandle nativeHandle) {
-        this.nativeHandle = nativeHandle;
-    }
-
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitMethod(this);
@@ -413,78 +357,8 @@ public class Method extends Flow implements Property {
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("constructor", this.isConstructor());
-        map.put("abstract", this.isAbstract());
-        map.put("declaringType", this.getDeclaringType().getStringId());
-        map.put("access", this.getAccess().name());
-        map.put("static", this.isStatic());
-        map.put("hidden", this.isHidden());
-        var staticType = this.getStaticType();
-        if (staticType != null) map.put("staticType", staticType.toJson());
-        map.put("minLocals", this.getMinLocals());
-        map.put("flags", this.getFlags());
-        map.put("parameterTypes", this.getParameterTypes().stream().map(Type::toJson).toList());
-        map.put("returnType", this.getReturnType().toJson());
-        map.put("code", this.getCode().toJson());
-        map.put("synthetic", this.isSynthetic());
-        map.put("name", this.getName());
-        map.put("state", this.getState().name());
-        map.put("functionType", this.getFunctionType().toJson());
-        map.put("native", this.isNative());
-        map.put("typeParameters", this.getTypeParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("parameters", this.getParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("returnTypeIndex", this.getReturnTypeIndex());
-        map.put("type", this.getType().toJson());
-        map.put("capturedTypeVariables", this.getCapturedTypeVariables().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("lambdas", this.getLambdas().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("constantPool", this.getConstantPool().toJson());
-        map.put("klasses", this.getKlasses().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("internalName", this.getInternalName());
-        map.put("attributes", this.getAttributes().stream().map(Attribute::toJson).toList());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_Method;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        super.readBody(input, parent);
-        this.declaringType = (Klass) parent;
-        this._static = input.readBoolean();
-        this.access = Access.fromCode(input.read());
-        this.isConstructor = input.readBoolean();
-        this.isAbstract = input.readBoolean();
-        this.hidden = input.readBoolean();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        super.writeBody(output);
-        output.writeBoolean(_static);
-        output.write(access.code());
-        output.writeBoolean(isConstructor);
-        output.writeBoolean(isAbstract);
-        output.writeBoolean(hidden);
     }
 
     @Override
@@ -494,8 +368,4 @@ public class Method extends Flow implements Property {
         super.writeCode(writer);
     }
 
-    @Override
-    protected void buildSource(Map<String, Value> source) {
-        super.buildSource(source);
-    }
 }

@@ -1,15 +1,9 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
-import org.metavm.entity.BuildKeyContext;
-import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.GlobalKey;
-import org.metavm.entity.IndexDef;
+import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.FunctionImpl;
@@ -17,23 +11,18 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.MetadataState;
-import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
-import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
+import org.metavm.wire.*;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-@NativeEntity(67)
+@Wire(67)
 @Entity(searchable = true)
 public class Function extends Flow implements GlobalKey {
 
@@ -43,8 +32,6 @@ public class Function extends Flow implements GlobalKey {
     public static final IndexDef<Function> UNIQUE_NAME =
             IndexDef.createUnique(Function.class, 1,
                     function -> List.of(Instances.stringInstance(function.getName())));
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     @SuppressWarnings({"FieldMayBeFinal", "unused"})
     private boolean allFlag = true;
@@ -62,12 +49,6 @@ public class Function extends Flow implements GlobalKey {
         super(id, name, isNative, isSynthetic, returnTypeIndex, typeParameters, state);
         setParameters(Utils.map(parameters, p -> new Parameter(nextChildId(), p.name(), p.type(), this)));
         resetBody();
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        Flow.visitBody(visitor);
-        visitor.visitBoolean();
     }
 
     @Override
@@ -142,65 +123,8 @@ public class Function extends Flow implements GlobalKey {
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("parameterTypes", this.getParameterTypes().stream().map(Type::toJson).toList());
-        map.put("returnType", this.getReturnType().toJson());
-        map.put("code", this.getCode().toJson());
-        map.put("synthetic", this.isSynthetic());
-        map.put("name", this.getName());
-        map.put("state", this.getState().name());
-        map.put("functionType", this.getFunctionType().toJson());
-        map.put("native", this.isNative());
-        map.put("typeParameters", this.getTypeParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("parameters", this.getParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("returnTypeIndex", this.getReturnTypeIndex());
-        map.put("type", this.getType().toJson());
-        map.put("capturedTypeVariables", this.getCapturedTypeVariables().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("lambdas", this.getLambdas().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("constantPool", this.getConstantPool().toJson());
-        map.put("klasses", this.getKlasses().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("flags", this.getFlags());
-        map.put("internalName", this.getInternalName());
-        map.put("attributes", this.getAttributes().stream().map(org.metavm.entity.Attribute::toJson).toList());
-        map.put("minLocals", this.getMinLocals());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
     }
 
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_Function;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        super.readBody(input, parent);
-        this.allFlag = input.readBoolean();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        super.writeBody(output);
-        output.writeBoolean(allFlag);
-    }
-
-    @Override
-    protected void buildSource(Map<String, Value> source) {
-        super.buildSource(source);
-    }
 }

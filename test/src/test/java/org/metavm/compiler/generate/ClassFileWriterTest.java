@@ -7,7 +7,6 @@ import org.metavm.compiler.CompilerTestUtils;
 import org.metavm.compiler.analyze.Lower;
 import org.metavm.compiler.diag.DummyLog;
 import org.metavm.compiler.syntax.ClassDecl;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.mocks.MockEntityRepository;
 import org.metavm.flow.KlassInput;
@@ -20,12 +19,6 @@ import java.io.ByteArrayOutputStream;
 
 @Slf4j
 public class ClassFileWriterTest extends TestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
-    }
 
     public void testLivingBeing() {
         process("kiwi/LivingBeing.kiwi");
@@ -207,9 +200,8 @@ public class ClassFileWriterTest extends TestCase {
         }
 
         var repo = new MockEntityRepository();
-        repo.bind(StdKlass.runtimeException.get());
+        repo.bind(StdKlass.exception.get());
         repo.bind(StdKlass.string.get());
-        repo.bind(StdKlass.list.get());
         repo.bind(StdKlass.enum_.get());
 
         var bytes = bout.toByteArray();

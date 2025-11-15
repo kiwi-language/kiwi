@@ -1,9 +1,8 @@
-import java.util.List
 
 class Utils {
 
-    static fn size(strings: List<string>) -> int {
-        return strings.size()
+    static fn size(strings: string[]) -> int {
+        return strings.length
     }
 
 }

@@ -2,6 +2,7 @@ package org.metavm.expression;
 
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Reference;
@@ -11,12 +12,13 @@ import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Types;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.Utils;
 import org.metavm.util.StreamVisitor;
+import org.metavm.util.Utils;
 
 import java.util.*;
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public class ArrayExpression extends Expression {
 
@@ -120,21 +122,16 @@ public class ArrayExpression extends Expression {
         type.forEachReference(action);
     }
 
-    public void buildJson(Map<String, Object> map) {
-        map.put("expressions", this.getExpressions().stream().map(Expression::toJson).toList());
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_ArrayExpression);
         super.write(output);
         output.writeList(expressions, arg0 -> arg0.write(output));
         output.writeValue(type);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new ArrayExpression(Utils.map(expressions, e -> e.accept(transformer)), type);
     }
 }

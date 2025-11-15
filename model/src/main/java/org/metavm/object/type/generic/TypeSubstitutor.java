@@ -10,8 +10,6 @@ import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
 import org.metavm.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -21,8 +19,6 @@ import java.util.Map;
 
 @Slf4j
 public class TypeSubstitutor extends ElementVisitor<Type> {
-
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private final Map<Type, Type> variableMap;
 
@@ -38,7 +34,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
     public void addMapping(Type from, Type to) {
         variableMap.put(from, to);
         if (DebugEnv.debugging)
-            debugLogger.info("added mapping: {} -> {}", EntityUtils.getEntityDesc(from), EntityUtils.getEntityDesc(to));
+            log.info("added mapping: {} -> {}", EntityUtils.getEntityDesc(from), EntityUtils.getEntityDesc(to));
     }
 
     @Override

@@ -1,10 +1,9 @@
 package org.metavm.user;
 
 import org.metavm.application.Application;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.event.rest.dto.LeaveAppEvent;
 import org.metavm.message.Message;
 import org.metavm.message.MessageKind;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.Instances;
 
 import java.util.List;
@@ -23,14 +22,6 @@ public class PlatformUsers {
                             Instances.nullInstance()
                     )
             );
-        }
-        var eventQueue = platformContext.getEventQueue();
-        if (eventQueue != null) {
-            platformContext.registerCommitCallback(() -> {
-                for (PlatformUser platformUser : platformUsers) {
-                    eventQueue.publishUserEvent(new LeaveAppEvent(platformUser.getStringId(), app.getStringId()));
-                }
-            });
         }
     }
 

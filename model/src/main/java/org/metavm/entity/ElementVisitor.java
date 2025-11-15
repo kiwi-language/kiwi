@@ -204,10 +204,6 @@ public abstract class ElementVisitor<R> {
         return visitExpression(expression);
     }
 
-    public R visitMethodExpression(MethodExpression expression) {
-        return visitExpression(expression);
-    }
-
     public R visitAsExpression(AsExpression expression) {
         return visitExpression(expression);
     }
@@ -225,14 +221,6 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitVariablePathExpression(VariablePathExpression expression) {
-        return visitExpression(expression);
-    }
-
-    public R visitCursorExpression(CursorExpression expression) {
-        return visitExpression(expression);
-    }
-
-    public R visitAllMatchExpression(AllMatchExpression expression) {
         return visitExpression(expression);
     }
 
@@ -326,10 +314,6 @@ public abstract class ElementVisitor<R> {
 
     public R visitLambdaRef(LambdaRef lambdaRef) {
         return visitElement(lambdaRef);
-    }
-
-    public R visitTypeLiteralExpression(TypeLiteralExpression typeLiteralExpression) {
-        return visitExpression(typeLiteralExpression);
     }
 
     public R visitNonNullNode(NonNullNode nonNullNode) {
@@ -477,10 +461,6 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitNewArrayWithDimsNode(NewArrayWithDimsNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadTypeNode(LoadTypeNode node) {
         return visitNode(node);
     }
 
@@ -724,114 +704,6 @@ public abstract class ElementVisitor<R> {
         return visitInvokeNode(node);
     }
 
-    public R visitLoadTypeArgumentNode(LoadTypeArgumentNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadElementTypeNode(LoadElementTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadKlassTypeNode(LoadKlassTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadInnerKlassTypeNode(LoadInnerKlassTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadArrayTypeNode(LoadArrayTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadIntTypeNode(LoadIntTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadAnyTypeNode(LoadAnyTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadBooleanTypeNode(LoadBooleanTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadCharTypeNode(LoadCharTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadByteTypeNode(LoadByteTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadDoubleTypeNode(LoadDoubleTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadFloatTypeNode(LoadFloatTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadLongTypeNode(LoadLongTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadShortTypeNode(LoadShortTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadUnderlyingTypeNode(LoadUnderlyingTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadParameterTypeNode(LoadParameterTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadReturnTypeNode(LoadReturnTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadStringTypeNode(LoadStringTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadVoidTypeNode(LoadVoidTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadNullTypeNode(LoadNullTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadNullableTypeNode(LoadNullableTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadUnionTypeNode(LoadUnionTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadUncertainTypeNode(LoadUncertainTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadIntersectionTypeNode(LoadIntersectionTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadNeverTypeNode(LoadNeverTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadLocalKlassTypeNode(LoadLocalKlassTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadFunctionTypeNode(LoadFunctionTypeNode node) {
-        return visitNode(node);
-    }
-
     public R visitGenericInvokeVirtualNode(GenericInvokeVirtualNode node) {
         return visitNode(node);
     }
@@ -847,35 +719,6 @@ public abstract class ElementVisitor<R> {
     public R visitGenericInvokeFunctionNode(GenericInvokeFunctionNode node) {
         return visitNode(node);
     }
-
-    public R visitTypeOfNode(TypeOfNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadTimeTypeNode(LoadTimeTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadPasswordTypeNode(LoadPasswordTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadOwnerTypeNode(LoadOwnerTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadDeclaringTypeNode(LoadDeclaringTypeNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadCurrentFlowNode(LoadCurrentFlowNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLoadAncestorTypeNode(LoadAncestorTypeNode node) {
-        return visitNode(node);
-    }
-
 
     public R visitDupNode2(Dup2Node node) {
         return visitNode(node);

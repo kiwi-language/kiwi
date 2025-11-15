@@ -9,6 +9,7 @@ import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.PersistenceUtils;
 import org.metavm.object.instance.persistence.VersionRT;
+import org.metavm.object.type.CheckConstraint;
 import org.metavm.object.type.Index;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ChangeList;
@@ -103,7 +104,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
                     if (!involvedIds.contains(id)) {
                         var currentEntry = Utils.findRequired(currentEntries, e -> e.getKey().equals(entry.getKey()));
                         var index = context.getEntity(Index.class, Id.fromBytes(entry.getIndexId()));
-                        throw BusinessException.constraintCheckFailed(instanceMap.get(currentEntry.getId()), index);
+                        throw CheckConstraint.constraintCheckFailed(instanceMap.get(currentEntry.getId()), index);
                     }
                 }));
         patch.entityChange().setAttribute(NEW_INDEX_ITEMS, currentEntries);

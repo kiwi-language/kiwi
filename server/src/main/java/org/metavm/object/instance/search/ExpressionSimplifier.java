@@ -1,28 +1,19 @@
 package org.metavm.object.instance.search;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.CopyVisitor;
-import org.metavm.entity.Element;
-import org.metavm.expression.ConstantExpression;
-import org.metavm.expression.Expression;
-import org.metavm.expression.UnaryExpression;
-import org.metavm.expression.UnaryOperator;
+import org.metavm.expression.*;
 import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.NumberValue;
 
-public class ExpressionSimplifier extends CopyVisitor {
+public class ExpressionSimplifier extends ExpressionTransformer {
 
     public static Expression simplify(@NotNull Expression expression) {
-        return (Expression) expression.accept(new ExpressionSimplifier(expression));
-    }
-
-    public ExpressionSimplifier(@NotNull Expression root) {
-        super(root, false);
+        return expression.accept(new ExpressionSimplifier());
     }
 
     @Override
-    public Element visitUnaryExpression(UnaryExpression expression) {
-        var operand = (Expression) copy(expression.getOperand());
+    public Expression visitUnaryExpression(UnaryExpression expression) {
+        var operand = expression.getOperand().copy();
         var operator = expression.getOperator();
         if(operator == UnaryOperator.NOT) {
             if(operand instanceof ConstantExpression constExpr)

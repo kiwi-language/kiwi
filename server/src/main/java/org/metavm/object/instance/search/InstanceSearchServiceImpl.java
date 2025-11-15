@@ -2,65 +2,47 @@ package org.metavm.object.instance.search;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
-import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.core.CountRequest;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.client.indices.GetIndexResponse;
-import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.xcontent.XContentType;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.ResponseException;
+import org.elasticsearch.client.RestClient;
+import org.jsonk.Jsonk;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
-import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.context.Component;
+import org.metavm.jdbc.TransactionCallback;
+import org.metavm.jdbc.TransactionStatus;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Hooks;
 import org.metavm.util.SearchSyncRequest;
-import org.metavm.util.Utils;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
 
 @Slf4j
 @Component
 public class InstanceSearchServiceImpl implements InstanceSearchService {
 
-    // IMPORTANT: Your application should use the ALIAS for all operations.
-    // The actual index name should be treated as an implementation detail.
     public static final String INDEX_PREFIX = "instance-";
     public static final String MAIN_ALIAS_PREFIX = "instance-main-";
     public static final String TMP_ALIAS_PREFIX = "instance-tmp-";
     public static final String BAK_ALIAS_PREFIX = "instance-bak-";
 
-    private final RestHighLevelClient restHighLevelClient;
+    private final RestClient restClient;
 
-    public InstanceSearchServiceImpl(RestHighLevelClient restHighLevelClient) {
-        this.restHighLevelClient = restHighLevelClient;
+    public InstanceSearchServiceImpl(RestClient restClient) {
+        this.restClient = restClient;
         Hooks.SEARCH_BULK = this::bulk;
-        Hooks.DROP_INDICES = appId -> TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        Hooks.DROP_INDICES = appId -> TransactionStatus.registerCallback(new TransactionCallback() {
             @Override
             public void afterCommit() {
                 deleteAllIndices(appId);
             }
         });
-        Hooks.CREATE_INDEX_IF_NOT_EXISTS = appId -> TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        Hooks.CREATE_INDEX_IF_NOT_EXISTS = appId -> TransactionStatus.registerCallback(new TransactionCallback() {
             @Override
             public void afterCommit() {
                 createIndexIfNotExists(appId);
@@ -74,18 +56,22 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
             var indexName = INDEX_PREFIX + appId + "-v" + getVersion(appId);
 
             // First, create the physical index
-            createIndex(indexName);
+            createPhysicalIndex(indexName);
 
             // Then, point the public-facing alias to this new index
-            IndicesAliasesRequest request = new IndicesAliasesRequest();
             var prefix = tmp ? TMP_ALIAS_PREFIX : MAIN_ALIAS_PREFIX;
-            IndicesAliasesRequest.AliasActions aliasAction =
-                    new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.ADD)
-                            .index(indexName)
-                            .alias(prefix + appId);
-            request.addAliasAction(aliasAction);
-            restHighLevelClient.indices().updateAliases(request, RequestOptions.DEFAULT);
-            log.info("Successfully pointed alias '{}' to new index '{}'.", indexName, indexName);
+            String aliasName = prefix + appId;
+
+            Map<String, Object> addAction = Map.of(
+                    "add", Map.of("index", indexName, "alias", aliasName)
+            );
+            Map<String, Object> body = Map.of("actions", List.of(addAction));
+
+            Request request = new Request("POST", "/_aliases");
+            request.setJsonEntity(Jsonk.toJson(body));
+            restClient.performRequest(request);
+
+            log.info("Successfully pointed alias '{}' to new index '{}'.", aliasName, indexName);
         } catch (IOException e) {
             throw new RuntimeException("Failed to create index with alias", e);
         }
@@ -105,53 +91,50 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     private long getVersion(long appId) throws IOException {
         String indexSearchPattern = String.format("%s%d-v*", INDEX_PREFIX, appId);
-        GetIndexRequest request = new GetIndexRequest(indexSearchPattern);
-        String[] indices;
+
+        Request request = new Request("GET", "/" + indexSearchPattern);
 
         try {
-            GetIndexResponse response = restHighLevelClient.indices().get(request, RequestOptions.DEFAULT);
-            indices = response.getIndices();
-        } catch (ElasticsearchStatusException e) {
-            // This exception is thrown if the wildcard expression matches no indices.
-            if (e.status() == RestStatus.NOT_FOUND) {
+            Response response = restClient.performRequest(request);
+            // Result is a Map<String, Object> where keys are index names
+            Map<String, Object> indicesMap = Jsonk.fromJson(new InputStreamReader(response.getEntity().getContent()), Map.class);
+
+            if (indicesMap == null || indicesMap.isEmpty()) return 1L;
+
+            long maxVersion = indicesMap.keySet().stream()
+                    .map(name -> {
+                        try {
+                            int versionMarker = name.lastIndexOf("-v");
+                            if (versionMarker != -1) {
+                                return Long.parseLong(name.substring(versionMarker + 2));
+                            }
+                        } catch (NumberFormatException ex) {
+                            log.warn("Could not parse version from malformed index name: '{}'", name);
+                        }
+                        return -1L;
+                    })
+                    .filter(v -> v != -1L)
+                    .max(Long::compare)
+                    .orElse(0L);
+
+            return maxVersion + 1;
+
+        } catch (ResponseException e) {
+            if (e.getResponse().getStatusLine().getStatusCode() == 404) {
                 log.info("No existing indices found for pattern '{}'. Starting with version 1.", indexSearchPattern);
                 return 1L;
             }
-            // Re-throw other unexpected exceptions.
             throw e;
         }
-
-        if (indices.length == 0) {
-            return 1L; // Should be covered by the catch block, but here for safety.
-        }
-
-        long maxVersion = Arrays.stream(indices)
-                .map(name -> {
-                    try {
-                        // Find the last occurrence of '-v' and parse the number that follows.
-                        int versionMarker = name.lastIndexOf("-v");
-                        if (versionMarker != -1) {
-                            return Long.parseLong(name.substring(versionMarker + 2));
-                        }
-                    } catch (NumberFormatException ex) {
-                        log.warn("Could not parse version from malformed index name: '{}'", name);
-                    }
-                    return -1L; // Return a sentinel value for names that can't be parsed.
-                })
-                .filter(v -> v != -1L) // Filter out any malformed names.
-                .max(Long::compare)
-                .orElse(0L); // If all names were malformed, start from 0.
-
-        return maxVersion + 1;
     }
 
     @Override
     public void deleteTmpIndex(long appId) {
         var tmpAlias = TMP_ALIAS_PREFIX + appId;
-        var oldTmpIndexName = getIndicesForAlias(tmpAlias);
-        if (!oldTmpIndexName.isEmpty()) {
-            log.info("App [{}]: Found old tmp index {} (alias: {}). Deleting it now", appId, oldTmpIndexName, tmpAlias);
-            deleteIndex(oldTmpIndexName.toArray(String[]::new));
+        var oldTmpIndexNames = getIndicesForAlias(tmpAlias);
+        if (!oldTmpIndexNames.isEmpty()) {
+            log.info("App [{}]: Found old tmp index {} (alias: {}). Deleting it now", appId, oldTmpIndexNames, tmpAlias);
+            deleteIndex(oldTmpIndexNames.toArray(String[]::new));
         }
     }
 
@@ -162,58 +145,44 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
         String bakAlias = BAK_ALIAS_PREFIX + appId;
 
         try {
-            // --- Step 1: Remove the index with the alias instance-bak-{appId} if it exists ---
-            log.info("App [{}]: Starting alias switch process. Step 1: Cleaning up old backup.", appId);
+            log.info("App [{}]: Starting alias switch process.", appId);
             if (backup) {
                 String oldBakIndexName = getIndexForAlias(bakAlias);
                 if (oldBakIndexName != null) {
-                    log.info("App [{}]: Found old backup index '{}' (alias: {}). Deleting it now.", appId, oldBakIndexName, bakAlias);
                     deleteIndex(oldBakIndexName);
-                } else {
-                    log.info("App [{}]: No old backup index found. Proceeding.", appId);
                 }
             }
 
-            // --- Steps 2 & 3: Find indices and perform the atomic alias switch ---
-            log.info("App [{}]: Step 2 & 3: Preparing to swap main and temporary aliases.", appId);
-
-            // Find the physical index names we are working with.
             String mainIndexName = getIndexForAlias(mainAlias);
             String tmpIndexName = getIndexForAlias(tmpAlias);
 
-            // Sanity checks before proceeding with the swap.
-            if (tmpIndexName == null) {
-                log.error("App [{}]: ABORTING SWITCH. The temporary alias '{}' does not point to an index. A new index must be prepared first.", appId, tmpAlias);
-                return;
-            }
-            if (mainIndexName == null) {
-                log.error("App [{}]: ABORTING SWITCH. The main service alias '{}' does not point to an index. Cannot perform a switch.", appId, mainAlias);
+            if (tmpIndexName == null || mainIndexName == null) {
+                log.error("App [{}]: ABORTING SWITCH. Missing indices. Main: {}, Tmp: {}", appId, mainIndexName, tmpIndexName);
                 return;
             }
             if (mainIndexName.equals(tmpIndexName)) {
-                log.warn("App [{}]: ABORTING SWITCH. Main alias '{}' and temporary alias '{}' already point to the same index ('{}'). No action needed.", appId, mainAlias, tmpAlias, mainIndexName);
-                return;
+                return; // Already pointing to same
             }
 
-            // Build the atomic request that performs both renames at once.
-            IndicesAliasesRequest request = new IndicesAliasesRequest();
+            List<Map<String, Object>> actions = new ArrayList<>();
 
-            // Step 2: Rename instance-service-{appId} to instance-bak-{appId}
-            request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.REMOVE).index(mainIndexName).alias(mainAlias));
-            if (backup)
-                request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.ADD).index(mainIndexName).alias(bakAlias));
+            actions.add(Map.of("remove", Map.of("index", mainIndexName, "alias", mainAlias)));
 
-            // Step 3: Rename instance-tmp-{appId} to instance-service-{appId}
-            request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.REMOVE).index(tmpIndexName).alias(tmpAlias));
-            request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.ADD).index(tmpIndexName).alias(mainAlias));
+            if (backup) {
+                actions.add(Map.of("add", Map.of("index", mainIndexName, "alias", bakAlias)));
+            }
 
-            // Execute the atomic switch.
-            AcknowledgedResponse response = restHighLevelClient.indices().updateAliases(request, RequestOptions.DEFAULT);
+            actions.add(Map.of("remove", Map.of("index", tmpIndexName, "alias", tmpAlias)));
+            actions.add(Map.of("add", Map.of("index", tmpIndexName, "alias", mainAlias)));
 
-            if (response.isAcknowledged()) {
-                log.info("App [{}]: SWITCH COMPLETE. Main service is now on index '{}'. Old index '{}' is now the backup.", appId, tmpIndexName, mainIndexName);
-            } else {
-                log.error("App [{}]: FAILED TO SWITCH ALIASES. The atomic operation was not acknowledged by the cluster.", appId);
+            Map<String, Object> body = Map.of("actions", actions);
+
+            Request request = new Request("POST", "/_aliases");
+            request.setJsonEntity(Jsonk.toJson(body));
+
+            Response response = restClient.performRequest(request);
+            if (response.getStatusLine().getStatusCode() == 200) {
+                log.info("App [{}]: SWITCH COMPLETE.", appId);
             }
 
             if (!backup) {
@@ -226,29 +195,31 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     }
 
     @SneakyThrows
-    private void deleteIndex(String...names) {
-        DeleteIndexRequest deleteRequest = new DeleteIndexRequest(names);
-        restHighLevelClient.indices().delete(deleteRequest, RequestOptions.DEFAULT);
+    private void deleteIndex(String... names) {
+        if (names == null || names.length == 0) return;
+        String joinedNames = String.join(",", names);
+        Request request = new Request("DELETE", "/" + joinedNames);
+        try {
+            restClient.performRequest(request);
+        } catch (ResponseException e) {
+            if (e.getResponse().getStatusLine().getStatusCode() != 404) {
+                throw e;
+            }
+        }
     }
 
     @Override
     public void deleteAllIndices(long appId) {
-        var mainIndex = getIndexForAlias(MAIN_ALIAS_PREFIX + appId);
-        if (mainIndex != null) {
-            deleteIndex(mainIndex);
-            log.info("App [{}]: Deleted main index '{}'.", appId, mainIndex);
-        } else {
-            log.warn("App [{}]: No main index found to delete.", appId);
-        }
-        var tmpIndex = getIndexForAlias(TMP_ALIAS_PREFIX + appId);
-        if (tmpIndex != null) {
-            deleteIndex(tmpIndex);
-            log.info("App [{}]: Deleted temporary index '{}'.", appId, tmpIndex);
-        }
-        var bakIndex = getIndexForAlias(BAK_ALIAS_PREFIX + appId);
-        if (bakIndex != null) {
-            deleteIndex(bakIndex);
-            log.info("App [{}]: Deleted backup index '{}'.", appId, bakIndex);
+        deleteIndexByAlias(MAIN_ALIAS_PREFIX + appId);
+        deleteIndexByAlias(TMP_ALIAS_PREFIX + appId);
+        deleteIndexByAlias(BAK_ALIAS_PREFIX + appId);
+    }
+
+    private void deleteIndexByAlias(String alias) {
+        String idx = getIndexForAlias(alias);
+        if (idx != null) {
+            deleteIndex(idx);
+            log.info("Deleted index for alias '{}': '{}'", alias, idx);
         }
     }
 
@@ -256,81 +227,83 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     public void revert(long appId) {
         var bakAlias = BAK_ALIAS_PREFIX + appId;
         var bakIndex = getIndexForAlias(bakAlias);
-        if (bakIndex == null)
-            throw new BusinessException(ErrorCode.NO_BACKUP, appId);
-        var mainAlias = MAIN_ALIAS_PREFIX + appId;
-        try {
-            var mainIndex = getIndexForAlias(mainAlias);
+        if (bakIndex == null) throw new BusinessException(ErrorCode.NO_BACKUP, appId);
 
-            IndicesAliasesRequest request = new IndicesAliasesRequest();
+        var mainAlias = MAIN_ALIAS_PREFIX + appId;
+        var mainIndex = getIndexForAlias(mainAlias);
+
+        try {
+            List<Map<String, Object>> actions = new ArrayList<>();
+
             if (mainIndex != null) {
-                request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.REMOVE)
-                        .index(mainIndex)
-                        .alias(mainAlias));
+                actions.add(Map.of("remove", Map.of("index", mainIndex, "alias", mainAlias)));
             }
-            request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.REMOVE)
-                    .index(bakIndex)
-                    .alias(bakAlias));
-            request.addAliasAction(new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest.AliasActions.Type.ADD)
-                    .index(bakIndex)
-                    .alias(mainAlias));
-            restHighLevelClient.indices().updateAliases(request, RequestOptions.DEFAULT);
+            actions.add(Map.of("remove", Map.of("index", bakIndex, "alias", bakAlias)));
+            actions.add(Map.of("add", Map.of("index", bakIndex, "alias", mainAlias)));
+
+            Map<String, Object> body = Map.of("actions", actions);
+
+            Request request = new Request("POST", "/_aliases");
+            request.setJsonEntity(Jsonk.toJson(body));
+            restClient.performRequest(request);
+
             if (mainIndex != null && !mainIndex.equals(bakIndex)) {
-                DeleteIndexRequest deleteRequest = new DeleteIndexRequest(mainIndex);
-                restHighLevelClient.indices().delete(deleteRequest, RequestOptions.DEFAULT);
-                log.info("App [{}]: Deleted original main index '{}'.", appId, mainIndex);
-            } else {
-                log.info("App [{}]: No original main index to delete or it is the same as backup '{}'.", appId, bakIndex);
+                deleteIndex(mainIndex);
             }
-            log.info("App [{}]: Rolled back. Main alias '{}' now points to backup index '{}'.", appId, mainAlias, bakIndex);
+            log.info("App [{}]: Rolled back.", appId);
         } catch (IOException e) {
             throw new RuntimeException("Error during rollback for app: " + appId, e);
         }
-
     }
-
-
 
     private String getIndexForAlias(String aliasName) {
         var indexNames = getIndicesForAlias(aliasName);
-        if (indexNames.isEmpty())
-            return null;
+        if (indexNames.isEmpty()) return null;
         if (indexNames.size() > 1)
             throw new RuntimeException("Critical error: Alias '" + aliasName + "' points to multiple indices: " + indexNames);
-        return indexNames.stream().findFirst().orElse(null);
+        return indexNames.iterator().next();
     }
 
     @SneakyThrows
     private Collection<String> getIndicesForAlias(String aliasName) {
-        GetAliasesRequest request = new GetAliasesRequest(aliasName);
+        Request request = new Request("GET", "/_alias/" + aliasName);
         try {
-            var response = restHighLevelClient.indices().getAlias(request, RequestOptions.DEFAULT);
-            return response.getAliases().keySet();
-        } catch (ElasticsearchStatusException e) {
-            if (e.status() == RestStatus.NOT_FOUND) {
-                // This is expected if the alias doesn't exist yet.
-                return List.of();
+            Response response = restClient.performRequest(request);
+            Map<String, Object> root = Jsonk.fromJson(new InputStreamReader(response.getEntity().getContent()), Map.class);
+            return root.keySet();
+        } catch (ResponseException e) {
+            if (e.getResponse().getStatusLine().getStatusCode() == 404) {
+                return Collections.emptyList();
             }
             throw e;
         }
     }
 
-    // Previous methods remain for direct index manipulation when needed
-
     @Override
+    @SuppressWarnings("unchecked")
     public Page<Id> search(SearchQuery query) {
         var alias = MAIN_ALIAS_PREFIX + query.appId();
-        SearchRequest searchRequest = new SearchRequest(alias);
-        searchRequest.routing(query.appId() + (query.includeBuiltin() ? ",-1" : ""));
-        searchRequest.source(SearchBuilder.build(query));
+        String routing = query.appId() + (query.includeBuiltin() ? ",-1" : "");
+        String endpoint = "/" + alias + "/_search?routing=" + routing;
+
+        Request request = new Request("POST", endpoint);
+
+        // SearchBuilder now returns Map<String, Object>, Jsonk converts it to String
+        request.setJsonEntity(Jsonk.toJson(SearchBuilder.build(query)));
+
         try {
-            SearchResponse response = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
-            long total = response.getHits().getTotalHits().value;
+            Response response = restClient.performRequest(request);
+            Map<String, Object> root = Jsonk.fromJson(new InputStreamReader(response.getEntity().getContent()), Map.class);
+
+            Map<String, Object> hitsWrapper = (Map<String, Object>) root.get("hits");
+            long total = ((Number) ((Map<String, Object>) hitsWrapper.get("total")).get("value")).longValue();
+
+            List<Map<String, Object>> hitsList = (List<Map<String, Object>>) hitsWrapper.get("hits");
             List<Id> ids = new ArrayList<>();
-            for (SearchHit hit : response.getHits().getHits()) {
-                var id = PhysicalId.of(Long.parseLong(hit.getId()), 0L);
-//                var typeId = ((Number) hit.getSourceAsMap().get("typeId")).longValue();
-                ids.add(id);
+
+            for (Map<String, Object> hit : hitsList) {
+                long idVal = Long.parseLong((String) hit.get("_id"));
+                ids.add(PhysicalId.of(idVal, 0L));
             }
             return new Page<>(ids, total);
         } catch (IOException e) {
@@ -340,12 +313,23 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     @Override
     public long count(SearchQuery query) {
-        CountRequest countRequest = new CountRequest(INDEX_PREFIX);
-        countRequest.routing(query.appId() + (query.includeBuiltin() ? ",-1" : ""));
-        countRequest.source(SearchBuilder.build(query));
+        String routing = query.appId() + (query.includeBuiltin() ? ",-1" : "");
+        Request request = new Request("POST", "/" + INDEX_PREFIX + "/_count?routing=" + routing);
+
+        // IMPORTANT: SearchBuilder.build returns "from", "size" and "sort".
+        // The _count API rejects these parameters. We must extract only the "query" part.
+        Map<String, Object> fullSearchSource = SearchBuilder.build(query);
+        Map<String, Object> countSource = new HashMap<>();
+        if (fullSearchSource.containsKey("query")) {
+            countSource.put("query", fullSearchSource.get("query"));
+        }
+
+        request.setJsonEntity(Jsonk.toJson(countSource));
+
         try {
-            var response = restHighLevelClient.count(countRequest, RequestOptions.DEFAULT);
-            return response.getCount();
+            Response response = restClient.performRequest(request);
+            Map<String, Object> root = Jsonk.fromJson(new InputStreamReader(response.getEntity().getContent()), Map.class);
+            return ((Number) root.get("count")).longValue();
         } catch (IOException e) {
             throw new RuntimeException("ElasticSearch Error", e);
         }
@@ -353,53 +337,67 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     @Override
     public void bulk(SearchSyncRequest request) {
-        BulkRequest bulkRequest = new BulkRequest();
-        bulkRequest.setRefreshPolicy(request.waitUtilRefresh() ? WriteRequest.RefreshPolicy.WAIT_UNTIL : WriteRequest.RefreshPolicy.NONE);
+        StringBuilder ndjson = new StringBuilder();
         var appId = request.appId();
-        List<IndexRequest> indexRequests = Utils.map(request.changedInstances(), instance -> buildIndexRequest(appId, request.migrating(), instance));
-        List<DeleteRequest> deleteRequests = Utils.map(request.removedInstanceIds(), id -> buildDeleteRequest(appId, request.migrating(), id));
-        indexRequests.forEach(bulkRequest::add);
-        deleteRequests.forEach(bulkRequest::add);
+        String refresh = request.waitUtilRefresh() ? "wait_for" : "false";
+
+        // Index requests
+        for (var instance : request.changedInstances()) {
+            String alias = request.migrating() ? TMP_ALIAS_PREFIX + appId : MAIN_ALIAS_PREFIX + appId;
+
+            Map<String, Object> meta = Map.of("index", Map.of(
+                    "_index", alias,
+                    "_id", String.valueOf(instance.getTreeId()),
+                    "routing", String.valueOf(appId)
+            ));
+
+            ndjson.append(Jsonk.toJson(meta)).append("\n");
+            ndjson.append(Jsonk.toJson(IndexSourceBuilder.buildSource(appId, instance))).append("\n");
+        }
+
+        // Delete requests
+        for (var id : request.removedInstanceIds()) {
+            String alias = request.migrating() ? TMP_ALIAS_PREFIX + appId : MAIN_ALIAS_PREFIX + appId;
+
+            Map<String, Object> meta = Map.of("delete", Map.of(
+                    "_index", alias,
+                    "_id", String.valueOf(id.getTreeId()),
+                    "routing", String.valueOf(appId)
+            ));
+
+            ndjson.append(Jsonk.toJson(meta)).append("\n");
+        }
+
+        if (ndjson.length() == 0) return;
+
+        Request bulkRequest = new Request("POST", "/_bulk?refresh=" + refresh);
+        bulkRequest.setJsonEntity(ndjson.toString());
+
         try {
-            var resp = restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-            if (resp.hasFailures()) {
-                log.error("Failed to synchronized ES documents: {}", resp.buildFailureMessage());
+            Response response = restClient.performRequest(bulkRequest);
+            Map<String, Object> root = Jsonk.fromJson(new InputStreamReader(response.getEntity().getContent()), Map.class);
+
+            if (Boolean.TRUE.equals(root.get("errors"))) {
+                log.error("Failed to synchronize ES documents. Bulk response has errors: {}", Jsonk.toJson(root));
             }
         } catch (IOException e) {
             throw new RuntimeException("ElasticSearch Error", e);
         }
     }
 
-    private IndexRequest buildIndexRequest(long appId, boolean migrating, ClassInstance instance) {
-        var alias = migrating ? TMP_ALIAS_PREFIX + appId : MAIN_ALIAS_PREFIX + appId;
-        IndexRequest indexRequest = new IndexRequest(alias);
-        indexRequest.id(instance.getTreeId() + "");
-        indexRequest.routing(appId + "");
-        indexRequest.source(IndexSourceBuilder.buildSource(appId, instance));
-        return indexRequest;
-    }
-
-    private DeleteRequest buildDeleteRequest(long appId, boolean migrating, Id id) {
-        var alias = migrating ? TMP_ALIAS_PREFIX + appId : MAIN_ALIAS_PREFIX + appId;
-        DeleteRequest deleteRequest = new DeleteRequest(alias);
-        deleteRequest.id(Long.toString(id.getTreeId()));
-        deleteRequest.routing(appId + "");
-        return deleteRequest;
-    }
-
-    private void createIndex(String indexName) throws IOException {
-        boolean exists = restHighLevelClient.indices().exists(new GetIndexRequest(indexName), RequestOptions.DEFAULT);
-        if (!exists) {
-            CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName);
-            createIndexRequest.source(getIndexSource(), XContentType.JSON);
-            restHighLevelClient.indices().create(createIndexRequest, RequestOptions.DEFAULT);
-            log.info("Successfully created index '{}' with custom mapping.", indexName);
-        } else {
+    private void createPhysicalIndex(String indexName) throws IOException {
+        try {
+            restClient.performRequest(new Request("HEAD", "/" + indexName));
             log.info("Index '{}' already exists.", indexName);
+        } catch (ResponseException e) {
+            if (e.getResponse().getStatusLine().getStatusCode() == 404) {
+                Request createRequest = new Request("PUT", "/" + indexName);
+                createRequest.setJsonEntity(EsInit.source); // Assuming EsInit.source is a valid JSON String
+                restClient.performRequest(createRequest);
+                log.info("Successfully created index '{}' with custom mapping.", indexName);
+            } else {
+                throw e;
+            }
         }
-    }
-
-    private String getIndexSource() {
-        return EsInit.source;
     }
 }

@@ -1,29 +1,27 @@
 package org.metavm.util;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
 import org.metavm.flow.FlowSavingContext;
+import org.metavm.server.Filter;
+import org.metavm.server.HttpRequest;
+import org.metavm.context.Component;
 
-import java.io.IOException;
+import java.util.function.Consumer;
 
 @Component
-@Order(1)
-public class ConfigContextFilter extends OncePerRequestFilter {
+public class ConfigContextFilter implements Filter  {
+
     @Override
-    protected void doFilterInternal(@NotNull HttpServletRequest request,
-                                    @NotNull HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    public void filter(HttpRequest request, Consumer<HttpRequest> proceed) {
         FlowSavingContext.initConfig();
         try {
-            filterChain.doFilter(request, response);
+            proceed.accept(request);
         } finally {
             FlowSavingContext.clearConfig();
         }
+    }
+
+    @Override
+    public int order() {
+        return 1;
     }
 }

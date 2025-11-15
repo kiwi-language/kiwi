@@ -3,19 +3,13 @@ package org.metavm.entity;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.util.InternalException;
-import org.metavm.util.ReflectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class IdentityContext {
-
-    private static final Logger logger = LoggerFactory.getLogger(IdentityContext.class);
 
     private final Map<Entity, ModelIdentity> model2identity = new IdentityHashMap<>();
     private final Map<ModelIdentity, Entity> identity2model = new HashMap<>();
@@ -35,7 +29,7 @@ public class IdentityContext {
     }
 
     public ModelIdentity getModelId(Entity model, @NotNull BuildKeyContext buildKeyContext, @Nullable Object current) {
-        var type = ReflectionUtils.getType(model);
+        var type = model.getClass();
         if (model == current) // Handle back reference from child to parent
             return new ModelIdentity(type, "this", true);
         var identity = model2identity.get(model);

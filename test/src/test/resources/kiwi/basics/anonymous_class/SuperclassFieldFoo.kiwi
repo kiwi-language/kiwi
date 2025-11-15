@@ -1,7 +1,5 @@
 package anonymous_class
 
-import java.util.Iterator
-
 class Base {
 
     var value: int = 0
@@ -32,3 +30,10 @@ class SuperclassFieldFoo: Base {
 
 }
 
+interface Iterator<E> {
+
+    fn next() -> E
+
+    fn hasNext() -> bool
+
+}

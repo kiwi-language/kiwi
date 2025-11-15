@@ -1,13 +1,11 @@
 package org.metavm.object.instance.core;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
 import org.metavm.object.type.FunctionType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeMetadata;
 import org.metavm.util.MvOutput;
 
@@ -18,8 +16,7 @@ import java.util.function.Consumer;
 @Slf4j
 public class FlowValue extends FunctionValue {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+    @Getter
     private final FlowRef flow;
     @Nullable
     private final ClassInstance boundSelf;
@@ -57,10 +54,6 @@ public class FlowValue extends FunctionValue {
     @Nullable
     public ClassInstance getBoundSelf() {
         return boundSelf;
-    }
-
-    public FlowRef getFlow() {
-        return flow;
     }
 
     @Override

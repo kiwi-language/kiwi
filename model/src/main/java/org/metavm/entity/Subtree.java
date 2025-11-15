@@ -17,7 +17,7 @@ public record Subtree(
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof Subtree subTree)) return false;
-        return id == subTree.id && Objects.equals(parentId, subTree.parentId) && Arrays.equals(data, subTree.data);
+        return id.equals(subTree.id) && Objects.equals(parentId, subTree.parentId) && Arrays.equals(data, subTree.data);
     }
 
     @Override

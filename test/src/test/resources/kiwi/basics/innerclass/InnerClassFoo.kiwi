@@ -1,15 +1,11 @@
 package innerclass
 
-import java.util.ArrayList
-import java.util.Iterator
-import java.util.List
-
 class InnerClassFoo<K, V> {
 
-    val entries: List<Entry<K, V>> = ArrayList<Entry<K, V>>()
+    val entries: Entry<K, V>[] = new Entry<K, V>[]
 
     fn addEntry(key: K, value: V) {
-        entries.add(Entry<K, V>(key, value))
+        entries.append(Entry<K, V>(key, value))
     }
 
     fn iterator() -> Iterator<Entry<K, V>> {
@@ -19,7 +15,7 @@ class InnerClassFoo<K, V> {
     fn first() -> Entry<K, V> {
         var it = iterator()
         if (it.hasNext()) return it.next()
-        throw IllegalStateException()
+        throw Exception("No such element")
     }
 
     class Entry<K, V>(
@@ -45,16 +41,24 @@ class InnerClassFoo<K, V> {
 
     }
 
+    interface Iterator<E> {
+
+        fn next() -> E
+
+        fn hasNext() -> bool
+
+    }
+
     temp class MyIterator: Iterator<Entry<K,V>> {
 
-        priv val it = entries.iterator()
+        priv var i = 0
 
         fn hasNext() -> bool {
-            return it.hasNext()
+            return i < entries.length
         }
 
         fn next() -> Entry<K, V> {
-            return it.next()
+            return entries[i++]
         }
 
         fn copy() -> MyIterator {

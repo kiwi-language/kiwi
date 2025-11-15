@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.api.Entity;
 import org.metavm.api.ValueObject;
 import org.metavm.flow.FunctionRef;
 import org.metavm.flow.MethodRef;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@Entity
 public interface GenericDeclarationRef extends ValueObject, Element, Value {
 
     void write(MvOutput output);

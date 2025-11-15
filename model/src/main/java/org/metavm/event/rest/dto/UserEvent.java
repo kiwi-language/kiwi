@@ -1,19 +1,20 @@
 package org.metavm.event.rest.dto;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.Getter;
+import org.jsonk.Json;
 
 import java.util.Objects;
 
-@JsonSubTypes(
-        {
-                @JsonSubTypes.Type(value = ReceiveMessageEvent.class, name = "1"),
-                @JsonSubTypes.Type(value = ReadMessageEvent.class, name = "2"),
-                @JsonSubTypes.Type(value = JoinAppEvent.class, name = "10"),
-                @JsonSubTypes.Type(value = LeaveAppEvent.class, name = "11"),
+@Getter
+@Json(
+        typeProperty = "kind",
+        subTypes = {
+                @org.jsonk.SubType(value = "1", type = ReceiveMessageEvent.class),
+                @org.jsonk.SubType(value = "2", type = ReadMessageEvent.class),
+                @org.jsonk.SubType(value = "10", type = JoinAppEvent.class),
+                @org.jsonk.SubType(value = "11", type = LeaveAppEvent.class),
         }
 )
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class UserEvent {
 
     private final int kind;
@@ -22,14 +23,6 @@ public abstract class UserEvent {
     public UserEvent(int kind, String userId) {
         this.kind = kind;
         this.userId = userId;
-    }
-
-    public int getKind() {
-        return kind;
-    }
-
-    public String getUserId() {
-        return userId;
     }
 
     @Override

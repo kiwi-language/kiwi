@@ -1,16 +1,14 @@
 package org.metavm.object.type.rest.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.metavm.entity.StdKlass;
+import org.jsonk.Json;
+import org.jsonk.JsonIgnore;
 import org.metavm.flow.rest.FunctionRefKey;
 import org.metavm.flow.rest.MethodRefKey;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
-import org.metavm.object.type.antlr.TypeLexer;
-import org.metavm.object.type.antlr.TypeParser;
-import org.metavm.util.*;
+import org.metavm.util.InstanceInput;
+import org.metavm.util.InternalException;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -18,13 +16,30 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Json(
+        typeProperty = "kind",
+        subTypes = {
+                @org.jsonk.SubType(value = "primitive", type = PrimitiveTypeKey.class),
+                @org.jsonk.SubType(value = "string", type = StringTypeKey.class),
+                @org.jsonk.SubType(value = "null", type = NullTypeKey.class),
+                @org.jsonk.SubType(value = "array", type = ArrayTypeKey.class),
+                @org.jsonk.SubType(value = "class", type = ClassTypeKey.class),
+                @org.jsonk.SubType(value = "parameterized", type = ParameterizedTypeKey.class),
+                @org.jsonk.SubType(value = "union", type = UnionTypeKey.class),
+                @org.jsonk.SubType(value = "intersection", type = IntersectionTypeKey.class),
+                @org.jsonk.SubType(value = "function", type = FunctionTypeKey.class),
+                @org.jsonk.SubType(value = "uncertain", type = UncertainTypeKey.class),
+                @org.jsonk.SubType(value = "variable", type = VariableTypeKey.class),
+                @org.jsonk.SubType(value = "captured", type = CapturedTypeKey.class),
+                @org.jsonk.SubType(value = "never", type = NeverTypeKey.class),
+                @org.jsonk.SubType(value = "any", type = AnyTypeKey.class),
+        }
+)
 public interface TypeKey extends TypeOrTypeKey {
 
     void write(MvOutput output);
 
     String toTypeExpression();
-
-    Type toType(TypeDefProvider typeDefProvider);
 
     <R> R accept(TypeKeyVisitor<R> visitor);
 
@@ -43,78 +58,9 @@ public interface TypeKey extends TypeOrTypeKey {
     }
 
     static TypeKey fromExpression(String expression) {
-        var parser = new TypeParser(new CommonTokenStream(new TypeLexer(CharStreams.fromString(expression))));
-        return fromTypeContext(parser.type());
-    }
-
-    static TypeKey fromTypeContext(TypeParser.TypeContext ctx) {
-        if (ctx.primitiveType() != null) {
-            var primitiveType = ctx.primitiveType();
-            if (primitiveType.LONG() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.LONG.code());
-            if(primitiveType.CHAR() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.CHAR.code());
-            if(primitiveType.SHORT() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.SHORT.code());
-            if(primitiveType.BYTE() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.BYTE.code());
-            if (primitiveType.DOUBLE() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
-            if (primitiveType.FLOAT() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.FLOAT.code());
-            if (primitiveType.BOOLEAN() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.BOOLEAN.code());
-            if (primitiveType.NULL() != null)
-                return new NullTypeKey();
-            if (primitiveType.VOID() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.VOID.code());
-            if (primitiveType.PASSWORD() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.PASSWORD.code());
-            if (primitiveType.TIME() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.TIME.code());
-            throw new InternalException("Invalid primitive type: " + primitiveType.getText());
-        }
-        if (ctx.classType() != null) {
-            return fromClassTypeContext(ctx.classType());
-        }
-        if(ctx.variableType() != null) {
-            var variableType = ctx.variableType();
-            return new VariableTypeKey(
-                    Id.parse(Constants.removeIdPrefix(variableType.IDENTIFIER().getText()))
-            );
-        }
-//            return new VariableTypeKey(Id.parse(ctx.variableType().qualifiedName().getText().substring(Constants.ID_PREFIX.length())));
-        if (ctx.elementType != null) {
-            var kind = ctx.arrayKind();
-            return new ArrayTypeKey(parseArrayKind(kind).code(), fromTypeContext(ctx.elementType));
-        }
-        if(ctx.LBRACK() != null)
-            return new UncertainTypeKey(fromTypeContext(ctx.type(0)), fromTypeContext(ctx.type(1)));
-        if(ctx.ARROW() != null) {
-            return new FunctionTypeKey(
-                    ctx.typeList() != null ? Utils.map(ctx.typeList().type(), TypeKey::fromTypeContext) : List.of(),
-                    fromTypeContext(ctx.type(0))
-            );
-        }
-        if(!ctx.BITAND().isEmpty())
-            return new IntersectionTypeKey(Utils.mapToSet(ctx.type(), TypeKey::fromTypeContext));
-        if(!ctx.BITOR().isEmpty())
-            return new UnionTypeKey(Utils.mapToSet(ctx.type(), TypeKey::fromTypeContext));
-        if(ctx.NEVER() != null)
-            return new NeverTypeKey();
-        if(ctx.ANY() != null)
-            return new AnyTypeKey();
-        throw new InternalException("Invalid type: " + ctx.getText());
-    }
-
-    static TypeKey fromClassTypeContext(TypeParser.ClassTypeContext classType) {
-        var id = Id.parse(classType.qualifiedName().getText().substring(Constants.ID_PREFIX.length()));
-        if(classType.typeArguments() != null)
-            return new ParameterizedTypeKey(null, id, Utils.map(classType.typeArguments().typeList().type(), TypeKey::fromTypeContext));
-        else if (StdKlass.string.get().idEquals(id))
-            return new StringTypeKey();
-        else
-            return new ClassTypeKey(id);
+        return new TypeParserImpl((TypeDefProvider) id -> {
+            throw new UnsupportedOperationException();
+        }).parseTypeKey(expression);
     }
 
     static TypeKey read(InstanceInput input) {
@@ -178,14 +124,6 @@ public interface TypeKey extends TypeOrTypeKey {
         for (int i = 0; i < num; i++)
             typeKeys.add(read(input));
         return typeKeys;
-    }
-
-    private static ArrayKind parseArrayKind(@Nullable TypeParser.ArrayKindContext ctx) {
-        if(ctx == null)
-            return ArrayKind.DEFAULT;
-        if(ctx.R() != null)
-            return ArrayKind.READ_ONLY;
-        throw new InternalException("Unrecognized array kind: " + ctx.getText());
     }
 
 }

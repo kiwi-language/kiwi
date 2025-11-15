@@ -1,24 +1,19 @@
 package org.metavm.object.instance.core;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.*;
-import org.metavm.event.EventQueue;
+import org.metavm.jdbc.TransactionCallback;
+import org.metavm.jdbc.TransactionStatus;
 import org.metavm.object.instance.ContextPlugin;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.StoreTreeSource;
-import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.VersionRT;
-import org.metavm.util.LinkedList;
 import org.metavm.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -33,10 +28,8 @@ public class InstanceContext extends BufferingInstanceContext {
     private final List<ContextPlugin> plugins;
     private final Executor executor;
     private final boolean childrenLazyLoading;
-    @Nullable
-    private final EventQueue eventQueue;
+    @Getter
     private final IInstanceStore instanceStore;
-    private final Cache cache;
     private final boolean skipPostprocessing;
     private final boolean relocationEnabled;
     private final boolean migrating;
@@ -48,8 +41,6 @@ public class InstanceContext extends BufferingInstanceContext {
                            List<ContextPlugin> plugins,
                            IInstanceContext parent,
                            boolean childrenLazyLoading,
-                           Cache cache,
-                           @Nullable EventQueue eventQueue,
                            boolean readonly,
                            boolean skipPostprocessing,
                            boolean relocationEnabled,
@@ -64,10 +55,8 @@ public class InstanceContext extends BufferingInstanceContext {
         this.plugins = plugins;
         this.executor = executor;
         this.childrenLazyLoading = childrenLazyLoading;
-        this.eventQueue = eventQueue;
         this.instanceStore = instanceStore;
         this.migrating = migrating;
-        this.cache = cache;
         this.skipPostprocessing = skipPostprocessing;
         this.relocationEnabled = relocationEnabled;
     }
@@ -78,18 +67,11 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public @Nullable EventQueue getEventQueue() {
-        return eventQueue;
-    }
-
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
-
-    @Override
     protected void finishInternal() {
         if (finished)
             throw new IllegalStateException("Already finished");
         if (DebugEnv.debugging)
-            debugLogger.info("InstanceContext.finish");
+            log.info("InstanceContext.finish");
         var commit = getActiveCommit();
         headContext.freeze();
         if(commit != null)
@@ -372,10 +354,6 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    public IInstanceStore getInstanceStore() {
-        return instanceStore;
-    }
-
     public <T extends ContextPlugin> T getPlugin(Class<T> pluginClass) {
         for (ContextPlugin plugin : plugins) {
             if (pluginClass.isInstance(plugin))
@@ -386,13 +364,14 @@ public class InstanceContext extends BufferingInstanceContext {
 
     @Override
     public void registerCommitCallback(Runnable action) {
-        Utils.require(TransactionSynchronizationManager.isActualTransactionActive(),
+        Utils.require(TransactionStatus.isTransactionActive(),
                 "Can not register commit callback outside of transactions");
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        TransactionStatus.registerCallback(new TransactionCallback() {
             @Override
             public void afterCommit() {
                 action.run();
             }
+
         });
     }
 

@@ -12,9 +12,6 @@ import java.util.function.Consumer;
 @Entity
 public abstract class CompositeType extends Type {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
-
     public CompositeType() {
         super();
     }
@@ -49,11 +46,6 @@ public abstract class CompositeType extends Type {
     @Override
     public void forEachTypeDef(Consumer<TypeDef> action) {
         getComponentTypes().forEach(t -> t.forEachTypeDef(action));
-    }
-
-    @Override
-    public Type getValueType() {
-        return __klass__.getType();
     }
 
     @Override

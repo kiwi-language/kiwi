@@ -6,10 +6,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.NeverTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.MvOutput;
@@ -22,8 +19,6 @@ import java.util.function.Function;
 public class NeverType extends Type {
 
     public static final NeverType instance = new NeverType();
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     private NeverType() {
         super();
@@ -97,11 +92,6 @@ public class NeverType extends Type {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitNeverType(this, s);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

@@ -12,7 +12,7 @@ import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
-import org.springframework.stereotype.Component;
+import org.metavm.context.Component;
 
 import java.util.ArrayList;
 import java.util.List;

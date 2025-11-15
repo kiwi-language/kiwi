@@ -8,7 +8,6 @@ import org.metavm.application.rest.dto.ApplicationDTO;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.EntityQueryService;
-import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.core.Id;
 import org.metavm.user.LoginService;
 import org.metavm.user.PlatformUserManager;
@@ -38,7 +37,6 @@ public class ApplicationManagerTest extends TestCase {
                         bootResult.entityContextFactory(),
                         new LoginService(bootResult.entityContextFactory()),
                         entityQueryService,
-                        new MockEventQueue(),
                         verificationCodeService
                 ),
                 verificationCodeService,
@@ -51,7 +49,6 @@ public class ApplicationManagerTest extends TestCase {
                 bootResult.entityContextFactory(),
                 loginService,
                 entityQueryService,
-                new MockEventQueue(),
                 verificationCodeService
         );
         ContextUtil.setAppId(Constants.PLATFORM_APP_ID);

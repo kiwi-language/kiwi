@@ -6,11 +6,11 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
 
@@ -65,8 +65,6 @@ public class DiskFormatter {
 
     public static final Map<String, Object> CONFIG = LOCAL_CONFIG;
 
-//    public static final String HOST = "localhost";
-
     private static String host() {
         return (String) CONFIG.get(CONFIG_HOST);
     }
@@ -94,16 +92,32 @@ public class DiskFormatter {
 
     private static void clearEs() {
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        // Note: Password kept hardcoded as per original snippet, though you might want to use CONFIG_DB_PASSWORD
         credentialsProvider.setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials("elastic", "85263670"));
 
         RestClientBuilder builder = RestClient.builder(new HttpHost(host(), esPort()))
                 .setHttpClientConfigCallback(b -> b.setDefaultCredentialsProvider(credentialsProvider));
-        //noinspection deprecation
-        try (RestHighLevelClient client = new RestHighLevelClient(builder)) {
-            var request = new DeleteIndexRequest("instance");
-            var response = client.indices().delete(request, RequestOptions.DEFAULT);
-            System.out.println("Deleted index acknowledged: " + response.isAcknowledged());
+
+        try (RestClient client = builder.build()) {
+            Request request = new Request("DELETE", "/instance");
+
+            try {
+                Response response = client.performRequest(request);
+                int statusCode = response.getStatusLine().getStatusCode();
+
+                if (statusCode == 200 || statusCode == 204) {
+                    System.out.println("Deleted index 'instance' successfully (Status: " + statusCode + ")");
+                }
+            } catch (ResponseException e) {
+                // If status is 404, the index simply didn't exist, which is fine for a clear operation.
+                if (e.getResponse().getStatusLine().getStatusCode() == 404) {
+                    System.out.println("Index 'instance' not found (already deleted).");
+                } else {
+                    // Rethrow if it's an actual error (e.g., 500 or Auth error)
+                    throw e;
+                }
+            }
         } catch (IOException e) {
             throw new InternalException("Elasticsearch error", e);
         }

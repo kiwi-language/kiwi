@@ -3,6 +3,7 @@ package org.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Node;
@@ -17,11 +18,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public class NodeExpression extends Expression {
 
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
     private final Reference node;
 
     public NodeExpression(@NotNull Node node) {
@@ -105,20 +105,15 @@ public class NodeExpression extends Expression {
         action.accept(node);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("node", this.getNode().getStringId());
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_NodeExpression);
         super.write(output);
         output.writeValue(node);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new NodeExpression(node);
     }
 }

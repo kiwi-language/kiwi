@@ -1,40 +1,39 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.LoadAware;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.metavm.wire.Parent;
+import org.metavm.wire.Wire;
 
 import javax.annotation.Nullable;
-import java.util.Map;
 import java.util.function.Consumer;
 
-@NativeEntity(2)
+@Wire(2)
 @Entity
 public class CapturedTypeVariable extends TypeDef implements LoadAware {
 
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
-
-    private String name;
+    @Getter
+    private final String name;
+    @Getter
+    @Setter
+    @Parent
     private CapturedTypeScope scope;
 
+    @Setter
+    @Getter
     private int uncertainTypeIndex;
+    @Setter
     private Reference typeVariable;
 
+    @Getter
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
     public CapturedTypeVariable(@NotNull Id id, String name, @NotNull UncertainType uncertainType,
@@ -54,14 +53,6 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
         scope.addCapturedTypeVariable(this);
     }
 
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        TypeDef.visitBody(visitor);
-        visitor.visitUTF();
-        visitor.visitInt();
-        visitor.visitValue();
-    }
-
     public Type getUpperBound() {
         return getUncertainType().getUpperBound();
     }
@@ -72,26 +63,6 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
 
     public void setUncertainType(UncertainType uncertainType) {
         this.uncertainTypeIndex = scope.getConstantPool().addValue(uncertainType);
-    }
-
-    public int getUncertainTypeIndex() {
-        return uncertainTypeIndex;
-    }
-
-    public void setUncertainTypeIndex(int uncertainTypeIndex) {
-        this.uncertainTypeIndex = uncertainTypeIndex;
-    }
-
-    public void setTypeVariable(Reference typeVariable) {
-        this.typeVariable = typeVariable;
-    }
-
-    public void setScope(CapturedTypeScope scope) {
-        this.scope = scope;
-    }
-
-    public CapturedTypeScope getScope() {
-        return scope;
     }
 
     public TypeVariable getTypeVariable() {
@@ -122,10 +93,6 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
         return curStage;
     }
 
-    public ResolutionStage getStage() {
-        return stage;
-    }
-
     @Override
     public void onLoad() {
         stage = ResolutionStage.INIT;
@@ -152,10 +119,6 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
         super.acceptChildren(visitor);
     }
 
-    public String getName() {
-        return name;
-    }
-
     @Override
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
@@ -163,61 +126,8 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("upperBound", this.getUpperBound().toJson());
-        map.put("lowerBound", this.getLowerBound().toJson());
-        map.put("uncertainTypeIndex", this.getUncertainTypeIndex());
-        map.put("scope", this.getScope());
-        map.put("typeVariable", this.getTypeVariable().getStringId());
-        map.put("typeVariableReference", this.getTypeVariableReference().toJson());
-        map.put("uncertainType", this.getUncertainType().toJson());
-        map.put("type", this.getType().toJson());
-        map.put("stage", this.getStage().name());
-        map.put("name", this.getName());
-        map.put("attributes", this.getAttributes().stream().map(org.metavm.entity.Attribute::toJson).toList());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
     }
 
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_CapturedTypeVariable;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        super.readBody(input, parent);
-        this.scope = (CapturedTypeScope) parent;
-        this.name = input.readUTF();
-        this.uncertainTypeIndex = input.readInt();
-        this.typeVariable = (Reference) input.readValue();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        super.writeBody(output);
-        output.writeUTF(name);
-        output.writeInt(uncertainTypeIndex);
-        output.writeValue(typeVariable);
-    }
-
-    @Override
-    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
-        super.buildSource(source);
-    }
 }

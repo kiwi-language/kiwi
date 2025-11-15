@@ -16,17 +16,23 @@
     <name>Metavm :: Distribution</name>
     <description>Builds the final application distribution package.</description>
 
+    <properties>
+        <native.extension/>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.metavm</groupId>
-            <artifactId>metavm-assembly</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>metavm-server</artifactId>
+            <version>${version}</version>
+            <classifier>executable</classifier>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.metavm</groupId>
-            <artifactId>metavm-compiler-asm</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>metavm-compiler</artifactId>
+            <version>${version}</version>
+            <classifier>executable</classifier>
             <scope>runtime</scope>
         </dependency>
     </dependencies>
@@ -36,7 +42,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.7.1</version>
                 <configuration>
                     <finalName>kiwi</finalName>
                     <descriptors>
@@ -56,4 +61,54 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <native.extension>.exe</native.extension>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>native</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.metavm</groupId>
+                    <artifactId>metavm-server</artifactId>
+                    <version>${version}</version>
+                    <classifier>native</classifier>
+                    <type>exe</type>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.metavm</groupId>
+                    <artifactId>metavm-compiler</artifactId>
+                    <version>${version}</version>
+                    <classifier>native</classifier>
+                    <type>exe</type>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/assembly-native.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

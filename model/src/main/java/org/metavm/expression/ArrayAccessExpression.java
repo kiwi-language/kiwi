@@ -1,8 +1,10 @@
 package org.metavm.expression;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.Reference;
@@ -17,6 +19,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Getter
+@Wire
 @Entity
 public class ArrayAccessExpression extends Expression {
 
@@ -61,14 +65,6 @@ public class ArrayAccessExpression extends Expression {
         return List.of(array, index);
     }
 
-    public Expression getArray() {
-        return array;
-    }
-
-    public Expression getIndex() {
-        return index;
-    }
-
     @Override
     protected Value evaluateSelf(EvaluationContext context) {
         int i = ((LongValue) (index.evaluate(context))).getValue().intValue();
@@ -105,22 +101,16 @@ public class ArrayAccessExpression extends Expression {
         index.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("array", this.getArray().toJson());
-        map.put("index", this.getIndex().toJson());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_ArrayAccessExpression);
         super.write(output);
         array.write(output);
         index.write(output);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new ArrayAccessExpression(array.accept(transformer), index.accept(transformer));
     }
 }

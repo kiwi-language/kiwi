@@ -1,17 +1,24 @@
 package org.metavm.object.instance.persistence;
 
-import com.google.common.primitives.UnsignedBytes;
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.EncodingUtils;
+import org.metavm.util.Utils;
 
 import java.util.Arrays;
 import java.util.Objects;
 
 public class IndexEntryPO implements Comparable<IndexEntryPO> {
 
+    @Setter
+    @Getter
     private long appId;
+    @Getter
     private final IndexKeyPO key;
+    @Setter
+    @Getter
     private byte[] instanceId;
     private transient int hash;
     private transient boolean hashIsZero;
@@ -24,14 +31,6 @@ public class IndexEntryPO implements Comparable<IndexEntryPO> {
         this.appId = appId;
         this.key = key;
         this.instanceId = instanceId;
-    }
-
-    public long getAppId() {
-        return appId;
-    }
-
-    public void setAppId(long appId) {
-        this.appId = appId;
     }
 
     public byte[] getIndexId() {
@@ -50,20 +49,8 @@ public class IndexEntryPO implements Comparable<IndexEntryPO> {
         key.setData(data);
     }
 
-    public IndexKeyPO getKey() {
-        return key;
-    }
-
-    public byte[] getInstanceId() {
-        return instanceId;
-    }
-
     public Id getId() {
         return Id.fromBytes(instanceId);
-    }
-
-    public void setInstanceId(byte[] instanceId) {
-        this.instanceId = instanceId;
     }
 
     @Override
@@ -106,6 +93,7 @@ public class IndexEntryPO implements Comparable<IndexEntryPO> {
         var keyComparison = key.compareTo(o.key);
         if (keyComparison != 0)
             return keyComparison;
-        return UnsignedBytes.lexicographicalComparator().compare(instanceId, o.instanceId);
+        return Utils.compareBytes(instanceId, o.instanceId);
     }
+
 }

@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.*;
@@ -11,8 +12,6 @@ import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.*;
 import org.metavm.util.profile.Profiler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
@@ -31,15 +30,19 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final Map<Id, Instance> instanceMap = new HashMap<>();
     private Instance head;
     private Instance tail;
+    @Getter
     private LockMode lockMode = LockMode.NONE;
+    @Getter
     protected final Profiler profiler = ContextUtil.getProfiler();
 
+    @Getter
     protected final IInstanceContext parent;
     private final Set<ContextListener> listeners = new LinkedHashSet<>();
     @Nullable
     private Consumer<Object> bindHook;
     private final InstanceMemoryIndex memIndex;
     private boolean closed;
+    @Getter
     private final boolean readonly;
     private final String clientId = ContextUtil.getClientId();
     private final IndexSource indexSource;
@@ -76,17 +79,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         this.bindHook = bindHook;
     }
 
-    public Profiler getProfiler() {
-        return profiler;
-    }
-
     @Override
     public void setLockMode(LockMode lockMode) {
         this.lockMode = lockMode;
-    }
-
-    public LockMode getLockMode() {
-        return lockMode;
     }
 
     @Override
@@ -142,10 +137,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public String getClientId() {
         return clientId;
-    }
-
-    public boolean isReadonly() {
-        return readonly;
     }
 
     public void updateMemoryIndex(ClassInstance instance) {
@@ -426,8 +417,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return appId;
     }
 
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
-
     @Override
     public void batchRemove(Collection<Instance> instances) {
         var removalBatch = getRemovalBatch(instances);
@@ -652,10 +641,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if(key.getIndex().isUnique() && parent != null && parent.containsUniqueKey(key))
             return parent.selectLastByKey(key);
         return Utils.first(query(key.toQuery(true, 1L)));
-    }
-
-    public IInstanceContext getParent() {
-        return parent;
     }
 
     @Override

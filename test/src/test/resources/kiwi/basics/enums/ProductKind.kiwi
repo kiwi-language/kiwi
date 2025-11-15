@@ -14,7 +14,7 @@ enum ProductKind(priv val code: int) {
         for (kind in values()) {
             if (kind.code == code) return kind
         }
-        throw NullPointerException("Cannot find a ProductKind for code " + code)
+        throw Exception("Cannot find a ProductKind for code " + code)
     }
 
 }

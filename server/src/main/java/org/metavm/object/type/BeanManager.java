@@ -9,7 +9,7 @@ import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.springframework.stereotype.Component;
+import org.metavm.context.Component;
 
 import java.util.*;
 

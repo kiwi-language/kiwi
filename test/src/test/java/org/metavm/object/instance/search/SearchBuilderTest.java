@@ -1,7 +1,6 @@
 package org.metavm.object.instance.search;
 
 import junit.framework.TestCase;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.instance.core.StringReference;
 import org.metavm.util.Constants;
 import org.metavm.util.MockUtils;
@@ -14,11 +13,6 @@ import java.util.Set;
 public class SearchBuilderTest extends TestCase {
 
     private static final Logger logger = LoggerFactory.getLogger(SearchBuilderTest.class);
-
-    @Override
-    protected void setUp() throws Exception {
-        MockStandardTypesInitializer.init();
-    }
 
     public void test() {
         var fooTypes = MockUtils.createFooTypes(true);

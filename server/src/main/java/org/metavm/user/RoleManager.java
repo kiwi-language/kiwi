@@ -6,8 +6,8 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.user.rest.dto.RoleDTO;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.metavm.context.Component;
+import org.metavm.context.sql.Transactional;
 
 import java.util.Objects;
 

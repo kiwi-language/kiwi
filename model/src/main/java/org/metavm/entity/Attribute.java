@@ -8,12 +8,14 @@ import org.metavm.object.instance.core.Reference;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
+import org.metavm.wire.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+@Wire
 @Slf4j
 @Entity
 public record Attribute(
@@ -41,20 +43,10 @@ public record Attribute(
     public void forEachReference(Consumer<Reference> action) {
     }
 
-    public void buildJson(Map<String, Object> map) {
-        map.put("name", this.name());
-        map.put("value", this.value());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.writeUTF(name);
         output.writeUTF(value);
     }
 
-    public Map<String, Object> toJson() {
-        var map = new java.util.HashMap<String, Object>();
-        buildJson(map);
-        return map;
-    }
 }

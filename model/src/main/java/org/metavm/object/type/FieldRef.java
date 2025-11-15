@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
@@ -19,15 +20,13 @@ import java.util.function.Consumer;
 @Slf4j
 public class FieldRef implements PropertyRef {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
-
     public static FieldRef read(MvInput input) {
         var classType = (ClassType) input.readType();
         var fieldReference = input.readReference();
         return new FieldRef(classType, fieldReference);
     }
 
+    @Getter
     private final ClassType declaringType;
     private final EntityReference fieldReference;
 //    public Field rawField;
@@ -41,10 +40,6 @@ public class FieldRef implements PropertyRef {
     private FieldRef(ClassType declaringType, Reference fieldReference) {
         this.declaringType = declaringType;
         this.fieldReference = (EntityReference) fieldReference;
-    }
-
-    public ClassType getDeclaringType() {
-        return declaringType;
     }
 
     public Field getRawField() {
@@ -118,11 +113,6 @@ public class FieldRef implements PropertyRef {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitFieldRef(this);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

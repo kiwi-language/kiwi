@@ -3,7 +3,6 @@ package org.metavm.object.instance;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeManager;
@@ -21,8 +20,6 @@ public class ShoppingTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
         var bootResult = BootstrapUtils.bootstrap();
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();

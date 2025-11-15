@@ -32,7 +32,7 @@ public final class TmpId extends Id {
 
     @Override
     public void write(MvOutput output) {
-        output.writeIdTag(IdTag.TMP, false);
+        output.writeIdTag(IdTag.TMP);
         output.writeLong(tmpId);
     }
 

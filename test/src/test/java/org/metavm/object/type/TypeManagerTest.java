@@ -6,7 +6,6 @@ import org.metavm.application.Application;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.MetaContextCache;
-import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.Id;
@@ -15,8 +14,6 @@ import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 import static org.metavm.util.TestConstants.APP_ID;
@@ -95,13 +92,6 @@ public class TypeManagerTest extends TestCase {
             assertEquals(1, klasses.size());
             assertEquals("Product", klasses.getFirst().getName());
         }
-    }
-
-    public void testHashMap() {
-        var defContext = ModelDefRegistry.getDefContext();
-        var klass = defContext.getKlass(HashMap.class);
-        Assert.assertEquals(HashMap.class.getName(), klass.getQualifiedName());
-        Assert.assertEquals(HashSet.class.getName(), defContext.getKlass(HashSet.class).getQualifiedName());
     }
 
     public void testChangeStaticFields() {

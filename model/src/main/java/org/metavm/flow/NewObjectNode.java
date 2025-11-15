@@ -1,27 +1,22 @@
 package org.metavm.flow;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.Type;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Setter
 @Entity
 public class NewObjectNode extends Node {
 
-    public static final Logger logger = LoggerFactory.getLogger(NewObjectNode.class);
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
-
+    @Getter
     private boolean ephemeral;
 
     private boolean unbound;
@@ -87,18 +82,6 @@ public class NewObjectNode extends Node {
         return 5;
     }
 
-    public boolean isEphemeral() {
-        return ephemeral;
-    }
-
-    public void setEphemeral(boolean ephemeral) {
-        this.ephemeral = ephemeral;
-    }
-
-    public void setUnbound(boolean unbound) {
-        this.unbound = unbound;
-    }
-
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitNewObjectNode(this);
@@ -112,38 +95,6 @@ public class NewObjectNode extends Node {
     @Override
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-    }
-
-    @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("stackChange", this.getStackChange());
-        map.put("length", this.getLength());
-        map.put("flow", this.getFlow().getStringId());
-        map.put("name", this.getName());
-        var successor = this.getSuccessor();
-        if (successor != null) map.put("successor", successor.getStringId());
-        var predecessor = this.getPredecessor();
-        if (predecessor != null) map.put("predecessor", predecessor.getStringId());
-        map.put("code", this.getCode().toJson());
-        map.put("exit", this.isExit());
-        map.put("unconditionalJump", this.isUnconditionalJump());
-        map.put("sequential", this.isSequential());
-        var error = this.getError();
-        if (error != null) map.put("error", error);
-        map.put("expressionTypes", this.getExpressionTypes());
-        map.put("nextExpressionTypes", this.getNextExpressionTypes());
-        map.put("offset", this.getOffset());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
     }
 
     @Override

@@ -15,7 +15,7 @@ import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
-import org.springframework.stereotype.Component;
+import org.metavm.context.Component;
 
 import java.util.HashSet;
 import java.util.List;

@@ -2,7 +2,6 @@ package org.metavm.object.instance.core;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Nodes;
 import org.metavm.object.instance.IndexKeyRT;
@@ -16,12 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 public class InstanceMemoryIndexTest extends TestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
-    }
 
     public void test() {
         var memIndex = new InstanceMemoryIndex();

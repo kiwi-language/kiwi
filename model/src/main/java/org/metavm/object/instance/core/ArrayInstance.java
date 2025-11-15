@@ -2,7 +2,6 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.NoProxy;
 import org.metavm.object.instance.ArrayListener;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.ClassType;
@@ -34,7 +33,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
         this.addAll(elements);
     }
 
-    @NoProxy
     public void reset(List<Value> elements) {
         clearInternal();
         for (Value element : elements)
@@ -64,7 +62,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     }
 
     @Override
-    @NoProxy
     protected void readBody(InstanceInput input) {
         var elements = this.elements;
         int len = input.readInt();
@@ -207,7 +204,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     }
 
     //    @Override
-    @NoProxy
     public boolean isReference() {
         return true;
     }

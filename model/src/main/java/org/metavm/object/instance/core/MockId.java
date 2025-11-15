@@ -1,10 +1,12 @@
 package org.metavm.object.instance.core;
 
+import lombok.Getter;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.MvOutput;
 
 import java.util.Objects;
 
+@Getter
 public class MockId extends Id {
 
     private final long id;
@@ -14,13 +16,9 @@ public class MockId extends Id {
         this.id = id;
     }
 
-    public long getId() {
-        return id;
-    }
-
     @Override
     public void write(MvOutput output) {
-        output.writeIdTag(IdTag.MOCK, false);
+        output.writeIdTag(IdTag.MOCK);
         output.writeLong(id);
     }
 

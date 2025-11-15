@@ -30,11 +30,6 @@ public class ParsingIdGenerator extends AbstractIdGenerator {
     }
 
     @Override
-    protected boolean isFieldIncluded(Field field) {
-        return false;
-    }
-
-    @Override
     protected boolean isConstructorIncluded(Constructor<?> constructor) {
         return constructor.isAnnotationPresent(EntityFlow.class);
     }

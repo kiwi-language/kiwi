@@ -10,7 +10,7 @@ public class TestConstants {
     public static final long USER_ID = 1004L;
 
     public static Id getAppId() {
-        return Constants.getAppId(APP_ID);
+        return Id.getAppId(APP_ID);
     }
 
 }

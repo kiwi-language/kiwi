@@ -1,0 +1,23 @@
+package deploy
+
+class Product(var name: string, val owner: User) {
+
+    {
+        owner.products.append(this)
+    }
+
+    fn getOwnerName() -> string {
+        return owner.name
+    }
+
+}
+
+class User(var name: string) {
+
+    val products = new Product[]
+
+    fn getFirstProductName() -> string {
+        return products[0].name
+    }
+
+}

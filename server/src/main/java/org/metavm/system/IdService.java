@@ -1,8 +1,8 @@
 package org.metavm.system;
 
 import org.metavm.entity.EntityIdProvider;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.metavm.context.Component;
+import org.metavm.context.sql.Transactional;
 
 import java.util.List;
 

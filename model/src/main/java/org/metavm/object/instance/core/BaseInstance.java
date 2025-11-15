@@ -1,7 +1,5 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.entity.NoProxy;
-
 import javax.annotation.Nullable;
 
 public abstract class BaseInstance implements Instance {
@@ -15,11 +13,6 @@ public abstract class BaseInstance implements Instance {
     @Override
     public InstanceState state() {
         return state;
-    }
-
-    @NoProxy
-    public void initState(Id id, long version ,long syncVersion, boolean ephemeral, boolean isNew) {
-        state = new InstanceState(id, version, syncVersion, ephemeral, isNew, this);
     }
 
 }

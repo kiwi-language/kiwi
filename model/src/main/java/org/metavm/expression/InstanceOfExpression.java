@@ -1,8 +1,10 @@
 package org.metavm.expression;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.instance.core.Reference;
@@ -18,11 +20,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Getter
+@Wire
 @Entity
 public class InstanceOfExpression extends Expression {
 
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
     private final Expression operand;
     private final Type targetType;
 
@@ -70,14 +72,6 @@ public class InstanceOfExpression extends Expression {
         return Instances.intInstance(targetType.isInstance(operand.evaluate(context)));
     }
 
-    public Expression getOperand() {
-        return operand;
-    }
-
-    public Type getTargetType() {
-        return targetType;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -108,22 +102,16 @@ public class InstanceOfExpression extends Expression {
         targetType.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("operand", this.getOperand().toJson());
-        map.put("targetType", this.getTargetType().toJson());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_InstanceOfExpression);
         super.write(output);
         operand.write(output);
         output.writeValue(targetType);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new InstanceOfExpression(operand.accept(transformer), targetType);
     }
 }

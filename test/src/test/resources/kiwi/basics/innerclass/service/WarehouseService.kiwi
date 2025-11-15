@@ -1,7 +1,6 @@
 package innerclass.service
 
 import innerclass.Warehouse
-import java.util.List
 
 @Bean
 class WarehouseService {
@@ -22,8 +21,8 @@ class WarehouseService {
         return warehouse.Container<Warehouse<string>.Container<string>[][]>(id)
     }
 
-    fn createContainer3(warehouse: Warehouse<string>, id: Warehouse<string>.Container<string>) -> List<Warehouse<string>.Container<Warehouse<string>.Container<string>>> {
-        return List.of<Warehouse<string>.Container<Warehouse<string>.Container<string>>>(warehouse.Container<Warehouse<string>.Container<string>>(id))
+    fn createContainer3(warehouse: Warehouse<string>, id: Warehouse<string>.Container<string>) -> Warehouse<string>.Container<Warehouse<string>.Container<string>>[] {
+        return new Warehouse<string>.Container<Warehouse<string>.Container<string>>[] { warehouse.Container<Warehouse<string>.Container<string>>(id) }
     }
 
     fn createItem(container: Warehouse<string>.Container<string>, type: string) -> Warehouse<string>.Container<string>.Item<string> {

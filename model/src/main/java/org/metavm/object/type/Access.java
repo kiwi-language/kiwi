@@ -1,12 +1,10 @@
 package org.metavm.object.type;
 
-import org.metavm.api.Entity;
 import org.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 
-@Entity
 public enum Access {
     PUBLIC(1),
     PACKAGE(2),

@@ -4,10 +4,10 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.persistence.SchemaManager;
 import org.metavm.object.instance.search.InstanceSearchService;
+import org.metavm.jdbc.TransactionCallback;
+import org.metavm.jdbc.TransactionStatus;
 import org.metavm.util.Utils;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.metavm.context.Component;
 
 @Component
 public class CommitService {
@@ -25,9 +25,9 @@ public class CommitService {
     }
 
     public void switchTable(long appId, Id commitId) {
-        Utils.require(TransactionSynchronizationManager.isActualTransactionActive());
+        Utils.require(TransactionStatus.isTransactionActive());
         terminateCommit(appId, commitId);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        TransactionStatus.registerCallback(new TransactionCallback() {
             @Override
             public void beforeCommit(boolean readOnly) {
                 // This terminates the commit in the original table
@@ -38,8 +38,9 @@ public class CommitService {
     }
 
     public void dropTmpTables(long appId, Id commitId) {
-        Utils.require(TransactionSynchronizationManager.isActualTransactionActive());
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        Utils.require(TransactionStatus.isTransactionActive());
+        TransactionStatus.registerCallback(new TransactionCallback() {
+
             @Override
             public void beforeCommit(boolean readOnly) {
                 dropTmpTables0(appId, commitId);
@@ -59,11 +60,12 @@ public class CommitService {
     private void switchTable0(long appId, Id commitId) {
         var backup = !getCommit(appId, commitId).isNoBackup();
         schemaManager.switchTable(appId, backup);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        TransactionStatus.registerCallback(new TransactionCallback() {
             @Override
             public void afterCommit() {
                 instanceSearchService.switchAlias(appId, backup);
             }
+
         });
         terminateCommit(appId, commitId);
     }

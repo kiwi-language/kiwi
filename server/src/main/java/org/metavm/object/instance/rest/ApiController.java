@@ -1,124 +1,91 @@
 package org.metavm.object.instance.rest;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.common.ErrorCode;
-import org.metavm.common.Result;
-import org.metavm.http.HttpCookieImpl;
+import org.metavm.context.http.*;
 import org.metavm.http.HttpHeaderImpl;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiAdapter;
+import org.metavm.server.HttpMethod;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
-@RestController
+@Controller
+@Mapping("/api")
 public class ApiController {
 
-    private final ApiAdapter apiAdapter;
-
-    public static final String HEADER_REFRESH_POLICY = "X-Refresh-Policy";
-    public static final String CALL_RETURN_OBJECT = "X-Return-Full-Object";
     public static final String REFRESH_POLICY_NONE = "none";
+
+    private final ApiAdapter apiAdapter;
 
     public ApiController(ApiAdapter apiAdapter) {
         this.apiAdapter = apiAdapter;
     }
 
-    @GetMapping("/api/**")
-    public Map<String, Object> handleGet(HttpServletRequest servletRequest) {
-        initContextAppId(servletRequest);
-        return apiAdapter.handleGet(servletRequest.getRequestURI());
+    @Get("/**")
+    public Map<String, Object> get(@Header("X-App-Id") String appId, @RequestURI String uri) {
+        initContextAppId(appId);
+        return apiAdapter.handleGet(uri);
     }
 
-    @PostMapping("/api/**")
-    public ResponseEntity<Object> handlePost(HttpServletRequest servletRequest,
-                                             @RequestBody(required = false) Map<String, Object> requestBody) {
+    @Post("/**")
+    public ResponseEntity<Object> post(@Header("X-Refresh-Policy") String refreshPolicy,
+                                       @Header("X-Return-Full-Object") String returnFullObject,
+                                       @Header("X-App-ID") String appId,
+                                       @RequestURI String uri,
+                                       @Headers Map<String, List<String>> headers,
+                                       @RequestBody Map<String, Object> body) {
         try {
-            var refreshPolicy = servletRequest.getHeader(HEADER_REFRESH_POLICY);
             if (!REFRESH_POLICY_NONE.equalsIgnoreCase(refreshPolicy))
                 ContextUtil.setWaitForSearchSync(true);
-            var callReturnObject = "true".equalsIgnoreCase(servletRequest.getHeader(CALL_RETURN_OBJECT));
-            initContextAppId(servletRequest);
-            var httpReq = buildHttpRequest(servletRequest);
+            var callReturnObject = "true".equalsIgnoreCase(returnFullObject);
+            initContextAppId(appId);
+            var httpReq = buildHttpRequest(HttpMethod.POST.name(), uri, headers);
             var httpResp = new HttpResponseImpl();
-            var r = Result.success(apiAdapter.handlePost(
-                    servletRequest.getRequestURI(),
-                    Objects.requireNonNullElse(requestBody, Map.of()),
+            var rs = apiAdapter.handlePost(
+                    uri,
+                    Objects.requireNonNullElse(body, Map.of()),
                     callReturnObject,
                     httpReq,
                     httpResp
-            ));
-            return toResponse(r, httpResp);
+            );
+            return buildResp(rs, httpResp);
         } finally {
             ContextUtil.setWaitForSearchSync(false);
         }
     }
 
-    private  <T> ResponseEntity<Object> toResponse(Result<T> result, HttpResponse response) {
-        if (result.isSuccessful()) {
-            var headers = getHeaders(response);
-            if (result.getData() == null)
-                return ResponseEntity.noContent().headers(headers).build();
-            else
-                return new ResponseEntity<>(result.getData(), headers, 200);
-        } else
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+    @Delete("/**")
+    public void delete(@Header("X-App-ID") String appId, @RequestURI String uri) {
+        initContextAppId(appId);
+        apiAdapter.handleDelete(uri);
     }
 
-    @DeleteMapping("/api/**")
-    public void handleDelete(HttpServletRequest servletRequest) {
-        initContextAppId(servletRequest);
-        apiAdapter.handleDelete(servletRequest.getRequestURI());
-    }
-
-    private HttpRequest buildHttpRequest(HttpServletRequest servletRequest) {
+    private static HttpRequest buildHttpRequest(String method, String uri, Map<String, List<String>> h) {
         var headers = new ArrayList<HttpHeader>();
-        var headerNames = servletRequest.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            var name = headerNames.nextElement();
-            var value = servletRequest.getHeader(name);
-            headers.add(new HttpHeaderImpl(name, value));
-        }
-        var cookies = new ArrayList<HttpCookie>();
-        if (servletRequest.getCookies() != null) {
-            for (Cookie cookie : servletRequest.getCookies()) {
-                cookies.add(new HttpCookieImpl(cookie.getName(), cookie.getValue()));
-            }
-        }
+        h.forEach((name, value) -> headers.add(new HttpHeaderImpl(name, value.getFirst())));
         return new HttpRequestImpl(
-                servletRequest.getMethod(),
-                servletRequest.getRequestURI(),
+                method,
+                uri,
                 headers,
-                cookies
+                List.of()
         );
     }
 
-    private HttpHeaders getHeaders(HttpResponse httpResponse) {
-        var headers = new HttpHeaders();
+    private static ResponseEntity<Object> buildResp(Object data, HttpResponse httpResponse) {
+        var headers = new HashMap<String, String>();
         for (HttpHeader header : httpResponse.getHeaders()) {
-            headers.add(header.name(), header.value());
+            headers.put(header.name(), header.value());
         }
-        for (HttpCookie cookie : httpResponse.getCookies()) {
-            headers.add(HttpHeaders.SET_COOKIE, ResponseCookie.from(cookie.name(), cookie.value()).toString());
-        }
-        return headers;
+        return new ResponseEntity<>(data, headers);
     }
 
-    private void initContextAppId(HttpServletRequest servletRequest) {
-        var appIdStr = servletRequest.getHeader("X-App-ID");
+    private static void initContextAppId(String appIdStr) {
         if (appIdStr == null)
             throw new BusinessException(ErrorCode.MISSING_X_APP_ID);
         try {

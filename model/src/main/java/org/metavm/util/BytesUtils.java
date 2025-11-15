@@ -19,8 +19,6 @@ import java.util.function.Function;
 
 public class BytesUtils {
 
-    public static final String SAVE_DIR = "/Users/leen/workspace/kiwi/src/test/resources/bytes";
-
     public static long readFirstLong(byte[] bytes) {
         int b = bytes[0];
         boolean negative = (b & 1) == 1;
@@ -47,7 +45,7 @@ public class BytesUtils {
 
     public static Object readIndexBytes(byte[] bytes) {
         var bin = new ByteArrayInputStream(bytes);
-        var input = new IndexKeyReader(bin, id -> new MockInstance(id));
+        var input = new IndexKeyReader(bin, MockInstance::new);
         return convertInstanceToValue(input.readValue());
     }
 
@@ -149,10 +147,6 @@ public class BytesUtils {
         }
 
         public <R> void acceptChildren(ValueVisitor<R> visitor) {
-
-        }
-
-        public void writeTree(TreeWriter treeWriter) {
 
         }
 
@@ -271,11 +265,6 @@ public class BytesUtils {
             }
         }
 
-    }
-
-    public static void saveCacheBytes(String name, byte[] bytes) {
-        var path = SAVE_DIR + "/" + name;
-        Utils.writeFile(path, bytes);
     }
 
     public static int compareBytes(byte[] bytes1, byte[] bytes2) {

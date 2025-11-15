@@ -1,15 +1,9 @@
 package org.metavm.test
 
-import org.metavm.object.type.Klass
-
 class InstanceOfFoo {
 
     fn isInstance(o: any) -> bool {
         return o is InstanceOfFoo
-    }
-
-    fn isKlassInstance(o: any) -> bool {
-        return o is Klass
     }
 
 }

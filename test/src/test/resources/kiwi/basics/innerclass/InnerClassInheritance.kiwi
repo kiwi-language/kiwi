@@ -1,6 +1,6 @@
 package innerclass
 
-class InnerClassInheritance<E>(priv val value: string): java.io.Serializable {
+class InnerClassInheritance<E>(priv val value: string) {
 
     fn getValue() -> string {
         return Inner2(0).getValue()

@@ -7,8 +7,6 @@ import java.lang.reflect.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static org.metavm.entity.ReflectDefiner.methodWhitelist;
-
 public class ReflectIdGenerator extends AbstractIdGenerator {
 
     public ReflectIdGenerator(Class<?> clazz, long treeId,
@@ -16,12 +14,6 @@ public class ReflectIdGenerator extends AbstractIdGenerator {
                               TriConsumer<ModelIdentity, Long, Long> rootCollector,
                               Consumer<Class<?>> callback) {
         super(clazz, treeId, idCollector, rootCollector, callback);
-    }
-
-    @Override
-    protected boolean isFieldIncluded(Field field) {
-        return Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers())
-                || ReflectDefiner.fieldWhitelist.contains(field);
     }
 
     @Override
@@ -33,7 +25,7 @@ public class ReflectIdGenerator extends AbstractIdGenerator {
     @Override
     protected boolean isMethodIncluded(Method method) {
         var mods = method.getModifiers();
-        return Modifier.isPublic(mods) || Modifier.isProtected(mods) || methodWhitelist.contains(method);
+        return Modifier.isPublic(mods) || Modifier.isProtected(mods);
     }
 
     @Override

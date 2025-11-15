@@ -1,9 +1,9 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.flow.FunctionRef;
-import org.metavm.flow.MethodRef;
+import org.metavm.flow.FunctionSignature;
 import org.metavm.flow.SimpleMethodRef;
+import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.InternalException;
 
 public interface TypeParser {
@@ -24,14 +24,8 @@ public interface TypeParser {
         }
     }
 
-    static MethodRef parseMethodRef(@NotNull String expression, TypeDefProvider typeDefProvider) {
-        try {
-            return new TypeParserImpl(typeDefProvider).parseMethodRef(expression);
-        }
-        catch (Exception e) {
-            throw new InternalException("Fail to parse type expression " + expression, e);
-        }
-    }
+
+    TypeKey parseTypeKey(@NotNull String expression);
 
     static SimpleMethodRef parseSimpleMethodRef(@NotNull String expression, ParserTypeDefProvider typeDefProvider) {
         try {
@@ -44,11 +38,7 @@ public interface TypeParser {
 
     Type parseType(String expression);
 
-    MethodRef parseMethodRef(String expression);
-
-    MethodRef parseMethodRef(org.metavm.object.type.antlr.TypeParser.MethodRefContext ctx);
-
-    FunctionRef parseFunctionRef(String expression);
+    FunctionSignature parseFunctionSignature(String expression);
 
     SimpleMethodRef parseSimpleMethodRef(String expression);
 }

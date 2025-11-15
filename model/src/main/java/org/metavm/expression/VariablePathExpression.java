@@ -1,15 +1,14 @@
 package org.metavm.expression;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.AnyType;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -19,11 +18,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Getter
+@Wire
 @Entity
 public class VariablePathExpression extends Expression {
 
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
     private final Expression qualifier;
     private final VariableExpression field;
 
@@ -41,14 +40,6 @@ public class VariablePathExpression extends Expression {
     public static void visit(StreamVisitor visitor) {
         Expression.visit(visitor);
         VariableExpression.visit(visitor);
-    }
-
-    public Expression getQualifier() {
-        return qualifier;
-    }
-
-    public VariableExpression getField() {
-        return field;
     }
 
     @Override
@@ -106,22 +97,16 @@ public class VariablePathExpression extends Expression {
         field.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("qualifier", this.getQualifier().toJson());
-        map.put("field", this.getField().toJson());
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_VariablePathExpression);
         super.write(output);
         qualifier.write(output);
         field.write(output);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new VariablePathExpression(qualifier.accept(transformer), field);
     }
 }

@@ -2,26 +2,27 @@ package org.metavm.ddl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
-import org.metavm.entity.EntityRegistry;
+import org.metavm.wire.Wire;
 import org.metavm.entity.IndexDef;
-import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Message;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.RedirectStatus;
 import org.metavm.util.Instances;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-@NativeEntity(13)
+@Wire(13)
 @Entity
 @Slf4j
 public class Commit extends org.metavm.entity.Entity implements RedirectStatus, Message {
@@ -34,32 +35,29 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     public static BiConsumer<Long, Id> dropTmpTableHook;
     public static Consumer<Long> cleanupRemovingClassesHook;
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
-
-    private Date time = new Date();
-    private long appId;
-    private List<String> newFieldIds = new ArrayList<>();
-    private List<String> convertingFieldIds = new ArrayList<>();
-    private List<String> toChildFieldIds = new ArrayList<>();
-    private List<String> toNonChildFieldIds = new ArrayList<>();
-    private List<String> removedChildFieldIds = new ArrayList<>();
-    private List<String> changingSuperKlassIds = new ArrayList<>();
-    private List<String> entityToValueKlassIds = new ArrayList<>();
-    private List<String> valueToEntityKlassIds = new ArrayList<>();
-    private List<FieldChange> fieldChanges = new ArrayList<>();
-    private List<String> newEnumConstantIds = new ArrayList<>();
-    private List<String> changedEnumConstantIds = new ArrayList<>();
-    private List<String> toEnumKlassIds = new ArrayList<>();
-    private List<String> fromEnumKlassIds = new ArrayList<>();
-    private List<String> runMethodIds = new ArrayList<>();
-    private List<String> newIndexIds = new ArrayList<>();
-    private List<String> searchEnabledKlassIds = new ArrayList<>();
+    private final Date time = new Date();
+    private final long appId;
+    private final List<String> newFieldIds = new ArrayList<>();
+    private final List<String> convertingFieldIds = new ArrayList<>();
+    private final List<String> toChildFieldIds = new ArrayList<>();
+    private final List<String> toNonChildFieldIds = new ArrayList<>();
+    private final List<String> removedChildFieldIds = new ArrayList<>();
+    private final List<String> changingSuperKlassIds = new ArrayList<>();
+    private final List<String> entityToValueKlassIds = new ArrayList<>();
+    private final List<String> valueToEntityKlassIds = new ArrayList<>();
+    private final List<FieldChange> fieldChanges = new ArrayList<>();
+    private final List<String> newEnumConstantIds = new ArrayList<>();
+    private final List<String> changedEnumConstantIds = new ArrayList<>();
+    private final List<String> toEnumKlassIds = new ArrayList<>();
+    private final List<String> fromEnumKlassIds = new ArrayList<>();
+    private final List<String> runMethodIds = new ArrayList<>();
+    private final List<String> newIndexIds = new ArrayList<>();
+    private final List<String> searchEnabledKlassIds = new ArrayList<>();
 
     private CommitState state = CommitState.MIGRATING;
     private boolean running = true;
     private boolean cancelled = false;
-    private boolean noBackup;
+    private final boolean noBackup;
     private boolean submitted;
 
     public Commit(@NotNull Id id,
@@ -98,32 +96,6 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         this.searchEnabledKlassIds.addAll(searchEnabledKlassIds);
         this.changedEnumConstantIds.addAll(changedEnumConstantIds);
         this.fieldChanges.addAll(fieldChanges);
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitLong();
-        visitor.visitLong();
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(() -> FieldChange.visit(visitor));
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitList(visitor::visitUTF);
-        visitor.visitByte();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
     }
 
     public void submit() {
@@ -292,116 +264,12 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         for (var fieldChanges_ : fieldChanges) fieldChanges_.forEachReference(action);
     }
 
-    @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("time", this.getTime().getTime());
-        map.put("state", this.getState().name());
-        map.put("newFieldIds", this.getNewFieldIds());
-        map.put("convertingFieldIds", this.getConvertingFieldIds());
-        map.put("toNonChildFieldIds", this.getToNonChildFieldIds());
-        map.put("removedChildFieldIds", this.getRemovedChildFieldIds());
-        map.put("toChildFieldIds", this.getToChildFieldIds());
-        map.put("changingSuperKlassIds", this.getChangingSuperKlassIds());
-        map.put("entityToValueKlassIds", this.getEntityToValueKlassIds());
-        map.put("valueToEntityKlassIds", this.getValueToEntityKlassIds());
-        map.put("fieldChanges", this.getFieldChanges().stream().map(FieldChange::toJson).toList());
-        map.put("newEnumConstantIds", this.getNewEnumConstantIds());
-        map.put("changedEnumConstantIds", this.getChangedEnumConstantIds());
-        map.put("toEnumKlassIds", this.getToEnumKlassIds());
-        map.put("fromEnumKlassIds", this.getFromEnumKlassIds());
-        map.put("runMethodIds", this.getRunMethodIds());
-        map.put("newIndexIds", this.getNewIndexIds());
-        map.put("searchEnabledKlassIds", this.getSearchEnabledKlassIds());
-        map.put("appId", this.getAppId());
-        map.put("running", this.isRunning());
-        map.put("submitted", this.isSubmitted());
-        map.put("cancelled", this.isCancelled());
-    }
-
     public long getAppId() {
         return appId;
     }
 
     @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_Commit;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.time = input.readDate();
-        this.appId = input.readLong();
-        this.newFieldIds = input.readList(input::readUTF);
-        this.convertingFieldIds = input.readList(input::readUTF);
-        this.toChildFieldIds = input.readList(input::readUTF);
-        this.toNonChildFieldIds = input.readList(input::readUTF);
-        this.removedChildFieldIds = input.readList(input::readUTF);
-        this.changingSuperKlassIds = input.readList(input::readUTF);
-        this.entityToValueKlassIds = input.readList(input::readUTF);
-        this.valueToEntityKlassIds = input.readList(input::readUTF);
-        this.fieldChanges = input.readList(() -> FieldChange.read(input));
-        this.newEnumConstantIds = input.readList(input::readUTF);
-        this.changedEnumConstantIds = input.readList(input::readUTF);
-        this.toEnumKlassIds = input.readList(input::readUTF);
-        this.fromEnumKlassIds = input.readList(input::readUTF);
-        this.runMethodIds = input.readList(input::readUTF);
-        this.newIndexIds = input.readList(input::readUTF);
-        this.searchEnabledKlassIds = input.readList(input::readUTF);
-        int stateNum = (byte) input.read();
-        if (stateNum < 0) {
-            stateNum = -stateNum - 1;
-            noBackup = true;
-        }
-        this.state = CommitState.fromCode(stateNum);
-        this.running = input.readBoolean();
-        this.cancelled = input.readBoolean();
-        this.submitted = input.readBoolean();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        output.writeDate(time);
-        output.writeLong(appId);
-        output.writeList(newFieldIds, output::writeUTF);
-        output.writeList(convertingFieldIds, output::writeUTF);
-        output.writeList(toChildFieldIds, output::writeUTF);
-        output.writeList(toNonChildFieldIds, output::writeUTF);
-        output.writeList(removedChildFieldIds, output::writeUTF);
-        output.writeList(changingSuperKlassIds, output::writeUTF);
-        output.writeList(entityToValueKlassIds, output::writeUTF);
-        output.writeList(valueToEntityKlassIds, output::writeUTF);
-        output.writeList(fieldChanges, arg0 -> arg0.write(output));
-        output.writeList(newEnumConstantIds, output::writeUTF);
-        output.writeList(changedEnumConstantIds, output::writeUTF);
-        output.writeList(toEnumKlassIds, output::writeUTF);
-        output.writeList(fromEnumKlassIds, output::writeUTF);
-        output.writeList(runMethodIds, output::writeUTF);
-        output.writeList(newIndexIds, output::writeUTF);
-        output.writeList(searchEnabledKlassIds, output::writeUTF);
-        output.write(noBackup ? -state.code() - 1 : state.code());
-        output.writeBoolean(running);
-        output.writeBoolean(cancelled);
-        output.writeBoolean(submitted);
-    }
-
-    @Override
-    protected void buildSource(Map<String, Value> source) {
     }
 
 }

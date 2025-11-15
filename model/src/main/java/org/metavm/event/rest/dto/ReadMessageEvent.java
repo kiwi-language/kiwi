@@ -1,7 +1,11 @@
 package org.metavm.event.rest.dto;
 
+import lombok.Getter;
+import org.jsonk.Json;
 import org.metavm.event.UserEventKind;
 
+@Getter
+@Json
 public class ReadMessageEvent extends UserEvent{
 
     private final String messageId;
@@ -11,7 +15,4 @@ public class ReadMessageEvent extends UserEvent{
         this.messageId = messageId;
     }
 
-    public String getMessageId() {
-        return messageId;
-    }
 }

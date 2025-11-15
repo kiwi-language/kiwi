@@ -1,42 +1,39 @@
 package org.metavm.expression;
 
-import org.metavm.entity.CopyVisitor;
-import org.metavm.entity.Element;
 import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
-import org.metavm.util.LinkedList;
+import java.util.LinkedList;
 import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 
-public class ExpressionResolverV2 extends CopyVisitor {
+public class ExpressionResolverV2 extends ExpressionTransformer {
 
     private final LinkedList<Type> assignedTypeStack = new LinkedList<>();
 
     public static Expression resolve(Expression expression, @Nullable Type assignedType, ParsingContext parsingContext) {
-        return (Expression) expression.accept(new ExpressionResolverV2(expression, parsingContext, assignedType));
+        return expression.accept(new ExpressionResolverV2(parsingContext, assignedType));
     }
 
     private final ParsingContext context;
 
-    private ExpressionResolverV2(Expression root, ParsingContext context, @Nullable Type assignedType) {
-        super(root, false);
+    private ExpressionResolverV2(ParsingContext context, @Nullable Type assignedType) {
         assignedTypeStack.push(assignedType);
         this.context = context;
     }
 
     @Override
-    public Element visitExpression(Expression expression) {
+    public Expression visitExpression(Expression expression) {
         assignedTypeStack.push(null);
         try {
-            return super.visitExpression(expression);
+            return expression.transform(this);
         } finally {
             assignedTypeStack.pop();
         }
     }
 
     @Override
-    public Element visitVariableExpression(VariableExpression expr) {
+    public Expression visitVariableExpression(VariableExpression expr) {
         Var variable = Var.parse(expr.getVariable());
         if (context.isContextVar(variable)) {
             return context.resolveVar(variable);
@@ -53,12 +50,12 @@ public class ExpressionResolverV2 extends CopyVisitor {
     }
 
     @Override
-    public Element visitArrayExpression(ArrayExpression array) {
+    public Expression visitArrayExpression(ArrayExpression array) {
         try {
             var assignedType = assignedTypeStack.peek();
             var assignedElementType = assignedType instanceof ArrayType arrayType ? arrayType.getElementType() : null;
             assignedTypeStack.push(assignedElementType);
-            var elements = Utils.map(array.getExpressions(), expr -> (Expression) copy(expr));
+            var elements = Utils.map(array.getExpressions(), e -> e.accept(this));
             var types = Utils.map(elements, Expression::getType);
             Type elementType = assignedElementType;
             if (elementType == null) {
@@ -78,13 +75,13 @@ public class ExpressionResolverV2 extends CopyVisitor {
     }
 
     @Override
-    public Element visitConditionalExpression(ConditionalExpression expression) {
+    public Expression visitConditionalExpression(ConditionalExpression expression) {
         assignedTypeStack.push(null);
         try {
             return ConditionalExpression.create(
-                    (Expression) expression.getCondition().accept(this),
-                    (Expression) expression.getTrueValue().accept(this),
-                    (Expression) expression.getFalseValue().accept(this)
+                    expression.getCondition().accept(this),
+                    expression.getTrueValue().accept(this),
+                    expression.getFalseValue().accept(this)
             );
         } finally {
             assignedTypeStack.pop();
@@ -92,7 +89,7 @@ public class ExpressionResolverV2 extends CopyVisitor {
     }
 
     @Override
-    public Element visitVariablePathExpression(VariablePathExpression expression) {
+    public Expression visitVariablePathExpression(VariablePathExpression expression) {
         try {
             assignedTypeStack.push(null);
             if (expression.getQualifier() instanceof VariableExpression qualifierVariableExpr) {
@@ -107,7 +104,7 @@ public class ExpressionResolverV2 extends CopyVisitor {
                     }
                 }
             }
-            var qualifier = (Expression) copy(expression.getQualifier());
+            var qualifier = expression.getQualifier().accept(this);
             var qualifierType = (ClassType) context.getExpressionType(qualifier).getUnderlyingType();
             var propertyRef = qualifierType.getPropertyByVar(Var.parse(expression.getField().getVariable()));
             if (propertyRef == null)
@@ -123,21 +120,6 @@ public class ExpressionResolverV2 extends CopyVisitor {
             case ID -> klassProvider.getTypeDef(var.getId()) instanceof Klass classType ? classType : null;
             case NAME -> klassProvider.findKlassByName(var.getName());
         };
-    }
-
-    @Override
-    public Element visitAllMatchExpression(AllMatchExpression expression) {
-        try {
-            assignedTypeStack.push(null);
-            var resolvedArray = (Expression) copy(expression.getArray());
-            var alias = resolvedArray instanceof AsExpression asExpression ? asExpression.getAlias() : null;
-            var elementType = ((ArrayType) resolvedArray.getType()).getElementType();
-            var subContext = new SubParsingContext(alias, elementType, context);
-            var condition = ExpressionResolverV2.resolve(expression.getCondition(), Types.getBooleanType(), subContext);
-            return new AllMatchExpression(resolvedArray, condition);
-        } finally {
-            assignedTypeStack.pop();
-        }
     }
 
 }

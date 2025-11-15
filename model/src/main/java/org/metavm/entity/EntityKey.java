@@ -8,7 +8,7 @@ public record EntityKey(
 ) {
 
     public static EntityKey create(Class<?> type, Id id) {
-        return new EntityKey(EntityUtils.getEntityType(type), id);
+        return new EntityKey(type, id);
     }
 
 }

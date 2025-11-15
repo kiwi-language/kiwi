@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.springframework.transaction.annotation.Transactional;
+import org.metavm.context.sql.Transactional;
 
 import java.io.InputStream;
 

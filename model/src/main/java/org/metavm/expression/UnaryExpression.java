@@ -1,14 +1,13 @@
 package org.metavm.expression;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -18,10 +17,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Getter
+@Wire
 @Entity
 public class UnaryExpression extends Expression {
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
     private final UnaryOperator operator;
     private final Expression operand;
 
@@ -39,14 +38,6 @@ public class UnaryExpression extends Expression {
     public static void visit(StreamVisitor visitor) {
         visitor.visitByte();
         Expression.visit(visitor);
-    }
-
-    public UnaryOperator getOperator() {
-        return operator;
-    }
-
-    public Expression getOperand() {
-        return operand;
     }
 
     @Override
@@ -133,22 +124,16 @@ public class UnaryExpression extends Expression {
         operand.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("operator", this.getOperator().name());
-        map.put("operand", this.getOperand().toJson());
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_UnaryExpression);
         super.write(output);
         output.write(operator.code());
         operand.write(output);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new UnaryExpression(operator, operand.accept(transformer));
     }
 }

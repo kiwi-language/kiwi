@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
@@ -12,11 +11,6 @@ import org.metavm.object.type.*;
 import javax.annotation.Nullable;
 
 public class ExpressionParserTest extends TestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        MockStandardTypesInitializer.init();
-    }
 
     public void test() {
         var parser = new ExpressionParser("switchVar instanceof $_$101", new MyParsingContext());
@@ -27,15 +21,6 @@ public class ExpressionParserTest extends TestCase {
         var id = PhysicalId.of(1L, 1L);
         var parser = new ExpressionParser("!($13aed34c instanceof $$" + id + ")", new MyParsingContext());
         var expr = parser.parse(Types.getAnyType());
-    }
-
-    public void testTypeLiteral() {
-        var parser = new ExpressionParser("(any|null)[].class", new MyParsingContext());
-        var expr = (TypeLiteralExpression) parser.parse(Types.getAnyType());
-        Assert.assertEquals(
-                new ArrayType(Types.getNullableAnyType(), ArrayKind.DEFAULT),
-                expr.getTypeObject()
-        );
     }
 
     public void testList() {

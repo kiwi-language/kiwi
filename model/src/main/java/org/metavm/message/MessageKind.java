@@ -1,9 +1,7 @@
 package org.metavm.message;
 
-import org.metavm.api.Entity;
 import org.metavm.util.Utils;
 
-@Entity
 public enum MessageKind {
     DEFAULT(0),
     INVITATION(1),

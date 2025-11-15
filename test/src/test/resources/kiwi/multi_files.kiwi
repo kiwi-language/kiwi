@@ -1,15 +1,13 @@
-import java.util.List
-import java.util.ArrayList
 import util.Utils
 
 class Lab {
 
     static fn test() -> bool {
-        val list = ArrayList<int>()
-        list.add(1)
-        list.add(2)
-        list.add(3)
-        list.add(4)
+        val list = new int[]
+        list.append(1)
+        list.append(2)
+        list.append(3)
+        list.append(4)
         return Utils.containsAny<int>(list, 1, 5)
     }
 

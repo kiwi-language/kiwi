@@ -1,8 +1,8 @@
 package org.metavm.object.type;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.metavm.context.Value;
+import org.metavm.context.Bean;
+import org.metavm.context.Configuration;
 
 @Configuration
 public class StdAllocatorsConfig {
@@ -16,11 +16,6 @@ public class StdAllocatorsConfig {
     @Bean
     public StdAllocators stdAllocators() {
         return new StdAllocators(new DirectoryAllocatorStore(cpRoot));
-    }
-
-    @Bean
-    public ColumnStore columnStore() {
-        return new FileColumnStore(cpRoot);
     }
 
     @Bean

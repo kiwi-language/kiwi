@@ -1,10 +1,12 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.Writable;
+import org.metavm.api.Entity;
 import org.metavm.entity.Reference;
+import org.metavm.entity.Writable;
 
 import java.util.function.Consumer;
 
+@Entity
 public interface PropertyRef extends Reference, Writable {
 
     Type getPropertyType();

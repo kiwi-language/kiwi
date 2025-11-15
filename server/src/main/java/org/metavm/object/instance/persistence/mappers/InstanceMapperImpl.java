@@ -3,12 +3,11 @@ package org.metavm.object.instance.persistence.mappers;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.jdbc.TransactionStatus;
 import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.VersionPO;
 import org.metavm.util.Utils;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +30,7 @@ public class InstanceMapperImpl implements InstanceMapper {
     private final String updateSQL;
     private final String upsertSQL;
     private final String deleteSQL;
+    private final String physicalDeleteSQL;
     private final String tryDeleteSQL;
     private final String batchPhysicalDeleteSQL;
     private final String updateSyncVersionSQL;
@@ -94,11 +94,13 @@ public class InstanceMapperImpl implements InstanceMapper {
                 "select id from %s where id = any(?) and deleted_at != 0",
                 t
         );
+        physicalDeleteSQL  = String.format("delete from %s where id = ?", t);
     }
 
     @SneakyThrows
     @Override
     public InstancePO selectById(long id) {
+        logEvent("selectById");
         var connection = getConnection();
         try {
             var stmt = connection.prepareStatement(selectByIdSQL);
@@ -116,6 +118,7 @@ public class InstanceMapperImpl implements InstanceMapper {
 
     @SneakyThrows
     public InstancePO selectPhysicalById(long id) {
+        logEvent("selectPhysicalById");
         var connection = getConnection();
         try {
             var stmt = connection.prepareStatement(selectPhysicalSQL);
@@ -156,6 +159,7 @@ public class InstanceMapperImpl implements InstanceMapper {
     @SneakyThrows
     @Override
     public List<Long> filterDeletedIds(Collection<Long> ids) {
+        logEvent("selectByDeletedIds");
         var connection = getConnection();
         try {
             var stmt = connection.prepareStatement(filterDeletedIdsSQL);
@@ -174,6 +178,7 @@ public class InstanceMapperImpl implements InstanceMapper {
     @SneakyThrows
     @Override
     public void batchInsert(Collection<InstancePO> records) {
+        logEvent("batchInsert");
         var connection = getConnection();
         try (var ps = connection.prepareStatement(insertSQL)) {
             for (InstancePO record : records) {
@@ -194,6 +199,7 @@ public class InstanceMapperImpl implements InstanceMapper {
     @SneakyThrows
     @Override
     public void batchUpdate(Collection<InstancePO> records) {
+        logEvent("batchUpdate");
         var connection = getConnection();
         try (var ps = connection.prepareStatement(updateSQL)) {
             for (InstancePO record : records) {
@@ -214,6 +220,7 @@ public class InstanceMapperImpl implements InstanceMapper {
     @SneakyThrows
     @Override
     public void batchUpsert(Collection<InstancePO> records) {
+        logEvent("batchUpsert");
         var connection = getConnection();
         try (var ps = connection.prepareStatement(upsertSQL)) {
             for (InstancePO record : records) {
@@ -234,6 +241,7 @@ public class InstanceMapperImpl implements InstanceMapper {
     @SneakyThrows
     @Override
     public void batchDelete(long appId, long timestamp, Collection<VersionPO> versions) {
+        logEvent("batchDelete");
         var connection = getConnection();
         try(var ps = connection.prepareStatement(deleteSQL)) {
             for (VersionPO version : versions) {
@@ -250,7 +258,20 @@ public class InstanceMapperImpl implements InstanceMapper {
 
     @SneakyThrows
     @Override
+    public void physicalDelete(long appId, long id) {
+        var connection = getConnection();
+        try(var ps = connection.prepareStatement(physicalDeleteSQL)) {
+            ps.setLong(1, id);
+            ps.executeUpdate();
+        } finally {
+            returnConnection(connection);
+        }
+    }
+
+    @SneakyThrows
+    @Override
     public void tryBatchDelete(long appId, long timestamp, Collection<VersionPO> versions) {
+        logEvent("tryBatchDelete");
         batchDelete(appId, timestamp, versions);
         var connection = getConnection();
         try(var ps = connection.prepareStatement(tryDeleteSQL)) {
@@ -270,6 +291,7 @@ public class InstanceMapperImpl implements InstanceMapper {
 
     @SneakyThrows
     private void physicalDeleteByIds(List<Long> ids) {
+        logEvent("physicalDeleteByIds");
         var connection = getConnection();
         try(var ps = connection.prepareStatement(batchPhysicalDeleteSQL)) {
             ps.setArray(1, connection.createArrayOf("bigint", ids.toArray()));
@@ -282,6 +304,7 @@ public class InstanceMapperImpl implements InstanceMapper {
     @SneakyThrows
     @Override
     public int updateSyncVersion(List<VersionPO> versions) {
+        logEvent("updateSyncVersion");
         var connection = getConnection();
         try(var ps = connection.prepareStatement(updateSyncVersionSQL)) {
             for (VersionPO version : versions) {
@@ -305,6 +328,7 @@ public class InstanceMapperImpl implements InstanceMapper {
     @SneakyThrows
     @Override
     public List<Long> scanTrees(long appId, long startId, long limit) {
+        logEvent("scanTrees");
         var connection = getConnection();
         try (var ps = connection.prepareStatement(scanTreesSQL)) {
             ps.setLong(1, startId);
@@ -322,6 +346,7 @@ public class InstanceMapperImpl implements InstanceMapper {
     @SneakyThrows
     @Override
     public List<TreeVersion> selectVersions(long appId, List<Long> ids) {
+        logEvent("selectVersions");
         var connection = getConnection();
         try (var ps = connection.prepareStatement(selectVersionsSQL)) {
             ps.setArray(1, connection.createArrayOf("bigint", ids.toArray()));
@@ -348,11 +373,11 @@ public class InstanceMapperImpl implements InstanceMapper {
     }
 
     private Connection getConnection() {
-        return DataSourceUtils.getConnection(dataSource);
+        return TransactionStatus.getConnection(dataSource);
     }
 
     private void returnConnection(Connection connection) throws SQLException {
-        if (!TransactionSynchronizationManager.isActualTransactionActive())
+        if (!TransactionStatus.isTransactionActive())
             connection.close();
     }
 
@@ -409,4 +434,9 @@ public class InstanceMapperImpl implements InstanceMapper {
         mapper.physicalDeleteByIds(List.of(1L, 2L, 3L));
 
     }
+
+    private void logEvent(String event) {
+//       log.debug("Request URI: {}, event: InstanceMapper.{}", ContextUtil.getRequestURI(), event);
+    }
+
 }

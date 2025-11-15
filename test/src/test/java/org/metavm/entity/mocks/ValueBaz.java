@@ -2,6 +2,7 @@ package org.metavm.entity.mocks;
 
 import org.metavm.api.Generated;
 import org.metavm.api.ValueObject;
+import org.metavm.wire.Wire;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -9,6 +10,7 @@ import org.metavm.util.StreamVisitor;
 
 import java.util.function.Consumer;
 
+@Wire
 public record ValueBaz(int value, Reference reference) implements ValueObject {
 
     @Generated

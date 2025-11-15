@@ -2,7 +2,7 @@ package org.metavm.object.instance.query;
 
 import org.metavm.expression.*;
 import org.metavm.util.IdentitySet;
-import org.metavm.util.LinkedList;
+import java.util.LinkedList;
 
 import java.util.List;
 

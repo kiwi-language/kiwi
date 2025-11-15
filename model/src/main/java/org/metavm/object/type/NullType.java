@@ -1,14 +1,12 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.Nullable;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.NullTypeKey;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
@@ -16,11 +14,10 @@ import org.metavm.util.WireTypes;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@Entity
 public class NullType extends Type {
 
     public final static NullType instance = new NullType();
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     private NullType() {
     }
@@ -103,11 +100,6 @@ public class NullType extends Type {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitNullType(this, s);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

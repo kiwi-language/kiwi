@@ -2,7 +2,6 @@ package org.metavm.entity;
 
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
-import org.metavm.util.TypeReference;
 import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
@@ -10,10 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EntityQueryBuilder<T extends Entity> {
-
-    public static <T extends Entity> EntityQueryBuilder<T> newBuilder(TypeReference<T> typeReference) {
-        return newBuilder(typeReference.getType());
-    }
 
     public static <T extends Entity> EntityQueryBuilder<T> newBuilder(Class<T> entityClass) {
         return new EntityQueryBuilder<>(entityClass);

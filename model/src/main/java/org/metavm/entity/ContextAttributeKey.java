@@ -1,24 +1,19 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.log.InstanceLog;
-import org.metavm.util.TypeReference;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 public class ContextAttributeKey<T> extends AttributeKey<T> {
 
-    public static final  ContextAttributeKey<Map<Long, String>> INSTANCE_TITLES =
-            new ContextAttributeKey<>(new TypeReference<>() {}, false, HashMap::new);
-
+    /** @noinspection rawtypes, unchecked */
     public static final  ContextAttributeKey<List<InstanceLog>> CHANGE_LOGS =
-            new ContextAttributeKey<>(new TypeReference<>() {}, false, ArrayList::new);
+            new ContextAttributeKey<>((Class) List.class, false, ArrayList::new);
 
-    public ContextAttributeKey(TypeReference<T> typeReference, boolean nullable, Supplier<T> defaultValueSupplier) {
-        super(typeReference, nullable, defaultValueSupplier);
+    public ContextAttributeKey(Class<T> clazz, boolean nullable, Supplier<T> defaultValueSupplier) {
+        super(clazz, nullable, defaultValueSupplier);
     }
 
 }

@@ -1,23 +1,18 @@
 package org.metavm.object.type.generic;
 
 import junit.framework.TestCase;
-import org.metavm.entity.DummyGenericDeclaration;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.NameAndType;
 import org.metavm.flow.Nodes;
-import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.object.type.*;
+import org.metavm.object.type.FieldBuilder;
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.PrimitiveType;
+import org.metavm.object.type.TypeVariable;
 import org.metavm.util.TestUtils;
 
 import java.util.List;
 
 public class SubstitutorV2Test extends TestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        MockStandardTypesInitializer.init();
-    }
 
     public void test() {
         var voidType = PrimitiveType.voidType;

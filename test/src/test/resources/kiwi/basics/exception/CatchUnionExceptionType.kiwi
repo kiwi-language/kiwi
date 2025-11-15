@@ -6,6 +6,10 @@ class CatchUnionExceptionType {
 
     static fn get(index: int) -> int {
         try {
+            if (array == null)
+                throw NullPointerException()
+            if (index >= array.length)
+                throw IndexOutOfBoundsException()
             return array[index]
         } catch (e: IndexOutOfBoundsException|NullPointerException) {
             return -1
@@ -14,3 +18,6 @@ class CatchUnionExceptionType {
 
 }
 
+class IndexOutOfBoundsException(): Exception("Index out of bounds") {}
+
+class NullPointerException(): Exception("Null pointer") {}

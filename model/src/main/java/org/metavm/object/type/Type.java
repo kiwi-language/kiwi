@@ -5,8 +5,8 @@ import org.metavm.api.ValueObject;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
-import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.InternalException;
@@ -22,9 +22,6 @@ import java.util.function.Function;
 
 @Entity
 public abstract class Type implements TypeOrTypeKey, Writable, ValueObject, Element, NativeValue {
-
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     public abstract String getName();
 
@@ -83,10 +80,6 @@ public abstract class Type implements TypeOrTypeKey, Writable, ValueObject, Elem
     }
 
     public boolean isBinaryNullable() {
-        return false;
-    }
-
-    public boolean isNull() {
         return false;
     }
 
@@ -160,52 +153,42 @@ public abstract class Type implements TypeOrTypeKey, Writable, ValueObject, Elem
         return false;
     }
 
-    @NoProxy
     public boolean isLong() {
         return false;
     }
 
-    @NoProxy
     public boolean isNumber() {
         return false;
     }
 
-    @NoProxy
     public boolean isChar() {
         return false;
     }
 
-    @NoProxy
     public boolean isShort() {
         return false;
     }
 
-    @NoProxy
     public boolean isByte() {
         return false;
     }
 
-    @NoProxy
     public boolean isDouble() {
         return false;
     }
 
-    @NoProxy
     public boolean isBoolean() {
         return false;
     }
 
-    @NoProxy
     public boolean isString() {
         return false;
     }
 
-    @NoProxy
     public boolean isTime() {
         return false;
     }
 
-    @NoProxy
     public boolean isPassword() {
         return false;
     }
@@ -222,13 +205,7 @@ public abstract class Type implements TypeOrTypeKey, Writable, ValueObject, Elem
         return !isNullable();
     }
 
-    @NoProxy
     public boolean isArray() {
-        return false;
-    }
-
-    @NoProxy
-    public boolean isPrimitive() {
         return false;
     }
 
@@ -244,7 +221,6 @@ public abstract class Type implements TypeOrTypeKey, Writable, ValueObject, Elem
         return false;
     }
 
-    @NoProxy
     public boolean isVoid() {
         return false;
     }

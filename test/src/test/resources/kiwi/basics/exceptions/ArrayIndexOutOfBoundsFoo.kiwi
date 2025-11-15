@@ -8,3 +8,5 @@ class ArrayIndexOutOfBoundsFoo {
 
 }
 
+class ArrayIndexOutOfBoundsException(val index: int): Exception("Array index out of range: " + index)
+

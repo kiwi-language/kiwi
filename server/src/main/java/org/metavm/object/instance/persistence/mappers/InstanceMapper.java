@@ -35,6 +35,8 @@ public interface InstanceMapper {
                      long timestamp,
                      Collection<VersionPO> versions);
 
+    void physicalDelete(long appId, long id);
+
     void tryBatchDelete(long appId,
                      long timestamp,
                      Collection<VersionPO> versions);

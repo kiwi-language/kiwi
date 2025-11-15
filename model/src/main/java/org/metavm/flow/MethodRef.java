@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
@@ -10,8 +11,6 @@ import org.metavm.flow.rest.MethodRefKey;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
 import org.metavm.util.*;
@@ -23,12 +22,10 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@Getter
 @Entity
 @Slf4j
 public class MethodRef extends FlowRef implements PropertyRef {
-
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     public static MethodRef create(ClassType declaringType, Method method, List<? extends Type> typeArguments) {
         if(typeArguments.equals(method.getDefaultTypeArguments()))
@@ -57,10 +54,6 @@ public class MethodRef extends FlowRef implements PropertyRef {
     @Override
     public GenericDeclarationRef getOwner() {
         return getDeclaringType();
-    }
-
-    public ClassType getDeclaringType() {
-        return declaringType;
     }
 
     @Override
@@ -284,11 +277,6 @@ public class MethodRef extends FlowRef implements PropertyRef {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitMethodRef(this);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

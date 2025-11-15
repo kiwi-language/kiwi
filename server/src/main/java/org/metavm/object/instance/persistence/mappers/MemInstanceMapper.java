@@ -1,5 +1,6 @@
 package org.metavm.object.instance.persistence.mappers;
 
+import lombok.Setter;
 import org.metavm.object.instance.ScanQuery;
 import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.persistence.InstancePO;
@@ -18,6 +19,7 @@ public class MemInstanceMapper implements InstanceMapper {
 
     private final NavigableMap<Long, InstancePO> id2instance = new TreeMap<>();
     private final Map<Long, InstancePO> removed = new HashMap<>();
+    @Setter
     private String table;
 
 
@@ -75,6 +77,11 @@ public class MemInstanceMapper implements InstanceMapper {
             remove(version.id());
             removed.put(version.id(), instancePO);
         }
+    }
+
+    @Override
+    public void physicalDelete(long appId, long id) {
+        id2instance.remove(id);
     }
 
     @Override
@@ -162,10 +169,6 @@ public class MemInstanceMapper implements InstanceMapper {
         id2instance.values().forEach(i -> copy.add(i.copy()));
         removed.values().forEach(i -> copy.removed.put(i.getId(), i.copy()));
         return copy;
-    }
-
-    public void setTable(String table) {
-        this.table = table;
     }
 
     public Collection<Long> getTreeIds() {

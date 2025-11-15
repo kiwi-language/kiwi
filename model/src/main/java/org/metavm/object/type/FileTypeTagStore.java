@@ -21,7 +21,7 @@ public class FileTypeTagStore extends MemTypeTagStore {
         this.cpRoot = cpRoot;
         var properties = new Properties();
         try {
-            properties.load(FileColumnStore.class.getResourceAsStream(FILE));
+            properties.load(FileTypeTagStore.class.getResourceAsStream(FILE));
         } catch (IOException e) {
             throw new InternalException("Fail to load type tags file '" + FILE + "'", e);
         }

@@ -10,11 +10,11 @@ import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.instance.search.SearchSync;
 import org.metavm.task.ShadowTask;
 import org.metavm.task.Task;
+import org.metavm.jdbc.TransactionCallback;
+import org.metavm.jdbc.TransactionStatus;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -71,19 +71,20 @@ public class ChangeLogPlugin implements ContextPlugin {
     private void createSearchSyncTask(Patch patch, List<InstanceLog> logs, IInstanceContext context) {
         if (context.isMigrating()) {
             List<Id> ids = Utils.map(patch.trees(), t -> PhysicalId.of(t.id(), 0));
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            TransactionStatus.registerCallback(new TransactionCallback() {
 
                 @Override
                 public void afterCommit() {
                     SearchSync.sync(ids, List.of(), false, context);
                 }
+
             });
 
         } else {
             var idsToIndex = new HashSet<>(Utils.filterAndMap(context.getSearchReindexSet(), i -> !i.isRemoved(), Instance::getId));
             var idsToRemove = new ArrayList<Id>();
             for (var log : logs) {
-                var inst = context.internalGet(log.getId());
+                var inst = context.internalGet(log.id());
                 if (inst instanceof ClassInstance clsInst && clsInst.isRoot() && clsInst.isSearchable()) {
                     if (log.isInsertOrUpdate())
                         idsToIndex.add(inst.getId());
@@ -99,7 +100,7 @@ public class ChangeLogPlugin implements ContextPlugin {
     private void createTasks(List<InstanceLog> logs, IInstanceContext context) {
         var tasks = new ArrayList<Task>();
         for (var log : logs) {
-            var inst = context.internalGet(log.getId());
+            var inst = context.internalGet(log.id());
             if (log.isInsert()) {
                 if (inst instanceof Task task) {
                     tasks.add(task);

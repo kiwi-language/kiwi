@@ -3,13 +3,12 @@ package org.metavm.object.instance.persistence.mappers;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.jdbc.TransactionStatus;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.IndexQueryPO;
 import org.metavm.util.Utils;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
@@ -79,6 +78,7 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     @SneakyThrows
     @Override
     public long count(IndexQueryPO queryPO) {
+        logEvent("count");
         var connection = getConnection();
         try {
             var ps = getQueryPS(connection, countSQLs, queryPO);
@@ -128,6 +128,7 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     @SneakyThrows
     @Override
     public List<IndexEntryPO> query(IndexQueryPO queryPO) {
+        logEvent("query");
         var connection = getConnection();
         try {
             var ps = getQueryPS(connection, querySQLs, queryPO);
@@ -141,6 +142,7 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     @SneakyThrows
     @Override
     public long countRange(long appId, IndexKeyPO from, IndexKeyPO to) {
+        logEvent("countRange");
         var connection = getConnection();
         try {
             var ps = connection.prepareStatement(countRangeSQL);
@@ -158,6 +160,7 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     @SneakyThrows
     @Override
     public List<IndexEntryPO> scan(long appId, IndexKeyPO from, IndexKeyPO to) {
+        logEvent("scan");
         var connection = getConnection();
         try {
             var ps = connection.prepareStatement(scanSQL);
@@ -175,6 +178,7 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     @SneakyThrows
     @Override
     public List<IndexEntryPO> selectByInstanceIds(long appId, Collection<byte[]> instanceIds) {
+        logEvent("selectByInstanceIds");
         if (instanceIds.isEmpty()) return List.of();
         var sql = "select " + columns + " from " + table + " where app_id = ? and instance_id in (" +
                 Utils.repeatWithDelimiter("?", instanceIds.size(), ",") + ")";
@@ -196,6 +200,7 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     @SneakyThrows
     @Override
     public List<IndexEntryPO> selectByKeys(long appId, Collection<IndexKeyPO> keys) {
+        logEvent("selectByKeys");
         if (keys.isEmpty()) return List.of();
         var sql = "select " + columns + " from " + table + " where app_id = ? and (index_id, data) in (" +
                 Utils.repeatWithDelimiter("(?, ?)", keys.size(), ",") + ")";
@@ -218,6 +223,7 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     @SneakyThrows
     @Override
     public void batchInsert(Collection<IndexEntryPO> items) {
+        logEvent("batchInsert");
         //noinspection DuplicatedCode
         var connection = getConnection();
         try {
@@ -239,6 +245,7 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     @SneakyThrows
     @Override
     public void tryBatchInsert(Collection<IndexEntryPO> items) {
+        logEvent("tryBachInsert");
         //noinspection DuplicatedCode
         var connection = getConnection();
         try {
@@ -260,6 +267,7 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     @SneakyThrows
     @Override
     public void batchDelete(Collection<IndexEntryPO> items) {
+        logEvent("batchDelete");
         //noinspection DuplicatedCode
         var connection = getConnection();
         try {
@@ -298,12 +306,12 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     }
 
     private Connection getConnection() {
-        return DataSourceUtils.getConnection(dataSource);
+        return TransactionStatus.getConnection(dataSource);
     }
 
     @SneakyThrows
     private void returnConnection(Connection connection) {
-        if (!TransactionSynchronizationManager.isActualTransactionActive())
+        if (!TransactionStatus.isTransactionActive())
             connection.close();
     }
 
@@ -370,6 +378,10 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
                 )
         ));
 
+    }
+
+    private void logEvent(String event) {
+//        log.debug("Request URI: {}, event: IndexEntryMapper.{}", ContextUtil.getRequestURI(), event);
     }
 
 }

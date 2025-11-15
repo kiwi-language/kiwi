@@ -208,95 +208,9 @@ public class KlassInput extends MvInput {
         };
     }
 
-    protected  <T extends Entity> T getOrCreateEntity(Class<T> klass) {
-        Entity existing = null;
-        if (klass == Klass.class) {
-            startPeeking();
-            readId();
-            readList(() -> Attribute.read(this));
-            var sourceTag = readNullable(this::readInt);
-            if (sourceTag != null)
-                existing = repository.selectFirstByKey(Klass.UNIQUE_SOURCE_TAG, Instances.intInstance(sourceTag));
-            else {
-                var name = readUTF();
-                String qualifiedName;
-                if (symbolMap != null)
-                    existing = symbolMap.get(Klass.class, name);
-                else if ((qualifiedName = readNullable(this::readUTF)) != null)
-                    existing = repository.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualifiedName));
-            }
-            stopPeeking();
-        }
-        else if (klass == Field.class) {
-            startPeeking();
-            readId();
-            var sourceTag = readNullable(this::readInt);
-            if (sourceTag != null)
-                existing = Objects.requireNonNull(symbolMap).get(Field.class, "tag:" + sourceTag);
-            else {
-                var name = readUTF();
-                existing = Objects.requireNonNull(symbolMap).get(Field.class, name);
-            }
-            stopPeeking();
-        }
-        else if (klass == Method.class || klass == Function.class) {
-            startPeeking();
-            readId();
-            readList(() -> Attribute.read(this));
-            var internalName = readUTF();
-            stopPeeking();
-            if (klass == Function.class) existing = repository.selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance(internalName));
-            else existing = Objects.requireNonNull(symbolMap).get(Method.class, internalName);
-        }
-        else if (klass == Parameter.class) {
-            startPeeking();
-            readId();
-            readList(() -> Attribute.read(this));
-            var name = readUTF();
-            stopPeeking();
-            existing = Objects.requireNonNull(symbolMap).get(Parameter.class, name);
-        }
-        else if (klass == Index.class) {
-            startPeeking();
-            readId();
-            var name = readUTF();
-            stopPeeking();
-            existing = Objects.requireNonNull(symbolMap).get(Index.class, name);
-        }
-        else if (klass == TypeVariable.class) {
-            startPeeking();
-            readId();
-            readList(() -> Attribute.read(this));
-            var name = readUTF();
-            stopPeeking();
-            existing = Objects.requireNonNull(symbolMap).get(TypeVariable.class, name);
-        }
-        var id = readId();
-        if (existing != null) {
-            //noinspection unchecked
-            return (T) existing;
-        }
-        var entity = getEntity(klass, id);
-        entity.state().setNew();
-        return entity;
-    }
-
-    @Override
-    protected <T extends Entity> T getEntity(Class<T> klass, Id id) {
-        var existing = klass.cast(cached.get(id));
-        if (existing != null)
-            return existing;
-        existing = repository.getEntity(klass, id);
-        if (existing != null)
-            return existing;
-        var newEntity = super.getEntity(klass, id);
-        cached.put(id, newEntity);
-        return newEntity;
-    }
-
     @Override
     public Klass readEntityMessage() {
-        return readEntity(Klass.class, null);
+        return (Klass) readEntity();
     }
 
     @Override
@@ -364,28 +278,6 @@ public class KlassInput extends MvInput {
             }
             default -> throw new IllegalStateException("Invalid state: " + state);
         };
-    }
-
-    public void startPeeking() {
-        if (state != STATE_NORMAL) throw new IllegalStateException();
-        assert peekedBytesOffset == 0 && peekedBytesLimit == 0 : "peekedBytesOffset and peekedBytesLimit should be zero";
-        state = STATE_PEEKING;
-    }
-
-    public void stopPeeking() {
-        if (state != STATE_PEEKING) throw new IllegalStateException();
-        if (peekedBytesLimit > 0) state = STATE_REPLAYING;
-        else state = STATE_NORMAL;
-    }
-
-    public <T extends Entity> T readEntity(Class<T> klass, Entity parent) {
-        var entity = getOrCreateEntity(klass);
-        enterSymbolMap(entity);
-        entity.readHeadAndBody(this, parent);
-        exitSymbolMap();
-        if (entity.isNew() && repository.getEntity(klass, entity.getId()) == null)
-            repository.bind(entity);
-        return entity;
     }
 
     public void logCurrentSymbols() {

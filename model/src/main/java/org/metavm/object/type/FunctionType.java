@@ -1,5 +1,7 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
@@ -25,9 +27,9 @@ import java.util.function.Function;
 @Entity
 public class FunctionType extends CompositeType {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
     private final List<Type> parameterTypes;
+    @Getter
+    @Setter
     private Type returnType;
 
     public FunctionType(List<Type> parameterTypes, @NotNull Type returnType) {
@@ -54,14 +56,6 @@ public class FunctionType extends CompositeType {
             }
         }
         return false;
-    }
-
-    public void setReturnType(Type returnType) {
-        this.returnType = returnType;
-    }
-
-    public Type getReturnType() {
-        return returnType;
     }
 
     public List<Type> getParameterTypes() {
@@ -143,11 +137,6 @@ public class FunctionType extends CompositeType {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitFunctionType(this, s);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

@@ -1,32 +1,29 @@
-import java.util.List
-import java.util.ArrayList
-
 class Node<T>(
     priv var label: string,
     priv var value: T
 ) {
 
     fn getLabel() -> string {
-        return this.label
+        return label
     }
 
     fn getValue() -> T {
-        return this.value
+        return value
     }
 
 }
 
 class MyList<T>(
     priv var label: string,
-    priv val nodes: ArrayList<Node<T>>
+    priv val nodes: Node<T>[]
 ) {
 
     fn getLabel() -> string {
-        return this.label
+        return label
     }
 
-    fn getNodes() -> List<Node<T>> {
-        return ArrayList<Node<T>>(this.nodes)
+    fn getNodes() -> Node<T>[] {
+        return nodes
     }
 
 }

@@ -3,15 +3,5 @@ package interceptors
 value class UserDTO(
     val name: string,
     val telephone: string
-) {
-
-    fn name() -> string {
-        return name
-    }
-
-    fn telephone() -> string {
-        return telephone
-    }
-
-}
+)
 

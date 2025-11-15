@@ -2,13 +2,15 @@ package org.metavm.system.persistence;
 
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.util.Utils;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
+import org.metavm.context.Qualifier;
+import org.metavm.context.Component;
 
 import javax.sql.DataSource;
 
 @Component
+@Slf4j
 public class IdSequenceMapperImpl implements IdSequenceMapper {
 
     private final DataSource dataSource;
@@ -20,6 +22,7 @@ public class IdSequenceMapperImpl implements IdSequenceMapper {
     @SneakyThrows
     @Override
     public Long selectNextId() {
+        logEvent("selectNextId");
         try (var connection = dataSource.getConnection(); var stmt = connection.createStatement()) {
             var rs = stmt.executeQuery("select next_id from id_sequence");
             return rs.next() ? rs.getLong(1) : null;
@@ -29,6 +32,7 @@ public class IdSequenceMapperImpl implements IdSequenceMapper {
     @SneakyThrows
     @Override
     public void incrementNextId(long increment) {
+        logEvent("incrementNextId");
         try (var connection = dataSource.getConnection();
              var stmt = connection.prepareStatement("update id_sequence set next_id = next_id + ?")) {
             stmt.setLong(1, increment);
@@ -39,6 +43,7 @@ public class IdSequenceMapperImpl implements IdSequenceMapper {
     @SneakyThrows
     @Override
     public void insert(long initial) {
+        logEvent("insert");
         try (var connection = dataSource.getConnection();
              var stmt = connection.prepareStatement("insert into id_sequence (next_id) values (?)")) {
             stmt.setLong(1, initial);
@@ -48,10 +53,15 @@ public class IdSequenceMapperImpl implements IdSequenceMapper {
 
     @SneakyThrows
     private void delete() {
+        logEvent("delete");
         try (var connection = dataSource.getConnection();
              var stmt = connection.prepareStatement("delete from id_sequence")) {
             stmt.executeUpdate();
         }
+    }
+
+    private void logEvent(String event) {
+//        log.debug("Request URI: {}, event: IdSequenceMapper.{}", ContextUtil.getRequestURI(), event);
     }
 
     public static void main(String[] args) {

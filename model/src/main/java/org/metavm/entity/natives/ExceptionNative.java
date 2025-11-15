@@ -1,24 +1,34 @@
 package org.metavm.entity.natives;
 
+import org.metavm.entity.StdField;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.NullValue;
+import org.metavm.object.instance.core.StringReference;
 import org.metavm.object.instance.core.Value;
+import org.metavm.util.Instances;
 
-public class ExceptionNative extends ThrowableNative {
+public class ExceptionNative {
 
-    public ExceptionNative(ClassInstance instance) {
-        super(instance);
+    public static Value Exception(ClassInstance instance, Value causeOrMessage) {
+        if(causeOrMessage instanceof NullValue nullInstance)
+            return Exception(instance, nullInstance, nullInstance);
+        else if(causeOrMessage instanceof StringReference)
+            return Exception(instance, causeOrMessage, Instances.nullInstance());
+        else
+            return Exception(instance, Instances.nullInstance(), causeOrMessage);
     }
 
-    public Value Exception(CallContext callContext) {
-        return Throwable(callContext);
+    private static Value Exception(ClassInstance instance, Value message, Value cause) {
+        instance.initField(StdField.exceptionDetailMessage.get(), message);
+        instance.initField(StdField.exceptionCause.get(), cause);
+        return instance.getReference();
     }
 
-    public Value Exception(Value causeOrMessage, CallContext callContext) {
-        return Throwable(causeOrMessage, callContext);
-    }
-
-    public Value Exception(Value message, Value cause, CallContext callContext) {
-        return Throwable(message, cause, callContext);
+    public static String getMessage(ClassInstance exception) {
+        if (StdField.exceptionDetailMessage.get().get(exception) instanceof StringReference s)
+            return s.getValue();
+        else
+            return null;
     }
 
 }

@@ -1,25 +1,20 @@
 package org.metavm.application;
 
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
-import org.metavm.api.Generated;
 import org.metavm.application.rest.dto.ApplicationDTO;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.EntityRegistry;
+import org.metavm.wire.Wire;
 import org.metavm.entity.HashedValue;
 import org.metavm.entity.SearchField;
 import org.metavm.object.instance.core.EntityReference;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.user.PlatformUser;
-import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
+import org.metavm.util.BusinessException;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -27,22 +22,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@NativeEntity(3)
+@Wire(3)
 @Entity(searchable = true)
 public class Application extends org.metavm.entity.Entity {
 
     public static final int MAX_NUM_ADMINS = 16;
 
     public static final SearchField<Application> esName =
-            SearchField.createTitle("s0", app -> Instances.stringInstance(app.name));
+            SearchField.createTitle(0, "s0", app -> Instances.stringInstance(app.name));
 
     public static final SearchField<Application> esState =
-            SearchField.create("i0", app -> Instances.intInstance(app.state.code()));
+            SearchField.create(0, "i0", app -> Instances.intInstance(app.state.code()));
 
-    public static final SearchField<Application> esOwner = SearchField.create("r0", app -> app.owner);
-
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+    public static final SearchField<Application> esOwner = SearchField.create(0, "r0", app -> app.owner);
 
     @EntityField(asTitle = true)
     private String name;
@@ -61,15 +53,6 @@ public class Application extends org.metavm.entity.Entity {
         this.owner = owner.getReference();
         this.admins.add(owner.getReference());
         state = ApplicationState.ACTIVE;
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitUTF();
-        visitor.visitValue();
-        visitor.visitNullable(() -> HashedValue.visit(visitor));
-        visitor.visitList(visitor::visitValue);
-        visitor.visitByte();
     }
 
     public void setOwner(PlatformUser owner) {
@@ -159,51 +142,7 @@ public class Application extends org.metavm.entity.Entity {
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("owner", this.getOwner().getStringId());
-        map.put("name", this.getName());
-        map.put("state", this.getState().name());
-        map.put("admins", this.getAdmins().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("active", this.isActive());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_Application;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.name = input.readUTF();
-        this.owner = (EntityReference) input.readValue();
-        this.secret = input.readNullable(() -> HashedValue.read(input));
-        this.admins = input.readList(() -> (Reference) input.readValue());
-        this.state = ApplicationState.fromCode(input.read());
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        output.writeUTF(name);
-        output.writeValue(owner);
-        output.writeNullable(secret, arg0 -> arg0.write(output));
-        output.writeList(admins, output::writeValue);
-        output.write(state.code());
     }
 
     @Override

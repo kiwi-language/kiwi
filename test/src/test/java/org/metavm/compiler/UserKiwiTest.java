@@ -5,6 +5,7 @@ import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.ApiNamedObject;
 import org.metavm.util.ContextUtil;
+import org.metavm.util.TestUtils;
 import org.metavm.util.Utils;
 
 import java.util.List;
@@ -47,7 +48,7 @@ public class UserKiwiTest extends KiwiProjectTestBase {
             );
             waitForAllTasksDone(schedulerAndWorker);
             var user = getObject(userId);
-            log.info("{}", Utils.toPrettyJsonString(user.getMap()));
+            log.info("{}", TestUtils.toJSONString(user.getMap()));
             assertEquals(email, user.getString("loginName"));
             assertEquals("lyq", user.getString("name"));
             var apps = user.getArray("applications");

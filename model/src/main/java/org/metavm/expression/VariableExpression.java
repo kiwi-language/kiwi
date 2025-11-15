@@ -1,15 +1,14 @@
 package org.metavm.expression;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.AnyType;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -19,11 +18,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Getter
+@Wire
 @Entity
 public class VariableExpression extends Expression {
 
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
     private final String variable;
 
     public VariableExpression(@NotNull String variable) {
@@ -65,10 +64,6 @@ public class VariableExpression extends Expression {
         throw new UnsupportedOperationException();
     }
 
-    public String getVariable() {
-        return variable;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -95,20 +90,15 @@ public class VariableExpression extends Expression {
         super.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variable", this.getVariable());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_VariableExpression);
         super.write(output);
         output.writeUTF(variable);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new VariableExpression(variable);
     }
 }

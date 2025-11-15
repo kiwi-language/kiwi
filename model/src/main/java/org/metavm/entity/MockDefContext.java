@@ -1,12 +1,11 @@
 package org.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.event.EventQueue;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.RedirectStatusProvider;
-import org.metavm.object.type.TypeDef;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.Utils;
@@ -14,7 +13,6 @@ import org.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -24,34 +22,13 @@ public class MockDefContext extends DefContext {
     private final Set<Entity> entities = new HashSet<>();
 
     @Override
-    public KlassDef<?> tryGetDef(TypeDef typeDef) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public KlassDef<?> getDef(Type javaType) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Nullable
-    @Override
-    public KlassDef<?> getDefIfPresent(Type javaType) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Collection<KlassDef<?>> getAllDefList() {
+    public Klass getKlass(Class<?> javaClass) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Id getModelId(Object o) {
         return null;
-    }
-
-    @Override
-    public boolean containsDef(TypeDef typeDef) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -118,12 +95,6 @@ public class MockDefContext extends DefContext {
     @Override
     public <T> T getEntity(Class<T> entityType, Id id) {
         return entityType.cast(entityMap.get(id));
-    }
-
-    @Nullable
-    @Override
-    public EventQueue getEventQueue() {
-        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -1,10 +1,14 @@
 package org.metavm.object.instance.core;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.wire.Wire;
 import org.metavm.util.MvOutput;
 import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
+@Getter
+@Wire(adapter = ValueAdapter.class)
 public class StringReference extends ValueReference implements  Comparable<StringReference> {
 
     private final String value;
@@ -28,10 +32,6 @@ public class StringReference extends ValueReference implements  Comparable<Strin
     @Override
     public int hashCode() {
         return value.hashCode();
-    }
-
-    public String getValue() {
-        return value;
     }
 
     @Override

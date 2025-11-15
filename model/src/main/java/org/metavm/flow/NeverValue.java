@@ -2,6 +2,7 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.object.instance.core.Reference;
@@ -12,6 +13,7 @@ import org.metavm.util.StreamVisitor;
 
 import java.util.function.Consumer;
 
+@Wire
 public class NeverValue extends Value {
 
     @Generated
@@ -44,12 +46,6 @@ public class NeverValue extends Value {
 
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-    }
-
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("text", this.getText());
-        map.put("expression", this.getExpression().toJson());
     }
 
     @Generated

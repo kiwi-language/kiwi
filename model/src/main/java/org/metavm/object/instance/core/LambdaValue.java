@@ -5,10 +5,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
 import org.metavm.object.type.FunctionType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeMetadata;
 import org.metavm.util.InternalException;
 import org.metavm.util.MvOutput;
@@ -19,8 +16,6 @@ import java.util.function.Consumer;
 @Slf4j
 public class LambdaValue extends FunctionValue {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
     private final LambdaRef lambdaRef;
     private final ClosureContext closureContext;
 

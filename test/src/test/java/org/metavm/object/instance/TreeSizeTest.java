@@ -2,7 +2,7 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.ModelDefRegistry;
+import org.metavm.entity.StdKlassRegistry;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.LongValue;
@@ -42,7 +42,7 @@ public class TreeSizeTest extends TestCase {
                     numField, new LongValue(1)
             ), klass.getType());
             context.bind(inst);
-            logTreeSize("klass klass", ModelDefRegistry.getClassType(Klass.class).getKlass());
+            logTreeSize("klass klass", StdKlassRegistry.instance.getClassType(Klass.class).getKlass());
             logTreeSize("foo klass", klass);
             logTreeSize("foo instance", inst);
         }

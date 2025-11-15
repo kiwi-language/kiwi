@@ -1,16 +1,18 @@
 package org.metavm.event.rest.dto;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.Getter;
+import org.jsonk.Json;
+import org.jsonk.SubType;
 
 import java.util.Objects;
 
-@JsonSubTypes(
-        {
-                @JsonSubTypes.Type(value = TypeChangeEvent.class, name = "1")
+@Getter
+@Json(
+        typeProperty = "kind",
+        subTypes = {
+                @SubType(value = "1", type = TypeChangeEvent.class)
         }
 )
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class AppEvent {
     private final long appId;
     private final int kind;
@@ -18,14 +20,6 @@ public abstract class AppEvent {
     public AppEvent(long appId, int kind) {
         this.appId = appId;
         this.kind = kind;
-    }
-
-    public long getAppId() {
-        return appId;
-    }
-
-    public int getKind() {
-        return kind;
     }
 
     @Override

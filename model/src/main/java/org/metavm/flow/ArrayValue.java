@@ -2,6 +2,7 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.expression.ArrayExpression;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+@Wire
 public class ArrayValue extends Value {
 
     private final List<Value> elements;
@@ -63,12 +65,6 @@ public class ArrayValue extends Value {
         super.forEachReference(action);
         for (var elements_ : elements) elements_.forEachReference(action);
         type.forEachReference(action);
-    }
-
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("text", this.getText());
-        map.put("expression", this.getExpression().toJson());
     }
 
     @Generated

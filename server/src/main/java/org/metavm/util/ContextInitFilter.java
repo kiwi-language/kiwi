@@ -1,32 +1,29 @@
 package org.metavm.util;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import lombok.extern.slf4j.Slf4j;
+import org.metavm.server.Filter;
+import org.metavm.server.HttpRequest;
+import org.metavm.context.Component;
 
-import java.io.IOException;
+import java.util.function.Consumer;
 
 @Component
-@Order(1)
-public class ContextInitFilter extends OncePerRequestFilter {
-
-    public static final Logger logger = LoggerFactory.getLogger(ContextInitFilter.class);
+@Slf4j
+public class ContextInitFilter implements Filter {
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    public void filter(HttpRequest request, Consumer<HttpRequest> proceed) {
         try {
             ContextUtil.initContextInfo();
-            filterChain.doFilter(request, response);
+            proceed.accept(request);
         }
         finally {
             ContextUtil.clearContextInfo();
         }
     }
 
+    @Override
+    public int order() {
+        return 1;
+    }
 }

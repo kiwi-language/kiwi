@@ -1,9 +1,7 @@
 package org.metavm.object.type;
 
-import org.metavm.api.Entity;
 import org.metavm.util.Utils;
 
-@Entity
 public enum MetadataState {
     INITIALIZING(0),
     READY(1),

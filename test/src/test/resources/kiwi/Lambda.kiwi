@@ -1,9 +1,7 @@
-import java.lang.Iterable
-import java.util.List
 
 class Utils {
 
-    static fn findGt(list: List<int>, value: int) -> int? {
+    static fn findGt(list: int[], value: int) -> int? {
         return Utils.find<int>(list, getGtOperator(value))
     }
 
@@ -11,10 +9,8 @@ class Utils {
         return v -> v > value
     }
 
-    static fn find<T>(iterable: Iterable<[never, T]>, test: (T) -> bool) ->  T? {
-        var it = iterable.iterator()!!
-        while (it.hasNext()) {
-            var next: T = it.next()!!
+    static fn find<T>(array: T[], test: (T) -> bool) ->  T? {
+        for (next in array) {
             if (test(next)) {
                 return next
             }

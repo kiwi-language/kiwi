@@ -1,15 +1,16 @@
 package org.metavm.util;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.wire.AdapterRegistry;
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityRegistry;
+import org.metavm.wire.WireAdapter;
 import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.persistence.IndexEntryPO;
-import org.metavm.object.instance.persistence.IndexKeyPO;
-import org.metavm.object.instance.persistence.InstancePO;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ArrayType;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.RedirectStatusProvider;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -29,10 +30,6 @@ public class InstanceInput extends MvInput {
         throw new UnsupportedOperationException();
     };
 
-    public static final TypeDefProvider UNSUPPORTED_TYPE_DEF_PROVIDER = id -> {
-        throw new UnsupportedOperationException();
-    };
-
     public static final RedirectStatusProvider UNSUPPORTED_REDIRECTION_SIGNAL_PROVIDER = id -> {
         throw new UnsupportedOperationException();
     };
@@ -48,10 +45,12 @@ public class InstanceInput extends MvInput {
     private final Function<Id, Instance> resolver;
     private final Consumer<Instance> addValue;
     private final RedirectStatusProvider redirectStatusProvider;
+    @Getter
     private long treeId;
     @Nullable
     private MvInstance parent;
     private @Nullable KlassDataSlot currentKlassSlot;
+    @Getter
     private boolean loadedFromCache;
 
     public InstanceInput(InputStream in) {
@@ -88,7 +87,7 @@ public class InstanceInput extends MvInput {
         var version = readLong();
         readTreeId();
         var nextNodeId = readLong();
-        var entity = readEntity(Entity.class, null);
+        var entity = (Entity) readEntity();
         entity.setVersion(version);
         entity.setNextNodeId(nextNodeId);
         return entity;
@@ -98,23 +97,10 @@ public class InstanceInput extends MvInput {
         var version = readLong();
         readTreeId();
         var nextNodeId = readLong();
-        var separateChild = readBoolean();
-        Reference parent = null;
-        Field parentField = null;
-//        boolean pendingChild = false;
-//        if (separateChild) {
-//            parent = resolveInstance(readId());
-//            var fieldId = readId();
-//            parentField = ((ClassInstance) parent.get()).getInstanceKlass().findField(f -> f.idEquals(fieldId));
-//            pendingChild = parentField == null || !parentField.isChild();
-//        }
+        readBoolean();
         var instance = (MvInstance) readValue().resolveDurable();
         instance.setVersion(version);
         instance.setNextNodeId(nextNodeId);
-//        if (separateChild) {
-//            instance.setPendingChild(pendingChild);
-//            instance.setParentInternal((MvInstance) parent.get(), parentField, false);
-//        }
         return instance;
     }
 
@@ -129,18 +115,12 @@ public class InstanceInput extends MvInput {
     }
 
     public Reference readReference() {
-//        var inst = resolveInstance(readId());
-//        if(parentField != null && parentField.isChild())
-//            inst.setParentInternal(parent, parentField, false);
-//        return inst;
         return resolveInstance(readId());
     }
 
     private Reference resolveInstance(Id id) {
         return new EntityReference(id, () -> resolver.apply(id));
     }
-
-    private final StreamVisitor skipper = new StreamVisitor(this);
 
     public Reference readInstance() {
         return readInstance(treeId, readLong());
@@ -174,10 +154,7 @@ public class InstanceInput extends MvInput {
         return instance.getReference();
     }
 
-    public void skipInstance() {
-        skipper.visitValue();
-    }
-
+    /** @noinspection UnusedReturnValue*/
     public byte[] readInstanceBytes() {
         var bout = new ByteArrayOutputStream();
         var copyVisitor = new StreamCopier(getIn(), bout);
@@ -191,37 +168,6 @@ public class InstanceInput extends MvInput {
 
     public long readTreeId() {
         return treeId = readLong();
-    }
-
-    public boolean isLoadedFromCache() {
-        return loadedFromCache;
-    }
-
-    public InstancePO readInstancePO(long appId) {
-        var id = readLong();
-        var data = new byte[readInt()];
-        read(data);
-        return new InstancePO(appId, id, data, 0L, 0L, readLong());
-    }
-
-    public IndexEntryPO readIndexEntryPO(long appId) {
-        return new IndexEntryPO(appId, readIndexKeyPO(), readId().toBytes());
-    }
-
-    public IndexKeyPO readIndexKeyPO() {
-        var indexId = readId().toBytes();
-        var len = readInt();
-        var data = new byte[len];
-        read(data);
-        return new IndexKeyPO(indexId, data);
-    }
-
-    public void setLoadedFromCache(boolean loadedFromCache) {
-        this.loadedFromCache = loadedFromCache;
-    }
-
-    public long getTreeId() {
-        return treeId;
     }
 
     @Nullable
@@ -248,12 +194,26 @@ public class InstanceInput extends MvInput {
     }
 
     @Override
-    public <T extends Entity> T readEntity(Class<T> klass, Entity parent) {
+    public Object readEntity(Object parent) {
         var tag = read();
-        //noinspection unchecked
-        klass = (Class<T>) EntityRegistry.getEntityClass(tag);
-        var entity = super.readEntity(klass, parent);
-        addValue.accept(entity);
-        return entity;
+        var adapter = AdapterRegistry.instance.getAdapter(tag);
+        return readEntity0(adapter, parent);
     }
+
+    @Override
+    public <T> T readEntity(WireAdapter<T> adapter, @org.jetbrains.annotations.Nullable Object parent) {
+        if (adapter.getTag() != -1) {
+            var tag = read();
+            assert tag == adapter.getTag();
+        }
+        return readEntity0(adapter, parent);
+    }
+
+    private <T> T readEntity0(WireAdapter<T> adapter, Object parent) {
+        var entity = super.readEntity(adapter, parent);
+        if (entity instanceof Instance inst)
+            addValue.accept(inst);
+        return  entity;
+    }
+
 }

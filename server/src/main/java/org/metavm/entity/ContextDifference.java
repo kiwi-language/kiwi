@@ -139,10 +139,12 @@ public class ContextDifference {
             }
 
             @Override
-            public void visitEntityBody(int tag, Id id, int refcount) {
-                ids.add(new DiffId(id, tag));
-                super.visitEntityBody(tag, id, refcount);
+            public void visitEntityHead() {
+                var id = readId();
+                readInt();
+                ids.add(new DiffId(id, -1));
             }
+
         }.visitGrove();
         return ids;
     }

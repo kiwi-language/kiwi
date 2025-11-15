@@ -1,15 +1,14 @@
 package org.metavm.object.type.rest;
 
-import jakarta.servlet.http.HttpServletRequest;
-import org.metavm.common.Result;
+import org.metavm.context.http.*;
 import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.rest.dto.GetSourceTagRequest;
-import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 
-@RestController
-@RequestMapping("/type")
+@Controller
+@Mapping("/type")
 public class TypeController {
 
     private final TypeManager typeManager;
@@ -18,17 +17,16 @@ public class TypeController {
         this.typeManager = typeManager;
     }
 
-    @PostMapping("/deploy/{appId}")
-    public Result<String> deploy(HttpServletRequest servletRequest, @PathVariable("appId") long appId,
-                                 @RequestParam(value = "no-backup", defaultValue = "false") boolean noBackup) throws IOException {
+    @Post("/deploy/{appId}")
+    public String deploy(InputStream input, @PathVariable("appId") long appId,
+                         @RequestParam(value = "no-backup", defaultValue = "false") boolean noBackup) throws IOException {
         typeManager.ensureAppAccess(appId);
-        var commitId = typeManager.deploy(appId, noBackup, servletRequest.getInputStream());
-        return Result.success(commitId);
+        return typeManager.deploy(appId, noBackup, input);
     }
 
-    @PostMapping("/source-tag")
-    public Result<Integer> getSourceTag(@RequestBody GetSourceTagRequest request) {
-        return Result.success(typeManager.getSourceTag(request.appId(), request.name()));
+    @Post("/source-tag")
+    public int etSourceTag(@RequestBody GetSourceTagRequest request) {
+        return typeManager.getSourceTag(request.appId(), request.name());
     }
 
 }

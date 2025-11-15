@@ -3,15 +3,16 @@ package org.metavm.entity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.api.ValueObject;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.util.EncodingUtils;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
+import org.metavm.wire.*;
 
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public record HashedValue(
         String salt,
@@ -36,20 +37,10 @@ public record HashedValue(
     public void forEachReference(Consumer<Reference> action) {
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("salt", this.salt());
-        map.put("hashedValue", this.hashedValue());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.writeUTF(salt);
         output.writeUTF(hashedValue);
     }
 
-    public java.util.Map<String, Object> toJson() {
-        var map = new java.util.HashMap<String, Object>();
-        buildJson(map);
-        return map;
-    }
 }

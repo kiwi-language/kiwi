@@ -1,13 +1,18 @@
 package org.metavm.event.rest.dto;
 
+import lombok.Getter;
+import org.jsonk.Json;
 import org.metavm.event.AppEventKind;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
+@Json
 public class FunctionChangeEvent extends AppEvent {
 
+    @Getter
     private final long version;
+    @Getter
     private final List<String> functionIds;
     @Nullable
     private final String triggerClientId;
@@ -17,14 +22,6 @@ public class FunctionChangeEvent extends AppEvent {
         this.functionIds = functionIds;
         this.version = version;
         this.triggerClientId = triggerClientId;
-    }
-
-    public long getVersion() {
-        return version;
-    }
-
-    public List<String> getFunctionIds() {
-        return functionIds;
     }
 
     @Nullable

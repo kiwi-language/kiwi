@@ -1,43 +1,25 @@
 package org.metavm.object.type;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.metavm.entity.*;
-import org.metavm.flow.*;
+import org.metavm.entity.StdKlass;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.MethodRef;
+import org.metavm.flow.NameAndType;
+import org.metavm.flow.Nodes;
 import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.instance.core.TmpId;
-import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.generic.TypeSubstitutor;
-import org.metavm.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.metavm.util.InternalException;
+import org.metavm.util.Utils;
+import org.metavm.util.ValueUtils;
 
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.ParameterizedType;
-import java.util.LinkedList;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
+@Slf4j
 public class Types {
 
-    public static final Logger logger = LoggerFactory.getLogger(Types.class);
-    private static final TypeFactory TYPE_FACTORY = new DefaultTypeFactory(ModelDefRegistry::getType);
-    private static final Function<java.lang.reflect.Type, Type> getType = ModelDefRegistry::getType;
-
-    public static String getCanonicalName(Type type, Function<Type, java.lang.reflect.Type> getJavType) {
-        return switch (type) {
-            case KlassType classType -> getCanonicalName(classType, getJavType);
-            case VariableType variableType -> getCanonicalName(variableType, getJavType);
-            case ArrayType arrayType -> getCanonicalName(arrayType, getJavType);
-            default -> throw new IllegalStateException("Unexpected value: " + type);
-        };
-    }
-
-    public static String getCanonicalName(ArrayType arrayType, Function<Type, java.lang.reflect.Type> getJavaType) {
-        return getJavaType.apply(arrayType.getElementType()) + "[]";
-    }
 
     public static void extractCapturedType(Type formalType, Type actualType, BiConsumer<CapturedType, Type> setCaptureType) {
         // TODO: to be more rigorous
@@ -82,84 +64,10 @@ public class Types {
                 if (actualType instanceof ArrayType actualArrayType)
                     extractCapturedType(arrayType.getElementType(), actualArrayType.getElementType(), setCaptureType);
             }
-            case UncertainType uncertainType -> throw new InternalException("Uncertain type not expected");
+            case UncertainType ignored -> throw new InternalException("Uncertain type not expected");
             default -> {
             }
         }
-    }
-
-    public static Type tryCapture(Type type, CapturedTypeScope scope, @Nullable Parameter parameter) {
-        return type;
-//        return switch (type) {
-//            case UncertainType uncertainType -> new CapturedType(uncertainType, scope, NncUtils.randomNonNegative(), parameter);
-//            case ClassType classType -> {
-//                if (classType.isParameterized()) {
-//                    yield compositeTypeFacade.getParameterizedType(
-//                            classType.getTemplate(),
-//                            NncUtils.map(classType.getTypeArguments(), arg -> tryCapture(arg, scope, compositeTypeFacade, parameter)),
-//                            classType.getStage(),
-//                            new MockDTOProvider()
-//                    );
-//                } else
-//                    yield classType;
-//            }
-//            case ArrayType arrayType -> compositeTypeFacade.getArrayType(
-//                    tryCapture(arrayType.getElementType(), scope, compositeTypeFacade, parameter),
-//                    arrayType.getKind(),
-//                    null
-//            );
-//            case UnionType unionType -> compositeTypeFacade.getUnionType(
-//                    NncUtils.mapUnique(unionType.getMembers(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
-//                    null
-//            );
-//            case IntersectionType intersectionType -> compositeTypeFacade.getIntersectionType(
-//                    NncUtils.mapUnique(intersectionType.getTypes(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
-//                    null
-//            );
-//            case FunctionType functionType -> compositeTypeFacade.getFunctionType(
-//                    NncUtils.map(functionType.getParameterTypes(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
-//                    tryCapture(functionType.getReturnType(), scope, compositeTypeFacade, parameter),
-//                    null
-//            );
-//            case TypeVariable typeVariable -> typeVariable;
-//            default -> type;
-//        };
-    }
-
-    public static Collection<Type> getComponentTypes(Type type) {
-        if (type instanceof KlassType classType) {
-            if (classType.isParameterized())
-                return classType.getTypeArguments();
-        } else if (type instanceof CompositeType compositeType)
-            return compositeType.getComponentTypes();
-        return List.of();
-    }
-
-    public static Type getTypeType(TypeTag tag) {
-        return switch (tag) {
-            case CLASS -> getClassType(Klass.class);
-            case ARRAY -> getClassType(ArrayType.class);
-        };
-    }
-
-    public static Type getTypeType(TypeCategory typeCategory) {
-        if (typeCategory.isPojo())
-            return getClassType(Klass.class);
-        else if (typeCategory.isPrimitive())
-            return getClassType(PrimitiveType.class);
-        else if (typeCategory.isArray())
-            return getClassType(ArrayType.class);
-        else if (typeCategory.isVariable())
-            return getClassType(TypeVariable.class);
-        else if (typeCategory.isUnion())
-            return getClassType(UnionType.class);
-        else if (typeCategory.isUncertain())
-            return getClassType(UncertainType.class);
-        else if (typeCategory.isFunction())
-            return getClassType(FunctionType.class);
-        else
-            throw new InternalException("Invalid type category: " + typeCategory);
-
     }
 
     public static @NotNull Type getLeastUpperBound(Collection<Type> types) {
@@ -195,8 +103,8 @@ public class Types {
         return Utils.findRequired(types, t -> !hasDescendant.contains(t));
     }
 
-    public static FunctionType getFunctionType(List<Parameter> parameters, Type returnType) {
-        return new FunctionType(Utils.map(parameters, Parameter::getType), returnType);
+    public static FunctionType getFunctionType(List<Type> paramTypes, Type returnType) {
+        return new FunctionType(paramTypes, returnType);
     }
 
     public static ClassType createFunctionalClass(ClassType functionalInterface) {
@@ -364,14 +272,6 @@ public class Types {
         return Utils.findRequired(type.getMembers(), t -> !t.equals(getNullType()));
     }
 
-    public static boolean isAny(Type type) {
-        return type instanceof AnyType;
-    }
-
-    public static boolean isBoolean(Type type) {
-        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.BOOLEAN;
-    }
-
     public static boolean isDouble(Type type) {
         return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.DOUBLE;
     }
@@ -380,16 +280,8 @@ public class Types {
         return type.isString();
     }
 
-    public static boolean isPassword(Type type) {
-        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.PASSWORD;
-    }
-
     public static boolean isLong(Type type) {
         return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.LONG;
-    }
-
-    public static boolean isChar(Type type) {
-        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.CHAR;
     }
 
     public static boolean isTime(Type type) {
@@ -400,216 +292,10 @@ public class Types {
         return type.isNull();
     }
 
-    public static String getMapTypeName(Type keyType, Type valueType) {
-        return getParameterizedName("Map", keyType, valueType);
-    }
-
-    public static String getCollectionName(Type type) {
-        return getParameterizedName("Collection", type);
-    }
-
-    public static String getSetName(Type type) {
-        return getParameterizedName("Set", type);
-    }
-
-    public static String getListName(Type type) {
-        return getParameterizedName("List", type);
-    }
-
-    public static String getIteratorName(Type type) {
-        return getParameterizedName("Iterator", type);
-    }
-
-    public static String getIteratorImplName(Type type) {
-        return getParameterizedName("IteratorImpl", type);
-    }
-
-    public static String getParameterizedName(String templateName, Type... typeArguments) {
-        return getParameterizedName(templateName, List.of(typeArguments));
-    }
-
-    public static String getParameterizedName(String templateName, @Nullable List<? extends Type> typeArguments) {
-        if (typeArguments == null || typeArguments.isEmpty()) {
-            return templateName;
-        }
-        return parameterizedName(templateName, Utils.map(typeArguments, Types::getTypeArgumentName));
-    }
-
-    public static String renameAnonymousType(String name) {
-        int index = name.indexOf('_');
-        if (index >= 0) {
-            return name.substring(0, index + 1) + Utils.randomNonNegative();
-        } else {
-            return name + "_" + Utils.randomNonNegative();
-        }
-    }
-
-    private static String getTypeArgumentName(Type typeArgument) {
-        if (typeArgument instanceof VariableType vt) {
-            return vt.getVariable().getGenericDeclaration().getName() + "_" + vt.getName();
-        } else {
-            return typeArgument.getName();
-        }
-    }
-
-    public static String parameterizedName(String templateName, List<String> typeArgumentNames) {
-        return templateName + "<" + Utils.join(typeArgumentNames, ",") + ">";
-    }
-
-    public static String getTypeName(java.lang.reflect.Type javaType) {
-        return switch (javaType) {
-            case Class<?> klass -> {
-                if (klass.isPrimitive())
-                    yield PrimitiveKind.fromJavaClass(klass).getName();
-                if (ReflectionUtils.isPrimitiveWrapper(klass))
-                    yield PrimitiveKind.fromJavaClass(ReflectionUtils.unbox(klass)).getName();
-                else if (klass.isArray())
-                    yield getTypeName(klass.getComponentType()) + "[]";
-                else
-                    yield EntityUtils.getMetaTypeName(klass);
-            }
-            case GenericArrayType genericArrayType -> getTypeName(genericArrayType.getGenericComponentType()) + "[]";
-            case ParameterizedType pType -> parameterizedName(getTypeName(pType.getRawType()),
-                    Utils.map(pType.getActualTypeArguments(), Types::getTypeName));
-            case java.lang.reflect.TypeVariable<?> typeVar -> getGenericDeclarationName(typeVar.getGenericDeclaration())
-                    + "-" + EntityUtils.getMetaTypeVariableName(typeVar);
-            default -> throw new IllegalStateException("Unexpected value: " + javaType);
-        };
-    }
-
-    public static String getTypeCode(java.lang.reflect.Type javaType) {
-        return switch (javaType) {
-            case Class<?> klass -> {
-                klass = ReflectionUtils.getWrapperClass(klass);
-                yield klass.isArray() ? getTypeCode(klass.getComponentType()) + "[]" : klass.getName();
-            }
-            case GenericArrayType genericArrayType -> getTypeCode(genericArrayType.getGenericComponentType()) + "[]";
-            case ParameterizedType pType -> parameterizedName(getTypeCode(pType.getRawType()),
-                    Utils.map(pType.getActualTypeArguments(), Types::getTypeCode));
-            case java.lang.reflect.TypeVariable<?> typeVar ->
-                    getGenericDeclarationCode(typeVar.getGenericDeclaration()) + "." + typeVar.getName();
-            default -> throw new IllegalStateException("Unexpected value: " + javaType);
-        };
-    }
-
-    public static String getFlowCode(java.lang.reflect.Method method) {
-        return getTypeCode(method.getDeclaringClass()) + "." +
-                method.getName() + "(" + Utils.map(method.getGenericParameterTypes(),
-                Types::getTypeCode) + ")";
-    }
-
-    public static String getGenericDeclarationName(GenericDeclaration genericDeclaration) {
-        return switch (genericDeclaration) {
-            case Class<?> klass -> getTypeName(klass);
-            case java.lang.reflect.Method method -> EntityUtils.getMetaFlowName(method);
-            default -> throw new IllegalStateException("Unexpected value: " + genericDeclaration);
-        };
-    }
-
-    public static String getGenericDeclarationCode(GenericDeclaration genericDeclaration) {
-        return switch (genericDeclaration) {
-            case Class<?> klass -> getTypeCode(klass);
-            case java.lang.reflect.Method method -> getFlowCode(method);
-            default -> throw new IllegalStateException("Unexpected value: " + genericDeclaration);
-        };
-    }
-
     public static String getConstructorName(Klass klass) {
         var typeCode = Objects.requireNonNull(klass.getName());
         var dotIdx = typeCode.lastIndexOf('.');
         return dotIdx >= 0 ? typeCode.substring(dotIdx + 1) : typeCode;
-    }
-
-    public static Type getType(java.lang.reflect.Type javaType) {
-        return getType.apply(javaType);
-    }
-
-    public static @javax.annotation.Nullable Class<?> getPrimitiveJavaType(Type type) {
-        if (type instanceof PrimitiveType primitiveType) {
-            return switch (primitiveType.getKind()) {
-                case BOOLEAN -> Boolean.class;
-                case LONG -> Long.class;
-                case INT -> Integer.class;
-                case TIME -> Date.class;
-                case VOID -> Void.class;
-                case PASSWORD -> Password.class;
-                case DOUBLE -> Double.class;
-                case CHAR -> Character.class;
-                case FLOAT -> Float.class;
-                case SHORT -> Short.class;
-                case BYTE -> Byte.class;
-            };
-        }
-        if (type instanceof AnyType)
-            return Object.class;
-        if (type instanceof NeverType)
-            return Never.class;
-        return null;
-    }
-
-    public static Type fromJavaType(java.lang.reflect.Type javaType) {
-        var type = tryFromJavaType(javaType);
-        if(type == null)
-            throw new IllegalArgumentException("Cannot get type for java type: " + javaType);
-        return type;
-    }
-
-    public static Type tryFromJavaType(java.lang.reflect.Type javaType) {
-        if(javaType instanceof Class<?> klass) {
-            if(klass == Object.class)
-                return getNullableAnyType();
-            if(klass == String.class)
-                return getNullableStringType();
-            if(klass.isPrimitive() || ReflectionUtils.isPrimitiveWrapper(klass)) {
-                var type = Objects.requireNonNull(getPrimitiveType(klass));
-                return klass.isPrimitive() ? type : getNullableType(type);
-            }
-            if(klass.isArray())
-                return getNullableType(getArrayType(fromJavaType(klass.getComponentType())));
-        }
-        else if(javaType instanceof GenericArrayType genericArrayType)
-            return getNullableType(getArrayType(fromJavaType(genericArrayType.getGenericComponentType())));
-        return null;
-    }
-
-    public static @javax.annotation.Nullable Type getPrimitiveType(java.lang.reflect.Type javaType) {
-        if (javaType instanceof Class<?> javaClass) {
-            if (javaClass == Object.class)
-                return getAnyType();
-            if (javaClass == Never.class)
-                return getNeverType();
-            if (javaClass == String.class)
-                return getStringType();
-            if (javaClass == Long.class || javaClass == long.class)
-                return getLongType();
-            if( javaClass == Integer.class || javaClass == int.class)
-                return getIntType();
-            if (javaClass == Short.class || javaClass == short.class)
-                return getShortType();
-            if (javaClass == Byte.class || javaClass == byte.class)
-                return getByteType();
-            if (javaClass == char.class || javaClass == Character.class)
-                return getCharType();
-            if (javaClass == Boolean.class || javaClass == boolean.class)
-                return getBooleanType();
-            if (javaClass == Double.class || javaClass == double.class)
-                return getDoubleType();
-            if (javaClass == Float.class || javaClass == float.class)
-                return getFloatType();
-            if (javaClass == Void.class || javaClass == void.class)
-                return getVoidType();
-            if (javaClass == Password.class)
-                return getPasswordType();
-            if (javaClass == Date.class)
-                return getTimeType();
-            if (javaClass == Null.class)
-                return getNullType();
-        }
-        return null;
-    }
-
-    public static ClassType getClassType(java.lang.reflect.Type javaType) {
-        return (ClassType) getType.apply(javaType);
     }
 
     public static AnyType getAnyType() {
@@ -632,10 +318,6 @@ public class Types {
         return PrimitiveType.longType;
     }
 
-    public static PrimitiveType getCharType() {
-        return PrimitiveType.charType;
-    }
-
     public static ClassType getStringType() {
         return StdKlass.string.type();
     }
@@ -652,10 +334,6 @@ public class Types {
         return PrimitiveType.voidType;
     }
 
-    public static PrimitiveType getPasswordType() {
-        return PrimitiveType.passwordType;
-    }
-
     public static PrimitiveType getDoubleType() {
         return PrimitiveType.doubleType;
     }
@@ -666,14 +344,6 @@ public class Types {
 
     public static ArrayType getArrayType(Type elementType) {
         return new ArrayType(elementType, ArrayKind.DEFAULT);
-    }
-
-    public static ArrayType getNeverArrayType() {
-        return new ArrayType(NeverType.instance, ArrayKind.DEFAULT);
-    }
-
-    public static ArrayType getReadOnlyAnyArrayType() {
-        return new ArrayType(AnyType.instance, ArrayKind.READ_ONLY);
     }
 
     public static Field getEnumNameField(Klass classType) {
@@ -694,10 +364,6 @@ public class Types {
 
     public static Type getNullableType(Type type) {
         return type.isNullable() ? type : new UnionType(Set.of(type, getNullType()));
-    }
-
-    public static Type getNullableThrowableType() {
-        return getNullableType(StdKlass.throwable.get().getType());
     }
 
     public static Type getNonNullType(Type type) {
@@ -722,40 +388,6 @@ public class Types {
             return type;
     }
 
-    public static Type getGeneralType(Klass klass) {
-        if(klass == StdKlass.any.get())
-            return getAnyType();
-        else
-            return klass.getType();
-    }
-
-    public static Klass getGeneralKlass(Type type) {
-        return switch (type) {
-            case ClassType classType -> classType.getKlass();
-            case ArrayType arrayType -> getGeneralKlass(arrayType.getElementType()).getArrayKlass();
-            case UnionType unionType -> getGeneralKlass(unionType.getUnderlyingType());
-            case AnyType anyType -> StdKlass.any.get();
-            default -> throw new IllegalStateException("Cannot get general klass for type: " + type);
-        };
-    }
-
-    public static Type getCompatibleType(List<Type> types) {
-        Utils.requireNotEmpty(types);
-        Iterator<Type> it = types.iterator();
-        Type compatibleType = it.next();
-        while (it.hasNext()) {
-            Type t = it.next();
-            if (!t.equals(compatibleType) && !ValueUtils.isAssignable(t, compatibleType)) {
-                if (ValueUtils.isAssignable(compatibleType, t)) {
-                    compatibleType = t;
-                } else {
-                    throw new InternalException("Types are not compatible: " + types);
-                }
-            }
-        }
-        return compatibleType;
-    }
-
     public static Type getCompatibleType(Type type1, Type type2) {
         if (type1.equals(type2)) {
             return type1;
@@ -773,16 +405,6 @@ public class Types {
             return type1;
         }
         throw new InternalException("category " + type1 + " and category " + type2 + " are incompatible");
-    }
-
-    public static Klass getKlass(Type type) {
-        return switch (type) {
-            case ClassType classType -> classType.getKlass();
-            case ArrayType arrayType -> getKlass(arrayType.getElementType()).getArrayKlass();
-            case UnionType unionType -> getKlass(unionType.getUnderlyingType());
-            case AnyType anyType -> ModelDefRegistry.getDefContext().getKlass(DummyAny.class);
-            default -> throw new IllegalStateException("Cannot get klass for type: " + type);
-        };
     }
 
     public static List<Klass> sortKlassesByTopology(Collection<Klass> klasses) {
@@ -825,11 +447,4 @@ public class Types {
         return PrimitiveType.floatType;
     }
 
-    public static PrimitiveType getShortType() {
-        return PrimitiveType.shortType;
-    }
-
-    public static PrimitiveType getByteType() {
-        return PrimitiveType.byteType;
-    }
 }

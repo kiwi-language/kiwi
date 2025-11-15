@@ -3,7 +3,10 @@ package org.metavm.object.type;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
-import org.metavm.entity.*;
+import org.metavm.entity.CopyIgnore;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.GenericDeclarationRef;
+import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.EntityReference;
@@ -27,9 +30,6 @@ import java.util.function.Function;
 @Entity
 @Slf4j
 public class KlassType extends ClassType {
-
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     public static ClassType create(Klass klass, List<? extends Type> typeArguments) {
         assert klass.getScope() == null;
@@ -68,16 +68,6 @@ public class KlassType extends ClassType {
         this.typeArguments = typeArguments.isEmpty() ? null : new ArrayList<>(typeArguments);
     }
 
-
-    @Override
-    public Type substitute(Type type) {
-        if (typeArguments != null) {
-            if (substitutor == null)
-                substitutor = new TypeSubstitutor(Utils.map(getKlass().getTypeParameters(), TypeVariable::getType), typeArguments);
-            return type.accept(substitutor);
-        } else
-            return type;
-    }
 
     @Override
     public boolean equals(Object obj) {
@@ -221,11 +211,6 @@ public class KlassType extends ClassType {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitKlassType(this, s);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

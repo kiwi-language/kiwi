@@ -15,7 +15,10 @@ import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -24,8 +27,6 @@ import java.util.stream.Collectors;
 public class UnionType extends CompositeType {
 
     public static final UnionType nullableAnyType = new UnionType(Set.of(NullType.instance, AnyType.instance));
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     public static UnionType create(Type...types) {
         return new UnionType(Set.of(types));
@@ -217,11 +218,6 @@ public class UnionType extends CompositeType {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitUnionType(this, s);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

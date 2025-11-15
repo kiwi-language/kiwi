@@ -1,12 +1,14 @@
 package org.metavm.util;
 
 import org.metavm.common.ErrorCode;
+import org.metavm.entity.natives.EmailSender;
 
 import java.util.regex.Pattern;
 
 public class EmailUtils {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
+    public static EmailSender emailSender;
 
     public static boolean isEmailAddress(String str) {
         return EMAIL_PATTERN.matcher(str).matches();

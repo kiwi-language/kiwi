@@ -1,8 +1,8 @@
 package org.metavm.object.instance.core;
 
+import lombok.Getter;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.entity.natives.CharSequenceNative;
 import org.metavm.flow.ClosureContext;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
@@ -17,10 +17,11 @@ import java.util.function.Function;
 
 import static org.metavm.util.Instances.toJavaString;
 
-public class StringInstance implements CharSequenceNative, ClassInstance {
+public class StringInstance implements ClassInstance {
 
     private final StringReference ref;
-    private String value;
+    @Getter
+    private final String value;
 
     public StringInstance(String value) {
         ref = new StringReference(this, value);
@@ -112,24 +113,6 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
     public Value charAt(Value index, CallContext callContext) {
         var i = (IntValue) index;
         return Instances.intInstance(value.charAt(i.value));
-    }
-
-    public Value writeObject(Value s, CallContext callContext) {
-        var output = ((MvObjectOutputStream) s.resolveObject()).getOut();
-        output.writeUTF(value);
-        return Instances.nullInstance();
-    }
-
-    public Value readObject(Value s, CallContext callContext) {
-        var input = ((MvObjectInputStream) s.resolveObject()).getInput();
-        value = input.readUTF();
-        return Instances.nullInstance();
-    }
-
-    public static Value format(Klass klass, Value format, Value args, CallContext callContext) {
-        var f = toJavaString(format);
-        var a = (Object[]) Instances.toJavaValue(args, Object[].class);
-        return Instances.stringInstance(String.format(f, a));
     }
 
     public static boolean startsWith(Value s1, Value s2) {

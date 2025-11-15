@@ -5,7 +5,6 @@ import org.junit.Assert;
 import org.metavm.entity.InstanceQuery;
 import org.metavm.entity.InstanceQueryBuilder;
 import org.metavm.entity.InstanceQueryField;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.EntityReference;
 import org.metavm.object.instance.core.Id;
@@ -16,7 +15,6 @@ import org.metavm.object.type.mocks.MockTypeDefRepository;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.MockUtils;
 import org.metavm.util.TestConstants;
-import org.metavm.util.TestUtils;
 
 import java.util.List;
 
@@ -32,8 +30,6 @@ public class InstanceQueryServiceTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
         typeRepository = new MockTypeDefRepository();
         instanceSearchService = new MemInstanceSearchServiceV2();
         instanceQueryService = new InstanceQueryService(instanceSearchService);

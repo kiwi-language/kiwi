@@ -1,9 +1,7 @@
 package org.metavm.ddl;
 
-import org.metavm.api.Entity;
 import org.metavm.util.Utils;
 
-@Entity
 public enum FieldChangeKind {
     CREATION(1),
     TYPE_CHANGE(2),

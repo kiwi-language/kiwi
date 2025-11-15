@@ -1,8 +1,5 @@
 package org.metavm.object.instance.search;
 
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 import org.metavm.constant.FieldNames;
 import org.metavm.expression.*;
 import org.metavm.object.instance.core.NumberValue;
@@ -15,7 +12,9 @@ import org.metavm.util.InternalException;
 import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.metavm.constant.FieldNames.APPLICATION_ID;
@@ -23,12 +22,30 @@ import static org.metavm.constant.FieldNames.TYPE;
 
 public class SearchBuilder {
 
-    public static SearchSourceBuilder build(SearchQuery query) {
-        SearchSourceBuilder builder = new SearchSourceBuilder();
-        builder.from(query.from()).size(Math.min(query.size(), 999));
-        builder.query(QueryBuilders.queryStringQuery(buildQueryString(query)));
-        builder.sort(FieldNames.ID, SortOrder.DESC);
-        return builder;
+    /**
+     * Builds the Elasticsearch DSL body.
+     * Return type changed from SearchSourceBuilder to Map<String, Object>
+     */
+    public static Map<String, Object> build(SearchQuery query) {
+        Map<String, Object> source = new LinkedHashMap<>();
+
+        // Pagination
+        source.put("from", query.from());
+        source.put("size", Math.min(query.size(), 999));
+
+        // Query: { "query": { "query_string": { "query": "..." } } }
+        source.put("query", Map.of(
+                "query_string", Map.of(
+                        "query", buildQueryString(query)
+                )
+        ));
+
+        // Sort: { "sort": [ { "id": "desc" } ] }
+        source.put("sort", List.of(
+                Map.of(FieldNames.ID, "desc")
+        ));
+
+        return source;
     }
 
     public static String buildQueryString(SearchQuery query) {

@@ -1,31 +1,24 @@
 package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
-import org.antlr.v4.runtime.BailErrorStrategy;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.DummyGenericDeclaration;
+import org.metavm.entity.GenericDeclaration;
+import org.metavm.entity.ModelIdentity;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.antlr.TypeLexer;
-import org.metavm.util.BusinessException;
+import org.metavm.object.instance.core.TmpId;
+import org.metavm.object.type.rest.dto.*;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
-import org.metavm.util.Utils;
 
-import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 public class TypeParserImpl implements TypeParser {
 
     private final ParserTypeDefProvider typeDefProvider;
-
-    private final Map<String, TypeVariable> typeParameters = new HashMap<>();
 
     public TypeParserImpl(TypeDefProvider typeDefProvider) {
         this.typeDefProvider = name -> {
@@ -43,252 +36,561 @@ public class TypeParserImpl implements TypeParser {
 
     @Override
     public Type parseType(@NotNull String expression) {
-        var parser = createAntlrParser(expression);
-        try {
-            return parseType(parser.unit().type());
-        } catch (Exception e) {
-            throw new InternalException("Failed to parse type: " + expression, e);
-        }
+        return createParser(expression).type();
     }
 
     @Override
-    public MethodRef parseMethodRef(String expression) {
-        var parser = createAntlrParser(expression);
-        try {
-            return parseMethodRef(parser.methodRef());
-        } catch (Exception e) {
-            throw new InternalException("Failed to parse method reference: " + expression, e);
-        }
+    public TypeKey parseTypeKey(@NotNull String expression) {
+        return createParser(expression).typeKey();
     }
 
     @Override
-    public FunctionRef parseFunctionRef(String expression) {
-        var parser = createAntlrParser(expression);
-        try {
-            return parseFunctionRef(parser.functionRef());
-        } catch (Exception e) {
-            throw new InternalException("Failed to parse function reference: " + expression, e);
-        }
+    public FunctionSignature parseFunctionSignature(String expression) {
+        return createParser(expression).functionSignature();
     }
 
     @Override
     public SimpleMethodRef parseSimpleMethodRef(String expression) {
-        var parser = createAntlrParser(expression);
-        try {
-            return parseSimpleMethodRef(parser.simpleMethodRef());
-        } catch (Exception e) {
-            throw new InternalException("Failed to parse simple method reference: " + expression, e);
-        }
+        return createParser(expression).methodRef();
     }
 
     public Function parseFunction(String expression, java.util.function.Function<ModelIdentity, Id> getId) {
-        var parser = createAntlrParser(expression);
-        try {
-           return parseFunction(parser.functionSignature(), getId);
-        }
-        catch (Exception e) {
-            throw new InternalException("Failed to parse function: " + expression, e);
-        }
+        return createParser(expression).function(getId);
     }
 
     public String getFunctionName(String expression) {
-        var parser = createAntlrParser(expression);
-        try {
-            return parser.functionSignature().IDENTIFIER().getText();
+        return createParser(expression).name();
+    }
+
+    private Parser createParser(String expression) {
+        return new Parser(expression);
+    }
+
+
+    private class Parser {
+
+        private final Tokenizer tokenizer;
+        private Token token;
+        private final Map<String, TypeVariable> typeParams = new HashMap<>();
+        private final StringBuilder buf = new StringBuilder();
+
+        private Parser(String s) {
+            this.tokenizer = new Tokenizer(s);
+            token = tokenizer.next();
         }
-        catch (Exception e) {
-            throw new InternalException("Failed to parse function: " + expression, e);
+
+        Function function(java.util.function.Function<ModelIdentity, Id> getId) {
+            var name = accept(TokenKind.IDENT).text;
+            var id = getId.apply(ModelIdentity.create(Function.class, name));
+            var func = FunctionBuilder.newBuilder(id, name).build();
+            var typeParams = new ArrayList<TypeVariable>();
+            if (is(TokenKind.LT)) {
+                next();
+                do {
+                    typeParams.add(typeParam(func, getId));
+                } while (skip(TokenKind.COMMA));
+                accept(TokenKind.GT);
+            }
+            func.setTypeParameters(typeParams);
+            accept(TokenKind.LPAREN);
+            var params = new ArrayList<Parameter>();
+            if (!is(TokenKind.RPAREN)) {
+                do {
+                    params.add(param(func, getId));
+                } while (skip(TokenKind.COMMA));
+            }
+            accept(TokenKind.RPAREN);
+            func.setParameters(params);
+            accept(TokenKind.ARROW);
+            func.setReturnType(type());
+            return func;
+        }
+
+        public FunctionSignature functionSignature() {
+            var name = name();
+            var typeParamNames = new ArrayList<String>();
+            if (is(TokenKind.LT)) {
+                next();
+                do {
+                    var typeParamName = name();
+                    if (skip(TokenKind.COLON))
+                        typeKey();
+                    this.typeParams.put(typeParamName, new TypeVariable(TmpId.random(), typeParamName, DummyGenericDeclaration.INSTANCE));
+                    typeParamNames.add(typeParamName);
+                } while (skip(TokenKind.COMMA));
+                accept(TokenKind.GT);
+            }
+            accept(TokenKind.LPAREN);
+            var paramNames = new ArrayList<String>();
+            if (!is(TokenKind.RPAREN)) {
+                do {
+                    var paramName = name();
+                    accept(TokenKind.COLON);
+                    typeKey();
+                    paramNames.add(paramName);
+                } while (skip(TokenKind.COMMA));
+                accept(TokenKind.RPAREN);
+            }
+            return new FunctionSignature(name, typeParamNames, paramNames);
+        }
+
+        private Parameter param(Function function, java.util.function.Function<ModelIdentity, Id> getId) {
+            var name = accept(TokenKind.IDENT).text;
+            accept(TokenKind.COLON);
+            var type = type();
+            return new Parameter(
+                    getId.apply(ModelIdentity.create(Parameter.class, function.getName() + "." + name)),
+                    name,
+                    type,
+                    function
+            );
+        }
+
+        private TypeVariable typeParam(GenericDeclaration genericDecl, java.util.function.Function<ModelIdentity, Id> getId) {
+            var name = accept(TokenKind.IDENT).text;
+            var id = getId.apply(ModelIdentity.create(TypeVariable.class, genericDecl.getName() + "." + name));
+            var typeVar = new TypeVariable(id, name, genericDecl);
+            typeParams.put(name, typeVar);
+            if (is(TokenKind.COLON)) {
+                next();
+                typeVar.setBounds(List.of(type()));
+            }
+            return typeVar;
+        }
+
+        SimpleMethodRef methodRef() {
+            var name = name();
+            List<Type> typeArgs = is(TokenKind.LT) ? typeArgs() : List.of();
+            return new SimpleMethodRef(name, typeArgs);
+        }
+
+        private List<Type> typeArgs() {
+            accept(TokenKind.LT);
+            var typeArgs = new ArrayList<Type>();
+            typeArgs.add(type());
+            while (skip(TokenKind.COMMA)){
+                typeArgs.add(type());
+            }
+            accept(TokenKind.GT);
+            return typeArgs;
+        }
+
+        TypeKey typeKey() {
+            return unionTypeKey();
+        }
+
+        TypeKey unionTypeKey() {
+            var t = intersectionTypeKey();
+            if (!is(TokenKind.OR))
+                return t;
+            var alts = new HashSet<TypeKey>();
+            alts.add(t);
+            do {
+                next();
+                alts.add(intersectionTypeKey());
+            } while (is(TokenKind.OR));
+            return new UnionTypeKey(alts);
+        }
+
+        TypeKey intersectionTypeKey() {
+            var t = arrayTypeKey();
+            if (!is(TokenKind.AND))
+                return t;
+            var bounds = new HashSet<TypeKey>();
+            bounds.add(t);
+            do {
+                next();
+                bounds.add(arrayTypeKey());
+            } while (is(TokenKind.AND));
+            return new IntersectionTypeKey(bounds);
+        }
+
+        private TypeKey arrayTypeKey() {
+            var t = atomTypeKey();
+            if (!is(TokenKind.LBRACKET))
+                return t;
+            do {
+                t = new ArrayTypeKey(ArrayKind.DEFAULT.code(), t);
+                next();
+                accept(TokenKind.RBRACKET);
+            } while (is(TokenKind.LBRACKET));
+            return t;
+        }
+
+        private TypeKey atomTypeKey() {
+            return switch (token.kind) {
+                case LBRACKET -> {
+                    next();
+                    var lb = typeKey();
+                    accept(TokenKind.COMMA);
+                    var ub = typeKey();
+                    accept(TokenKind.RBRACKET);
+                    yield new UncertainTypeKey(lb, ub);
+                }
+                case LPAREN -> {
+                    next();
+                    if (skip(TokenKind.RPAREN)) {
+                        accept(TokenKind.ARROW);
+                        yield new FunctionTypeKey(List.of(), typeKey());
+                    }
+                    var t = typeKey();
+                    if (is(TokenKind.COMMA)) {
+                        next();
+                        var paramTypes = new ArrayList<TypeKey>();
+                        paramTypes.add(t);
+                        do {
+                            paramTypes.add(typeKey());
+                        } while (skip(TokenKind.COMMA));
+                        accept(TokenKind.RPAREN);
+                        accept(TokenKind.ARROW);
+                        yield new FunctionTypeKey(paramTypes, typeKey());
+                    } else {
+                        accept(TokenKind.RPAREN);
+                        if (skip(TokenKind.ARROW))
+                            yield new FunctionTypeKey(List.of(t), typeKey());
+                        else
+                            yield t;
+                    }
+                }
+                case AT -> {
+                    next();
+                    var name = name();
+                    yield new VariableTypeKey(Id.parse(name.substring(Constants.ID_PREFIX.length())));
+                }
+                case IDENT -> {
+                    var text = token.text;
+                    next();
+                    yield switch (text) {
+                        case "byte" -> new PrimitiveTypeKey(PrimitiveKind.BYTE.code());
+                        case "short" -> new PrimitiveTypeKey(PrimitiveKind.SHORT.code());
+                        case "int" -> new PrimitiveTypeKey(PrimitiveKind.INT.code());
+                        case "long" -> new PrimitiveTypeKey(PrimitiveKind.LONG.code());
+                        case "boolean" -> new PrimitiveTypeKey(PrimitiveKind.BOOLEAN.code());
+                        case "string" -> new ClassTypeKey(StdKlass.string.get().getId());
+                        case "char" -> new PrimitiveTypeKey(PrimitiveKind.CHAR.code());
+                        case "double" -> new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
+                        case "float" -> new PrimitiveTypeKey(PrimitiveKind.FLOAT.code());
+                        case "void" -> new PrimitiveTypeKey(PrimitiveKind.VOID.code());
+                        case "time" -> new PrimitiveTypeKey(PrimitiveKind.TIME.code());
+                        case "password" -> new PrimitiveTypeKey(PrimitiveKind.PASSWORD.code());
+                        case "null" -> new NullTypeKey();
+                        case "any" -> new AnyTypeKey();
+                        case "never" -> new NeverTypeKey();
+                        default -> {
+                            buf.setLength(0);
+                            buf.append(text);
+                            while (is(TokenKind.DOT)) {
+                                next();
+                                buf.append('.').append(accept(TokenKind.IDENT).text);
+                            }
+                            var name = buf.toString();
+                            if (typeParams.containsKey(name))
+                                yield new VariableTypeKey(typeParams.get(name).getId());
+                            var id = Id.parse(name.substring(Constants.ID_PREFIX.length()));
+                            if (is(TokenKind.LT)) {
+                                next();
+                                var typeArgs = new ArrayList<TypeKey>();
+                                do {
+                                    typeArgs.add(typeKey());
+                                } while (skip(TokenKind.COMMA));
+                                accept(TokenKind.GT);
+                                yield new ParameterizedTypeKey(null, id, typeArgs);
+                            } else
+                                yield new ClassTypeKey(id);
+                        }
+                    };
+                }
+                default -> throw new TypeNotPresentException("Unexpected token: " + token.kind, null);
+            };
+        }
+
+        Type type() {
+            return unionType();
+        }
+
+        Type unionType() {
+            var t = intersectionType();
+            if (!is(TokenKind.OR))
+                return t;
+            var alts = new HashSet<Type>();
+            alts.add(t);
+            do {
+                next();
+                alts.add(intersectionType());
+            } while (is(TokenKind.OR));
+            return new UnionType(alts);
+        }
+
+        String name() {
+            return accept(TokenKind.IDENT).text;
+        }
+
+        Type intersectionType() {
+            var t = arrayType();
+            if (!is(TokenKind.AND))
+                return t;
+            var bounds = new HashSet<Type>();
+            bounds.add(t);
+            do {
+                next();
+                bounds.add(arrayType());
+            } while (is(TokenKind.AND));
+            return new IntersectionType(bounds);
+        }
+
+        Type arrayType() {
+            var t = atomType();
+            if (!is(TokenKind.LBRACKET))
+                return t;
+            do {
+                t = Types.getArrayType(t);
+                next();
+                accept(TokenKind.RBRACKET);
+            } while (is(TokenKind.LBRACKET));
+            return t;
+        }
+
+        Type atomType() {
+            return switch (token.kind) {
+                case LBRACKET -> {
+                    next();
+                    var lb = type();
+                    accept(TokenKind.COMMA);
+                    var ub = type();
+                    accept(TokenKind.RBRACKET);
+                    yield new UncertainType(lb, ub);
+                }
+                case LPAREN -> {
+                    next();
+                    if (skip(TokenKind.RPAREN)) {
+                        accept(TokenKind.ARROW);
+                        yield new FunctionType(List.of(), type());
+                    }
+                    var t = type();
+                    if (is(TokenKind.COMMA)) {
+                        next();
+                        var paramTypes = new ArrayList<Type>();
+                        paramTypes.add(t);
+                        do {
+                            paramTypes.add(type());
+                        } while (skip(TokenKind.COMMA));
+                        accept(TokenKind.RPAREN);
+                        accept(TokenKind.ARROW);
+                        yield new FunctionType(paramTypes, type());
+                    } else {
+                        accept(TokenKind.RPAREN);
+                        if (skip(TokenKind.ARROW))
+                            yield new FunctionType(List.of(t), type());
+                        else
+                            yield t;
+                    }
+                }
+                case AT -> {
+                    next();
+                    var name = name();
+                    yield new VariableType((TypeVariable) typeDefProvider.getTypeDef(name));
+                }
+                case IDENT -> {
+                    var text = token.text;
+                    next();
+                    yield switch (text) {
+                        case "byte" -> PrimitiveType.byteType;
+                        case "short" -> PrimitiveType.shortType;
+                        case "int" -> PrimitiveType.intType;
+                        case "long" -> PrimitiveType.longType;
+                        case "boolean" -> PrimitiveType.booleanType;
+                        case "string" -> StdKlass.string.type();
+                        case "char" -> PrimitiveType.charType;
+                        case "double" -> PrimitiveType.doubleType;
+                        case "float" -> PrimitiveType.floatType;
+                        case "void" -> PrimitiveType.voidType;
+                        case "time" -> PrimitiveType.timeType;
+                        case "password" -> PrimitiveType.passwordType;
+                        case "null" -> NullType.instance;
+                        case "any" -> AnyType.instance;
+                        case "never" -> NeverType.instance;
+                        default -> {
+                            buf.setLength(0);
+                            buf.append(text);
+                            while (is(TokenKind.DOT)) {
+                                next();
+                                buf.append('.').append(accept(TokenKind.IDENT).text);
+                            }
+                            var name = buf.toString();
+                            if (typeParams.containsKey(name))
+                                yield typeParams.get(name).getType();
+                            var klass = (Klass) typeDefProvider.getTypeDef(name);
+                            if (is(TokenKind.LT)) {
+                                next();
+                                var typeArgs = new ArrayList<Type>();
+                                do {
+                                    typeArgs.add(type());
+                                } while (skip(TokenKind.COMMA));
+                                accept(TokenKind.GT);
+                                yield KlassType.create(klass.getType().getOwner(), klass, typeArgs);
+                            } else
+                                yield klass.getType();
+                        }
+                    };
+                }
+                default -> throw new TypeParsingException("Unexpected token: " + token.kind);
+            };
+        }
+
+        private void next() {
+            token = tokenizer.next();
+        }
+
+        private boolean skip(TokenKind kind) {
+            if (is(kind)) {
+                next();
+                return true;
+            } else
+                return false;
+        }
+
+        private boolean is(TokenKind kind) {
+            return token.kind == kind;
+        }
+
+        private Token accept(TokenKind kind) {
+            if (is(kind)) {
+                var t = token;
+                next();
+                return t;
+            }
+            throw new TypeParsingException("Failed to parse expression: " + tokenizer.s + ". Expected token: " + kind + ", but found: " + token.kind);
         }
 
     }
 
-    private Function parseFunction(org.metavm.object.type.antlr.TypeParser.FunctionSignatureContext ctx,
-                                   java.util.function.Function<ModelIdentity, Id> getId) {
-        var name = ctx.IDENTIFIER().getText();
-        var func =  FunctionBuilder.newBuilder(getId.apply(ModelIdentity.create(Function.class, name)), name).build();
-        var typeParamList = ctx.typeParameterList();
-        if (typeParamList != null)
-                func.setTypeParameters(Utils.map(typeParamList.typeParameter(), t -> parseTypeParameter(t, func, getId)));
-        var paramList = ctx.parameterList();
-        if (paramList != null)
-            func.setParameters(Utils.map(paramList.parameter(), p -> parseParameter(p, func, getId)));
-        func.setReturnType(parseType(ctx.type()));
-        return func;
+    private static class Tokenizer {
+        private final String s;
+        private int pos;
+        private final StringBuilder buf = new StringBuilder();
+
+        public Tokenizer(String s) {
+            this.s = s;
+        }
+
+        char current() {
+            return s.charAt(pos);
+        }
+
+        Token next() {
+            if (pos == s.length())
+                return new Token(TokenKind.EOF, "");
+            return switch (current()) {
+                case 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+                     'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+                     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+                     'N', 'O', 'P',  'Q',  'R',  'S',  'T',  'U',  'V',  'W',  'X',
+                     'Y',  'Z', '_' ->
+                    new Token(TokenKind.IDENT, scanIdent());
+                case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ->
+                    throw new TypeParsingException("Numeric literals are not supported");
+                case ',' -> {
+                    pos++;
+                    yield new Token(TokenKind.COMMA, ",");
+                }
+                case '.' -> {
+                    pos++;
+                    yield new Token(TokenKind.DOT, ".");
+                }
+                case '&' -> {
+                    pos++;
+                    yield new Token(TokenKind.AND, "&");
+                }
+                case '|' -> {
+                    pos++;
+                    yield new Token(TokenKind.OR, "|");
+                }
+                case '(' -> {
+                    pos++;
+                    yield new Token(TokenKind.LPAREN, "(");
+                }
+                case ')' -> {
+                    pos++;
+                    yield new Token(TokenKind.RPAREN, ")");
+                }
+                case '[' -> {
+                    pos++;
+                    yield new Token(TokenKind.LBRACKET, "[");
+                }
+                case ']' -> {
+                    pos++;
+                    yield new Token(TokenKind.RBRACKET, "]");
+                }
+                case '<' -> {
+                    pos++;
+                    yield new Token(TokenKind.LT, "<");
+                }
+                case '>' -> {
+                    pos++;
+                    yield new Token(TokenKind.GT, ">");
+                }
+                case '-' -> {
+                    pos++;
+                    if (current() == '>') {
+                        next();
+                        yield new Token(TokenKind.ARROW, "->");
+                    } else
+                        throw new TypeParsingException("Unexpected character: " + current());
+                }
+                case ':' -> {
+                    pos++;
+                    yield new Token(TokenKind.COLON, ":");
+                }
+                case '@' -> {
+                    pos++;
+                    yield new Token(TokenKind.AT, "@");
+                }
+                case ' ', '\t' -> {
+                    skipWhitespaces();
+                    yield next();
+                }
+                default -> {
+                    if (Character.isJavaIdentifierPart(current()))
+                        yield new Token(TokenKind.IDENT, scanIdent());
+                    else
+                        throw new TypeParsingException("Unexpected character: " + current());
+                }
+            };
+        }
+
+        private void skipWhitespaces() {
+            while (!isEof() && Character.isWhitespace(current()))
+                pos++;
+        }
+
+        private String scanIdent() {
+            buf.setLength(0);
+            while (!isEof() && Character.isJavaIdentifierPart(current())) {
+                buf.append(current());
+                pos++;
+            }
+            return buf.toString();
+        }
+
+        private boolean isEof() {
+            return pos >= s.length();
+        }
+
+
     }
 
-    private Parameter parseParameter(org.metavm.object.type.antlr.TypeParser.ParameterContext ctx,
-                                     Function function,
-                                     java.util.function.Function<ModelIdentity, Id> getId) {
-        var name = ctx.IDENTIFIER().getText();
-        var id = getId.apply(ModelIdentity.create(Parameter.class, function.getName() + "." + name));
-        return new Parameter(id, name, parseType(ctx.type()), function);
+    private record Token(TokenKind kind, String text) {}
+
+    private enum TokenKind {
+       IDENT, DOT, COMMA, COLON, ARROW, LPAREN, RPAREN, LBRACKET, RBRACKET, EOF, AND, OR, LT, GT, AT
     }
 
-    private TypeVariable parseTypeParameter(org.metavm.object.type.antlr.TypeParser.TypeParameterContext ctx,
-                                            Function function,
-                                            java.util.function.Function<ModelIdentity, Id> getId) {
-        var name = ctx.IDENTIFIER().getText();
-        var id = getId.apply(ModelIdentity.create(TypeVariable.class, function.getName() + "." + name));
-        var typeVar =  new TypeVariable(id, name, function);
-        typeParameters.put(name, typeVar);
-        return typeVar;
+
+    public static class TypeParsingException extends RuntimeException {
+
+        public TypeParsingException(String message) {
+            super(message);
+        }
     }
 
-    private org.metavm.object.type.antlr.TypeParser createAntlrParser(String expression) {
-        var input = CharStreams.fromString(expression);
-        var parser = new org.metavm.object.type.antlr.TypeParser(new CommonTokenStream(new TypeLexer(input)));
-        parser.setErrorHandler(new BailErrorStrategy());
-        return parser;
-    }
-
-    private Type parseType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        if(ctx.parType() != null)
-            return parseType(ctx.parType().type());
-        if (ctx.primitiveType() != null)
-            return parsePrimitiveType(ctx.primitiveType());
-        if (ctx.ANY() != null)
-            return AnyType.instance;
-        if (ctx.NEVER() != null)
-            return NeverType.instance;
-        if (ctx.LPAREN() != null)
-            return parseFunctionType(ctx);
-        if (ctx.elementType != null)
-            return parseArrayType(ctx);
-        if (ctx.classType() != null)
-            return parseClassType(ctx.classType());
-        if (ctx.variableType() != null)
-            return parseVariableType(ctx.variableType());
-        if (ctx.LBRACK() != null)
-            return parseUncertainType(ctx);
-        if (ctx.NUM() != null)
-            return parseCapturedType(ctx);
-        if (!ctx.BITOR().isEmpty())
-            return parseUnionType(ctx);
-        if (!ctx.BITAND().isEmpty())
-            return parseIntersectionType(ctx);
-        throw new IllegalArgumentException("Unknown type: " + ctx.getText());
-    }
-
-    public MethodRef parseMethodRef(org.metavm.object.type.antlr.TypeParser.MethodRefContext ctx) {
-        var classType = (ClassType) parseClassType(ctx.classType());
-        var rawMethod = (Method) typeDefProvider.getTypeDef(ctx.IDENTIFIER().getText());
-        List<Type> typeArgs = ctx.typeArguments() != null ? parseTypeList(ctx.typeArguments().typeList()) : List.of();
-        return new MethodRef(classType, rawMethod, typeArgs);
-    }
-
-    public FunctionRef parseFunctionRef(org.metavm.object.type.antlr.TypeParser.FunctionRefContext ctx) {
-        var rawFunc = (Function) getTypeDef(ctx.IDENTIFIER().getText());
-        List<Type> typeArgs = ctx.typeArguments() != null ? parseTypeList(ctx.typeArguments().typeList()) : List.of();
-        return new FunctionRef(rawFunc, typeArgs);
-    }
-
-    private SimpleMethodRef parseSimpleMethodRef(org.metavm.object.type.antlr.TypeParser.SimpleMethodRefContext ctx) {
-        return new SimpleMethodRef(
-                ctx.IDENTIFIER().getText(),
-                ctx.typeArguments() != null ? Utils.map(ctx.typeArguments().typeList().type(), this::parseType) : List.of()
-        );
-    }
-
-    private VariableType parseVariableType(org.metavm.object.type.antlr.TypeParser.VariableTypeContext ctx) {
-//        return new VariableType((TypeVariable) getTypeDef(ctx.qualifiedName().getText()), genericDeclarationRef, rawVariable);
-        var rawTypeVariable = (TypeVariable) getTypeDef(ctx.IDENTIFIER().getText());
-        return new VariableType(rawTypeVariable);
-    }
-
-    private GenericDeclarationRef parseGenericDeclarationRef(org.metavm.object.type.antlr.TypeParser.GenericDeclarationRefContext ctx) {
-        if(ctx.classType() != null)
-            return (ClassType) parseClassType(ctx.classType());
-        else if(ctx.methodRef() != null)
-            return parseMethodRef(ctx.methodRef());
-        else if(ctx.functionRef() != null)
-            return parseFunctionRef(ctx.functionRef());
-        else
-            throw new IllegalStateException("Failed to parse generic declaration ref: " + ctx.getText());
-    }
-
-    private Type parsePrimitiveType(org.metavm.object.type.antlr.TypeParser.PrimitiveTypeContext ctx) {
-        if (ctx.BOOLEAN() != null)
-            return PrimitiveType.booleanType;
-        if (ctx.STRING() != null)
-            return StdKlass.string.type();
-        if (ctx.INT() != null)
-            return PrimitiveType.intType;
-        if (ctx.LONG() != null)
-            return PrimitiveType.longType;
-        if (ctx.CHAR() != null)
-            return PrimitiveType.charType;
-        if (ctx.DOUBLE() != null)
-            return PrimitiveType.doubleType;
-        if (ctx.FLOAT() != null)
-            return PrimitiveType.floatType;
-        if (ctx.VOID() != null)
-            return PrimitiveType.voidType;
-        if (ctx.TIME() != null)
-            return PrimitiveType.timeType;
-        if (ctx.PASSWORD() != null)
-            return PrimitiveType.passwordType;
-        if (ctx.NULL() != null)
-            return NullType.instance;
-        throw new IllegalArgumentException("Unknown primitive type: " + ctx.getText());
-    }
-
-    private FunctionType parseFunctionType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new FunctionType(parseTypeList(ctx.typeList()), parseType(ctx.type(0)));
-    }
-
-    private ArrayType parseArrayType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new ArrayType(parseType(ctx.elementType), parseArrayKind(ctx.arrayKind()));
-    }
-
-    private UncertainType parseUncertainType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new UncertainType(parseType(ctx.type(0)), parseType(ctx.type(1)));
-    }
-
-    private UnionType parseUnionType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new UnionType(Utils.mapToSet(ctx.type(), this::parseType)).flatten();
-    }
-
-    private IntersectionType parseIntersectionType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new IntersectionType(Utils.mapToSet(ctx.type(), this::parseType)).flatten();
-    }
-
-    private Type parseClassType(org.metavm.object.type.antlr.TypeParser.ClassTypeContext ctx) {
-        var name = ctx.qualifiedName().getText();
-        var typeVar = typeParameters.get(name);
-        if(typeVar != null)
-            return typeVar.getType();
-        var klass = (Klass) getTypeDef(name);
-        if (ctx.typeArguments() != null) {
-            return new KlassType(Utils.safeCall(klass.getScope(), GenericDeclaration::getRef),
-                    klass, Utils.map(ctx.typeArguments().typeList().type(), this::parseType));
-        } else
-            return klass.getType();
-    }
-
-    private CapturedType parseCapturedType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        var name = ctx.qualifiedName().getText();
-        var typeDef = getTypeDef(name);
-        return new CapturedType((CapturedTypeVariable) typeDef);
-    }
-
-    private ITypeDef getTypeDef(String name) {
-        var typeDef = typeDefProvider.getTypeDef(name);
-        if(typeDef == null)
-            throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, name);
-        return typeDef;
-    }
-
-    private ArrayKind parseArrayKind(org.metavm.object.type.antlr.TypeParser.ArrayKindContext ctx) {
-        if (ctx.LBRACK() != null)
-            return ArrayKind.DEFAULT;
-        if (ctx.R() != null)
-            return ArrayKind.READ_ONLY;
-        throw new IllegalArgumentException("Unknown array kind: " + ctx.getText());
-    }
-
-    private List<Type> parseTypeList(@Nullable org.metavm.object.type.antlr.TypeParser.TypeListContext ctx) {
-        if (ctx == null)
-            return List.of();
-        return Utils.map(ctx.type(), this::parseType);
-    }
 }

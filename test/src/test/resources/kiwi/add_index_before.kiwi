@@ -1,8 +1,2 @@
 
-class Product(var name: string) {
-
-    fn getName() -> string {
-        return this.name
-    }
-
-}
+class Product(var name: string)

@@ -2,26 +2,18 @@ package org.metavm.classfile;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.mocks.MockEntityRepository;
 import org.metavm.flow.KlassInput;
 import org.metavm.flow.KlassOutput;
 import org.metavm.object.type.Types;
 import org.metavm.util.MockUtils;
-import org.metavm.util.TestUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 public class ClassFileIOTest extends TestCase {
 
-
-    @Override
-    protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
-    }
 
     public void test() {
         var testKlasses = MockUtils.createTestKlasses();

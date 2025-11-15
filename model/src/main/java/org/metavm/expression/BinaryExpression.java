@@ -1,8 +1,10 @@
 package org.metavm.expression;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -10,17 +12,17 @@ import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.Utils;
 import org.metavm.util.StreamVisitor;
+import org.metavm.util.Utils;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Getter
+@Wire
 @Entity
 public class BinaryExpression extends Expression {
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
     private final BinaryOperator operator;
     private final Expression left;
     private final Expression right;
@@ -41,18 +43,6 @@ public class BinaryExpression extends Expression {
         visitor.visitByte();
         Expression.visit(visitor);
         Expression.visit(visitor);
-    }
-
-    public BinaryOperator getOperator() {
-        return operator;
-    }
-
-    public Expression getLeft() {
-        return left;
-    }
-
-    public Expression getRight() {
-        return right;
     }
 
     @Override
@@ -120,18 +110,6 @@ public class BinaryExpression extends Expression {
         right.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("operator", this.getOperator().name());
-        map.put("left", this.getLeft().toJson());
-        map.put("right", this.getRight().toJson());
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_BinaryExpression);
@@ -139,5 +117,10 @@ public class BinaryExpression extends Expression {
         output.write(operator.code());
         left.write(output);
         right.write(output);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new BinaryExpression(operator, left.accept(transformer), right.accept(transformer));
     }
 }

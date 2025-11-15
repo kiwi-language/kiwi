@@ -1,9 +1,10 @@
 package org.metavm.object.instance.core;
 
-import com.google.common.primitives.UnsignedBytes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jsonk.Json;
 import org.metavm.common.ErrorCode;
+import org.metavm.wire.Wire;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.*;
 
@@ -11,6 +12,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Objects;
 
+@Json(adapter = IdAdapter.class)
+@Wire(adapter = IdWireAdapter.class)
 public abstract class Id implements Comparable<Id> {
 
     public static @javax.annotation.Nullable Id tryParse(String s) {
@@ -19,6 +22,10 @@ public abstract class Id implements Comparable<Id> {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    public static Id getAppId(long id) {
+        return PhysicalId.of(id, 0L);
     }
 
     public abstract void write(MvOutput output);

@@ -1,7 +1,5 @@
 package anonymous_class
 
-import java.util.Iterator
-
 class StaticAnonymousClassFoo {
 
     static fn iterator() -> Iterator<string> {
@@ -12,7 +10,7 @@ class StaticAnonymousClassFoo {
             }
 
             fn next() -> string {
-                throw IllegalStateException()
+                throw Exception("No such element")
             }
 
         }
@@ -24,3 +22,10 @@ class StaticAnonymousClassFoo {
 
 }
 
+interface Iterator<E> {
+
+    fn next() -> E
+
+    fn hasNext() -> bool
+
+}

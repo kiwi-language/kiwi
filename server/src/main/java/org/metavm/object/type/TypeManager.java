@@ -19,8 +19,8 @@ import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.metavm.context.Component;
+import org.metavm.context.sql.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;

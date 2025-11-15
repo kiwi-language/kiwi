@@ -5,26 +5,18 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TypeId;
 import org.metavm.util.InternalException;
 import org.metavm.util.Utils;
-import org.metavm.util.ReflectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.metavm.util.ReflectionUtils.getFieldQualifiedName;
-
 public class StdAllocators {
 
-    private static final Logger logger = LoggerFactory.getLogger(StdAllocators.class);
-
-    private final Map<Type, StdAllocator> allocatorMap = new HashMap<>();
+    private final Map<String, StdAllocator> allocatorMap = new HashMap<>();
     private long nextId;
     private final AllocatorStore store;
 
@@ -39,10 +31,8 @@ public class StdAllocators {
 
     public Id getId(Object object) {
         return switch (object) {
-            case java.lang.reflect.Field field -> getId0(Field.class, getFieldQualifiedName(field));
-            case Type type -> getId0(Klass.class, getTypeCode(type));
-            case Enum<?> enumConstant -> getId0(ReflectionUtils.getEnumClass(enumConstant), enumConstant.name());
-            case ModelIdentity modelIdentity -> getId0(modelIdentity.type(), modelIdentity.name());
+            case Type type -> getId0(Klass.class.getName(), getTypeCode(type));
+            case ModelIdentity modelIdentity -> getId0(modelIdentity.type().getTypeName(), modelIdentity.name());
             case null, default ->
                     throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
         };
@@ -54,32 +44,26 @@ public class StdAllocators {
 
     public void putId(Object object, Id id, @Nullable Long nextNodeId) {
         switch (object) {
-            case java.lang.reflect.Field field -> putId0(Field.class, getFieldQualifiedName(field), id, nextNodeId);
-            case Type type -> putId0(Klass.class, getTypeCode(type), id, nextNodeId);
-            case Enum<?> enumConstant -> putId0(ReflectionUtils.getEnumClass(enumConstant), enumConstant.name(), id, nextNodeId);
-            case ModelIdentity modelIdentity -> putId0(modelIdentity.type(), modelIdentity.name(), id, nextNodeId);
+            case Type type -> putId0(Klass.class.getName(), getTypeCode(type), id, nextNodeId);
+            case ModelIdentity modelIdentity -> putId0(modelIdentity.type().getTypeName(), modelIdentity.name(), id, nextNodeId);
             case null, default ->
                     throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
         }
     }
 
-    public StdAllocator getAllocatorById(Id id) {
-        return Utils.find(allocatorMap.values(), a -> a.contains(id));
-    }
-
-    private Id getId0(Type javaType, String entityCode) {
+    private Id getId0(String javaType, String entityCode) {
         return getAllocator(javaType).getId(entityCode);
     }
 
-    private void putId0(Type javaType, String entityCode, Id id, @Nullable Long nextNodeId) {
+    private void putId0(String javaType, String entityCode, Id id, @Nullable Long nextNodeId) {
         getAllocator(javaType).putId(entityCode, id, nextNodeId);
     }
 
     public TypeId getTypeId(Id id) {
-        StdAllocator classTypeAllocator = allocatorMap.get(Klass.class);
+        StdAllocator classTypeAllocator = allocatorMap.get(Klass.class.getName());
         for (StdAllocator allocator : allocatorMap.values()) {
             if (allocator.contains(id))
-                return TypeId.ofClass(classTypeAllocator.getId(allocator.getJavaType().getTypeName()).getTreeId());
+                return TypeId.ofClass(classTypeAllocator.getId(allocator.getJavaType()).getTreeId());
         }
         throw new InternalException("Can not found typeId for id: " + id);
     }
@@ -96,12 +80,12 @@ public class StdAllocators {
         return nextId++;
     }
 
-    private StdAllocator getAllocator(Type javaType) {
+    private StdAllocator getAllocator(String javaType) {
         return allocatorMap.computeIfAbsent(javaType, this::createAllocator);
     }
 
-    private StdAllocator createAllocator(Type javaType) {
-        String fileName = store.getFileName(javaType.getTypeName());
+    private StdAllocator createAllocator(String javaType) {
+        String fileName = store.getFileName(javaType);
         if (store.fileNameExists(fileName)) {
             return new StdAllocator(store, fileName);
         } else {
@@ -116,11 +100,6 @@ public class StdAllocators {
         if (type instanceof ParameterizedType pType) {
             return getTypeCode(pType.getRawType()) + "<" +
                     Utils.join(pType.getActualTypeArguments(), this::getTypeCode) + ">";
-        }
-        if (type instanceof WildcardType wildcardType) {
-            if (ReflectionUtils.isAllWildCardType(wildcardType)) {
-                return "?";
-            }
         }
         throw new InternalException("Can not get code for type: " + type);
     }
@@ -139,7 +118,7 @@ public class StdAllocators {
 
     public @Nullable Long getNextNodeId(Object entity) {
         if(entity instanceof ModelIdentity modelIdentity)
-            return getAllocator(modelIdentity.type()).getNextNodeId(modelIdentity.name());
+            return getAllocator(modelIdentity.type().getTypeName()).getNextNodeId(modelIdentity.name());
         else
             throw new IllegalArgumentException("Invalid entity: " + entity);
     }

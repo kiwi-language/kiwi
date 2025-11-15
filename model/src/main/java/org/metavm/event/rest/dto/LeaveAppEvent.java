@@ -1,9 +1,13 @@
 package org.metavm.event.rest.dto;
 
+import lombok.Getter;
+import org.jsonk.Json;
 import org.metavm.event.UserEventKind;
 
 import java.util.Objects;
 
+@Getter
+@Json
 public class LeaveAppEvent extends UserEvent{
 
     private final String appId;
@@ -11,10 +15,6 @@ public class LeaveAppEvent extends UserEvent{
     public LeaveAppEvent(String userId, String appId) {
         super(UserEventKind.LEAVE_APP.code(), userId);
         this.appId = appId;
-    }
-
-    public String getAppId() {
-        return appId;
     }
 
     @Override

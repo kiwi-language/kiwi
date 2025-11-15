@@ -3,6 +3,7 @@ package org.metavm.object.instance.log;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.api.ValueObject;
+import org.metavm.wire.Wire;
 import org.metavm.object.instance.ChangeType;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Reference;
@@ -14,11 +15,10 @@ import org.metavm.util.StreamVisitor;
 
 import java.util.function.Consumer;
 
+@Wire
 @Entity
-public class InstanceLog implements ValueObject {
-
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
+public record InstanceLog(long appId, Id id, ChangeType changeType, long version,
+                          int entityTag) implements ValueObject {
 
     public static InstanceLog insert(VersionRT version) {
         return new InstanceLog(version.appId(), version.id(), ChangeType.INSERT, version.version(), version.entityTag());
@@ -30,20 +30,6 @@ public class InstanceLog implements ValueObject {
 
     public static InstanceLog delete(VersionRT version) {
         return new InstanceLog(version.appId(), version.id(), ChangeType.DELETE, version.version(), version.entityTag());
-    }
-
-    private final long appId;
-    private final Id id;
-    private final ChangeType changeType;
-    private final long version;
-    private final int entityTag;
-
-    public InstanceLog(long appId, Id id, ChangeType changeType, long version, int entityTag) {
-        this.appId = appId;
-        this.id = id;
-        this.changeType = changeType;
-        this.version = version;
-        this.entityTag = entityTag;
     }
 
     @Generated
@@ -60,29 +46,8 @@ public class InstanceLog implements ValueObject {
         visitor.visitInt();
     }
 
-    public long getAppId() {
-        return appId;
-    }
-
-    public Id getId() {
-        return id;
-    }
-
-
-    public ChangeType getChangeType() {
-        return changeType;
-    }
-
     public VersionPO toVersionPO() {
-        return new VersionPO(appId, getId().getTreeId(), version);
-    }
-
-    public long getVersion() {
-        return version;
-    }
-
-    public int getEntityTag() {
-        return entityTag;
+        return new VersionPO(appId, id().getTreeId(), version);
     }
 
     public boolean isInsert() {
@@ -97,28 +62,7 @@ public class InstanceLog implements ValueObject {
         return changeType == ChangeType.DELETE;
     }
 
-    @Override
-    public String toString() {
-        return "InstanceLog{" +
-                "appId=" + appId +
-                ", id=" + id +
-                ", changeType=" + changeType +
-                ", version=" + version +
-                '}';
-    }
-
     public void forEachReference(Consumer<Reference> action) {
-    }
-
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("appId", this.getAppId());
-        map.put("id", this.getId());
-        map.put("changeType", this.getChangeType().name());
-        map.put("version", this.getVersion());
-        map.put("entityTag", this.getEntityTag());
-        map.put("insert", this.isInsert());
-        map.put("insertOrUpdate", this.isInsertOrUpdate());
-        map.put("delete", this.isDelete());
     }
 
     @Generated
@@ -130,9 +74,4 @@ public class InstanceLog implements ValueObject {
         output.writeInt(entityTag);
     }
 
-    public java.util.Map<String, Object> toJson() {
-        var map = new java.util.HashMap<String, Object>();
-        buildJson(map);
-        return map;
-    }
 }

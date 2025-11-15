@@ -1,0 +1,13 @@
+org.metavm.entity.StringKlassBuilder
+org.metavm.entity.EnumKlassBuilder
+org.metavm.entity.ExceptionKlassBuilder
+org.metavm.entity.IndexKlassBuilder
+org.metavm.entity.HttpRequestImplKlassBuilder
+org.metavm.entity.HttpResponseImplKlassBuilder
+org.metavm.entity.HttpCookieImplKlassBuilder
+org.metavm.entity.HttpHeaderImplKlassBuilder
+org.metavm.entity.InterceptorKlassBuilder
+org.metavm.entity.HttpCookieKlassBuilder
+org.metavm.entity.HttpHeaderKlassBuilder
+org.metavm.entity.HttpRequestKlassBuilder
+org.metavm.entity.HttpResponseKlassBuilder

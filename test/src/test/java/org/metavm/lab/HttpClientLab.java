@@ -1,8 +1,8 @@
 package org.metavm.lab;
 
+import org.jsonk.Jsonk;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.Headers;
-import org.metavm.util.Utils;
 
 import java.io.IOException;
 import java.net.CookieHandler;
@@ -30,7 +30,7 @@ public class HttpClientLab {
                 .header("Content-Type", "application/json")
                 .header(Headers.X_APP_ID, Long.toString(2L))
                 .POST(HttpRequest.BodyPublishers.ofString(
-                        Utils.toJSONString(new LoginRequest(2L, "demo", "123456"))
+                        Jsonk.toJson(new LoginRequest(2L, "demo", "123456"))
                 ))
                 .build();
 

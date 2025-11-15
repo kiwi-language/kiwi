@@ -1,14 +1,11 @@
 package anonymous_class
 
-import java.util.ArrayList
-import java.util.Iterator
-import java.util.List
 
 class AnonymousClassFoo<K, V> {
 
-    priv val entries: List<Entry> = ArrayList<Entry>()
+    priv val entries: Entry[] = new Entry[]
 
-    static fn create<K, V>(entries: List<EntryDTO<K, V>>) -> AnonymousClassFoo<K, V> {
+    static fn create<K, V>(entries: EntryDTO<K, V>[]) -> AnonymousClassFoo<K, V> {
         var foo = AnonymousClassFoo<K, V>()
         for (entry in entries) {
             foo.Entry(entry.key(), entry.value())
@@ -17,20 +14,22 @@ class AnonymousClassFoo<K, V> {
     }
 
     fn keysSnapshot() -> Iterable<K> {
-        var a0 = ArrayList<Entry>(entries)
+        var a0 = new Entry[]
+        for (e in entries)
+            a0.append(e)
         return new Iterable<K>() {
 
             fn iterator() -> Iterator<K> {
                 return new Iterator<K>() {
 
-                    priv val i: Iterator<Entry> = a0.iterator()
+                    priv var i = 0
 
                     fn hasNext() -> bool {
-                        return i.hasNext()
+                        return i < a0.length
                     }
 
                     fn next() -> K {
-                        return i.next().key()
+                        return a0[i++].key()
                     }
 
                 }
@@ -55,7 +54,7 @@ class AnonymousClassFoo<K, V> {
     ) {
 
         {
-            entries.add(this)
+            entries.append(this)
         }
 
         fn key() -> K {
@@ -67,6 +66,20 @@ class AnonymousClassFoo<K, V> {
         }
 
     }
+
+}
+
+interface Iterable<E> {
+
+    fn iterator() -> Iterator<E>
+
+}
+
+interface Iterator<E> {
+
+    fn next() -> E
+
+    fn hasNext() -> bool
 
 }
 

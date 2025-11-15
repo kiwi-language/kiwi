@@ -2,7 +2,6 @@ package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.CheckConstraint;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Utils;
@@ -117,8 +116,6 @@ public class ModelIdentities {
             case Field field -> {
                 if (Modifier.isStatic(field.getModifiers()) && field.getType() == IndexDef.class)
                     yield Index.class;
-                if (Modifier.isStatic(field.getModifiers()) && field.getType() == ConstraintDef.class)
-                    yield CheckConstraint.class;
                 else
                     yield org.metavm.object.type.Field.class;
             }

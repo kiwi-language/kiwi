@@ -2,7 +2,8 @@ package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
-import org.metavm.entity.Entity;
+import org.metavm.wire.AdapterRegistry;
+import org.metavm.wire.WireAdapter;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.KlassDataSlot;
 import org.metavm.object.instance.core.Message;
@@ -76,8 +77,21 @@ public class InstanceOutput extends MvOutput {
     }
 
     @Override
-    public void writeEntity(Entity entity) {
-        write(entity.getEntityTag());
-        super.writeEntity(entity);
+    public void writeEntity(Object o) {
+        //noinspection unchecked
+        var adapter = (WireAdapter<Object>) AdapterRegistry.instance.getAdapter(o.getClass());
+        write(adapter.getTag());
+        super.writeEntity(o, adapter);
+    }
+
+    @Override
+    public <T> void writeEntity(T o, WireAdapter<T> adapter) {
+        if (adapter.getTag() != -1) {
+//            log.debug("Writing entity tag for: {}", adapter.getSupportedType().getName());
+            write(adapter.getTag());
+        } else {
+//            log.debug("Skip reading entity tag for: {}", adapter.getSupportedType().getName());
+        }
+        super.writeEntity(o, adapter);
     }
 }

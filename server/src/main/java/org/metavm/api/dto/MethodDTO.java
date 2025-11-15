@@ -1,9 +1,11 @@
 package org.metavm.api.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jsonk.Json;
+import org.jsonk.JsonProperty;
 
 import java.util.List;
 
+@Json
 public record MethodDTO(
         String access,
         @JsonProperty("abstract")

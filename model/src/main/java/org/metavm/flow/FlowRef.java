@@ -21,9 +21,6 @@ import java.util.function.Consumer;
 @Entity
 public abstract class FlowRef implements GenericDeclarationRef, Writable, CallableRef {
 
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
-//    public Flow rawFlow;
     protected final Reference flowReference;
     protected final List<Type> typeArguments;
     @CopyIgnore
@@ -31,7 +28,6 @@ public abstract class FlowRef implements GenericDeclarationRef, Writable, Callab
 
     public FlowRef(Flow rawFlow, List<? extends Type> typeArguments) {
         this(rawFlow.getReference(), typeArguments);
-//        this.rawFlow = rawFlow;
     }
 
     protected FlowRef(Reference flowReference, List<? extends Type> typeArguments) {

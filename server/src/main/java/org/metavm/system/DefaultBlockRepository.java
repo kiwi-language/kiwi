@@ -1,12 +1,12 @@
 package org.metavm.system;
 
+import org.metavm.context.sql.TransactionPropagation;
 import org.metavm.system.persistence.IdSequenceMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+import org.metavm.context.Component;
+import org.metavm.context.sql.TransactionIsolation;
+import org.metavm.context.sql.Transactional;
 
 @Component
 public class DefaultBlockRepository implements BlockRepository {
@@ -23,7 +23,7 @@ public class DefaultBlockRepository implements BlockRepository {
     }
 
     @Override
-    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRES_NEW)
+    @Transactional(isolation = TransactionIsolation.SERIALIZABLE, propagation = TransactionPropagation.REQUIRES_NEW)
     public Block allocate() {
         var next = idSequenceMapper.selectNextId();
         if(next == null) {

@@ -3,15 +3,5 @@ package hashcode
 value class HashCodeBaz(
     priv val name: string,
     priv val extra: any
-) {
-
-    fn name() -> string {
-        return name
-    }
-
-    fn extra() -> any {
-        return extra
-    }
-
-}
+)
 

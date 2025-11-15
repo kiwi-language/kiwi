@@ -1,7 +1,6 @@
 package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.compiler.CompilationTask;
 import org.metavm.compiler.CompilationTaskBuilder;
 import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.MockEnter;

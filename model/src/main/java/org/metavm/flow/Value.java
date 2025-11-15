@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.api.ValueObject;
+import org.metavm.wire.Wire;
+import org.metavm.wire.SubType;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.object.instance.core.Reference;
@@ -14,6 +16,14 @@ import org.metavm.util.StreamVisitor;
 
 import java.util.function.Consumer;
 
+@Wire(subTypes = {
+        @SubType(value = 1, type = NodeValue.class),
+        @SubType(value = 2, type = ExpressionValue.class),
+        @SubType(value = 3, type = ArrayValue.class),
+        @SubType(value = 4, type = PropertyValue.class),
+        @SubType(value = 5, type = ConstantValue.class),
+        @SubType(value = 6, type = NeverValue.class)
+})
 @Entity
 public abstract class Value implements ValueObject {
 
@@ -23,7 +33,6 @@ public abstract class Value implements ValueObject {
     protected static final int TYPE_NeverValue = 3;
     protected static final int TYPE_NodeValue = 4;
     protected static final int TYPE_PropertyValue = 5;
-    protected static final int TYPE_TypeValue = 6;
 
     public Value() {
         super();
@@ -38,7 +47,6 @@ public abstract class Value implements ValueObject {
             case TYPE_ConstantValue -> ConstantValue.read(input);
             case TYPE_NeverValue -> NeverValue.read(input);
             case TYPE_ArrayValue -> ArrayValue.read(input);
-            case TYPE_TypeValue -> TypeValue.read(input);
             case TYPE_NodeValue -> NodeValue.read(input);
             default -> throw new IllegalStateException("Unrecognized type: " + type);
         };
@@ -53,7 +61,6 @@ public abstract class Value implements ValueObject {
             case TYPE_ConstantValue -> ConstantValue.visit(visitor);
             case TYPE_NeverValue -> NeverValue.visit(visitor);
             case TYPE_ArrayValue -> ArrayValue.visit(visitor);
-            case TYPE_TypeValue -> TypeValue.visit(visitor);
             case TYPE_NodeValue -> NodeValue.visit(visitor);
             default -> throw new IllegalStateException("Unrecognized type: " + type);
         }
@@ -71,19 +78,8 @@ public abstract class Value implements ValueObject {
     public void forEachReference(Consumer<Reference> action) {
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("text", this.getText());
-        map.put("expression", this.getExpression().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
     }
 
-    public java.util.Map<String, Object> toJson() {
-        var map = new java.util.HashMap<String, Object>();
-        buildJson(map);
-        return map;
-    }
 }

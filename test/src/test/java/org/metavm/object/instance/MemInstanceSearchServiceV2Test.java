@@ -2,7 +2,6 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.search.AndSearchCondition;
@@ -11,7 +10,6 @@ import org.metavm.object.instance.search.SearchQuery;
 import org.metavm.util.MockUtils;
 import org.metavm.util.SearchSyncRequest;
 import org.metavm.util.TestConstants;
-import org.metavm.util.TestUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -25,8 +23,6 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
         memInstanceSearchServiceV2 = new MemInstanceSearchServiceV2();
         memInstanceSearchServiceV2.createIndex(TestConstants.APP_ID, false);
     }

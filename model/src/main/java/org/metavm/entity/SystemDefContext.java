@@ -3,8 +3,7 @@ package org.metavm.entity;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ValueObject;
-import org.metavm.event.EventQueue;
-import org.metavm.flow.Function;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
@@ -19,60 +18,33 @@ import java.util.*;
 import java.util.function.Consumer;
 
 @Slf4j
-public class SystemDefContext extends DefContext implements DefMap, IInstanceContext, TypeRegistry {
+public class SystemDefContext extends DefContext implements IInstanceContext {
 
     public static final Set<Class<? extends GlobalKey>> BINDING_ALLOWED_CLASSES = Set.of();
 
-    private final Map<Type, KlassDef<?>> javaType2Def = new HashMap<>();
-    private final Map<TypeDef, KlassDef<?>> typeDef2Def = new IdentityHashMap<>();
+    private final Map<Class<?>, Klass> javaClass2klass = new HashMap<>();
+    private final Map<Klass, Type> klass2javaClass = new IdentityHashMap<>();
     private final StdIdProvider stdIdProvider;
     private final Set<Entity> entities = new IdentitySet<>();
     private final IdentityContext identityContext;
-    private final TypeTagStore typeTagStore;
     private final EntityMemoryIndex memoryIndex = new EntityMemoryIndex();
     private final Map<Id, Entity> entityMap = new HashMap<>();
-    private final Set<java.lang.reflect.Field> fieldBlacklist = new HashSet<>();
-    private final Set<ClassType> typeDefTypes = new HashSet<>();
-    private final Set<ClassType> functionTypes = new HashSet<>();
-    private final StandardDefBuilder standardDefBuilder;
     private final Profiler profiler = new Profiler();
 
-    public SystemDefContext(StdAllocators stdAllocators, TypeTagStore typeTagStore) {
-        this(stdAllocators, typeTagStore, new IdentityContext());
-    }
-
-    public SystemDefContext(StdAllocators allocators, TypeTagStore typeTagStore, IdentityContext identityContext) {
+    public SystemDefContext(StdAllocators allocators, IdentityContext identityContext) {
         this.stdIdProvider = new StdIdProvider(allocators);
         this.identityContext = identityContext;
-        this.typeTagStore = typeTagStore;
-        standardDefBuilder = new StandardDefBuilder(this);
-        standardDefBuilder.initRootTypes();
+        addKlass(String.class, StdKlass.string.get());
+        addKlass(Enum.class, StdKlass.enum_.get());
+        addKlass(Exception.class, StdKlass.exception.get());
+        initSystemFunctions();
     }
 
-    @Override
-    public KlassDef<?> getDef(TypeDef typeDef) {
-        return Objects.requireNonNull(tryGetDef(typeDef), "Can not find def for: " + typeDef);
-    }
-
-    public KlassDef<?> getDef(Type javaType) {
-        checkJavaType(javaType);
-        var existing = javaType2Def.get(javaType);
-        if (existing != null && existing.getParser() == null)
+    public Klass getKlass(Class<?> javaClass) {
+        var existing = javaClass2klass.get(javaClass);
+        if (existing != null)
             return existing;
-        return parseType(javaType);
-    }
-
-    @SuppressWarnings("unused")
-    public boolean isFieldBlacklisted(java.lang.reflect.Field field) {
-        return fieldBlacklist.contains(field);
-    }
-
-    public void setFieldBlacklist(Set<java.lang.reflect.Field> fieldBlacklist) {
-        this.fieldBlacklist.addAll(fieldBlacklist);
-    }
-
-    public int getTypeTag(Class<?> javaClass) {
-        return typeTagStore.getTypeTag(javaClass.getName());
+        return parseType(javaClass);
     }
 
     @Override
@@ -81,84 +53,32 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     }
 
     @Override
-    public boolean containsDef(Type javaType) {
-        return javaType2Def.containsKey(javaType);
-    }
-
-    public Klass getKlass(Class<?> javaClass) {
-        return getDef(javaClass).getTypeDef();
-    }
-
-    @Override
     public Id getModelId(Object o) {
         var identity = o instanceof ModelIdentity i ? i : ModelIdentities.getIdentity(o);
         var id = stdIdProvider.getId(identity);
-//        if (DebugEnv.flag) {
-            if (id == null)
-                throw new NullPointerException("Failed to get id for model: " + identity.name());
-//        }
+        if (id == null)
+            throw new NullPointerException("Failed to get id for model: " + identity.name());
         return id;
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> KlassDef<T> getDef(Class<T> klass) {
-        return (KlassDef<T>) getDef((Type) klass);
+    private @NotNull Klass parseType(Class<?> javaClass) {
+        var klass = StdKlassRegistry.instance.getKlass(javaClass);
+        writeEntityIfNotPresent(klass);
+        return klass;
     }
 
-    @Nullable
-    @Override
-    public KlassDef<?> getDefIfPresent(Type javaType) {
-        return javaType2Def.get(javaType);
-    }
-
-    @Override
-    public boolean containsDef(TypeDef typeDef) {
-        return typeDef2Def.containsKey(typeDef);
-    }
-
-    public @Nullable KlassDef<?> tryGetDef(TypeDef typeDef) {
-        return typeDef2Def.get(typeDef);
-    }
-
-    private @NotNull KlassDef<?> parseType(Type javaType) {
-        var javaClass = ReflectionUtils.getRawClass(javaType);
-        var parser = new KlassParser<>(javaClass, this, this::getModelId);
-        var def = parser.parse();
-        afterDefInitialized(def);
-        return def;
-    }
-
-    @Override
-    public boolean containsJavaType(Type javaType) {
-        return javaType2Def.containsKey(javaType);
-    }
-
-    @Override
-    public void preAddDef(KlassDef<?> def) {
+    public void addKlass(Class<?> javaClass, Klass klass) {
         var tracing = DebugEnv.traceClassDefinition;
-        if (tracing) log.trace("Adding class def: {}", def.getJavaClass().getName());
-        var existing = javaType2Def.get(def.getJavaClass());
-        if (existing != null && existing != def)
-            throw new InternalException("Def for java type " + def.getJavaClass() + " already exists");
-        javaType2Def.put(def.getJavaClass(), def);
-        existing = typeDef2Def.get(def.getTypeDef());
-        if (existing != null && existing != def)
-            throw new InternalException("Def for type " + def.getTypeDef() + " already exists. Def: " + existing);
-        typeDef2Def.put(def.getTypeDef(), def);
-    }
-
-    @Override
-    public void addDef(KlassDef<?> def) {
-        preAddDef(def);
-        afterDefInitialized(def);
-    }
-
-    @Override
-    public void afterDefInitialized(KlassDef<?> def) {
-        if (def.isInitialized())
-            return;
-        def.setInitialized(true);
-        def.getEntities().forEach(this::writeEntityIfNotPresent);
+        if (tracing) log.trace("Adding class: {}", klass.getQualifiedName());
+        var existing = javaClass2klass.get(javaClass);
+        if (existing != null && existing != klass)
+            throw new InternalException("Def for java type " + javaClass + " already exists");
+        javaClass2klass.put(javaClass, klass);
+        var existingJavaClass = klass2javaClass.get(klass);
+        if (existingJavaClass != null && existingJavaClass != javaClass)
+            throw new InternalException("Def for type " + klass + " already exists. Def: " + existing);
+        klass2javaClass.put(klass, javaClass);
+        writeEntityIfNotPresent(klass);
     }
 
     private void writeEntityIfNotPresent(Entity entity) {
@@ -176,38 +96,18 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
             throw new InternalException("Entity " + entity + " is already written to the context");
     }
 
-    @Override
-    public Collection<KlassDef<?>> getAllDefList() {
-        return javaType2Def.values();
-    }
-
-    public Map<Entity, ModelIdentity> getIdentityMap() {
-        return identityContext.getIdentityMap();
-    }
-
     public void flush() {
         try (var ignored = getProfiler().enter("flush")) {
             crawNewEntities();
-            recordHotTypes();
             setupIdentityContext();
         }
     }
 
     private void freezeKlasses() {
-        typeDef2Def.keySet().forEach(t -> {
+        klass2javaClass.keySet().forEach(t -> {
             if(t instanceof Klass k)
                 k.freeze();
         });
-    }
-
-    @Override
-    public boolean isTypeDefType(ClassType type) {
-        return typeDefTypes.contains(type);
-    }
-
-    @Override
-    public boolean isFunctionType(ClassType type) {
-        return functionTypes.contains(type);
     }
 
     private void setupIdentityContext() {
@@ -216,21 +116,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
                 identityContext.getModelId(entity);
             }
         }
-    }
-
-    private void recordHotTypes() {
-        typeDefTypes.clear();
-        functionTypes.clear();
-        var typeDefKlass = getKlass(TypeDef.class);
-        var functionKlass = getKlass(Function.class);
-        typeDef2Def.keySet().forEach(typeDef -> {
-            if (typeDef instanceof Klass klass) {
-                if (typeDefKlass.isAssignableFrom(klass))
-                    typeDefTypes.add(klass.getType());
-                else if (functionKlass.isAssignableFrom(klass))
-                    functionTypes.add(klass.getType());
-            }
-        });
     }
 
     private void crawNewEntities() {
@@ -272,7 +157,7 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     public <T extends Instance> T bind(T object) {
         if (object.isEphemeral())
             throw new IllegalArgumentException("Can not bind an ephemeral entity");
-        if (object instanceof  Entity entity && BINDING_ALLOWED_CLASSES.contains(EntityUtils.getRealType(object.getClass()))) {
+        if (object instanceof  Entity entity && BINDING_ALLOWED_CLASSES.contains(object.getClass())) {
             writeEntity(entity);
             return object;
         } else
@@ -285,10 +170,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         return profiler;
     }
 
-    public IdentityContext getIdentityContext() {
-        return identityContext;
-    }
-
     public Collection<Entity> entities() {
         return Collections.unmodifiableSet(entities);
     }
@@ -299,14 +180,11 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
 
     public void postProcess() {
         log.info("Post processing system def context");
-        standardDefBuilder.initUserFunctions();
+        initUserFunctions();
         buildMemoryIndex();
         Klasses.loadKlasses(this);
         freezeKlasses();
-        StdKlass.initialize(this, false);
-        StdMethod.initialize(this, false);
-        StdField.initialize(this, false);
-        for (TypeDef typeDef : typeDef2Def.keySet()) {
+        for (TypeDef typeDef : klass2javaClass.keySet()) {
             if(typeDef instanceof Klass klass)
                 klass.rebuildMethodTable();
         }
@@ -333,12 +211,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     @Override
     public boolean containsIdSelf(Id id) {
         return containsId(id);
-    }
-
-    @Nullable
-    @Override
-    public EventQueue getEventQueue() {
-        return null;
     }
 
     @Override
@@ -638,6 +510,14 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     @Override
     public void buffer(Id id) {
 
+    }
+
+    public void initSystemFunctions() {
+        StdFunction.defineSystemFunctions(this).forEach(this::writeEntity);
+    }
+
+    public void initUserFunctions() {
+        StdFunction.defineUserFunctions(this).forEach(this::writeEntity);
     }
 
     @Override

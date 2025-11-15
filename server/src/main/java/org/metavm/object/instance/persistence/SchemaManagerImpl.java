@@ -6,9 +6,8 @@ import org.metavm.common.ErrorCode;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Hooks;
 import org.metavm.util.Utils;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.metavm.context.Component;
+import org.metavm.jdbc.TransactionStatus;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -54,7 +53,10 @@ public class SchemaManagerImpl implements SchemaManager {
     public void createIndexEntryTable(long appId, String table) {
         var connection = getConnection();
         try (var stmt = connection.createStatement()) {
-            var sql = "create table " + table + "_" + appId +
+            String tableName = table + "_" + appId;
+
+            // 1. Create the Table
+            var createTableSql = "create table " + tableName +
                     """
                     (
                         app_id      bigint not null,
@@ -63,8 +65,17 @@ public class SchemaManagerImpl implements SchemaManager {
                         instance_id bytea  not null,
                         primary key (app_id, index_id, data, instance_id)
                     )""";
-            log.info("SQL: {}", sql);
-            stmt.executeUpdate(sql);
+
+            log.info("Creating table SQL: {}", createTableSql);
+            stmt.executeUpdate(createTableSql);
+
+            // 2. Create the Secondary Index on instance_id
+            // Convention: tableName_columnName_idx
+            var indexName = tableName + "_instance_id_idx";
+            var createIndexSql = "create index " + indexName + " on " + tableName + " (instance_id)";
+
+            log.info("Creating index SQL: {}", createIndexSql);
+            stmt.executeUpdate(createIndexSql);
         } finally {
             returnConnection(connection);
         }
@@ -73,7 +84,7 @@ public class SchemaManagerImpl implements SchemaManager {
     @SneakyThrows
     @Override
     public void switchTable(long appId, boolean backup) {
-        Utils.require(TransactionSynchronizationManager.isActualTransactionActive());
+        Utils.require(TransactionStatus.isTransactionActive());
         var connection = getConnection();
         try (var stmt = connection.createStatement()) {
             log.info("Start switching table");
@@ -176,11 +187,11 @@ public class SchemaManagerImpl implements SchemaManager {
     }
 
     private Connection getConnection() {
-        return DataSourceUtils.getConnection(dataSource);
+        return TransactionStatus.getConnection(dataSource);
     }
 
     private void returnConnection(Connection connection) throws SQLException {
-        if (!TransactionSynchronizationManager.isActualTransactionActive())
+        if (!TransactionStatus.isTransactionActive())
             connection.close();
     }
 }

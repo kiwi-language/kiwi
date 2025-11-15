@@ -327,4 +327,14 @@ public class KiwiTest2 extends KiwiTestBase {
         assertEquals(0, getObject(id).getChildren("Module").size());
     }
 
+    public void testForwardReference() {
+        deploy("kiwi/deploy/forward_reference.kiwi");
+        var userId = saveInstance("deploy.User", Map.of("name", "Leen", "products", List.of()));
+        var product = saveInstance("deploy.Product", Map.of(
+           "name", "Shoes", "owner", userId
+        ));
+        assertEquals("Leen", callMethod(product, "getOwnerName", List.of()));
+        assertEquals("Shoes", callMethod(userId, "getFirstProductName", List.of()));
+    }
+
 }

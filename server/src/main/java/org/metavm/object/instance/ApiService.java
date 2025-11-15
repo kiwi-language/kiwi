@@ -1,36 +1,36 @@
 package org.metavm.object.instance;
 
 import org.jetbrains.annotations.NotNull;
+import org.jsonk.Jsonk;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.entity.natives.ArrayListNative;
-import org.metavm.entity.natives.ThrowableNative;
+import org.metavm.entity.natives.ExceptionNative;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Flows;
 import org.metavm.flow.MethodRef;
 import org.metavm.flow.ParameterRef;
+import org.metavm.context.Component;
+import org.metavm.context.sql.TransactionIsolation;
+import org.metavm.context.sql.Transactional;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
-import org.metavm.util.LinkedList;
+import java.util.LinkedList;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Supplier;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-@Service
+@Component
 public class ApiService extends ApplicationStatusAware {
 
     public static final Logger logger = LoggerFactory.getLogger(ApiService.class);
@@ -51,7 +51,7 @@ public class ApiService extends ApplicationStatusAware {
         this.instanceQueryService = instanceQueryService;
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(isolation = TransactionIsolation.SERIALIZABLE)
     public String handleNewInstance(String classCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         ensureApplicationActive();
         try (var context = newContext()) {
@@ -68,7 +68,7 @@ public class ApiService extends ApplicationStatusAware {
         }
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(isolation = TransactionIsolation.SERIALIZABLE)
     public Object handleMethodCall(Object receiver, String methodCode, Object rawArguments, boolean returnFullObject, HttpRequest request, HttpResponse response) {
         ensureApplicationActive();
         try (var context = newContext()) {
@@ -77,7 +77,7 @@ public class ApiService extends ApplicationStatusAware {
                 var r = tryResolveObject(map, AnyType.instance, null, false, context);
                 if (!r.successful) {
                     throw invalidRequestBody("cannot find method with name '" + methodCode
-                            + "' and arguments '" + Utils.toJSONString(rawArguments) + "'");
+                            + "' and arguments '" + Jsonk.toJson(rawArguments) + "'");
                 }
                 result = executeInstanceMethod(r.resolved.resolveObject(), methodCode, rawArguments, request, response, context);
             } else if (receiver instanceof String s){
@@ -110,7 +110,7 @@ public class ApiService extends ApplicationStatusAware {
                 self, request, response, context);
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(isolation = TransactionIsolation.SERIALIZABLE)
     public Object handleStaticMethodCall(String classCode, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         ensureApplicationActive();
         try (var context = newContext()) {
@@ -142,7 +142,7 @@ public class ApiService extends ApplicationStatusAware {
         );
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(isolation = TransactionIsolation.SERIALIZABLE)
     public void delete(String id) {
         ensureApplicationActive();
         try (var context = newContext()) {
@@ -198,7 +198,7 @@ public class ApiService extends ApplicationStatusAware {
 
     private void ensureSuccessful(FlowExecResult result) {
         if (result.exception() != null)
-            throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
+            throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ExceptionNative.getMessage(result.exception()));
     }
 
     private ClassType getKlass(String classCode, IInstanceContext context) {
@@ -210,7 +210,7 @@ public class ApiService extends ApplicationStatusAware {
         return type;
     }
 
-    @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
+    @Transactional(readonly = true, isolation = TransactionIsolation.SERIALIZABLE)
     public Map<String, Object> getInstance(String id) {
         ensureApplicationActive();
         try (var context = newContext()) {
@@ -218,7 +218,7 @@ public class ApiService extends ApplicationStatusAware {
         }
     }
 
-    @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
+    @Transactional(readonly = true, isolation = TransactionIsolation.SERIALIZABLE)
     public List<Map<String, Object>> multiGet(List<String> ids, boolean excludeChildren, boolean excludeFields) {
         ensureApplicationActive();
         var idList = Utils.map(ids, Id::parse);
@@ -233,7 +233,7 @@ public class ApiService extends ApplicationStatusAware {
         }
     }
 
-    @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
+    @Transactional(readonly = true, isolation = TransactionIsolation.SERIALIZABLE)
     public Object getStatic(String className, String fieldName) {
         ensureApplicationActive();
         try(var context = newContext()) {
@@ -243,7 +243,7 @@ public class ApiService extends ApplicationStatusAware {
         }
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(isolation = TransactionIsolation.SERIALIZABLE)
     public String saveInstance(Map<String, Object> object, HttpRequest request, HttpResponse response) {
         ensureApplicationActive();
         try (var context = newContext()) {
@@ -307,10 +307,9 @@ public class ApiService extends ApplicationStatusAware {
     }
 
     private Value handleExecutionResult(FlowExecResult result) {
-        if (result.exception() != null) {
-            var throwableNative = new ThrowableNative(result.exception());
-            throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, throwableNative.getMessage().getTitle());
-        } else
+        if (result.exception() != null)
+            throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ExceptionNative.getMessage(result.exception()));
+        else
             return Objects.requireNonNullElseGet(result.ret(), Instances::nullInstance);
     }
 
@@ -323,30 +322,8 @@ public class ApiService extends ApplicationStatusAware {
             case Reference reference -> {
                 var resolved = reference.get();
                 switch (resolved) {
-                    case Entity entity -> {
-                        yield entity.toJson();
-                    }
                     case ClassInstance clsInst -> {
-                        var klass = clsInst.getInstanceKlass();
-                        if (klass == StdKlass.byte_.get())
-                            yield Instances.toJavaByte(reference);
-                        if (klass == StdKlass.short_.get())
-                            yield Instances.toJavaShort(reference);
-                        if (klass == StdKlass.integer.get())
-                            yield Instances.toJavaInt(reference);
-                        if (klass == StdKlass.long_.get())
-                            yield Instances.toJavaLong(reference);
-                        if (klass == StdKlass.float_.get())
-                            yield Instances.toJavaFloat(reference);
-                        if (klass == StdKlass.double_.get())
-                            yield Instances.toJavaDouble(reference);
-                        if (klass == StdKlass.character.get())
-                            yield Instances.toJavaChar(reference);
-                        if (klass == StdKlass.boolean_.get())
-                            yield Instances.toJavaBoolean(reference);
-                        if (clsInst.isList())
-                            yield formatList(clsInst, includeChildren);
-                        else if (asValue || reference instanceof ValueReference)
+                        if (asValue || reference instanceof ValueReference)
                             yield formatObject(clsInst, true, true, includeChildren);
                         else
                             yield formatObject(clsInst, true, false, false);
@@ -419,12 +396,6 @@ public class ApiService extends ApplicationStatusAware {
     private List<Object> formatArray(ArrayInstance arrayInstance, boolean asValue, boolean excludingChildren) {
         var list = new ArrayList<>();
         arrayInstance.forEach(e -> list.add(formatValue(e, asValue, excludingChildren)));
-        return list;
-    }
-
-    private List<Object> formatList(ClassInstance instance, boolean excludingChildren) {
-        var list = new ArrayList<>();
-        Instances.toJavaList(instance).forEach(e -> list.add(formatValue(e, false, excludingChildren)));
         return list;
     }
 
@@ -539,56 +510,6 @@ public class ApiService extends ApplicationStatusAware {
                         yield ValueResolutionResult.of(Instances.stringInstance(s));
                     yield ValueResolutionResult.failed;
                 }
-                case Long l->  {
-                    if (classType.isAssignableFrom(StdKlass.long_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedLongInstance(l));
-                    else if (classType.isAssignableFrom(StdKlass.double_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(l));
-                    else if (classType.isAssignableFrom(StdKlass.float_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedFloatInstance(l));
-                    else
-                        yield ValueResolutionResult.failed;
-                }
-                case Double d->  {
-                  if (classType.isAssignableFrom(StdKlass.double_.type()))
-                      yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(d));
-                  else if (classType.isAssignableFrom(StdKlass.float_.type()))
-                      yield ValueResolutionResult.of(Instances.wrappedFloatInstance(d.floatValue()));
-                  else
-                      yield ValueResolutionResult.failed;
-                }
-                case Integer i->  {
-                    if (classType.isAssignableFrom(StdKlass.byte_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedByteInstance(i.byteValue()));
-                    else if (classType.isAssignableFrom(StdKlass.short_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedShortInstance(i.shortValue()));
-                    else if (classType.isAssignableFrom(StdKlass.integer.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedIntInstance(i));
-                    else if (classType.isAssignableFrom(StdKlass.long_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedLongInstance(i));
-                    else if (classType.isAssignableFrom(StdKlass.float_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedFloatInstance(i));
-                    else if (classType.isAssignableFrom(StdKlass.double_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(i));
-                    else
-                        yield ValueResolutionResult.failed;
-                }
-                case Float f->  classType.isAssignableFrom(StdKlass.float_.type()) ?
-                        ValueResolutionResult.of(Instances.wrappedFloatInstance(f)) :
-                        ValueResolutionResult.failed;
-                case Short s->  classType.isAssignableFrom(StdKlass.short_.type()) ?
-                        ValueResolutionResult.of(Instances.wrappedShortInstance(s)) :
-                        ValueResolutionResult.failed;
-                case Byte b->  classType.isAssignableFrom(StdKlass.byte_.type()) ?
-                        ValueResolutionResult.of(Instances.wrappedByteInstance(b)) :
-                        ValueResolutionResult.failed;
-                case Character c->  classType.isAssignableFrom(StdKlass.character.type()) ?
-                        ValueResolutionResult.of(Instances.wrappedCharInstance(c)) :
-                        ValueResolutionResult.failed;
-                case Boolean z->  classType.isAssignableFrom(StdKlass.boolean_.type()) ?
-                        ValueResolutionResult.of(Instances.wrappedBooleanInstance(z)) :
-                        ValueResolutionResult.failed;
-                case List<?> list -> tryResolveList(list, classType, currentValue, context);
                 //noinspection rawtypes
                 case Map map -> tryResolveObject(map, classType, null, asValue, context);
                 case null, default -> ValueResolutionResult.failed;
@@ -666,7 +587,7 @@ public class ApiService extends ApplicationStatusAware {
             return ValueResolutionResult.of(bean.getReference());
         }
         if (actualType == null)
-            throw invalidRequestBody("type not specified for object '" + Utils.toJSONString(map) + "'");
+            throw invalidRequestBody("type not specified for object '" + Jsonk.toJson(map) + "'");
         var instance = saveObject(map, actualType, parent, context);
         return instance != null ? ValueResolutionResult.of(instance.getReference()) : ValueResolutionResult.failed;
     }
@@ -708,42 +629,6 @@ public class ApiService extends ApplicationStatusAware {
             return ValueResolutionResult.failed;
     }
 
-    private ValueResolutionResult tryResolveList(List<?> list, ClassType type, @Nullable Value currentValue, IInstanceContext context) {
-        ArrayListNative listNative;
-        if (currentValue != null && currentValue.isObject() && type.isInstance(currentValue)) {
-            listNative = Instances.getListNative(currentValue.resolveObject());
-            listNative.clear();
-        } else {
-            ClassType concreteType;
-            if (type.isInterface() || type.isAbstract()) {
-                var iterableType = type.asSuper(StdKlass.iterable.get());
-                if (iterableType != null) {
-                    var elementType = iterableType.getTypeArguments().getFirst().getUpperBound2();
-                    concreteType = KlassType.create(StdKlass.arrayList.get(), List.of(elementType));
-                    if (!type.isAssignableFrom(concreteType))
-                        return ValueResolutionResult.failed;
-                } else
-                    return ValueResolutionResult.failed;
-            } else if (type.isList())
-                concreteType = type;
-            else
-                return ValueResolutionResult.failed;
-            listNative = Instances.getListNative(Instances.newList(concreteType));
-        }
-        var elements = new ArrayList<Value>();
-        var actualType = listNative.getInstance().getInstanceType();
-        var elementType = actualType.getFirstTypeArgument();
-        for (Object o : list) {
-            var r = tryResolveValue(o, elementType, false, null, context);
-            if (r.successful())
-                elements.add(r.resolved());
-            else
-                return ValueResolutionResult.failed;
-        }
-        elements.forEach(listNative::add);
-        return ValueResolutionResult.of(listNative.getInstance().getReference());
-    }
-
     private ValueResolutionResult tryResolveReference(String stringId, Type type, IInstanceContext context) {
             var id = Id.parse(stringId);
             var inst = Objects.requireNonNull(context.get(id), () -> "Instance not found for ID: " + id);
@@ -756,27 +641,27 @@ public class ApiService extends ApplicationStatusAware {
         if (rawValue instanceof String str)
             return Instances.stringInstance(str);
         if(rawValue instanceof Character c)
-            return Instances.wrappedCharInstance(c);
+            return Instances.charInstance(c);
         if(ValueUtils.isLong(rawValue))
-            return Instances.wrappedLongInstance(((Number) rawValue).longValue());
+            return Instances.longInstance(((Number) rawValue).longValue());
         if (ValueUtils.isInteger(rawValue))
-            return Instances.wrappedIntInstance(((Number) rawValue).intValue());
+            return Instances.intInstance(((Number) rawValue).intValue());
         if (ValueUtils.isDouble(rawValue))
-            return Instances.wrappedDoubleInstance(((Number) rawValue).doubleValue());
+            return Instances.doubleInstance(((Number) rawValue).doubleValue());
         if (ValueUtils.isFloat(rawValue))
-            return Instances.wrappedFloatInstance(((Number) rawValue).floatValue());
+            return Instances.floatInstance(((Number) rawValue).floatValue());
         if (rawValue instanceof Boolean b)
-            return Instances.wrappedBooleanInstance(b);
+            return Instances.booleanInstance(b);
         if (rawValue instanceof Map<?,?> map) {
             var r = tryResolveObject(map, Types.getAnyType(), null, asValue, context);
             if (r.successful) return r.resolved;
         }
         if (rawValue instanceof List<?> list) {
-            var listType = KlassType.create(StdKlass.arrayList.get(), List.of(Types.getAnyType()));
-            return Instances.createList(listType,
+            var arrayType = Types.getArrayType(Types.getAnyType());
+            return Instances.createArray(arrayType,
                     Utils.map(list, e -> resolveAny(e, false, context))).getReference();
         }
-        throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, Utils.toJSONString(rawValue));
+        throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, Jsonk.toJson(rawValue));
     }
 
     private ClassInstance createObject(Map<String, Object> map, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
@@ -785,14 +670,14 @@ public class ApiService extends ApplicationStatusAware {
         var id = parent != null ? parent.nextChildId() : context.allocateRootId(actualType);
         //noinspection rawtypes
         if (!(map.get(KEY_FIELDS) instanceof Map fields))
-            throw invalidRequestBody("incorrect object '" + Utils.toJSONString(map) + "'");
+            throw invalidRequestBody("incorrect object '" + Jsonk.toJson(map) + "'");
         var r = resolveConstructor(actualType, fields, context);
         var self = ClassInstance.allocate(id, actualType, parent);
         var result = Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context);
         context.bind(self);
         if (result.exception() != null)
             throw new InternalException("Failed to instantiate " + type.getTypeDesc() + " with value " + map
-                    + ": " + ThrowableNative.getMessage(result.exception()));
+                    + ": " + ExceptionNative.getMessage(result.exception()));
         //noinspection unchecked
         var children = (Map<String, Object>) map.getOrDefault(KEY_CHILDREN, Map.of());
         saveChildren(children, self, List.of(), context);

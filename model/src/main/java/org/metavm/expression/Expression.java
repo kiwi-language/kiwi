@@ -3,12 +3,13 @@ package org.metavm.expression;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.api.ValueObject;
+import org.metavm.wire.Wire;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.*;
+import org.metavm.wire.SubType;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.InternalException;
 import org.metavm.util.MvInput;
@@ -19,16 +20,33 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+@Wire(subTypes = {
+        @SubType(value = 1, type = ExpressionPlaceholder.class),
+        @SubType(value = 2, type = StaticPropertyExpression.class),
+        @SubType(value = 3, type = FunctionExpression.class),
+        @SubType(value = 4, type = ThisExpression.class),
+        @SubType(value = 5, type = ConditionalExpression.class),
+        @SubType(value = 6, type = InstanceOfExpression.class),
+        @SubType(value = 8, type = VariablePathExpression.class),
+        @SubType(value = 9, type = BinaryExpression.class),
+        @SubType(value = 10, type = PropertyExpression.class),
+        @SubType(value = 11, type = ArrayAccessExpression.class),
+        @SubType(value = 12, type = ConstantExpression.class),
+        @SubType(value = 14, type = NeverExpression.class),
+        @SubType(value = 15, type = UnaryExpression.class),
+        @SubType(value = 16, type = NodeExpression.class),
+        @SubType(value = 18, type = AsExpression.class),
+        @SubType(value = 19, type = VariableExpression.class),
+        @SubType(value = 20, type = ArrayExpression.class)
+})
 @Entity
 public abstract class Expression implements ValueObject, Element {
 
-    protected static final int TYPE_AllMatchExpression = 0;
     protected static final int TYPE_ArrayAccessExpression = 1;
     protected static final int TYPE_ArrayExpression = 2;
     protected static final int TYPE_FunctionExpression = 3;
     protected static final int TYPE_PropertyExpression = 4;
     protected static final int TYPE_InstanceOfExpression = 5;
-    protected static final int TYPE_CursorExpression = 6;
     protected static final int TYPE_UnaryExpression = 7;
     protected static final int TYPE_AsExpression = 8;
     protected static final int TYPE_ExpressionPlaceholder = 9;
@@ -38,10 +56,8 @@ public abstract class Expression implements ValueObject, Element {
     protected static final int TYPE_ConditionalExpression = 13;
     protected static final int TYPE_ThisExpression = 14;
     protected static final int TYPE_NodeExpression = 15;
-    protected static final int TYPE_TypeLiteralExpression = 16;
     protected static final int TYPE_BinaryExpression = 17;
     protected static final int TYPE_VariablePathExpression = 18;
-    protected static final int TYPE_MethodExpression = 19;
     protected static final int TYPE_VariableExpression = 20;
 
     @Generated
@@ -50,7 +66,6 @@ public abstract class Expression implements ValueObject, Element {
         return switch (type) {
             case TYPE_StaticPropertyExpression -> StaticPropertyExpression.read(input);
             case TYPE_VariablePathExpression -> VariablePathExpression.read(input);
-            case TYPE_TypeLiteralExpression -> TypeLiteralExpression.read(input);
             case TYPE_ExpressionPlaceholder -> ExpressionPlaceholder.read(input);
             case TYPE_ConditionalExpression -> ConditionalExpression.read(input);
             case TYPE_ArrayAccessExpression -> ArrayAccessExpression.read(input);
@@ -59,9 +74,6 @@ public abstract class Expression implements ValueObject, Element {
             case TYPE_PropertyExpression -> PropertyExpression.read(input);
             case TYPE_FunctionExpression -> FunctionExpression.read(input);
             case TYPE_ConstantExpression -> ConstantExpression.read(input);
-            case TYPE_AllMatchExpression -> AllMatchExpression.read(input);
-            case TYPE_MethodExpression -> MethodExpression.read(input);
-            case TYPE_CursorExpression -> CursorExpression.read(input);
             case TYPE_BinaryExpression -> BinaryExpression.read(input);
             case TYPE_UnaryExpression -> UnaryExpression.read(input);
             case TYPE_NeverExpression -> NeverExpression.read(input);
@@ -79,7 +91,6 @@ public abstract class Expression implements ValueObject, Element {
         switch (type) {
             case TYPE_StaticPropertyExpression -> StaticPropertyExpression.visit(visitor);
             case TYPE_VariablePathExpression -> VariablePathExpression.visit(visitor);
-            case TYPE_TypeLiteralExpression -> TypeLiteralExpression.visit(visitor);
             case TYPE_ExpressionPlaceholder -> ExpressionPlaceholder.visit(visitor);
             case TYPE_ConditionalExpression -> ConditionalExpression.visit(visitor);
             case TYPE_ArrayAccessExpression -> ArrayAccessExpression.visit(visitor);
@@ -88,9 +99,6 @@ public abstract class Expression implements ValueObject, Element {
             case TYPE_PropertyExpression -> PropertyExpression.visit(visitor);
             case TYPE_FunctionExpression -> FunctionExpression.visit(visitor);
             case TYPE_ConstantExpression -> ConstantExpression.visit(visitor);
-            case TYPE_AllMatchExpression -> AllMatchExpression.visit(visitor);
-            case TYPE_MethodExpression -> MethodExpression.visit(visitor);
-            case TYPE_CursorExpression -> CursorExpression.visit(visitor);
             case TYPE_BinaryExpression -> BinaryExpression.visit(visitor);
             case TYPE_UnaryExpression -> UnaryExpression.visit(visitor);
             case TYPE_NeverExpression -> NeverExpression.visit(visitor);
@@ -180,10 +188,6 @@ public abstract class Expression implements ValueObject, Element {
 
     protected abstract Value evaluateSelf(EvaluationContext context);
 
-//    public Expression simplify() {
-//        return substituteChildren(NncUtils.map(getChildren(), Expression::simplify));
-//    }
-
     protected <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
         return List.of();
     }
@@ -195,22 +199,20 @@ public abstract class Expression implements ValueObject, Element {
     public void forEachReference(Consumer<Reference> action) {
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
     }
 
-    public java.util.Map<String, Object> toJson() {
-        var map = new java.util.HashMap<String, Object>();
-        buildJson(map);
-        return map;
+    public abstract Expression transform(ExpressionTransformer transformer);
+
+    public Expression copy() {
+        return transform(new ExpressionTransformer() {
+
+            @Override
+            public Expression visitExpression(Expression expression) {
+                return expression.copy();
+            }
+        });
     }
+
 }

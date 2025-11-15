@@ -6,7 +6,6 @@ import org.metavm.ddl.CommitService;
 import org.metavm.ddl.DeployService;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.ChangeLogManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.core.Id;
@@ -22,9 +21,7 @@ import org.metavm.system.MemoryBlockRepository;
 import org.metavm.task.*;
 import org.metavm.user.PlatformUser;
 
-import java.lang.reflect.Field;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 public class BootstrapUtils {
@@ -34,7 +31,7 @@ public class BootstrapUtils {
     public static BootstrapResult bootstrap() {
         ContextUtil.resetProfiler();
         if (state == null)
-            createState(new MemAllocatorStore(), new MemColumnStore(), new MemTypeTagStore(), Set.of(), Set.of());
+            createState(new MemAllocatorStore(), new MemTypeTagStore());
         return fromState();
     }
 
@@ -56,8 +53,7 @@ public class BootstrapUtils {
         );
         entityContextFactory.setDefContext(defContext);
         var changeLogManager = new ChangeLogManager(entityContextFactory);
-        var taskManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
-        new MockEventQueue();
+        var taskManager = new TaskManager(entityContextFactory);
         createPlatformApp(entityContextFactory);
         var userId = createApp(entityContextFactory, mapperRegistry, instanceSearchService);
         var transactionOps = new MockTransactionOperations();
@@ -71,7 +67,6 @@ public class BootstrapUtils {
                 idProvider,
                 instanceSearchService,
                 state.allocatorStore(),
-                state.columnStore(),
                 state.stdIdStore(),
                 state.typeTagStore(),
                 metaContextCache,
@@ -88,10 +83,7 @@ public class BootstrapUtils {
     }
 
     public static void createState(MemAllocatorStore allocatorStore,
-                                              MemColumnStore columnStore,
-                                              MemTypeTagStore typeTagStore,
-                                              Set<Class<?>> classBlacklist,
-                                              Set<Field> fieldBlacklist) {
+                                              MemTypeTagStore typeTagStore) {
         generateIds(allocatorStore);
         StdFunction.setEmailSender(MockEmailSender.INSTANCE);
         var blockRepository = new MemoryBlockRepository();
@@ -108,18 +100,13 @@ public class BootstrapUtils {
         var stdIdStore = new MemoryStdIdStore();
         var bootstrap = new Bootstrap(
                 entityContextFactory,
-                new StdAllocators(allocatorStore),
-                columnStore,
-                typeTagStore
+                new StdAllocators(allocatorStore)
         );
-        bootstrap.setClassBlacklist(classBlacklist);
-        bootstrap.setFieldBlacklist(fieldBlacklist);
         bootstrap.boot();
-        var defContext = copyDefContext(entityContextFactory, idProvider, (SystemDefContext) ModelDefRegistry.getDefContext());
+        var defContext = copyDefContext((SystemDefContext) ModelDefRegistry.getDefContext());
         state = new BootState(
                 defContext,
                 blockRepository.copy(),
-                columnStore.copy(),
                 typeTagStore.copy(),
                 stdIdStore.copy(),
                 allocatorStore.copy(),
@@ -131,7 +118,7 @@ public class BootstrapUtils {
     private static void createPlatformApp(EntityContextFactory entityContextFactory) {
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                var platformUser = new PlatformUser(platformContext.allocateRootId(), "platform", UUID.randomUUID().toString(), "platform", List.of());;
+                var platformUser = new PlatformUser(platformContext.allocateRootId(), "platform", UUID.randomUUID().toString(), "platform", List.of());
                 platformContext.bind(platformUser);
                 platformContext.bind(new Application(PhysicalId.of(Constants.PLATFORM_APP_ID, 0), "platform", platformUser));
                 platformContext.finish();
@@ -177,23 +164,8 @@ public class BootstrapUtils {
         stdAllocators.save();
     }
 
-    private static SystemDefContext copyDefContext(EntityContextFactory entityContextFactory, EntityIdProvider idProvider, SystemDefContext sysDefContext) {
-//        var bridge = new EntityInstanceContextBridge();
-//        var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
-//                ROOT_APP_ID, false, null, null,
-//                new DefaultIdInitializer(idProvider), bridge, null, null, null, false,
-//                builder -> builder.timeout(0L).typeDefProvider(sysDefContext)
-//        );
-//        var defContext = new ReversedDefContext(standardInstanceContext, sysDefContext);
-//        bridge.setEntityContext(defContext);
-//        defContext.initializeFrom(sysDefContext);
-//        ModelDefRegistry.setDefContext(defContext);
-//        return defContext;
+    private static SystemDefContext copyDefContext(SystemDefContext sysDefContext) {
         return sysDefContext;
-    }
-
-    public static void clearState() {
-        state = null;
     }
 
 }

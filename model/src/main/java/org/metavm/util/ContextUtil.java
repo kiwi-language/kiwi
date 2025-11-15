@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -22,8 +23,10 @@ public class ContextUtil {
         // Add randomness to challenge unit tests
         long nextTmpId = Utils.randomInt(1000000);
         String token;
+        String requestURI;
         private Profiler profiler = new Profiler();
         private final Map<String, Value> userData = new HashMap<>();
+        @Getter
         private IInstanceContext context;
         private int contextFinishCount;
         private final List<String> finishedContexts = new ArrayList<>();
@@ -77,10 +80,6 @@ public class ContextUtil {
             return userData.getOrDefault(key, Instances.nullInstance());
         }
 
-        public IInstanceContext getContext() {
-            return context;
-        }
-
         public void resetProfiler() {
             profiler = new Profiler();
         }
@@ -123,6 +122,14 @@ public class ContextUtil {
 
     public static void setClientId(String clientId) {
         getContextInfo().clientId = clientId;
+    }
+
+    public static void setRequestUri(String uri) {
+        getContextInfo().requestURI = uri;
+    }
+
+    public static String getRequestURI() {
+        return getContextInfo().requestURI;
     }
 
     public static boolean isLoggedIn() {

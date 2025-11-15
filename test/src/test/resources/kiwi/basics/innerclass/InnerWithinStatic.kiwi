@@ -1,8 +1,5 @@
 package innerclass
 
-import java.util.Iterator
-import java.util.NoSuchElementException
-
 abstract class InnerWithinStatic<E> {
 
     abstract fn iterator() -> Iterator<E>
@@ -24,7 +21,7 @@ abstract class InnerWithinStatic<E> {
             }
 
             fn next() -> E {
-                throw NoSuchElementException()
+                throw Exception()
             }
 
         }
@@ -33,3 +30,10 @@ abstract class InnerWithinStatic<E> {
 
 }
 
+interface Iterator<E> {
+
+    fn next() -> E
+
+    fn hasNext() -> bool
+
+}

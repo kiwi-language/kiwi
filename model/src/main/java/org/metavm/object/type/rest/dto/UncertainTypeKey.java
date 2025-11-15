@@ -1,10 +1,10 @@
 package org.metavm.object.type.rest.dto;
 
-import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.type.UncertainType;
+import org.jsonk.Json;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
+@Json
 public record UncertainTypeKey(TypeKey lowerBoundKey, TypeKey upperBoundKey) implements TypeKey {
     @Override
     public void write(MvOutput output) {
@@ -16,11 +16,6 @@ public record UncertainTypeKey(TypeKey lowerBoundKey, TypeKey upperBoundKey) imp
     @Override
     public String toTypeExpression() {
         return "[" + lowerBoundKey.toTypeExpression() + "," + upperBoundKey.toTypeExpression() + "]";
-    }
-
-    @Override
-    public UncertainType toType(TypeDefProvider typeDefProvider) {
-        return new UncertainType(lowerBoundKey.toType(typeDefProvider), upperBoundKey.toType(typeDefProvider));
     }
 
     @Override

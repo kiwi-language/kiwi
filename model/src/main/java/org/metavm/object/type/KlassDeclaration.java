@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import org.metavm.api.Entity;
 import org.metavm.api.JsonIgnore;
 import org.metavm.entity.GenericDeclaration;
 import org.metavm.util.Utils;
@@ -7,6 +8,7 @@ import org.metavm.util.Utils;
 import java.util.List;
 import java.util.function.Consumer;
 
+@Entity
 public interface KlassDeclaration extends GenericDeclaration {
 
     @JsonIgnore

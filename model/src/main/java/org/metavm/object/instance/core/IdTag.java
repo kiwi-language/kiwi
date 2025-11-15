@@ -19,10 +19,6 @@ public enum IdTag {
         return code;
     }
 
-    public int maskedCode(boolean isArray) {
-        return code | (isArray ? 0x80 : 0);
-    }
-
     public static IdTag fromCode(int code) {
         return Utils.findRequired(values(), v -> v.code == code, () -> "Can not find IdTag for code: " + code);
     }

@@ -1,13 +1,13 @@
 package org.metavm.object.type.rest.dto;
 
-import org.metavm.object.type.IntersectionType;
-import org.metavm.object.type.TypeDefProvider;
+import org.jsonk.Json;
 import org.metavm.util.MvOutput;
 import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 import java.util.Set;
 
+@Json
 public record IntersectionTypeKey(Set<TypeKey> typeKeys) implements TypeKey {
     @Override
     public void write(MvOutput output) {
@@ -19,11 +19,6 @@ public record IntersectionTypeKey(Set<TypeKey> typeKeys) implements TypeKey {
     @Override
     public String toTypeExpression() {
         return Utils.join(typeKeys, TypeKey::toTypeExpression, "&");
-    }
-
-    @Override
-    public IntersectionType toType(TypeDefProvider typeDefProvider) {
-        return new IntersectionType(Utils.mapToSet(typeKeys, k -> k.toType(typeDefProvider)));
     }
 
     @Override

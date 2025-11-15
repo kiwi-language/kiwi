@@ -8,9 +8,8 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.metavm.context.Bean;
+import org.metavm.context.Configuration;
 
 @Slf4j
 @Configuration
@@ -22,7 +21,7 @@ public class ElasticSearchConfig {
     }
 
     @Bean
-    public RestHighLevelClient restHighLevelClient() {
+    public RestClient restClient() {
         var esConfig = kiwiConfig.getEsConfig();
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         if (esConfig.user() != null) {
@@ -32,7 +31,7 @@ public class ElasticSearchConfig {
         RestClientBuilder builder = RestClient.builder(new HttpHost(esConfig.host(), esConfig.port()))
                 .setHttpClientConfigCallback(b -> b.setDefaultCredentialsProvider(credentialsProvider));
 
-        return new RestHighLevelClient(builder);
+        return builder.build();
     }
 
 }

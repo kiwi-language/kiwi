@@ -1,34 +1,28 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
-import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.api.ValueObject;
-import org.metavm.entity.BuildKeyContext;
-import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.LocalKey;
-import org.metavm.entity.Struct;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.entity.*;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
+import org.metavm.wire.*;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.Consumer;
 
-//@NativeEntity(6)
-//@Entity
-public class StaticFieldTableEntry implements LocalKey, Struct {
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
-    private StaticFieldTable table;
+@Wire
+public class StaticFieldTableEntry implements LocalKey, Struct, ValueObject {
+    @Parent
+    private final StaticFieldTable table;
     private Reference fieldReference;
+    @Setter
+    @Getter
     private Value value;
 
     public StaticFieldTableEntry(StaticFieldTable table) {
@@ -39,12 +33,6 @@ public class StaticFieldTableEntry implements LocalKey, Struct {
         this.table = table;
         this.fieldReference = field.getReference();
         this.value = value;
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitValue();
-        visitor.visitValue();
     }
 
     @Generated
@@ -63,14 +51,6 @@ public class StaticFieldTableEntry implements LocalKey, Struct {
 
     public Field getField() {
         return (Field) fieldReference.get();
-    }
-
-    public Value getValue() {
-        return value;
-    }
-
-    public void setValue(Value value) {
-        this.value = value;
     }
 
     @Override

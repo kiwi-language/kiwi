@@ -3,9 +3,12 @@ package org.metavm.entity;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.*;
-import org.metavm.util.MvInput;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 import org.metavm.util.Utils;
+import org.metavm.wire.*;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -14,16 +17,39 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
-public abstract class Entity extends BaseInstance implements IdInitializing, BindAware, NativeObject {
+@Wire
+public abstract class Entity implements Instance, IdInitializing, BindAware, NativeObject {
 
     private transient Entity root;
+    private final Id id;
     private int refcount;
+    private transient InstanceState state;
 
     public Entity(@NotNull Id id) {
-        super(id, 0,0 , false, true);
+        this.id = id;
+        state = new InstanceState(id, 0, 0, false, true, this);
     }
 
-    @NoProxy
+    /** @noinspection unused*/
+    private void onRead() {
+        state = new InstanceState(id, 0, 0, false, false, this);
+    }
+
+    public void initState(Id id, long version ,long syncVersion, boolean ephemeral, boolean isNew) {
+        state = new InstanceState(id, version, syncVersion, ephemeral, isNew, this);
+    }
+
+    /** @noinspection unused*/
+    protected static void __visit__(WireVisitor visitor, WireAdapter<Id> idAdapter) {
+        var streamVisitor = (StreamVisitor) visitor;
+        streamVisitor.visitEntityHead();
+    }
+
+    @Override
+    public final InstanceState state() {
+        return state;
+    }
+
     public boolean idEquals(Id id) {
         return Objects.equals(state.id, id);
     }
@@ -38,7 +64,6 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Bin
 
     @Nullable
     @Override
-    @NoProxy
     public Id tryGetId() {
         return state.id;
     }
@@ -47,7 +72,6 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Bin
         return Utils.safeCall(getEntityId(), Id::toString);
     }
 
-    @NoProxy
     public final EntityKey key() {
         if (state.id == null) {
             return null;
@@ -70,7 +94,6 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Bin
     }
 
 
-    @NoProxy
     public final boolean isIdNull() {
         return state.id == null;
     }
@@ -93,26 +116,8 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Bin
 
     @Override
     public final void write(MvOutput output) {
-        output.writeId(getId());
-        output.writeInt(refcount);
-        writeBody(output);
+        output.writeEntity(this);
     }
-
-    public final void read(MvInput input, Entity parent) {
-        initState(input.readId(), 0, 0, false, false);
-        readHeadAndBody(input, parent);
-    }
-
-    public final void readHeadAndBody(MvInput input, Entity parent) {
-        refcount = input.readInt();
-        readBody(input, parent);
-    }
-
-    protected abstract void writeBody(MvOutput output);
-
-    protected abstract void readBody(MvInput input, Entity parent);
-
-    public abstract int getEntityTag();
 
     @Override
     public String getTitle() {
@@ -123,7 +128,7 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Bin
     public void writeTo(MvOutput output) {
         output.write(TreeTags.ENTITY);
         output.writeLong(getVersion());
-        output.writeLong(state.id.getTreeId());
+        output.writeLong(Objects.requireNonNull(state.id).getTreeId());
         output.writeLong(getNextNodeId());
         output.writeEntity(this);
     }
@@ -158,21 +163,14 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Bin
         return root = root.getRoot();
     }
 
-    public Map<String, Object> toJson() {
-        var map = new HashMap<String, Object>();
-        buildJson(map);
-        return map;
-    }
-
-    protected abstract void buildJson(Map<String, Object> map);
-
     public Map<String, Value> buildSource() {
         var source = new HashMap<String, Value>();
         buildSource(source);
         return source;
     }
 
-    protected abstract void buildSource(Map<String, Value> source);
+    protected void buildSource(Map<String, Value> source) {
+    }
 
     @Override
     public String getText() {
@@ -198,5 +196,22 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Bin
     @Override
     public int getRefcount() {
         return refcount;
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    // Forbid overriding by mistake
+    @Override
+    public final void setVersion(long version) {
+        state().setVersion(version);
+
     }
 }
