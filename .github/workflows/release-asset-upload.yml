@@ -9,27 +9,44 @@ permissions:
 
 jobs:
   build-and-upload:
-    runs-on: ubuntu-latest
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset_name: kiwi-linux-amd64.zip
+          - os: macos-latest
+            # macos-latest is currently Apple Silicon (M1/M2/ARM64)
+            asset_name: kiwi-macos-aarch64.zip
+          - os: windows-latest
+            asset_name: kiwi-windows-amd64.zip
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
         with:
           java-version: '21'
-          distribution: 'temurin'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           cache: 'maven'
 
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml
+      - name: Build Native Image with Maven
+        # Builds using the 'native' profile
+        run: mvn -B -Pnative package --file pom.xml
+
+      - name: Rename Release Asset
+        shell: bash
+        run: |
+          # We use bash shell on all platforms (including Windows) to ensure 'mv' works consistently
+          mv ./dist/target/kiwi.zip ${{ matrix.asset_name }}
 
       - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./dist/target/kiwi.zip
-          asset_name: kiwi.zip
-          asset_content_type: application/zip
+          files: ${{ matrix.asset_name }}
