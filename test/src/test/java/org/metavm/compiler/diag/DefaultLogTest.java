@@ -35,7 +35,7 @@ public class DefaultLogTest extends TestCase {
                                 var name: string
                                                 ^
                         """,
-                bout.toString());
+                bout.toString().replace(System.lineSeparator(), "\n"));
     }
 
     private record MockSourceFile(String source) implements SourceFile {
