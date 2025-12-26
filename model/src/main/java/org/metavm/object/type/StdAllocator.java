@@ -1,11 +1,10 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.TypeParser;
 
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,13 +16,15 @@ public class StdAllocator {
     public static final String TYPE_CODE_PROP_KEY = "$typeCode";
 
     private final AllocatorStore store;
+    @Getter
     private final String fileName;
     private final Map<String, Id> name2id = new LinkedHashMap<>();
     private final Map<Id, String> id2name = new LinkedHashMap<>();
     private final Map<String, Long> code2nextNodeId = new HashMap<>();
-    private final Type javaType;
+    @Getter
+    private final String javaType;
 
-    public StdAllocator(AllocatorStore store, String fileName, Type javaType) {
+    public StdAllocator(AllocatorStore store, String fileName, String javaType) {
         this.store = store;
         this.fileName = fileName;
         this.javaType = javaType;
@@ -32,7 +33,7 @@ public class StdAllocator {
     public StdAllocator(AllocatorStore store, String fileName) {
         this.store = store;
         Properties properties = store.load(fileName);
-        javaType = TypeParser.parse(properties.getProperty(TYPE_CODE_PROP_KEY));
+        javaType = properties.getProperty(TYPE_CODE_PROP_KEY);
         this.fileName = fileName;
         for (String name : properties.stringPropertyNames()) {
             if(!name.startsWith(SYSTEM_PROP_PREFIX)) {
@@ -62,30 +63,22 @@ public class StdAllocator {
     }
 
     public void buildIdMap(Map<String, Id> ids) {
-        name2id.forEach((code, id) -> ids.put(javaType.getTypeName() + "." + code, id));
+        name2id.forEach((code, id) -> ids.put(javaType + "." + code, id));
     }
 
     public boolean contains(Id id) {
         return id2name.containsKey(id);
     }
 
-    public Type getJavaType() {
-        return javaType;
-    }
-
     public void save() {
         Properties properties = new Properties();
-        properties.put(TYPE_CODE_PROP_KEY, javaType.getTypeName());
+        properties.put(TYPE_CODE_PROP_KEY, javaType);
         name2id.forEach((code, id) -> {
             var nextNodeId = code2nextNodeId.get(code);
             var idStr = nextNodeId == null ? id.toString() : id.toString() + ":" + nextNodeId;
             properties.put(code, idStr);
         });
         store.save(fileName, properties);
-    }
-
-    public String getFileName() {
-        return fileName;
     }
 
     public void putId(@NotNull String name, @NotNull Id id, @Nullable Long nextNodeId) {

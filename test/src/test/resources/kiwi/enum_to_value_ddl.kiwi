@@ -1,25 +1,7 @@
 class Product(
     var name: string,
     var kind: ProductKind
-) {
-
-    fn getName() -> string {
-        return this.name
-    }
-
-    fn setName(name: string) {
-        this.name = name
-    }
-
-    fn getKind() -> ProductKind {
-        return this.kind
-    }
-
-    fn setKind(kind: ProductKind) {
-        this.kind = kind
-    }
-
-}
+)
 
 enum ProductKind(val code: int) {
 
@@ -28,8 +10,4 @@ enum ProductKind(val code: int) {
     HOTEL(2)
 
 ;
-    fn getCode() -> int {
-        return this.code
-    }
-
 }

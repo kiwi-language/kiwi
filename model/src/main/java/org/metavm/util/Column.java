@@ -1,18 +1,15 @@
 package org.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
 import org.metavm.api.ValueObject;
 import org.metavm.entity.BuildKeyContext;
-import org.metavm.entity.EntityRegistry;
+import org.metavm.wire.Wire;
 import org.metavm.entity.GlobalKey;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import java.util.Map;
 import java.util.Objects;
@@ -20,6 +17,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public record Column(
         ColumnKind kind,

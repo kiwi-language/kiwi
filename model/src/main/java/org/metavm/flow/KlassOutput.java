@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.entity.SymbolRefs;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.*;

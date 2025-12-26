@@ -3,10 +3,10 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.expression.ConstantExpression;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.Type;
 import org.metavm.util.MvInput;
@@ -15,6 +15,7 @@ import org.metavm.util.StreamVisitor;
 
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public class ConstantValue extends Value {
 
@@ -59,12 +60,6 @@ public class ConstantValue extends Value {
         super.forEachReference(action);
         if (value instanceof Reference r) action.accept(r);
         else if (value instanceof org.metavm.object.instance.core.NativeValue t) t.forEachReference(action);
-    }
-
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("text", this.getText());
-        map.put("expression", this.getExpression().toJson());
     }
 
     @Generated

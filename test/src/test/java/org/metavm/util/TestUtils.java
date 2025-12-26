@@ -1,37 +1,23 @@
 package org.metavm.util;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.jsonk.Jsonk;
+import org.jsonk.Option;
 import org.metavm.ddl.CommitState;
-import org.metavm.entity.*;
-import org.metavm.event.MockEventQueue;
-import org.metavm.flow.MethodBuilder;
-import org.metavm.flow.NameAndType;
-import org.metavm.object.instance.InstanceQueryService;
-import org.metavm.object.instance.cache.LocalCache;
+import org.metavm.entity.EntityIdProvider;
+import org.metavm.entity.InstanceContextFactory;
+import org.metavm.jdbc.MockTransactionUtils;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.MapperRegistry;
 import org.metavm.object.instance.persistence.MockSchemaManager;
-import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.type.*;
 import org.metavm.task.*;
 import org.slf4j.Logger;
 
-import javax.sql.DataSource;
-import java.io.*;
-import java.lang.reflect.Field;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -47,32 +33,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TestUtils {
 
-    public static final ObjectMapper INDENT_OBJECT_MAPPER = new ObjectMapper()
-            .enable(JsonGenerator.Feature.IGNORE_UNKNOWN)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static long nextKlassTag = 1000000;
 
     private static long nextTreeId = 10000000L;
 
-    static {
-        SimpleModule module = new SimpleModule();
-        module.addSerializer(new TypeReference<Class<?>>() {
-        }.getType(), new ReflectClassSerializer());
-        module.addSerializer(Field.class, new ReflectFieldSerializer());
-        INDENT_OBJECT_MAPPER.registerModule(module);
-        INDENT_OBJECT_MAPPER.registerModule(new Jdk8Module());
-        INDENT_OBJECT_MAPPER.registerModule(new JavaTimeModule());
-        INDENT_OBJECT_MAPPER.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
-        INDENT_OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
-        INDENT_OBJECT_MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    }
-
     public static String toJSONString(Object object) {
-        try {
-            return INDENT_OBJECT_MAPPER.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
-            throw new InternalException(e);
-        }
+        return Jsonk.toJson(object, Option.create().indent());
     }
 
     private final static byte[] byteBuf = new byte[1024 * 1024];
@@ -86,75 +52,8 @@ public class TestUtils {
         }
     }
 
-    public static <T> T readJSON(Class<T> klass, String json) {
-        try {
-            return INDENT_OBJECT_MAPPER.readValue(json, klass);
-        } catch (JsonProcessingException e) {
-            throw new InternalException("Fail to read JSON '" + json + "'", e);
-        }
-    }
-
-    public static <T> T readJSON(Class<T> klass, Reader reader) {
-        try {
-            return INDENT_OBJECT_MAPPER.readValue(reader, klass);
-        } catch (IOException e) {
-            throw new InternalException("Fail to read JSON", e);
-        }
-    }
-
-    public static void printJSON(Object object) {
-        try {
-            INDENT_OBJECT_MAPPER.writeValue(System.out, object);
-        } catch (IOException e) {
-            throw new InternalException(e);
-        }
-    }
-
     public static <R> R parseJson(String jsonStr, Class<R> klass) {
-        return Utils.readJSONString(jsonStr, klass);
-    }
-
-    public static <R> R readJson(String path, Class<R> klass) {
-        try {
-            return INDENT_OBJECT_MAPPER.readValue(readEntireFile(path), klass);
-        } catch (JsonProcessingException e) {
-            throw new InternalException("JSON deserialization failed", e);
-        }
-    }
-
-    public static <R> R readJson(String path, com.fasterxml.jackson.core.type.TypeReference<R> typeRef) {
-        try {
-            return INDENT_OBJECT_MAPPER.readValue(readEntireFile(path), typeRef);
-        } catch (JsonProcessingException e) {
-            throw new InternalException("JSON deserialization failed", e);
-        }
-    }
-
-    public static String readEntireFile(String path) {
-        try (FileReader reader = new FileReader(path)) {
-            var builder = new StringBuilder();
-            var buf = new char[256];
-            while (true) {
-                int n = reader.read(buf);
-                if (n == -1)
-                    return builder.toString();
-                builder.append(buf, 0, n);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Fail to read file '" + path + "'", e);
-        }
-    }
-
-    public static void writeFile(String path, String content) {
-        try (var writer = new FileWriter(path)) {
-            writer.write(content);
-        } catch (IOException e) {
-            throw new RuntimeException("Fail to write file '" + path + "'", e);
-        }
-    }
-
-    public static void writeJson(String path, Object object) {
-        writeFile(path, toJSONString(object));
+        return Jsonk.fromJson(jsonStr, klass);
     }
 
     public static void doInTransactionWithoutResult(Runnable action) {
@@ -165,16 +64,6 @@ public class TestUtils {
         return MockTransactionUtils.doInTransaction(action);
     }
 
-    public static DataSource createDataSource() {
-        var dataSource = new HikariDataSource();
-        dataSource.setUsername("root");
-        dataSource.setPassword("85263670");
-        dataSource.setMaximumPoolSize(1);
-        dataSource.setJdbcUrl("jdbc:mysql://localhost:3306/object?allowMultiQueries=true");
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        return dataSource;
-    }
-
     public static void logJSON(Logger logger, Object object) {
         logJSON(logger, "JSON", object);
     }
@@ -183,23 +72,9 @@ public class TestUtils {
         logger.info(title + "\n" + toJSONString(object));
     }
 
-    public static EntityContextFactory getEntityContextFactory(EntityIdProvider idProvider,
-                                                               MapperRegistry mapperRegistry,
-                                                               InstanceLogService instanceLogService,
-                                                               IndexEntryMapper indexEntryMapper) {
-        var factory = new EntityContextFactory(
-                getInstanceContextFactory(idProvider, mapperRegistry)
-        );
-        factory.setInstanceLogService(instanceLogService);
-        return factory;
-    }
-
     public static InstanceContextFactory getInstanceContextFactory(EntityIdProvider idProvider,
                                                                    MapperRegistry mapperRegistry) {
-        InstanceContextFactory instanceContextFactory = new InstanceContextFactory(mapperRegistry, new MockEventQueue())
-                .setIdService(idProvider);
-        instanceContextFactory.setCache(new LocalCache());
-        return instanceContextFactory;
+        return new InstanceContextFactory(mapperRegistry).setIdService(idProvider);
     }
 
     public static void clearDirectory(File file) {
@@ -268,7 +143,6 @@ public class TestUtils {
     }
 
     public static void waitForTaskDone(Predicate<Task> predicate, long delay, int batchSize, SchedulerAndWorker schedulerAndWorker) {
-        var transactionOps = new MockTransactionOperations();
         var scheduler = schedulerAndWorker.scheduler();
         var worker = schedulerAndWorker.worker();
         waitForTaskDone(scheduler, worker, predicate, delay, batchSize);
@@ -356,26 +230,6 @@ public class TestUtils {
 
     public static KlassBuilder newKlassBuilder(Id id, String name, String qualifiedName) {
         return KlassBuilder.newBuilder(id, name, qualifiedName).tag(nextKlassTag());
-    }
-
-    public static void ensureStringKlassInitialized() {
-        if (StdKlass.string.isInitialized()) return;
-        var treeId = 100000000;
-        var klass = TestUtils.newKlassBuilder(PhysicalId.of(treeId, 0), "String", "java.lang.String")
-                .kind(ClassKind.VALUE)
-                .build();
-        StdKlass.string.set(klass);
-        klass.setType(new StringType());
-        MethodBuilder.newBuilder(klass, "equals")
-                .isNative(true)
-                .returnType(PrimitiveType.booleanType)
-                .parameters(new NameAndType("o", Types.getNullableAnyType()))
-                .build();
-        MethodBuilder.newBuilder(klass, "isEmpty")
-                .isNative(true)
-                .returnType(PrimitiveType.booleanType)
-                .build();
-        klass.resetHierarchy();
     }
 
     public static String getResourcePath(String resourcePath) {

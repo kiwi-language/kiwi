@@ -1,11 +1,9 @@
 package org.metavm.entity;
 
-import org.metavm.event.EventQueue;
-import org.metavm.object.instance.cache.Cache;
+import org.metavm.context.Autowired;
+import org.metavm.context.Component;
+import org.metavm.jdbc.TransactionStatus;
 import org.metavm.object.instance.persistence.MapperRegistry;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.concurrent.*;
 
@@ -16,10 +14,6 @@ public class InstanceContextFactory {
 
     private final MapperRegistry mapperRegistry;
 
-    private final EventQueue eventQueue;
-
-    private Cache cache;
-
     private final Executor executor = new ThreadPoolExecutor(
             16, 16, 0L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(1000),
             r -> {
@@ -29,21 +23,18 @@ public class InstanceContextFactory {
             }
     );
 
-    public InstanceContextFactory(MapperRegistry mapperRegistry, EventQueue eventQueue) {
+    public InstanceContextFactory(MapperRegistry mapperRegistry) {
         this.mapperRegistry = mapperRegistry;
-        this.eventQueue = eventQueue;
     }
 
     private boolean isReadonlyTransaction() {
-        return !TransactionSynchronizationManager.isActualTransactionActive()
-                || TransactionSynchronizationManager.isCurrentTransactionReadOnly();
+        return !TransactionStatus.isTransactionActive()
+                || TransactionStatus.isTransactionReadonly();
     }
 
     public InstanceContextBuilder newBuilder(long appId) {
         return InstanceContextBuilder.newBuilder(appId, mapperRegistry, new DefaultIdInitializer(idService))
                 .executor(executor)
-                .eventQueue(eventQueue)
-                .cache(cache)
                 .readonly(isReadonlyTransaction());
     }
 
@@ -51,11 +42,6 @@ public class InstanceContextFactory {
     public InstanceContextFactory setIdService(EntityIdProvider idService) {
         this.idService = idService;
         return this;
-    }
-
-    @Autowired
-    public void setCache(Cache cache) {
-        this.cache = cache;
     }
 
 }

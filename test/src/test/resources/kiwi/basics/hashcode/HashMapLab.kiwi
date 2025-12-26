@@ -2,7 +2,6 @@ package hashcode
 
 import java.util.HashMap
 import java.util.HashSet
-import java.util.List
 import java.util.Map
 
 @Bean
@@ -26,31 +25,31 @@ class HashMapLab {
         return map.get(HashCodeBaz(name, extra))
     }
 
-    fn listPut(elements: List<any>, value: any) {
+    fn listPut(elements: any[], value: any) {
         map.put(elements, value)
     }
 
-    fn listGet(elements: List<any>) -> any? {
+    fn listGet(elements: any[]) -> any? {
         return map.get(elements)
     }
 
-    fn setPut(elements: List<any>, value: any) {
+    fn setPut(elements: any[], value: any) {
         map.put(HashSet<any>(elements), value)
     }
 
-    fn setGet(elements: List<any>) -> any {
+    fn setGet(elements: any[]) -> any {
         return map.get(HashSet<any>(elements))
     }
 
-    fn mapPut(entries: List<MapEntry>, value: any) {
+    fn mapPut(entries: MapEntry[], value: any) {
         map.put(createMap(entries), value)
     }
 
-    fn mapGet(entries: List<MapEntry>) -> any {
+    fn mapGet(entries: MapEntry[]) -> any {
         return map.get(createMap(entries))
     }
 
-    priv fn createMap(entries: List<MapEntry>) -> Map<any, any> {
+    priv fn createMap(entries: MapEntry[]) -> Map<any, any> {
         var m = HashMap<any, any>()
         var i: int = 0
         var list = entries

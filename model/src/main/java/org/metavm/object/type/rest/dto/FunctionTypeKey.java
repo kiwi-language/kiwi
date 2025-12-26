@@ -1,13 +1,13 @@
 package org.metavm.object.type.rest.dto;
 
-import org.metavm.object.type.FunctionType;
-import org.metavm.object.type.TypeDefProvider;
+import org.jsonk.Json;
 import org.metavm.util.MvOutput;
 import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 import java.util.List;
 
+@Json
 public record FunctionTypeKey(List<TypeKey> parameterTypeKeys, TypeKey returnTypeKey) implements TypeKey {
     @Override
     public void write(MvOutput output) {
@@ -20,11 +20,6 @@ public record FunctionTypeKey(List<TypeKey> parameterTypeKeys, TypeKey returnTyp
     @Override
     public String toTypeExpression() {
         return "(" + Utils.join(parameterTypeKeys, TypeKey::toTypeExpression) + ")->" + returnTypeKey.toTypeExpression();
-    }
-
-    @Override
-    public FunctionType toType(TypeDefProvider typeDefProvider) {
-        return new FunctionType(Utils.map(parameterTypeKeys, k -> k.toType(typeDefProvider)), returnTypeKey.toType(typeDefProvider));
     }
 
     @Override

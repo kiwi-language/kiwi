@@ -1,7 +1,12 @@
 package org.metavm.user.rest.dto;
 
+
+
+import org.jsonk.Json;
+
 import java.util.List;
 
+@Json
 public record UserDTO (
         String id,
         String loginName,

@@ -128,7 +128,7 @@ public class ApiClient {
     }
 
     private void processResponse(HttpResponse response) {
-        response.getCookies().forEach(this::addCookie);
+        ((HttpResponseImpl) response).forEachCookie(this::addCookie);
     }
 
     private void addCookie(HttpCookie cookie) {

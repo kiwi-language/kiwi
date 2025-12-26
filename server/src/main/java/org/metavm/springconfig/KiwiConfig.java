@@ -1,7 +1,8 @@
 package org.metavm.springconfig;
 
 
-import org.springframework.stereotype.Component;
+import lombok.Getter;
+import org.metavm.context.Component;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
@@ -9,6 +10,7 @@ import java.io.FileInputStream;
 import java.util.Map;
 import java.util.Objects;
 
+@Getter
 @Component
 public class KiwiConfig {
 
@@ -62,18 +64,6 @@ public class KiwiConfig {
         var host = (String) config.get("host");
         var port = (int) config.get("port");
         return new DbConfig(userName, passwd, dbName, host, port);
-    }
-
-    public DbConfig getDbConfig() {
-        return dbConfig;
-    }
-
-    public ServerConfig getServerConfig() {
-        return serverConfig;
-    }
-
-    public EsConfig getEsConfig() {
-        return esConfig;
     }
 
     public record DbConfig(String username, String password, String dbName, String host, int port) {

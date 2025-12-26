@@ -4,11 +4,7 @@ import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.entity.*;
-import org.metavm.event.EventQueue;
-import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.IInstanceStore;
-import org.metavm.object.instance.cache.Cache;
-import org.metavm.object.instance.cache.MockCache;
 import org.metavm.object.instance.persistence.MemMapperRegistry;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Types;
@@ -24,22 +20,16 @@ public class InstanceContextTest extends TestCase {
 
     private DefContext entityRepository;
     private IInstanceStore instanceStore;
-    private Cache cache;
-    private EventQueue eventQueue;
     private EntityIdProvider idProvider;
     private Executor executor;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
         var mapperReg = new MemMapperRegistry();
         mapperReg.createTables(TestConstants.APP_ID);
         instanceStore = new MemInstanceStore(mapperReg);
         entityRepository = new MockDefContext();
-        cache = new MockCache();
-        eventQueue = new MockEventQueue();
         idProvider = new MockIdProvider();
         executor = Executors.newSingleThreadExecutor();
     }
@@ -53,8 +43,7 @@ public class InstanceContextTest extends TestCase {
                 List.of(),
                 entityRepository,
                 false,
-                cache,
-                eventQueue, false, false, false, false,
+                false, false, false, false,
                 0);
     }
 

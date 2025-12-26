@@ -1,33 +1,28 @@
 package org.metavm.util;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import lombok.extern.slf4j.Slf4j;
+import org.metavm.server.Filter;
+import org.metavm.server.HttpRequest;
+import org.metavm.context.Component;
 
-import java.io.IOException;
+import java.util.function.Consumer;
 
 @Component
-@Order(3)
-public class ClientInfoFilter extends OncePerRequestFilter {
-
-    public static final Logger logger = LoggerFactory.getLogger(ClientInfoFilter.class);
+@Slf4j
+public class ClientInfoFilter implements Filter {
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    @NotNull HttpServletResponse response,
-                                    @NotNull FilterChain filterChain) throws ServletException, IOException {
+    public void filter(HttpRequest request, Consumer<HttpRequest> proceed) {
         ContextUtil.setClientId(request.getHeader(Headers.CLIENT_ID));
+        ContextUtil.setRequestUri(request.getRequestURI());
         Long metaVersion = Utils.tryParseLong(request.getHeader(Headers.META_VERSION));
         if(metaVersion != null)
             ContextUtil.setMetaVersion(metaVersion);
-        filterChain.doFilter(request, response);
+        proceed.accept(request);
     }
 
+    @Override
+    public int order() {
+        return 3;
+    }
 }

@@ -39,7 +39,7 @@ public class KiwiTestWithStdlib extends KiwiTestBase {
 
     @Override
     protected List<Path> additionalSourcePaths() {
-        return Utils.listFilePathsRecursively(Path.of(TestUtils.getResourcePath("/stdlib")).resolve("src"), "kiwi");
+        return Utils.listFilePathsRecursively(KiwiEnv.getStdLibPath().resolve("src"), "kiwi");
     }
 
 }

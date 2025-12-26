@@ -1,7 +1,6 @@
 package org.metavm.object.type;
 
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Reference;
@@ -16,8 +15,8 @@ import java.util.function.Function;
 
 public class StringType extends KlassType {
 
-    public StringType() {
-        super(null, StdKlass.string.get(), List.of());
+    public StringType(Klass klass) {
+        super(null, klass, List.of());
     }
 
     @Override
@@ -52,6 +51,11 @@ public class StringType extends KlassType {
 
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
+    }
+
+    @Override
+    public boolean isValueType() {
+        return true;
     }
 
     @Override

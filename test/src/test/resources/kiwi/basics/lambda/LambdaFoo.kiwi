@@ -1,7 +1,5 @@
 package lambda
 
-import java.util.Comparator
-
 class LambdaFoo {
 
     static fn comparator<T: Comparable<[T, any]>>() -> (T, T) -> int {
@@ -9,21 +7,22 @@ class LambdaFoo {
     }
 
     static fn compare(v1: long, v2: long) -> int {
-        var cmp: (Item, Item) -> int = comparator<Item>()
+        var cmp = comparator<Item>()
         return cmp(Item(v1), Item(v2))
     }
 
-    priv static class Item(priv val value: long): Comparable<Item> {
+    priv static class Item(val value: long): Comparable<Item> {
 
-        fn compareTo(o: Item?) -> int {
-            return Long.compare(value, o!!.value)
-        }
-
-        fn value() -> long {
-            return value
+        fn compareTo(o: Item) -> int {
+            return value < o.value ? -1 : value == o.value ? 0 : 1
         }
 
     }
 
 }
 
+interface Comparable<E> {
+
+    fn compareTo(that: E) -> int
+
+}

@@ -1,7 +1,6 @@
 package org.metavm.expression;
 
 import junit.framework.TestCase;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Types;
 import org.metavm.object.type.UnionType;
@@ -14,11 +13,6 @@ import java.util.Set;
 public class TypeReducerTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(TypeReducerTest.class);
-
-    @Override
-    protected void setUp() throws Exception {
-        MockStandardTypesInitializer.init();
-    }
 
     public void test() {
         var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();

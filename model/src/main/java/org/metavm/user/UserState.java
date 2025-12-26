@@ -1,9 +1,7 @@
 package org.metavm.user;
 
-import org.metavm.api.Entity;
 import org.metavm.util.Utils;
 
-@Entity
 public enum UserState {
     ACTIVE(1),
     INACTIVE(2),

@@ -1,14 +1,16 @@
 package org.metavm.http;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.Entity;
 import org.metavm.api.EntityFlow;
 import org.metavm.api.ValueObject;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
-import org.metavm.entity.natives.CallContext;
-import org.metavm.object.instance.core.*;
+import org.metavm.entity.StdKlassRegistry;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceState;
+import org.metavm.object.instance.core.NativeEphemeralObject;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
@@ -19,12 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@Entity
 @Slf4j
 public class HttpRequestImpl implements HttpRequest, ValueObject, NativeEphemeralObject {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+    public static final Klass __klass__ = StdKlassRegistry.instance.getKlass(HttpRequestImpl.class);
     private final transient InstanceState state = InstanceState.ephemeral(this);
 
     public final String method;
@@ -83,43 +83,8 @@ public class HttpRequestImpl implements HttpRequest, ValueObject, NativeEphemera
         return state;
     }
 
-    public Value getMethod(CallContext callContext) {
-        return Instances.stringInstance(method);
-    }
-
-    public Value getRequestURI(CallContext callContext) {
-        return Instances.stringInstance(requestURI);
-    }
-
-    public Value getCookie(Value name, CallContext callContext) {
-        var n = name.stringValue();
-        var c = getCookie(n);
-        return c != null ? Instances.stringInstance(c) : Instances.nullInstance();
-    }
-
-    public Value getHeader(Value name, CallContext callContext) {
-        var n = name.stringValue();
-        var h = getHeader(n);
-        return h != null ? Instances.stringInstance(h) : Instances.nullInstance();
-    }
-
-    public Value getCurrentUser(CallContext callContext) {
-        return (Value) getCurrentUser();
-    }
-
-    public Value setCurrentUser(Value currentUser, CallContext callContext) {
-        setCurrentUser(currentUser);
-        return Instances.nullInstance();
-    }
-
     @Override
     public void forEachReference(Consumer<Reference> action) {
-    }
-
-    @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("method", this.getMethod());
-        map.put("requestURI", this.getRequestURI());
     }
 
     @Override

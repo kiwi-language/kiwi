@@ -3,8 +3,6 @@ package org.metavm.object.type;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
-import org.metavm.entity.DummyGenericDeclaration;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.NameAndType;
 import org.metavm.object.instance.ColumnKind;
@@ -20,12 +18,6 @@ import java.util.List;
 
 @Slf4j
 public class ClassTypeTest extends TestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
-    }
 
     @Override
     protected void tearDown() throws Exception {

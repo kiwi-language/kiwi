@@ -2,19 +2,12 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.DummyGenericDeclaration;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.util.TestUtils;
 
 import java.util.List;
 import java.util.Set;
 
 public class TypesTest extends TestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        MockStandardTypesInitializer.init();
-    }
 
     public void testGetCommonSuperTypes() {
         var c1 = TestUtils.newKlassBuilder("c1", null).build();

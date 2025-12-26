@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
@@ -16,6 +17,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@Getter
 @Entity
 public class PrimitiveType extends Type {
 
@@ -30,8 +32,6 @@ public class PrimitiveType extends Type {
     public static final PrimitiveType floatType = new PrimitiveType(PrimitiveKind.FLOAT);
     public static final PrimitiveType shortType = new PrimitiveType(PrimitiveKind.SHORT);
     public static final PrimitiveType byteType = new PrimitiveType(PrimitiveKind.BYTE);
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     private final PrimitiveKind kind;
 
@@ -146,10 +146,6 @@ public class PrimitiveType extends Type {
         return kind == PrimitiveKind.PASSWORD;
     }
 
-    public PrimitiveKind getKind() {
-        return kind;
-    }
-
     @Override
     public String toString() {
         return "PrimitiveType " + kind.getName();
@@ -197,11 +193,6 @@ public class PrimitiveType extends Type {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitPrimitiveType(this, s);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

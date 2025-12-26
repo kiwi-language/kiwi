@@ -1,17 +1,17 @@
 package org.metavm.flow.rest;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.jsonk.Json;
+import org.jsonk.SubType;
 
 import java.util.List;
 
-@JsonSubTypes(
-        {
-                @JsonSubTypes.Type(value = MethodRefKey.class, name = "1"),
-                @JsonSubTypes.Type(value = FunctionRefKey.class, name = "2"),
-        }
+@Json(
+    typeProperty = "kind",
+    subTypes = {
+            @SubType(value = "method", type = MethodRefKey.class),
+            @SubType(value = "function", type = FunctionRefKey.class)
+    }
 )
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public interface FlowRefKey extends CallableRefKey {
 
     String rawFlowId();

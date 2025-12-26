@@ -1,4 +1,3 @@
-import java.util.Iterator
 
 class AnonymousClassLab(val value: int) {
 

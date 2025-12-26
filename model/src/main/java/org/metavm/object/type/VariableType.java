@@ -24,8 +24,6 @@ import java.util.function.Function;
 @Entity
 public class VariableType extends Type implements IVariableType {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
     private final Reference variableReference;
 //    private TypeVariable variable;
 
@@ -154,11 +152,6 @@ public class VariableType extends Type implements IVariableType {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitVariableType(this, s);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

@@ -1,9 +1,7 @@
 package org.metavm.mocks;
 
-import org.metavm.api.Entity;
 import org.metavm.util.Utils;
 
-@Entity
 public enum FooState {
     STATE1(1),
     STATE2(2);

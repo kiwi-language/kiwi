@@ -3,6 +3,7 @@ package org.metavm.ddl;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.api.ValueObject;
+import org.metavm.wire.Wire;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.Field;
@@ -12,10 +13,9 @@ import org.metavm.util.StreamVisitor;
 
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public final class FieldAddition implements ValueObject {
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
     private final Reference fieldReference;
     private final Reference initializerReference;
 
@@ -67,18 +67,10 @@ public final class FieldAddition implements ValueObject {
         action.accept(initializerReference);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.writeValue(fieldReference);
         output.writeValue(initializerReference);
     }
 
-    public java.util.Map<String, Object> toJson() {
-        var map = new java.util.HashMap<String, Object>();
-        buildJson(map);
-        return map;
-    }
 }

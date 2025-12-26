@@ -11,13 +11,9 @@ public @interface Entity {
 
     String value() default "";
 
-    boolean compiled() default false;
-
     boolean ephemeral() default false;
 
     boolean searchable() default false;
-
-    int tag() default -1;
 
     int since() default 0;
 

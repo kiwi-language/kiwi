@@ -1,0 +1,62 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/2.1.1"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/2.1.1 https://maven.apache.org/xsd/assembly-2.1.1.xsd">
+
+    <id>bin-native</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <includes>
+                <include>org.metavm:metavm-server:*:native*</include>
+                <include>org.metavm:metavm-server:*:exe</include>
+            </includes>
+            <outputDirectory>bin</outputDirectory>
+            <outputFileNameMapping>kiwi-server${native.extension}</outputFileNameMapping>
+            <unpack>false</unpack>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+            <fileMode>0755</fileMode>
+        </dependencySet>
+
+        <dependencySet>
+            <includes>
+                <include>org.metavm:metavm-compiler:*:native*</include>
+                <include>org.metavm:metavm-compiler:*:exe</include>
+            </includes>
+            <outputDirectory>bin</outputDirectory>
+            <outputFileNameMapping>kiwi${native.extension}</outputFileNameMapping>
+            <unpack>false</unpack>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+            <fileMode>0755</fileMode>
+        </dependencySet>
+    </dependencySets>
+
+    <fileSets>
+
+        <fileSet>
+            <directory>src/main/conf</directory>
+            <outputDirectory>conf</outputDirectory>
+            <includes>
+                <include>kiwi.yml</include>
+            </includes>
+            <fileMode>0644</fileMode>
+        </fileSet>
+
+        <fileSet>
+            <directory>../stdlib</directory>
+            <outputDirectory>pkg/std</outputDirectory>
+            <fileMode>0644</fileMode>
+            <excludes>
+                <exclude>.gitignore</exclude>
+                <exclude>target/**</exclude>
+                <exclude>.metavm/**</exclude>
+            </excludes>
+        </fileSet>
+
+    </fileSets>
+</assembly>

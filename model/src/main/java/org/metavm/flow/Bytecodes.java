@@ -1,10 +1,5 @@
 package org.metavm.flow;
 
-import org.metavm.util.ReflectionUtils;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
 public class Bytecodes {
 
     public static final int GET_FIELD = 1;
@@ -130,41 +125,7 @@ public class Bytecodes {
     public static final int INT_TO_CHAR = 133;
     public static final int TABLE_SWITCH = 134;
     public static final int LOOKUP_SWITCH = 135;
-    public static final int LT_TYPE_ARGUMENT = 136;
-    public static final int LT_ELEMENT = 137;
-    public static final int LT_KLASS = 138;
-    public static final int LT_INNER_KLASS = 139;
-    public static final int LT_ARRAY = 140;
-    public static final int LT_BYTE = 141;
-    public static final int LT_SHORT = 142;
-    public static final int LT_CHAR = 143;
-    public static final int LT_INT = 144;
-    public static final int LT_LONG = 145;
-    public static final int LT_FLOAT = 146;
-    public static final int LT_DOUBLE = 147;
-    public static final int LT_BOOLEAN = 148;
-    public static final int LT_STRING = 149;
-    public static final int LT_ANY = 150;
-    public static final int LT_UNDERLYING = 151;
-    public static final int LT_PARAMETER_TYPE = 152;
-    public static final int LT_RETURN = 153;
-    public static final int LT_VOID = 154;
-    public static final int LT_NULL = 155;
-    public static final int LT_NULLABLE = 156;
-    public static final int LT_UNION = 157;
-    public static final int LT_INTERSECTION = 158;
-    public static final int LT_UNCERTAIN = 159;
-    public static final int LT_NEVER = 160;
-    public static final int LT_LOCAL_KLASS = 161;
-    public static final int LT_FUNCTION_TYPE = 162;
     public static final int GENERIC_INVOKE_FUNCTION = 163;
-    public static final int TYPEOF = 164;
-    public static final int LT_PASSWORD = 165;
-    public static final int LT_TIME = 166;
-    public static final int LT_OWNER = 167;
-    public static final int LT_DECLARING_TYPE = 168;
-    public static final int LT_CURRENT_FLOW = 169;
-    public static final int LT_ANCESTOR = 170;
     public static final int DUP2 = 171;
     public static final int DELETE = 172;
 
@@ -175,12 +136,132 @@ public class Bytecodes {
     }
 
     static {
-        for (Field field : Bytecodes.class.getFields()) {
-            if(Modifier.isStatic(field.getModifiers()) && field.getType() == int.class) {
-                var code = ReflectionUtils.getIntField(field, null);
-                names[code] = field.getName();
-            }
-        }
+        names[GET_FIELD] = "GET_FIELD";
+        names[GET_METHOD] = "GET_METHOD";
+        names[ADD_OBJECT] = "ADD_OBJECT";
+        names[SET_FIELD] = "SET_FIELD";
+        names[ID] = "ID";
+        names[RETURN] = "RETURN";
+        names[RAISE] = "RAISE";
+        names[INVOKE_VIRTUAL] = "INVOKE_VIRTUAL";
+        names[INVOKE_SPECIAL] = "INVOKE_SPECIAL";
+        names[INVOKE_STATIC] = "INVOKE_STATIC";
+        names[GET_UNIQUE] = "GET_UNIQUE";
+        names[NEW] = "NEW";
+        names[SET_FIELD_REFRESH] = "SET_FIELD_REFRESH";
+        names[SET_STATIC] = "SET_STATIC";
+        names[GENERIC_INVOKE_VIRTUAL] = "GENERIC_INVOKE_VIRTUAL";
+        names[GENERIC_INVOKE_SPECIAL] = "GENERIC_INVOKE_SPECIAL";
+        names[GENERIC_INVOKE_STATIC] = "GENERIC_INVOKE_STATIC";
+        names[NEW_ARRAY] = "NEW_ARRAY";
+        names[TRY_ENTER] = "TRY_ENTER";
+        names[TRY_EXIT] = "TRY_EXIT";
+        names[FUNC] = "FUNC";
+        names[LAMBDA] = "LAMBDA";
+        names[ADD_ELEMENT] = "ADD_ELEMENT";
+        names[DELETE_ELEMENT] = "DELETE_ELEMENT";
+        names[GET_ELEMENT] = "GET_ELEMENT";
+        names[INVOKE_FUNCTION] = "INVOKE_FUNCTION";
+        names[CAST] = "CAST";
+        names[CLEAR_ARRAY] = "CLEAR_ARRAY";
+        names[COPY] = "COPY";
+        names[INDEX_SCAN] = "INDEX_SCAN";
+        names[INDEX_COUNT] = "INDEX_COUNT";
+        names[INDEX_SELECT] = "INDEX_SELECT";
+        names[INDEX_SELECT_FIRST] = "INDEX_SELECT_FIRST";
+        names[GOTO] = "GOTO";
+        names[LOAD_CHILDREN] = "LOAD_CHILDREN";
+        names[NON_NULL] = "NON_NULL";
+        names[SET_ELEMENT] = "SET_ELEMENT";
+        names[IF_NE] = "IF_NE";
+        names[NOOP] = "NOOP";
+        names[LONG_ADD] = "LONG_ADD";
+        names[LONG_SUB] = "LONG_SUB";
+        names[LONG_MUL] = "LONG_MUL";
+        names[LONG_DIV] = "LONG_DIV";
+        names[LONG_SHIFT_LEFT] = "LONG_SHIFT_LEFT";
+        names[LONG_SHIFT_RIGHT] = "LONG_SHIFT_RIGHT";
+        names[LONG_UNSIGNED_SHIFT_RIGHT] = "LONG_UNSIGNED_SHIFT_RIGHT";
+        names[LONG_BIT_OR] = "LONG_BIT_OR";
+        names[LONG_BIT_AND] = "LONG_BIT_AND";
+        names[LONG_BIT_XOR] = "LONG_BIT_XOR";
+        names[LONG_NEG] = "LONG_NEG";
+        names[LONG_REM] = "LONG_REM";
+        names[EQ] = "EQ";
+        names[NE] = "NE";
+        names[GE] = "GE";
+        names[GT] = "GT";
+        names[LT] = "LT";
+        names[LE] = "LE";
+        names[GET_STATIC_FIELD] = "GET_STATIC_FIELD";
+        names[GET_STATIC_METHOD] = "GET_STATIC_METHOD";
+        names[INSTANCE_OF] = "INSTANCE_OF";
+        names[ARRAY_LENGTH] = "ARRAY_LENGTH";
+        names[IF_EQ] = "IF_EQ";
+        names[STORE] = "STORE";
+        names[LOAD] = "LOAD";
+        names[LOAD_CONTEXT_SLOT] = "LOAD_CONTEXT_SLOT";
+        names[STORE_CONTEXT_SLOT] = "STORE_CONTEXT_SLOT";
+        names[LOAD_CONSTANT] = "LOAD_CONSTANT";
+        names[NEW_ARRAY_WITH_DIMS] = "NEW_ARRAY_WITH_DIMS";
+        names[VOID_RETURN] = "VOID_RETURN";
+        names[LOAD_KLASS] = "LOAD_KLASS";
+        names[DUP] = "DUP";
+        names[POP] = "POP";
+        names[DUP_X1] = "DUP_X1";
+        names[DUP_X2] = "DUP_X2";
+        names[LOAD_PARENT] = "LOAD_PARENT";
+        names[NEW_CHILD] = "NEW_CHILD";
+        names[INT_TO_LONG] = "INT_TO_LONG";
+        names[INT_TO_FLOAT] = "INT_TO_FLOAT";
+        names[INT_TO_DOUBLE] = "INT_TO_DOUBLE";
+        names[LONG_TO_INT] = "LONG_TO_INT";
+        names[LONG_TO_FLOAT] = "LONG_TO_FLOAT";
+        names[LONG_TO_DOUBLE] = "LONG_TO_DOUBLE";
+        names[FLOAT_TO_INT] = "FLOAT_TO_INT";
+        names[FLOAT_TO_LONG] = "FLOAT_TO_LONG";
+        names[FLOAT_TO_DOUBLE] = "FLOAT_TO_DOUBLE";
+        names[DOUBLE_TO_INT] = "DOUBLE_TO_INT";
+        names[DOUBLE_TO_LONG] = "DOUBLE_TO_LONG";
+        names[DOUBLE_TO_FLOAT] = "DOUBLE_TO_FLOAT";
+        names[INT_ADD] = "INT_ADD";
+        names[INT_SUB] = "INT_SUB";
+        names[INT_MUL] = "INT_MUL";
+        names[INT_DIV] = "INT_DIV";
+        names[INT_REM] = "INT_REM";
+        names[INT_NEG] = "INT_NEG";
+        names[INT_SHIFT_LEFT] = "INT_SHIFT_LEFT";
+        names[INT_SHIFT_RIGHT] = "INT_SHIFT_RIGHT";
+        names[INT_UNSIGNED_SHIFT_RIGHT] = "INT_UNSIGNED_SHIFT_RIGHT";
+        names[INT_BIT_AND] = "INT_BIT_AND";
+        names[INT_BIT_OR] = "INT_BIT_OR";
+        names[INT_BIT_XOR] = "INT_BIT_XOR";
+        names[LONG_COMPARE] = "LONG_COMPARE";
+        names[INT_COMPARE] = "INT_COMPARE";
+        names[DOUBLE_COMPARE] = "DOUBLE_COMPARE";
+        names[REF_COMPARE_EQ] = "REF_COMPARE_EQ";
+        names[REF_COMPARE_NE] = "REF_COMPARE_NE";
+        names[FLOAT_ADD] = "FLOAT_ADD";
+        names[FLOAT_SUB] = "FLOAT_SUB";
+        names[FLOAT_MUL] = "FLOAT_MUL";
+        names[FLOAT_DIV] = "FLOAT_DIV";
+        names[FLOAT_REM] = "FLOAT_REM";
+        names[FLOAT_NEG] = "FLOAT_NEG";
+        names[FLOAT_COMPARE] = "FLOAT_COMPARE";
+        names[DOUBLE_ADD] = "DOUBLE_ADD";
+        names[DOUBLE_SUB] = "DOUBLE_SUB";
+        names[DOUBLE_MUL] = "DOUBLE_MUL";
+        names[DOUBLE_DIV] = "DOUBLE_DIV";
+        names[DOUBLE_REM] = "DOUBLE_REM";
+        names[DOUBLE_NEG] = "DOUBLE_NEG";
+        names[INT_TO_SHORT] = "INT_TO_SHORT";
+        names[INT_TO_BYTE] = "INT_TO_BYTE";
+        names[INT_TO_CHAR] = "INT_TO_CHAR";
+        names[TABLE_SWITCH] = "TABLE_SWITCH";
+        names[LOOKUP_SWITCH] = "LOOKUP_SWITCH";
+        names[GENERIC_INVOKE_FUNCTION] = "GENERIC_INVOKE_FUNCTION";
+        names[DUP2] = "DUP2";
+        names[DELETE] = "DELETE";
     }
 
 }

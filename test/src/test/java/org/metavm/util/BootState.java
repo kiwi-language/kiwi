@@ -5,14 +5,12 @@ import org.metavm.entity.SystemDefContext;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.persistence.MemMapperRegistry;
 import org.metavm.object.type.MemAllocatorStore;
-import org.metavm.object.type.MemColumnStore;
 import org.metavm.object.type.MemTypeTagStore;
 import org.metavm.system.MemoryBlockRepository;
 
 public record BootState(
         SystemDefContext defContext,
         MemoryBlockRepository blockRepository,
-        MemColumnStore columnStore,
         MemTypeTagStore typeTagStore,
         MemoryStdIdStore stdIdStore,
         MemAllocatorStore allocatorStore,
@@ -25,7 +23,6 @@ public record BootState(
         return new BootState(
                 defContext,
                 blockRepository.copy(),
-                columnStore.copy(),
                 typeTagStore.copy(),
                 stdIdStore.copy(),
                 allocatorStore.copy(),

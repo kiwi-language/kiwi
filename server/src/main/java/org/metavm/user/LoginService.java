@@ -1,14 +1,15 @@
 package org.metavm.user;
 
 import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.metavm.context.Component;
+import org.metavm.context.sql.Transactional;
 import org.metavm.application.Application;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.EntityIndexKey;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.user.rest.dto.LoginInfo;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.*;
@@ -110,7 +111,20 @@ public class LoginService extends EntityContextFactoryAware {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
+    public void logout(String token) {
+        try (var context = newPlatformContext()) {
+            var session = context.selectFirstByKey(Session.IDX_TOKEN, Instances.stringInstance(token));
+            if (session != null) {
+                if (session.isActive())
+                    session.close();
+                context.finish();
+            }
+        }
+    }
+
+
+    @Transactional(readonly = true)
     public LoginInfo authenticate(@NotNull Token token) {
         var appId = token.appId();
         try (var context = newContext(appId);
@@ -120,7 +134,7 @@ public class LoginService extends EntityContextFactoryAware {
                 ContextUtil.setAppId(appId);
                 ContextUtil.setUserId(session.getUser().getId());
                 ContextUtil.setToken(token.token());
-                return new LoginInfo(appId, session.getUser().getStringId());
+                return new LoginInfo(appId, session.getUser().getStringId(), session.getToken());
             } else
                 return LoginInfo.failed();
         }
@@ -128,7 +142,7 @@ public class LoginService extends EntityContextFactoryAware {
 
     public boolean verifySecret(long appId, String secret) {
         try(var context = newPlatformContext()) {
-            var app = context.getEntity(Application.class, Constants.getAppId(appId));
+            var app = context.getEntity(Application.class, Id.getAppId(appId));
             return app.verify(secret);
         }
     }

@@ -5,20 +5,19 @@
 //import org.hamcrest.MatcherAssert;
 //import org.junit.Assert;
 //import org.metavm.api.ValueObject;
-//import org.metavm.event.MockEventQueue;
 //import org.metavm.flow.Function;
-//import org.metavm.http.HttpRequestImpl;
 //import org.metavm.object.instance.InstanceStore;
 //import org.metavm.object.instance.MockInstanceLogService;
 //import org.metavm.object.instance.cache.LocalCache;
 //import org.metavm.object.instance.cache.MockCache;
 //import org.metavm.object.instance.core.Instance;
 //import org.metavm.object.type.*;
-//import org.metavm.util.*;
+//import org.metavm.util.ContextUtil;
+//import org.metavm.util.Instances;
+//import org.metavm.util.MockIdProvider;
+//import org.metavm.util.Utils;
 //import org.slf4j.Logger;
 //
-//import java.lang.reflect.Method;
-//import java.lang.reflect.Modifier;
 //import java.util.Map;
 //import java.util.Objects;
 //import java.util.Set;
@@ -68,23 +67,6 @@
 //        instanceContextFactory.setCache(new MockCache());
 //        entityContextFactory.setInstanceLogService(new MockInstanceLogService());
 //        return new Bootstrap(entityContextFactory, stdAllocators, columnStore, typeTagStore);
-//    }
-//
-//    public void _testTmp() {
-//        generateIds(allocatorStore);
-//        var bootstrap = newBootstrap();
-//        var result = bootstrap.boot();
-//        Assert.assertTrue(result.numInstancesWithNullIds() > 0);
-//
-//        var defContext = ModelDefRegistry.getDefContext();
-//        var klass = defContext.getKlass(HttpRequestImpl.class);
-//        for (Method javaMethod : HttpRequestImpl.class.getDeclaredMethods()) {
-//            if (Modifier.isPublic(javaMethod.getModifiers()) && !Modifier.isStatic(javaMethod.getModifiers())) {
-//                var method = klass.findMethodByName(javaMethod.getName());
-//                Assert.assertNotNull("Method " + javaMethod.getName() + " does not exist", method);
-//                Assert.assertTrue(method.isNative());
-//            }
-//        }
 //    }
 //
 //    public void test() {

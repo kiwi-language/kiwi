@@ -1,24 +1,25 @@
 package org.metavm.flow;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.Ref;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
+@Entity
 public abstract class SwitchNode extends Node {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+    @Setter
+    @Getter
     @Ref
     protected LabelNode defaultTarget;
 
@@ -27,14 +28,6 @@ public abstract class SwitchNode extends Node {
 
     protected SwitchNode(@NotNull String name, @Nullable Type outputType, @Nullable Node previous, @NotNull Code code) {
         super(name, outputType, previous, code);
-    }
-
-    public LabelNode getDefaultTarget() {
-        return defaultTarget;
-    }
-
-    public void setDefaultTarget(LabelNode defaultTarget) {
-        this.defaultTarget = defaultTarget;
     }
 
     public void addTarget(LabelNode target) {
@@ -54,40 +47,6 @@ public abstract class SwitchNode extends Node {
     @Override
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-    }
-
-    @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("defaultTarget", this.getDefaultTarget().getStringId());
-        map.put("flow", this.getFlow().getStringId());
-        map.put("name", this.getName());
-        var successor = this.getSuccessor();
-        if (successor != null) map.put("successor", successor.getStringId());
-        var predecessor = this.getPredecessor();
-        if (predecessor != null) map.put("predecessor", predecessor.getStringId());
-        map.put("code", this.getCode().toJson());
-        map.put("exit", this.isExit());
-        map.put("unconditionalJump", this.isUnconditionalJump());
-        map.put("sequential", this.isSequential());
-        var error = this.getError();
-        if (error != null) map.put("error", error);
-        var type = this.getType();
-        if (type != null) map.put("type", type.toJson());
-        map.put("expressionTypes", this.getExpressionTypes());
-        map.put("nextExpressionTypes", this.getNextExpressionTypes());
-        map.put("stackChange", this.getStackChange());
-        map.put("length", this.getLength());
-        map.put("offset", this.getOffset());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
     }
 
     @Override

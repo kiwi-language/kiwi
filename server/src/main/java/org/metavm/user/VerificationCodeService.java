@@ -1,19 +1,16 @@
 package org.metavm.user;
 
-import org.metavm.util.Instances;
-import org.metavm.util.Utils;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.metavm.common.EmailService;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.EntityIndexKey;
+import org.metavm.context.sql.Transactional;
+import org.metavm.jdbc.TransactionCallback;
+import org.metavm.jdbc.TransactionStatus;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.util.BusinessException;
-import org.metavm.util.EmailUtils;
+import org.metavm.util.*;
+import org.metavm.context.Component;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -51,11 +48,12 @@ public class VerificationCodeService extends EntityContextFactoryAware {
             platformCtx.bind(VerificationCode.create(platformCtx.allocateRootId(), receiver, code, clientIP));
             platformCtx.finish();
         }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        TransactionStatus.registerCallback(new TransactionCallback() {
             @Override
             public void afterCommit() {
                 emailService.send(receiver, title, code);
             }
+
         });
     }
 

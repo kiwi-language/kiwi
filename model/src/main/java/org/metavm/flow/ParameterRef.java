@@ -1,10 +1,9 @@
 package org.metavm.flow;
 
+import lombok.Getter;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -15,10 +14,10 @@ import java.util.function.Consumer;
 @Entity
 public class ParameterRef implements org.metavm.entity.Reference {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+    @Getter
     private final CallableRef callableRef;
     private final org.metavm.object.instance.core.Reference parameterReference;
+    @Getter
     private Parameter rawParameter;
 
     public ParameterRef(CallableRef callableRef, Parameter rawParameter) {
@@ -29,14 +28,6 @@ public class ParameterRef implements org.metavm.entity.Reference {
     public ParameterRef(CallableRef callableRef, org.metavm.object.instance.core.Reference parameterReference) {
         this.callableRef = callableRef;
         this.parameterReference = parameterReference;
-    }
-
-    public CallableRef getCallableRef() {
-        return callableRef;
-    }
-
-    public Parameter getRawParameter() {
-        return rawParameter;
     }
 
     @Override
@@ -71,11 +62,6 @@ public class ParameterRef implements org.metavm.entity.Reference {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitParameterRef(this);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

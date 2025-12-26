@@ -1,9 +1,7 @@
 package org.metavm.application;
 
-import org.metavm.api.Entity;
 import org.metavm.util.Utils;
 
-@Entity
 public enum ApplicationState {
     ACTIVE(1),
     REMOVING(2),

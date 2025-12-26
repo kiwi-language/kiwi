@@ -1,32 +1,30 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.entity.NoProxy;
+import org.metavm.wire.Wire;
 import org.metavm.flow.ClosureContext;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
 import org.metavm.util.MvOutput;
 
+@Wire(adapter = ValueAdapter.class)
 public interface Value {
 
-    @NoProxy
-    Type getValueType();
+    default Type getValueType() {
+        throw new UnsupportedOperationException();
+    }
 
-    @NoProxy
     default boolean isValue() {
         return false;
     }
 
-    @NoProxy
     default boolean isNull() {
         return false;
     }
 
-    @NoProxy
     default boolean isNotNull() {
         return !isNull();
     }
 
-    @NoProxy
     default boolean isPassword() {
         return getValueType().isPassword();
     }
@@ -35,7 +33,6 @@ public interface Value {
         return Instances.stringInstance(getTitle());
     }
 
-    @NoProxy
     default boolean isArray() {
         return false;
     }
@@ -44,7 +41,6 @@ public interface Value {
         return false;
     }
 
-    @NoProxy
     default boolean isPrimitive() {
         return false;
     }
@@ -70,7 +66,6 @@ public interface Value {
 
     Object toSearchConditionValue();
 
-    @NoProxy
     <R> R accept(ValueVisitor<R> visitor);
 
     default String getText() {

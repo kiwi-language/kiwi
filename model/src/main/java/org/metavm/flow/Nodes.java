@@ -14,11 +14,11 @@ import java.util.function.Supplier;
 public class Nodes {
 
     public static RaiseNode raiseWithMessage(String message, Code code) {
-        var type = StdKlass.runtimeException.type();
+        var type = StdKlass.exception.type();
         Nodes.newObject(code, type, true, true);
         Nodes.dup(code);
         loadConstant(Instances.stringInstance(message), code);
-        var constructor = type.resolveMethod(type.getName(), List.of(Types.getNullableStringType()), List.of(), false);
+        var constructor = type.resolveMethod(type.getName(), List.of(Types.getStringType()), List.of(), false);
         invokeMethod(constructor, code);
         return raise(code);
     }

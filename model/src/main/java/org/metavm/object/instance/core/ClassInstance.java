@@ -17,8 +17,6 @@ import java.util.function.Predicate;
 
 public interface ClassInstance extends Instance {
 
-    Klass uninitializedKlass = KlassBuilder.newBuilder(new NullId(), "Uninitialized", "Uninitialized").build();
-
     static MvClassInstance create(Id id, Map<Field, ? extends Value> data, ClassType type) {
         return ClassInstanceBuilder.newBuilder(type, id).data(data).build();
     }
@@ -126,10 +124,6 @@ public interface ClassInstance extends Instance {
         };
     }
 
-    default boolean isList() {
-        return getInstanceKlass().isList();
-    }
-
     default boolean isEnum() {
         var klass = getInstanceKlass();
         return klass.isEnum() || klass.getSuperKlass() != null && klass.getSuperKlass().isEnum();
@@ -171,10 +165,6 @@ public interface ClassInstance extends Instance {
     void addChild(ClassInstance child);
 
     Map<String, Value> buildSource();
-
-    default Object getNativeObject() {
-        return null;
-    }
 
     void incRefcount(int amount);
 

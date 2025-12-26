@@ -1,39 +1,34 @@
 package org.metavm.user;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
+import org.metavm.server.Filter;
+import org.metavm.server.HttpRequest;
 import org.metavm.util.BusinessException;
-import org.metavm.util.Headers;
+import org.metavm.util.Constants;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.metavm.context.Component;
 
-import java.io.IOException;
 import java.util.Set;
+import java.util.function.Consumer;
 
 @Component
-@Order(4)
-public class AuthenticateFilter extends OncePerRequestFilter {
+public class AuthenticateFilter implements Filter  {
 
     public static final Logger logger = LoggerFactory.getLogger(AuthenticateFilter.class);
 
     private final LoginService loginService;
 
     public static final Set<String> PASSING_PREFIXES = Set.of(
-            "/login",
-            "/login-with-token",
+            "/ping",
+            "/auth/login",
+            "/auth/login-with-token",
+            "/auth/get-login-info",
             "/internal-api",
             "/bootstrap",
             "/system",
             "/lab",
-            "/get-login-info",
             "/register",
             "/platform-user/change-password",
             "/object",
@@ -45,28 +40,26 @@ public class AuthenticateFilter extends OncePerRequestFilter {
         this.loginService = loginService;
     }
 
+    private boolean shouldPass(HttpRequest request) {
+        return Utils.anyMatch(PASSING_PREFIXES, p -> request.getRequestURI().startsWith(p));
+    }
+
     @Override
-    protected void doFilterInternal(@NotNull HttpServletRequest request,
-                                    @NotNull HttpServletResponse response,
-                                    @NotNull FilterChain filterChain) throws IOException, ServletException {
+    public void filter(HttpRequest request, Consumer<HttpRequest> proceed) {
         if (shouldPass(request)) {
-            filterChain.doFilter(request, response);
+            proceed.accept(request);
             return;
         }
-        var appId = Utils.tryParseLong(request.getHeader(Headers.X_APP_ID));
-        if(appId == null)
-            appId = Utils.tryParseLong(request.getParameter("__app_id__"));
-        if (appId != null) {
-            var token = Tokens.getToken(appId, request);
-            if (token != null &&  loginService.authenticate(token).isSuccessful()) {
-                filterChain.doFilter(request, response);
-                return;
-            }
+        var token = Tokens.getToken(request);
+        if (token != null &&  loginService.authenticate(new Token(Constants.PLATFORM_APP_ID, token)).isSuccessful()) {
+            proceed.accept(request);
+            return;
         }
         throw new BusinessException(ErrorCode.INVALID_TOKEN);
     }
 
-    private boolean shouldPass(HttpServletRequest request) {
-        return Utils.anyMatch(PASSING_PREFIXES, p -> request.getRequestURI().startsWith(p));
+    @Override
+    public int order() {
+        return 4;
     }
 }

@@ -2,6 +2,7 @@ package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.expression.Var;
@@ -12,7 +13,7 @@ import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.TypeId;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
-import org.metavm.util.LinkedList;
+import java.util.LinkedList;
 import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
@@ -23,8 +24,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+@Entity
 @Slf4j
-public abstract class ClassType extends CompositeType implements ISubstitutor, GenericDeclarationRef {
+public abstract class ClassType extends CompositeType implements GenericDeclarationRef {
 
     @Override
     public GenericDeclarationRefKey toGenericDeclarationKey(Function<ITypeDef, Id> getTypeDefId) {
@@ -129,10 +131,6 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
     @Override
     public List<Type> getComponentTypes() {
         return getTypeArguments();
-    }
-
-    public boolean isList() {
-        return getKlass().isList();
     }
 
     @Override
@@ -425,11 +423,6 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
 
     public boolean isParameterized() {
         return false;
-    }
-
-    @Override
-    public Type substitute(Type type) {
-        return type;
     }
 
     public boolean isTemplate() {

@@ -11,10 +11,4 @@ public @interface Value {
 
     String value() default "";
 
-    boolean compiled() default false;
-
-    int tag() default -1;
-
-    int since() default 0;
-
 }

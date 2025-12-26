@@ -3,18 +3,17 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.StdKlass;
-import org.metavm.entity.natives.*;
+import org.metavm.entity.natives.CallContext;
+import org.metavm.entity.natives.ExceptionNative;
+import org.metavm.entity.natives.NativeMethods;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
-import org.metavm.util.LinkedList;
+import java.util.LinkedList;
 import org.metavm.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -39,8 +38,6 @@ public class VmStack {
             pool.returnObject(stack);
         }
     }
-
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private final ExceptionHandler[] exceptionHandlers = new ExceptionHandler[1024];
     private final Value[] stack = new Value[1024 * 1024];
@@ -449,9 +446,8 @@ public class VmStack {
                                     stack[top++] = arrayInst.get(index).toStackValue();
                                     pc++;
                                 } else {
-                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.indexOutOfBoundsException.type());
-                                    var nat = new IndexOutOfBoundsExceptionNative(exception);
-                                    nat.IndexOutOfBoundsException(callContext);
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
+                                    ExceptionNative.Exception(exception, Instances.stringInstance("Index out of bound"));
                                     break except;
                                 }
                             }
@@ -532,10 +528,9 @@ public class VmStack {
                                     pc += 3;
                                 } else {
                                     exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.get().getType());
-                                    var exceptionNative = new ExceptionNative(exception);
-                                    exceptionNative.Exception(Instances.stringInstance(
+                                    ExceptionNative.Exception(exception, Instances.stringInstance(
                                             String.format("Can not cast instance '%s' to type '%s'", inst.getTitle(), type.getName())
-                                    ), callContext);
+                                    ));
                                     break except;
                                 }
                             }
@@ -572,8 +567,8 @@ public class VmStack {
                             case Bytecodes.INDEX_SELECT -> {
                                 var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                                 var result = callContext.instanceRepository().indexSelect(loadIndexKey(index, stack[--top]));
-                                var type = new KlassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType()));
-                                var list = Instances.newList(type, result);
+                                var type = Types.getArrayType(index.getDeclaringType());
+                                var list = Instances.createArray(type, result);
                                 stack[top++] = list.getReference();
                                 pc += 3;
                             }
@@ -586,9 +581,8 @@ public class VmStack {
                             case Bytecodes.NON_NULL -> {
                                 var inst = stack[top - 1];
                                 if (inst.isNull()) {
-                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.type());
-                                    var nat = new NullPointerExceptionNative(exception);
-                                    nat.NullPointerException(callContext);
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
+                                    ExceptionNative.Exception(exception, Instances.stringInstance("Null pointer"));
                                     break except;
                                 } else
                                     pc++;
@@ -635,9 +629,8 @@ public class VmStack {
                                 var v2 = ((IntValue) stack[--top]).value;
                                 var v1 = ((IntValue) stack[--top]).value;
                                 if (v2 == 0) {
-                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.arithmeticException.type());
-                                    var nat = new ArithmeticExceptionNative(exception);
-                                    nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
+                                    ExceptionNative.Exception(exception, Instances.stringInstance("/ by zero"));
                                     break except;
                                 } else {
                                     stack[top++] = new IntValue(v1 / v2);
@@ -648,9 +641,8 @@ public class VmStack {
                                 var v2 = ((IntValue) stack[--top]).value;
                                 var v1 = ((IntValue) stack[--top]).value;
                                 if (v2 == 0) {
-                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.arithmeticException.type());
-                                    var nat = new ArithmeticExceptionNative(exception);
-                                    nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
+                                    ExceptionNative.Exception(exception, Instances.stringInstance("/ by zero"));
                                     break except;
                                 } else {
                                     stack[top++] = new IntValue(v1 % v2);
@@ -679,9 +671,8 @@ public class VmStack {
                                 var v2 = ((LongValue) stack[--top]).value;
                                 var v1 = ((LongValue) stack[--top]).value;
                                 if (v2 == 0) {
-                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.arithmeticException.type());
-                                    var nat = new ArithmeticExceptionNative(exception);
-                                    nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
+                                    ExceptionNative.Exception(exception, Instances.stringInstance("/ by zero"));
                                     break except;
                                 } else {
                                     stack[top++] = new LongValue(v1 / v2);
@@ -692,9 +683,8 @@ public class VmStack {
                                 var v2 = ((LongValue) stack[--top]).value;
                                 var v1 = ((LongValue) stack[--top]).value;
                                 if (v2 == 0) {
-                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.arithmeticException.type());
-                                    var nat = new ArithmeticExceptionNative(exception);
-                                    nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
+                                    ExceptionNative.Exception(exception, Instances.stringInstance("/ by zero"));
                                     break except;
                                 } else {
                                     stack[top++] = new LongValue(v1 % v2);
@@ -1093,12 +1083,6 @@ public class VmStack {
                                 constants = callableRef.getTypeMetadata().getValues();
                                 closureContext = frame.closureContext;
                             }
-                            case Bytecodes.LOAD_KLASS -> {
-                                var type = (Type) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                                var klass = Types.getKlass(type);
-                                stack[top++] = klass.getReference();
-                                pc += 3;
-                            }
                             case Bytecodes.DUP -> {
                                 stack[top] = stack[top++ - 1];
                                 pc++;
@@ -1188,187 +1172,6 @@ public class VmStack {
                                         l = m + 1;
                                 }
                                 pc += offset;
-                            }
-                            case Bytecodes.LT_TYPE_ARGUMENT -> {
-                                var t = (GenericDeclarationRef) stack[--top];
-                                var idx = (bytes[pc + 1] & 0xff) << 8 | (bytes[pc + 2] & 0xff);
-                                stack[top++] = t.getTypeArguments().get(idx);
-                                pc += 3;
-                            }
-                            case Bytecodes.LT_OWNER -> {
-                                var t = (KlassType) stack[--top];
-                                stack[top++] = Objects.requireNonNull(t.owner);
-                                pc++;
-                            }
-                            case Bytecodes.LT_ELEMENT -> {
-                                var t = (ArrayType) stack[--top];
-                                stack[top++] = t.getElementType();
-                                pc++;
-                            }
-                            case Bytecodes.LT_UNDERLYING -> {
-                                var t = (UnionType) stack[--top];
-                                stack[top++] = t.getUnderlyingType();
-                                pc++;
-                            }
-                            case Bytecodes.LT_KLASS -> {
-                                var k = ((KlassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getKlass();
-                                var typeArgCount = k.getTypeParameters().size();
-                                var typeArgs = new Type[typeArgCount];
-                                for (int i = typeArgCount - 1; i >= 0; i--) {
-                                    typeArgs[i] = (Type) stack[--top];
-                                }
-                                stack[top++] = new KlassType(null, k, List.of(typeArgs));
-                                pc += 3;
-                            }
-                            case Bytecodes.LT_LOCAL_KLASS -> {
-                                var k = ((KlassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getKlass();
-                                var typeArgCount = k.getTypeParameters().size();
-                                var typeArgs = new Type[typeArgCount];
-                                for (int i = typeArgCount - 1; i >= 0; i--) {
-                                    typeArgs[i] = (Type) stack[--top];
-                                }
-                                stack[top++] = new KlassType(callableRef.getFlow(), k, List.of(typeArgs));
-                                pc += 3;
-                            }
-                            case Bytecodes.LT_INNER_KLASS -> {
-                                var k = ((KlassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getKlass();
-                                var typeArgCount = k.getTypeParameters().size();
-                                var typeArgs = new Type[typeArgCount];
-                                for (int i = typeArgCount - 1; i >= 0; i--) {
-                                    typeArgs[i] = ((Type) stack[--top]);
-                                }
-                                var owner = (ClassType) stack[--top];
-                                stack[top++] = new KlassType(owner, k, List.of(typeArgs));
-                                pc += 3;
-                            }
-                            case Bytecodes.LT_UNION -> {
-                                var memberCnt = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                var members = new HashSet<Type>();
-                                for (int i = 0; i < memberCnt; i++) {
-                                    members.add((Type) stack[--top]);
-                                }
-                                stack[top++] = new UnionType(members);
-                                pc += 3;
-                            }
-                            case Bytecodes.LT_INTERSECTION -> {
-                                var memberCnt = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                var members = new HashSet<Type>();
-                                for (int i = 0; i < memberCnt; i++) {
-                                    members.add((Type) stack[--top]);
-                                }
-                                stack[top++] = new IntersectionType(members);
-                                pc += 3;
-                            }
-                            case Bytecodes.LT_UNCERTAIN -> {
-                                var ub = (Type) stack[--top];
-                                var lb = (Type) stack[--top];
-                                stack[top++] = new UncertainType(lb, ub);
-                                pc++;
-                            }
-                            case Bytecodes.LT_FUNCTION_TYPE -> {
-                                var paramCnt = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                var retType = (Type) stack[--top];
-                                var paramTypes = new Type[paramCnt];
-                                for (int i = paramCnt - 1; i >= 0; i--) {
-                                    paramTypes[i] = (Type) stack[--top];
-                                }
-                                stack[top++] = new FunctionType(List.of(paramTypes), retType);
-                                pc += 3;
-                            }
-                            case Bytecodes.LT_PARAMETER_TYPE -> {
-                                var idx = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                var funcType = (FunctionType) stack[--top];
-                                stack[top++] = funcType.getParameterTypes().get(idx);
-                                pc += 3;
-                            }
-                            case Bytecodes.LT_RETURN -> {
-                                var funcType = (FunctionType) stack[--top];
-                                stack[top++] = funcType.getReturnType();
-                                pc++;
-                            }
-                            case Bytecodes.LT_ARRAY -> {
-                                stack[top++] = new ArrayType(((Type) stack[--top]), ArrayKind.DEFAULT);
-                                pc++;
-                            }
-                            case Bytecodes.LT_NULLABLE -> {
-                                stack[top++] = new UnionType(Set.of((Type) stack[--top], NullType.instance));
-                                pc++;
-                            }
-                            case Bytecodes.LT_BYTE -> {
-                                stack[top++] = PrimitiveType.byteType;
-                                pc++;
-                            }
-                            case Bytecodes.LT_SHORT -> {
-                                stack[top++] = PrimitiveType.shortType;
-                                pc++;
-                            }
-                            case Bytecodes.LT_CHAR -> {
-                                stack[top++] = PrimitiveType.charType;
-                                pc++;
-                            }
-                            case Bytecodes.LT_INT -> {
-                                stack[top++] = PrimitiveType.intType;
-                                pc++;
-                            }
-                            case Bytecodes.LT_LONG -> {
-                                stack[top++] = PrimitiveType.longType;
-                                pc++;
-                            }
-                            case Bytecodes.LT_FLOAT -> {
-                                stack[top++] = PrimitiveType.floatType;
-                                pc++;
-                            }
-                            case Bytecodes.LT_DOUBLE -> {
-                                stack[top++] = PrimitiveType.doubleType;
-                                pc++;
-                            }
-                            case Bytecodes.LT_STRING -> {
-                                stack[top++] = Types.getStringType();
-                                pc++;
-                            }
-                            case Bytecodes.LT_VOID -> {
-                                stack[top++] = PrimitiveType.voidType;
-                                pc++;
-                            }
-                            case Bytecodes.LT_TIME -> {
-                                stack[top++] = PrimitiveType.timeType;
-                                pc++;
-                            }
-                            case Bytecodes.LT_PASSWORD -> {
-                                stack[top++] = PrimitiveType.passwordType;
-                                pc++;
-                            }
-                            case Bytecodes.LT_ANY -> {
-                                stack[top++] = AnyType.instance;
-                                pc++;
-                            }
-                            case Bytecodes.LT_NULL -> {
-                                stack[top++] = NullType.instance;
-                                pc++;
-                            }
-                            case Bytecodes.LT_NEVER -> {
-                                stack[top++] = NeverType.instance;
-                                pc++;
-                            }
-                            case Bytecodes.TYPEOF -> {
-                                var v = stack[--top];
-                                stack[top++] = v.getValueType();
-                                pc++;
-                            }
-                            case Bytecodes.LT_DECLARING_TYPE -> {
-                                var v = (PropertyRef) stack[--top];
-                                stack[top++] = v.getDeclaringType();
-                                pc++;
-                            }
-                            case Bytecodes.LT_CURRENT_FLOW -> {
-                                stack[top++] = callableRef.getFlow();
-                                pc++;
-                            }
-                            case Bytecodes.LT_ANCESTOR -> {
-                                var k = ((ClassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getKlass();
-                                var t = (ClassType) stack[--top];
-                                stack[top++] = Objects.requireNonNull(t.asSuper(k));
-                                pc += 3;
                             }
                             case Bytecodes.DELETE -> {
                                 repository.remove(stack[--top].resolveObject());

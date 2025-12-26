@@ -1,12 +1,12 @@
 package org.metavm.tools;
 
 import org.apache.http.HttpHost;
-import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.jsonk.Jsonk;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.util.Constants;
 import org.metavm.util.Utils;
@@ -23,11 +23,12 @@ public class EsIndexCreator {
     public static final int PORT = 9200;
     public static final String INDEX = "instance";
 
-    private final RestHighLevelClient client;
+    private final RestClient client;
 
     public EsIndexCreator() {
         RestClientBuilder builder = RestClient.builder(new HttpHost(HOST, PORT));
-        client = new RestHighLevelClient(builder);
+        // Build the low-level client directly
+        client = builder.build();
     }
 
     public Map<String, Object> buildSource() {
@@ -59,19 +60,47 @@ public class EsIndexCreator {
     }
 
     public void create() {
-        CreateIndexRequest request = new CreateIndexRequest(INDEX);
-        request.source(buildSource());
         try {
-            CreateIndexResponse response = client.indices().create(request, RequestOptions.DEFAULT);
-            System.out.printf("Create index response. index: %s, ack: %s%n", response.index(), response.isAcknowledged());
+            // 1. Create the Low-Level Request (PUT /instance)
+            Request request = new Request("PUT", "/" + INDEX);
+
+            // 2. Convert the Map source to a JSON String using your util
+            String jsonSource = Jsonk.toJson(buildSource());
+            request.setJsonEntity(jsonSource);
+
+            // 3. Execute request
+            Response response = client.performRequest(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+
+            // 4. Handle success (200 OK)
+            if (statusCode == 200) {
+                System.out.printf("Create index response. index: %s, status: %d (Success)%n", INDEX, statusCode);
+            } else {
+                System.err.printf("Unexpected status code: %d%n", statusCode);
+            }
+
+        } catch (ResponseException e) {
+            // Handle specific ES errors (e.g., 400 if index already exists)
+            System.err.println("Elasticsearch Error: " + e.getMessage());
+            throw new RuntimeException("Fail to create index (Status: " + e.getResponse().getStatusLine().getStatusCode() + ")", e);
         } catch (IOException e) {
-            throw new RuntimeException("Fail to create index", e);
+            throw new RuntimeException("Fail to create index due to IO error", e);
+        } finally {
+            // Optional: Close client if this is a one-off tool execution
+            try {
+                client.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public static void main(String[] args) {
         EsIndexCreator creator = new EsIndexCreator();
-        System.out.println(Utils.toJSONString(creator.buildSource()));
+        // Print the JSON structure for debugging
+        System.out.println("Source JSON: " + Jsonk.toJson(creator.buildSource()));
+        // Run creation
+        creator.create();
     }
 
 }

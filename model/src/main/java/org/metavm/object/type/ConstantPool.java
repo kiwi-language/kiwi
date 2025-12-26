@@ -1,10 +1,14 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
+import org.metavm.api.ValueObject;
 import org.metavm.entity.*;
+import org.metavm.wire.*;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -17,9 +21,11 @@ import org.metavm.util.Utils;
 import java.util.*;
 import java.util.function.Consumer;
 
+@Wire
 @Slf4j
-public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey, Struct {
+public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey, Struct, ValueObject {
 
+    @Parent
     private final ConstantScope scope;
     private List<Value> entries = new ArrayList<>();
     private transient ConstantPool template;
@@ -29,7 +35,10 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
     private transient Object[] values = new Object[1];
 
     public transient List<Type> typeArguments;
+    @Setter
+    @Getter
     private transient ResolutionStage stage = ResolutionStage.INIT;
+    @Getter
     private transient int version;
 
     public ConstantPool(ConstantScope scope) {
@@ -41,11 +50,6 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
         this(template.scope);
         this.typeArguments = new ArrayList<>(typeArguments);
         this.template = template;
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitList(visitor::visitValue);
     }
 
     @Generated
@@ -133,14 +137,6 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
         return (KlassType) values[index];
     }
 
-    public ResolutionStage getStage() {
-        return stage;
-    }
-
-    public void setStage(ResolutionStage stage) {
-        this.stage = stage;
-    }
-
     @Override
     public String toString() {
         return Arrays.toString(getValues());
@@ -194,10 +190,6 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
         map.put("stage", this.getStage().name());
     }
 
-    public int getVersion() {
-        return version;
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.writeList(entries, output::writeValue);
@@ -218,7 +210,7 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
     }
 
     public void ensureUptodate() {
-        if (template.version > version)
+        if (template != null && template.version > version)
             template.substitute(this);
     }
 

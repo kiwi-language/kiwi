@@ -4,17 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.StaticFieldTable;
-import org.metavm.util.ReflectionUtils;
 import org.metavm.util.TriConsumer;
 
 import java.lang.reflect.*;
-import java.util.Arrays;
-import java.util.Spliterator;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-
-import static org.metavm.entity.ReflectDefiner.ignoredFunctionalInterfaceMethods;
 
 @Slf4j
 public abstract class AbstractIdGenerator {
@@ -57,7 +51,7 @@ public abstract class AbstractIdGenerator {
         var isFunctionalInterface = javaClass.isAnnotationPresent(FunctionalInterface.class);
         for (Method javaMethod : javaClass.getDeclaredMethods()) {
             if (isFunctionalInterface) {
-                if (javaMethod.isDefault() || ignoredFunctionalInterfaceMethods.contains(ReflectDefiner.JavaMethodSignature.of(javaMethod)))
+                if (javaMethod.isDefault())
                     continue;
             }
             if (javaMethod.isSynthetic() || !isMethodIncluded(javaMethod))
@@ -65,28 +59,13 @@ public abstract class AbstractIdGenerator {
             processExecutable(javaMethod);
             processType(javaMethod.getGenericReturnType());
         }
-        boolean sftRequired = false;
-        for (Field field : javaClass.getDeclaredFields()) {
-            if (isFieldIncluded(field)) {
-                initId(field);
-                processType(field.getGenericType());
-                if (Modifier.isStatic(field.getModifiers())) {
-                    var initialValue = ReflectionUtils.get(null, field);
-                    if (initialValue instanceof Integer) sftRequired = true;
-                }
-            }
-        }
         for (Class<?> innerClass : javaClass.getDeclaredClasses()) {
             if (Modifier.isPublic(innerClass.getModifiers())) {
                 generate(innerClass);
             }
         }
-        if (sftRequired)
-            initId(ModelIdentity.create(StaticFieldTable.class, javaClass.getName().replace('$', '.')));
     }
 
-
-    protected abstract boolean isFieldIncluded(Field field);
 
     protected  abstract boolean isConstructorIncluded(Constructor<?> constructor);
 

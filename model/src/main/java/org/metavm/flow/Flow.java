@@ -1,15 +1,14 @@
 package org.metavm.flow;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
-import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.expression.VoidStructuralVisitor;
 import org.metavm.object.instance.core.Id;
@@ -17,47 +16,42 @@ import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
-import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.metavm.util.BusinessException;
+import org.metavm.util.InternalException;
+import org.metavm.util.NamingUtils;
+import org.metavm.util.Utils;
+import org.metavm.wire.Wire;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-@NativeEntity(28)
+@Wire(28)
 @Entity
 @Slf4j
 public abstract class Flow extends AttributedElement implements GenericDeclaration, Callable, LoadAware, CapturedTypeScope, ITypeDef, ConstantScope, KlassDeclaration{
-
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     @EntityField(asTitle = true)
     private @NotNull String name;
     private boolean isNative;
     private boolean isSynthetic;
-    private List<Parameter> parameters = new ArrayList<>();
+    private final List<Parameter> parameters = new ArrayList<>();
+    @Getter
+    @Setter
     private int returnTypeIndex;
     private @Nullable Code code;
+    @Getter
     private transient long version;
     // Don't remove, for search
     @SuppressWarnings("unused")
     private boolean isTemplate;
-    private List<TypeVariable> typeParameters = new ArrayList<>();
+    private final List<TypeVariable> typeParameters = new ArrayList<>();
     private @NotNull MetadataState state;
-    private List<CapturedTypeVariable> capturedTypeVariables = new ArrayList<>();
-    private List<Lambda> lambdas = new ArrayList<>();
-    private List<Klass> klasses = new ArrayList<>();
-    private ConstantPool constantPool = new ConstantPool(this);
+    private final List<CapturedTypeVariable> capturedTypeVariables = new ArrayList<>();
+    private final List<Lambda> lambdas = new ArrayList<>();
+    private final List<Klass> klasses = new ArrayList<>();
+    private final ConstantPool constantPool = new ConstantPool(this);
     private @Nullable String internalName;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
@@ -78,25 +72,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.returnTypeIndex = returnTypeIndex;
         setTypeParameters(typeParameters);
         this.state = state;
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        AttributedElement.visitBody(visitor);
-        visitor.visitUTF();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        visitor.visitList(visitor::visitEntity);
-        visitor.visitInt();
-        visitor.visitNullable(() -> Code.visit(visitor));
-        visitor.visitBoolean();
-        visitor.visitList(visitor::visitEntity);
-        visitor.visitByte();
-        visitor.visitList(visitor::visitEntity);
-        visitor.visitList(visitor::visitEntity);
-        visitor.visitList(visitor::visitEntity);
-        ConstantPool.visit(visitor);
-        visitor.visitNullable(visitor::visitUTF);
     }
 
     public abstract FlowExecResult execute(@Nullable Value self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext);
@@ -216,10 +191,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return getType();
     }
 
-    public long getVersion() {
-        return version;
-    }
-
     public boolean isNative() {
         return isNative;
     }
@@ -271,14 +242,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public void setReturnType(Type returnType) {
         this.returnTypeIndex = constantPool.addValue(returnType);
-    }
-
-    public void setReturnTypeIndex(int returnTypeIndex) {
-        this.returnTypeIndex = returnTypeIndex;
-    }
-
-    public int getReturnTypeIndex() {
-        return returnTypeIndex;
     }
 
     @JsonIgnore
@@ -574,40 +537,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("parameterTypes", this.getParameterTypes().stream().map(Type::toJson).toList());
-        map.put("returnType", this.getReturnType().toJson());
-        map.put("code", this.getCode().toJson());
-        map.put("synthetic", this.isSynthetic());
-        map.put("name", this.getName());
-        map.put("state", this.getState().name());
-        map.put("functionType", this.getFunctionType().toJson());
-        map.put("native", this.isNative());
-        map.put("typeParameters", this.getTypeParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("parameters", this.getParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("returnTypeIndex", this.getReturnTypeIndex());
-        map.put("type", this.getType().toJson());
-        map.put("capturedTypeVariables", this.getCapturedTypeVariables().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("lambdas", this.getLambdas().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("constantPool", this.getConstantPool().toJson());
-        map.put("klasses", this.getKlasses().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("flags", this.getFlags());
-        map.put("internalName", this.getInternalName());
-        map.put("attributes", this.getAttributes().stream().map(Attribute::toJson).toList());
-        map.put("minLocals", this.getMinLocals());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
         for (var parameters_ : parameters) action.accept(parameters_);
@@ -615,57 +544,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         for (var capturedTypeVariables_ : capturedTypeVariables) action.accept(capturedTypeVariables_);
         for (var lambdas_ : lambdas) action.accept(lambdas_);
         for (var klasses_ : klasses) action.accept(klasses_);
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_Flow;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        super.readBody(input, parent);
-        this.name = input.readUTF();
-        this.isNative = input.readBoolean();
-        this.isSynthetic = input.readBoolean();
-        this.parameters = input.readList(() -> input.readEntity(Parameter.class, this));
-        this.returnTypeIndex = input.readInt();
-        this.code = input.readNullable(() -> Code.read(input, this));
-        this.isTemplate = input.readBoolean();
-        this.typeParameters = input.readList(() -> input.readEntity(TypeVariable.class, this));
-        this.state = MetadataState.fromCode(input.read());
-        this.capturedTypeVariables = input.readList(() -> input.readEntity(CapturedTypeVariable.class, this));
-        this.lambdas = input.readList(() -> input.readEntity(Lambda.class, this));
-        this.klasses = input.readList(() -> input.readEntity(Klass.class, this));
-        this.constantPool = ConstantPool.read(input, this);
-        this.internalName = input.readNullable(input::readUTF);
-        this.onRead();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        super.writeBody(output);
-        output.writeUTF(name);
-        output.writeBoolean(isNative);
-        output.writeBoolean(isSynthetic);
-        output.writeList(parameters, output::writeEntity);
-        output.writeInt(returnTypeIndex);
-        output.writeNullable(code, arg0 -> arg0.write(output));
-        output.writeBoolean(isTemplate);
-        output.writeList(typeParameters, output::writeEntity);
-        output.write(state.code());
-        output.writeList(capturedTypeVariables, output::writeEntity);
-        output.writeList(lambdas, output::writeEntity);
-        output.writeList(klasses, output::writeEntity);
-        constantPool.write(output);
-        output.writeNullable(internalName, output::writeUTF);
-    }
-
-    @Override
-    protected void buildSource(Map<String, Value> source) {
-        super.buildSource(source);
     }
 
     @Override

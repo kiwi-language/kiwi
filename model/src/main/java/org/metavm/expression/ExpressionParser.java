@@ -1,26 +1,16 @@
 package org.metavm.expression;
 
 import lombok.extern.slf4j.Slf4j;
-import org.antlr.v4.runtime.BailErrorStrategy;
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
-import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.expression.antlr.MetaVMLexer;
-import org.metavm.expression.antlr.MetaVMParser;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.query.OperatorTypes;
 import org.metavm.object.type.*;
-import org.metavm.util.Constants;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
-import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -45,344 +35,796 @@ public class ExpressionParser {
         }
     }
 
-    public static Type parseType(@NotNull String expression, @NotNull ParsingContext context) {
-        try {
-            return new ExpressionParser(expression, context).parseType();
-        }
-        catch (Exception e) {
-            throw new InternalException("fail to type parse expression " + expression, e);
-        }
-    }
-
-    private final String expression;
-    private final MetaVMParser parser;
+    private final Tokenizer tokenizer;
     private final ParsingContext context;
+    private Token token;
+    private final StringBuilder buf = new StringBuilder();
 
     public ExpressionParser(String expression, ParsingContext context) {
-        this.expression = expression;
         this.context = context;
-        CharStream input = CharStreams.fromString(expression);
-        parser = new MetaVMParser(new CommonTokenStream(new MetaVMLexer(input)));
-        parser.setErrorHandler(new BailErrorStrategy());
+        tokenizer = new Tokenizer(expression);
+        token = tokenizer.next();
     }
 
     public Expression parse(@Nullable Type assignedType) {
-        try {
-            Expression expression = antlrPreparse();
-            return resolve(expression, assignedType);
-        }
-        catch (ParseCancellationException e) {
-            throw new InternalException("fail to parse expression: " + expression, e);
-        }
-    }
-
-    private Type parseType() {
-        return parseTypeType(parser.typeTypeOrVoid());
+        Expression expression = expression();
+        return resolve(expression, assignedType);
     }
 
     private Expression resolve(Expression expression, @Nullable Type assignedType) {
         return ExpressionResolverV2.resolve(expression, assignedType, context);
     }
 
-    Expression antlrPreparse() {
-        return parse(parser.expression());
+    Expression expression() {
+        return ternaryExpr();
     }
 
-    private Expression parse(MetaVMParser.ExpressionContext expression) {
-        if (expression.primary() != null) {
-            return preParsePrimary(expression.primary());
-        } else if (expression.DOT() != null && !expression.typeType().isEmpty()) {
-            return parseStaticField(expression);
-        } else if (expression.bop != null) {
-            return parseBop(expression);
-        } else if (expression.LBRACK() != null) {
-            return parseArrayAccess(expression);
-        } else if (expression.list() != null) {
-            return parseArray(expression.list());
-        } else if (expression.prefix != null) {
-            return parsePrefix(expression);
-        } else if (expression.allMatch() != null) {
-            return parseAllMatch(expression.allMatch());
-        } else if (expression.AS() != null) {
-            return parseAs(expression);
-        } else if (expression.methodCall() != null) {
-            return parseMethodCall(expression.methodCall());
-        } else if(expression.LT().size() == 2 || expression.GT().size() >= 2)
-            return parseShift(expression);
-        else {
-            throw new ExpressionParsingException();
+    private Expression ternaryExpr() {
+        var e = orExpr();
+        if (is(TokenKind.QUESTION)) {
+            next();
+            var truePart = orExpr();
+            accept(TokenKind.COLON);
+            var falsePart = ternaryExpr();
+            return ConditionalExpression.create(e, truePart, falsePart);
+        } else
+            return e;
+    }
+
+    private Expression orExpr() {
+        var e = andExpr();
+        for (;;) {
+            if (is(TokenKind.OR)) {
+                next();
+                e = new BinaryExpression(BinaryOperator.OR, e, andExpr());
+            } else {
+                return e;
+            }
         }
     }
 
-    private Expression parseShift(MetaVMParser.ExpressionContext ctx) {
-        var left = parse(ctx.expression(0));
-        var right = parse(ctx.expression(1));
-        BinaryOperator op;
-        if(ctx.LT().size() == 2)
-            op = BinaryOperator.LEFT_SHIFT;
-        else if(ctx.GT().size() == 2)
-            op = BinaryOperator.RIGHT_SHIFT;
-        else if(ctx.GT().size() == 3)
-            op = BinaryOperator.UNSIGNED_RIGHT_SHIFT;
-        else
-            throw new IllegalStateException("Cannot resolve operator for expression: " + ctx.getText());
-        return new BinaryExpression(op, left, right);
-    }
-
-    private Expression parseAs(MetaVMParser.ExpressionContext expression) {
-        return new AsExpression(
-                parse(expression.expression(0)),
-                expression.IDENTIFIER().getText()
-        );
-    }
-
-    private Expression parseAllMatch(MetaVMParser.AllMatchContext allMatch) {
-        return new AllMatchExpression(
-                parse(allMatch.expression(0)),
-                parse(allMatch.expression(1))
-        );
-    }
-
-    private Expression parseMethodCall(MetaVMParser.MethodCallContext methodCall) {
-        if (methodCall.identifier().IDENTIFIER() != null) {
-            return new FunctionExpression(
-                    Func.getByName(methodCall.identifier().IDENTIFIER().getText()),
-                    methodCall.expressionList() != null ?
-                            parseExpressionList(methodCall.expressionList())
-                            : List.of()
-            );
-        } else {
-            throw new ExpressionParsingException();
+    private Expression andExpr() {
+        var e = bitOrExpr();
+        for (;;) {
+            if (is(TokenKind.AND)) {
+                next();
+                e = new BinaryExpression(BinaryOperator.AND, e, bitOrExpr());
+            } else {
+                return e;
+            }
         }
     }
 
-    private List<Expression> parseExpressionList(MetaVMParser.ExpressionListContext expressionList) {
-        return Utils.map(expressionList.expression(), this::parse);
-    }
-
-    private Expression parsePrefix(MetaVMParser.ExpressionContext expression) {
-        var operator = switch (expression.prefix.getType()) {
-            case MetaVMParser.ADD -> UnaryOperator.POS;
-            case MetaVMParser.SUB -> UnaryOperator.NEG;
-            case MetaVMParser.BANG -> UnaryOperator.NOT;
-            case MetaVMParser.TILDE -> UnaryOperator.BITWISE_COMPLEMENT;
-            default -> throw new IllegalStateException("Unexpected prefix: " + expression.prefix.getTokenIndex());
-        };
-        return new UnaryExpression(operator, parse(expression.expression(0)));
-    }
-
-    private ArrayExpression parseArray(MetaVMParser.ListContext list) {
-        return new ArrayExpression(
-                list.expressionList() != null ?
-                        parseExpressionList(list.expressionList()) : List.of(),
-                Types.getAnyArrayType()
-        );
-    }
-
-    private StaticPropertyExpression parseStaticField(MetaVMParser.ExpressionContext expression) {
-        var klass = ((ClassType) parseTypeType(expression.typeType(0))).getKlass();
-        String identifier = expression.identifier().IDENTIFIER().getText();
-        Field field = identifier.startsWith(Constants.ID_PREFIX) ?
-                klass.getField(Id.parse(identifier.substring(Constants.ID_PREFIX.length()))) :
-                klass.getFieldByName(identifier);
-        return new StaticPropertyExpression(field.getRef());
-    }
-
-    private Expression parseArrayAccess(MetaVMParser.ExpressionContext expression) {
-        return new ArrayAccessExpression(
-                parse(expression.expression(0)),
-                parse(expression.expression(1))
-        );
-    }
-
-    private Expression preParsePrimary(MetaVMParser.PrimaryContext primary) {
-        if (primary.LPAREN() != null) {
-            return parse(primary.expression());
-        } else if (primary.THIS() != null) {
-            return new VariableExpression("this");
-        } else if (primary.literal() != null) {
-            return preParseLiteral(primary.literal());
-        } else if (primary.identifier() != null) {
-            return parseIdentifier(primary.identifier());
-        } else if(primary.CLASS() != null) {
-            return new TypeLiteralExpression(parseTypeType(primary.typeTypeOrVoid()));
-        } else {
-            throw new ExpressionParsingException();
+    private Expression bitOrExpr() {
+        var e = bitXorExpr();
+        for (;;) {
+            if (is(TokenKind.BIT_OR)) {
+                next();
+                e = new BinaryExpression(BinaryOperator.BITWISE_OR, e, bitXorExpr());
+            } else {
+                return e;
+            }
         }
     }
 
-    private Expression parseBop(MetaVMParser.ExpressionContext expression) {
-        var bop = expression.bop;
-        return switch (bop.getType()) {
-            case MetaVMParser.DOT -> {
-                if (expression.identifier() != null) {
-                    yield new VariablePathExpression(
-                            parse(expression.expression(0)),
-                            (VariableExpression) parseIdentifier(expression.identifier())
-                    );
-                } else {
-                    throw new ExpressionParsingException();
+    private Expression bitXorExpr() {
+        var e = bitAndExpr();
+        for (;;) {
+            if (is(TokenKind.BIT_XOR)) {
+                next();
+                e = new BinaryExpression(BinaryOperator.BITWISE_XOR, e, bitAndExpr());
+            } else {
+                return e;
+            }
+        }
+    }
+
+    private Expression bitAndExpr() {
+        var e = eqExpr();
+        for (;;) {
+            if (is(TokenKind.BIT_AND)) {
+                next();
+                e = new BinaryExpression(BinaryOperator.BITWISE_AND, e, eqExpr());
+            } else {
+                return e;
+            }
+        }
+    }
+
+    private Expression eqExpr() {
+        var e = relationExpr();
+        for (;;) {
+            switch (token.kind) {
+                case EQ -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.EQ, e, relationExpr());
+                }
+                case NE -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.NE, e, relationExpr());
+                }
+                default -> {
+                    return e;
                 }
             }
-            case MetaVMParser.INSTANCEOF -> new InstanceOfExpression(
-                    parse(expression.expression(0)),
-                    parseTypeType(expression.typeType(0))
-            );
-            case MetaVMParser.QUESTION -> ConditionalExpression.create(
-                    parse(expression.expression(0)),
-                    parse(expression.expression(1)),
-                    parse(expression.expression(2))
-            );
-            default -> new BinaryExpression(
-                    BinaryOperator.getByOp(bop.getText(), OperatorTypes.BINARY),
-                    parse(expression.expression(0)),
-                    parse(expression.expression(1))
-            );
+        }
+    }
+
+    private Expression relationExpr() {
+        var e = shiftExpr();
+        for (;;) {
+            switch (token.kind) {
+                case LT -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.LT, e, shiftExpr());
+                }
+                case GT -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.GT, e, shiftExpr());
+                }
+                case LE -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.LE, e, shiftExpr());
+                }
+                case GE -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.GE, e, shiftExpr());
+                }
+                case INSTANCEOF -> {
+                    next();
+                    var type = type();
+                    e = new InstanceOfExpression(e, type);
+                }
+                case LIKE -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.LIKE, e, shiftExpr());
+                }
+                case IN -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.IN, e, shiftExpr());
+                }
+                default -> {
+                    return e;
+                }
+            }
+        }
+    }
+
+    private Expression shiftExpr() {
+        var e = addExpr();
+        for (;;) {
+            switch (token.kind) {
+                case SHL -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.LEFT_SHIFT, e, addExpr());
+                }
+                case SHR -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.RIGHT_SHIFT, e, addExpr());
+                }
+                case USHR -> {
+                    next();
+                    e = new BinaryExpression(BinaryOperator.UNSIGNED_RIGHT_SHIFT, e, addExpr());
+                }
+                default -> {
+                    return e;
+                }
+            }
+        }
+    }
+
+    private Expression addExpr() {
+        var e = mulExpr();
+        for (;;) {
+            switch (token.kind) {
+                case ADD -> e = new BinaryExpression(BinaryOperator.ADD, e, mulExpr());
+                case MINUS -> e = new BinaryExpression(BinaryOperator.SUB, e, mulExpr());
+                default -> {
+                    return e;
+                }
+            }
+        }
+    }
+
+    private Expression mulExpr() {
+        var e = prefixExpr();
+        for (;;) {
+            switch (token.kind) {
+                case MUL -> e = new BinaryExpression(BinaryOperator.MUL, e, prefixExpr());
+                case DIV -> e = new BinaryExpression(BinaryOperator.DIV, e, prefixExpr());
+                case MOD -> e = new BinaryExpression(BinaryOperator.MOD, e, prefixExpr());
+                default -> {
+                    return e;
+                }
+            }
+        }
+    }
+
+    private Expression prefixExpr() {
+        switch (token.kind) {
+            case ADD -> {
+                next();
+                return new UnaryExpression(UnaryOperator.POS, prefixExpr());
+            }
+            case MINUS -> {
+                next();
+                return new UnaryExpression(UnaryOperator.NEG, prefixExpr());
+            }
+            case NOT -> {
+                next();
+                return new UnaryExpression(UnaryOperator.NOT, prefixExpr());
+            }
+            default -> {
+                return postfixExpr();
+            }
+        }
+    }
+
+    private Expression postfixExpr() {
+        var e = atomExpr();
+        for (;;) {
+            switch (token.kind) {
+                case DOT -> {
+                    next();
+                    var varExpr = new VariableExpression(name());
+                    e = new VariablePathExpression(e, varExpr);
+                }
+                case LBRACKET -> {
+                    next();
+                    var indexExpr = expression();
+                    accept(TokenKind.RBRACKET);
+                    e = new ArrayAccessExpression(e, indexExpr);
+                }
+                case AS -> {
+                    next();
+                    var typeName = name();
+                    e = new AsExpression(e, typeName);
+                }
+                default -> {
+                    return e;
+                }
+            }
+        }
+    }
+
+    private Expression atomExpr() {
+        switch (token.kind) {
+            case TRUE -> {
+                next();
+                return new ConstantExpression(Instances.booleanInstance(true));
+            }
+            case FALSE -> {
+                next();
+                return new ConstantExpression(Instances.booleanInstance(false));
+            }
+            case NULL -> {
+                next();
+                return new ConstantExpression(Instances.nullInstance());
+            }
+            case INT_LITERAL -> {
+                var intText = token.text;
+                next();
+                return new ConstantExpression(
+                        Instances.longInstance(Long.parseLong(intText))
+                );
+            }
+            case FLOAT_LITERAL -> {
+                var floatText = token.text;
+                next();
+                return new ConstantExpression(
+                        Instances.doubleInstance(Double.parseDouble(floatText))
+                );
+            }
+            case CHAR_LIT -> {
+                var charText = token.text;
+                next();
+                return new ConstantExpression(
+                        Instances.charInstance(charText.charAt(0))
+                );
+            }
+            case STRING_LITERAL -> {
+                var strText = token.text;
+                next();
+                return new ConstantExpression(
+                        Instances.stringInstance(strText)
+                );
+            }
+            case IDENT -> {
+                var name = token.text;
+                next();
+                if (is(TokenKind.LPAREN)) {
+                    next();
+                    var func = Func.fromName(name);
+                    var args = new ArrayList<Expression>();
+                    if (!is(TokenKind.RPAREN)) {
+                        do {
+                            args.add(expression());
+                        } while (skip(TokenKind.COMMA));
+                    }
+                    accept(TokenKind.RPAREN);
+                    return new FunctionExpression(func ,args);
+                } else
+                    return new VariableExpression(name);
+            }
+            case LPAREN -> {
+                next();
+                var e = expression();
+                accept(TokenKind.RPAREN);
+                return e;
+            }
+            case LBRACKET -> {
+                next();
+                var exprs = new ArrayList<Expression>();
+                if (!is(TokenKind.RBRACKET)) {
+                    do {
+                        exprs.add(expression());
+                    } while (skip(TokenKind.COMMA));
+                }
+                accept(TokenKind.RBRACKET);
+                return ArrayExpression.create(exprs);
+            }
+            default -> throw new ExpressionParsingException("Unexpected token: " + token.kind);
+        }
+    }
+
+
+    Type type() {
+        return unionType();
+    }
+
+    Type unionType() {
+        var t = intersectionType();
+        if (!is(TokenKind.OR))
+            return t;
+        var alts = new HashSet<Type>();
+        alts.add(t);
+        do {
+            next();
+            alts.add(intersectionType());
+        } while (is(TokenKind.OR));
+        return new UnionType(alts);
+    }
+
+    Type intersectionType() {
+        var t = arrayType();
+        if (!is(TokenKind.AND))
+            return t;
+        var bounds = new HashSet<Type>();
+        bounds.add(t);
+        do {
+            next();
+            bounds.add(arrayType());
+        } while (is(TokenKind.AND));
+        return new IntersectionType(bounds);
+    }
+
+    Type arrayType() {
+        var t = atomType();
+        if (!is(TokenKind.LBRACKET))
+            return t;
+        do {
+            t = Types.getArrayType(t);
+            next();
+            accept(TokenKind.RBRACKET);
+        } while (is(TokenKind.LBRACKET));
+        return t;
+    }
+
+    Type atomType() {
+        return switch (token.kind) {
+            case LBRACKET -> {
+                next();
+                var lb = type();
+                accept(TokenKind.COMMA);
+                var ub = type();
+                accept(TokenKind.RBRACKET);
+                yield new UncertainType(lb, ub);
+            }
+            case LPAREN -> {
+                next();
+                if (skip(TokenKind.RPAREN)) {
+                    accept(TokenKind.ARROW);
+                    yield new FunctionType(List.of(), type());
+                }
+                var t = type();
+                if (is(TokenKind.COMMA)) {
+                    next();
+                    var paramTypes = new ArrayList<Type>();
+                    paramTypes.add(t);
+                    do {
+                        paramTypes.add(type());
+                    } while (skip(TokenKind.COMMA));
+                    accept(TokenKind.ARROW);
+                    yield new FunctionType(paramTypes, type());
+                } else {
+                    accept(TokenKind.RPAREN);
+                    if (skip(TokenKind.ARROW))
+                        yield new FunctionType(List.of(t), type());
+                    else
+                        yield t;
+                }
+            }
+            case IDENT -> {
+                var text = token.text;
+                next();
+                yield switch (text) {
+                    case "byte" -> PrimitiveType.byteType;
+                    case "short" -> PrimitiveType.shortType;
+                    case "int" -> PrimitiveType.intType;
+                    case "long" -> PrimitiveType.longType;
+                    case "boolean" -> PrimitiveType.booleanType;
+                    case "string" -> StdKlass.string.type();
+                    case "char" -> PrimitiveType.charType;
+                    case "double" -> PrimitiveType.doubleType;
+                    case "float" -> PrimitiveType.floatType;
+                    case "void" -> PrimitiveType.voidType;
+                    case "time" -> PrimitiveType.timeType;
+                    case "password" -> PrimitiveType.passwordType;
+                    case "null" -> NullType.instance;
+                    case "any" -> AnyType.instance;
+                    case "never" -> NeverType.instance;
+                    default -> {
+                        buf.setLength(0);
+                        buf.append(text);
+                        while (is(TokenKind.DOT)) {
+                            next();
+                            buf.append('.').append(accept(TokenKind.IDENT).text);
+                        }
+                        var name = buf.toString();
+                        var klass = (Klass) requireNonNull(context.getTypeDefProvider().findKlassByName(name));
+                        if (is(TokenKind.LT)) {
+                            next();
+                            var typeArgs = new ArrayList<Type>();
+                            do {
+                                typeArgs.add(type());
+                            } while (skip(TokenKind.COMMA));
+                            accept(TokenKind.GT);
+                            yield KlassType.create(klass, typeArgs);
+                        } else
+                            yield klass.getType();
+                    }
+                };
+            }
+            default -> throw new org.metavm.expression.ExpressionParsingException("Unexpected token: " + token.kind);
         };
     }
 
-    private Type parseTypeType(MetaVMParser.TypeTypeOrVoidContext typeType) {
-        if(typeType.VOID() != null)
-            return PrimitiveType.voidType;
-        else
-            return parseTypeType(typeType.typeType());
+    private String name() {
+        return accept(TokenKind.IDENT).text;
     }
 
-    private Type parseTypeType(MetaVMParser.TypeTypeContext typeType) {
-        if(typeType.parType() != null)
-            return parseTypeType(typeType.parType().typeType());
-        if(typeType.ANY() != null)
-            return Types.getAnyType();
-        if(typeType.NEVER() != null)
-            return Types.getNeverType();
-        if(typeType.LBRACK() != null)
-            return new UncertainType(parseTypeType(typeType.typeType(0)), parseTypeType(typeType.typeType(1)));
-        if(typeType.primitiveType() != null)
-            return parsePrimitiveType(typeType.primitiveType());
-        if (typeType.classOrInterfaceType() != null)
-            return parseClassType(typeType.classOrInterfaceType());
-        if (!typeType.BITOR().isEmpty())
-            return new UnionType(Utils.mapToSet(typeType.typeType(), this::parseTypeType)).flatten();
-        if (!typeType.BITAND().isEmpty())
-            return new IntersectionType(Utils.mapToSet(typeType.typeType(), this::parseTypeType)).flatten();
-        if(typeType.ARROW() != null) {
-            List<Type> paramTypes = typeType.typeList() != null ?
-                    Utils.map(typeType.typeList().typeType(), this::parseTypeType) : List.of();
-            return new FunctionType(paramTypes, parseTypeType(typeType.typeType(0)));
+    private Token accept(TokenKind tk) {
+        if (is(tk)) {
+            var t = token;
+            next();
+            return t;
+        } else
+            throw new ExpressionParsingException("Expected token: " + tk + ", but found: " + token);
+    }
+
+    private void next() {
+        token = tokenizer.next();
+    }
+
+    private boolean skip(TokenKind tk) {
+        if (is(tk)) {
+            next();
+            return true;
+        } else
+            return false;
+    }
+
+    private boolean is(TokenKind tk) {
+        return token.kind == tk;
+    }
+
+
+    private static class Tokenizer {
+        private final String s;
+        private int pos;
+        private final StringBuilder buf = new StringBuilder();
+
+        public Tokenizer(String s) {
+            this.s = s;
         }
-        if(typeType.arrayKind() != null)
-            return new ArrayType(parseTypeType(typeType.typeType(0)), parseArrayKind(typeType.arrayKind()));
-        throw new ExpressionParsingException();
-    }
 
-    private ClassType parseClassType(MetaVMParser.ClassOrInterfaceTypeContext ctx) {
-        var identifier = ctx.qualifiedName();
-        String name = identifier.getText();
-        var colonIdx = name.indexOf(':');
-        if(colonIdx >= 0)
-            name = name.substring(0, colonIdx);
-        Klass klass;
-        if (name.startsWith(Constants.ID_PREFIX))
-            klass = context.getTypeDefProvider().getKlass(Id.parse(Constants.removeIdPrefix(name)));
-        else
-            klass = requireNonNull(context.getTypeDefProvider().findKlassByName(name));
-        if(ctx.typeArguments() != null)
-            return KlassType.create(klass, Utils.map(ctx.typeArguments().typeType(), this::parseTypeType));
-        else
-            return klass.getType();
-    }
-
-    private Type parsePrimitiveType(MetaVMParser.PrimitiveTypeContext ctx) {
-        if(ctx.BOOLEAN() != null)
-            return PrimitiveType.booleanType;
-        if(ctx.STRING() != null)
-            return StdKlass.string.type();
-        if (ctx.INT() != null)
-            return PrimitiveType.intType;
-        if(ctx.LONG() != null)
-            return PrimitiveType.longType;
-        if(ctx.CHAR() != null)
-            return PrimitiveType.charType;
-        if(ctx.DOUBLE() != null)
-            return PrimitiveType.doubleType;
-        if(ctx.PASSWORD() != null)
-            return PrimitiveType.passwordType;
-        if(ctx.TIME() != null)
-            return PrimitiveType.timeType;
-        if(ctx.VOID() != null)
-            return PrimitiveType.voidType;
-        if(ctx.NULL_LITERAL() != null)
-            return NullType.instance;
-        else
-            throw new IllegalStateException("Unrecognized primitive type: " + ctx.getText());
-
-    }
-
-    private ArrayKind parseArrayKind(MetaVMParser.ArrayKindContext ctx) {
-        if(ctx.R() != null)
-            return ArrayKind.READ_ONLY;
-        if(ctx.LBRACK() != null)
-            return ArrayKind.DEFAULT;
-        throw new IllegalStateException("Unrecognized array kind: " + ctx.getText());
-    }
-
-    private Expression preParseLiteral(MetaVMParser.LiteralContext literal) {
-        if (literal.STRING_LITERAL() != null) {
-            return parseStringLiteral(literal.STRING_LITERAL());
-        } else if (literal.CHAR_LITERAL() != null) {
-            return parseCharLiteral(literal.CHAR_LITERAL());
-        } else if (literal.integerLiteral() != null) {
-            String intText = literal.integerLiteral().getText();
-            return new ConstantExpression(
-                    Instances.longInstance(Long.parseLong(intText))
-            );
-        } else if (literal.floatLiteral() != null) {
-            return new ConstantExpression(
-                    Instances.doubleInstance(Double.parseDouble(literal.getText()))
-            );
-        } else if (literal.BOOL_LITERAL() != null) {
-            return new ConstantExpression(
-                    Instances.booleanInstance(Boolean.parseBoolean(literal.getText()))
-            );
-        } else if (literal.NULL_LITERAL() != null) {
-            return new ConstantExpression(Instances.nullInstance());
-        } else if(literal.NEVER() != null)
-            return new NeverExpression();
-        else {
-            throw new ExpressionParsingException();
+        char current() {
+            return s.charAt(pos);
         }
-    }
 
-    private Expression parseStringLiteral(TerminalNode stringLiteral) {
-        return new ConstantExpression(
-                Instances.stringInstance(Expressions.deEscapeDoubleQuoted(stringLiteral.getText()))
-        );
-    }
+        Token next() {
+            if (pos == s.length())
+                return new Token(TokenKind.EOF, "");
+            return switch (current()) {
+                case 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+                        'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+                        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+                        'N', 'O', 'P',  'Q',  'R',  'S',  'T',  'U',  'V',  'W',  'X',
+                        'Y',  'Z', '_' -> identOrKeyword();
+                case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> numberLit();
+                case ',' -> {
+                    pos++;
+                    yield new Token(TokenKind.COMMA, ",");
+                }
+                case '.' -> {
+                    pos++;
+                    yield new Token(TokenKind.DOT, ".");
+                }
+                case '&' -> {
+                    pos++;
+                    if (current() == '&') {
+                        pos++;
+                        yield new Token(TokenKind.AND, "&&");
+                    }
+                    yield new Token(TokenKind.BIT_AND, "&");
+                }
+                case '|' -> {
+                    pos++;
+                    if (current() == '|') {
+                        pos++;
+                        yield new Token(TokenKind.OR, "||");
+                    }
+                    yield new Token(TokenKind.BIT_OR, "|");
+                }
+                case '~' -> {
+                    pos++;
+                    yield new Token(TokenKind.BIT_NOT, "~");
+                }
+                case '^' -> {
+                    pos++;
+                    yield new Token(TokenKind.BIT_XOR, "^");
+                }
+                case '(' -> {
+                    pos++;
+                    yield new Token(TokenKind.LPAREN, "(");
+                }
+                case ')' -> {
+                    pos++;
+                    yield new Token(TokenKind.RPAREN, ")");
+                }
+                case '[' -> {
+                    pos++;
+                    yield new Token(TokenKind.LBRACKET, "[");
+                }
+                case ']' -> {
+                    pos++;
+                    yield new Token(TokenKind.RBRACKET, "]");
+                }
+                case '<' -> {
+                    pos++;
+                    if (current() == '=') {
+                        pos++;
+                        yield new Token(TokenKind.LE, "<=");
+                    }
+                    yield new Token(TokenKind.LT, "<");
+                }
+                case '>' -> {
+                    pos++;
+                    if( current() == '=') {
+                        pos++;
+                        yield new Token(TokenKind.GE, ">=");
+                    }
+                    yield new Token(TokenKind.GT, ">");
+                }
+                case '?' -> {
+                    pos++;
+                    yield new Token(TokenKind.QUESTION, "?");
+                }
+                case '+' -> {
+                    pos++;
+                    yield new Token(TokenKind.ADD, "+");
+                }
+                case '!' -> {
+                    pos++;
+                    if (current() == '=') {
+                        pos++;
+                        yield new Token(TokenKind.NE, "!=");
+                    }
+                    yield new Token(TokenKind.NOT, "!");
+                }
+                case '=' -> {
+                    pos++;
+                    yield new Token(TokenKind.EQ, "=");
+                }
+                case '-' -> {
+                    pos++;
+                    if (current() == '>') {
+                        next();
+                        yield new Token(TokenKind.ARROW, "->");
+                    } else
+                        yield new Token(TokenKind.MINUS, "-");
+                }
+                case '"' -> stringLit();
+                case '\'' -> charLit();
+                case '@' -> {
+                    pos++;
+                    yield new Token(TokenKind.AT, "@");
+                }
+                case ' ', '\t' -> {
+                    skipWhitespaces();
+                    yield next();
+                }
+                default -> {
+                    if (Character.isJavaIdentifierPart(current()))
+                        yield identOrKeyword();
+                    else
+                        throw new ExpressionParsingException("Unexpected character: " + current());
+                }
+            };
+        }
 
-    private Expression parseSingleQuoteLiteral(TerminalNode singleQuoteStringLiteral) {
-        return new ConstantExpression(
-                Instances.stringInstance(Expressions.deEscapeSingleQuoted(singleQuoteStringLiteral.getText()))
-        );
-    }
+        private void skipWhitespaces() {
+            while (!isEof() && Character.isWhitespace(current()))
+                pos++;
+        }
 
-    private Expression parseCharLiteral(TerminalNode charLiteral) {
-        return new ConstantExpression(
-                Instances.charInstance(Expressions.deEscapeChar(charLiteral.getText()))
-        );
-    }
-
-    private Expression parseIdentifier(MetaVMParser.IdentifierContext identifier) {
-        if (identifier.IDENTIFIER() != null) {
-            String text = identifier.IDENTIFIER().getText();
-            if (text.startsWith(Constants.ID_PREFIX)) {
-                return new ConstantExpression(context.getInstanceProvider().get(
-                        Id.parse(text.substring(Constants.ID_PREFIX.length()))).getReference());
-            } else {
-                return new VariableExpression(identifier.IDENTIFIER().getText());
+        private Token identOrKeyword() {
+            buf.setLength(0);
+            while (!isEof() && Character.isJavaIdentifierPart(current())) {
+                buf.append(current());
+                pos++;
             }
-        } else {
-            throw new ExpressionParsingException();
+            var text = buf.toString();
+            var tk = switch (text) {
+                case "as" -> TokenKind.AS;
+                case "true" -> TokenKind.TRUE;
+                case "false" -> TokenKind.FALSE;
+                case "like" -> TokenKind.LIKE;
+                case "null" -> TokenKind.NULL;
+                case "in" -> TokenKind.IN;
+                case "instanceof" -> TokenKind.INSTANCEOF;
+                default -> TokenKind.IDENT;
+            };
+            return new Token(tk, text);
+        }
+
+        private boolean isEof() {
+            return pos >= s.length();
+        }
+
+        private Token charLit() {
+            accept('\'');
+            buf.append(0);
+            var c = current();
+            pos++;
+            if (c == '\\') {
+                var c1 = current();
+                pos++;
+                c = switch (c1) {
+                    case '\\' -> '\\';
+                    case 'b' -> '\b';
+                    case 'f' -> '\f';
+                    case 'n' -> '\n';
+                    case 'r' -> '\r';
+                    case 't' -> '\t';
+                    case '\'' -> '\'';
+                    case 'u' -> {
+                        var code = 0;
+                        for (int i = 0; i < 4; i++) {
+                            code = code << 4 | hex(current());
+                            pos++;
+                        }
+                        yield (char) code;
+                    }
+                    default -> throw new org.metavm.expression.ExpressionParsingException("Invalid escape character: " + c1);
+                };
+            }
+            accept('\'');
+            return new Token(TokenKind.CHAR_LIT, Character.toString(c));
+        }
+
+        private Token stringLit() {
+            accept('"');
+            buf.setLength(0);
+            for (;;) {
+                var c = current();
+                pos++;
+                switch (c) {
+                    case '"' -> {
+                        return new Token(TokenKind.STRING_LITERAL, buf.toString());
+                    }
+                    case '\\' -> {
+                        var c1 = current();
+                        pos++;
+                        switch (c1) {
+                           case '"' -> buf.append('"');
+                           case 'b' -> buf.append('\b');
+                           case 'f' -> buf.append('\f');
+                           case 'n' -> buf.append('\n');
+                           case 'r' -> buf.append('\r');
+                           case 't' -> buf.append('\t');
+                           case '\\' -> buf.append('\\');
+                           case 'u' -> {
+                               var code = 0;
+                               for (int i = 0; i < 4; i++) {
+                                  code = code << 4 | hex(current());
+                                  next();
+                               }
+                               buf.appendCodePoint(code);
+                           }
+                        }
+                    }
+                    default -> buf.append(c);
+                }
+            }
+        }
+
+        private Token numberLit() {
+            buf.setLength(0);
+            if (current() == '-') {
+                buf.append('-');
+                pos++;
+            }
+            scanDigits();
+            var tk = TokenKind.INT_LITERAL;
+            if (current() == '.') {
+                pos++;
+                scanDigits();
+                tk = TokenKind.FLOAT_LITERAL;
+            }
+            if (current() == 'e' || current() == 'E') {
+                buf.append('e');
+                tk = TokenKind.FLOAT_LITERAL;
+                if (current() == '-') {
+                    buf.append('-');
+                    pos++;
+                }
+                scanDigits();
+            }
+            return new Token(tk, buf.toString());
+        }
+
+        private void scanDigits() {
+            if (!isDigit())
+                throw new ExpressionParsingException("Digit expected, but found: " + current());
+            do {
+                buf.append(current());
+                pos++;
+            } while (isDigit());
+        }
+
+        private boolean isDigit() {
+            var c = current();
+            return c >= '0' && c <= '9';
+        }
+
+        private int hex(char c) {
+            if (c >= '0' && c <= '9')
+                return c - '0';
+            if (c >= 'a' && c <= 'f')
+                return 10 + (c - 'a');
+            if (c >= 'A' && c <= 'F')
+                return 10 + (c - 'A');
+            throw new ExpressionParsingException("Invalid hex character: " + c);
+        }
+
+        private void accept(char c) {
+            if (current() == c)
+                pos++;
+            else
+                throw new ExpressionParsingException("Expected character: " + c + ", but found: " + current());
+        }
+
+    }
+
+    private record Token(TokenKind kind, String text) {}
+
+    private enum TokenKind {
+        IDENT, DOT, COMMA, COLON, ARROW, LPAREN, RPAREN, LBRACKET, RBRACKET, EOF, BIT_AND, BIT_OR, BIT_XOR, LT, GT, ADD, MINUS,
+        MUL, DIV, MOD, NOT, QUESTION, AS, DOUBLE_QUOTE, QUOTE,
+        INT_LITERAL, FLOAT_LITERAL, STRING_LITERAL, TRUE, FALSE, INSTANCEOF, BIT_NOT, SHL, SHR, USHR, EQ, NE,
+        GE, LE, AND, OR, LIKE, AT, CHAR_LIT, IN, NULL
+    }
+
+
+    public static class ExpressionParsingException extends RuntimeException {
+
+        public ExpressionParsingException(String message) {
+            super(message);
         }
     }
+
+
+
 
 }

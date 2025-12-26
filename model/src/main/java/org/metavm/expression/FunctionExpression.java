@@ -2,14 +2,15 @@ package org.metavm.expression;
 
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.Utils;
 import org.metavm.util.StreamVisitor;
+import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,10 +18,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public class FunctionExpression extends Expression {
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
     private final Func function;
     private final List<Expression> arguments;
 
@@ -113,22 +113,16 @@ public class FunctionExpression extends Expression {
         for (var arguments_ : arguments) arguments_.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("function", this.getFunction().name());
-        map.put("arguments", this.getArguments().stream().map(Expression::toJson).toList());
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_FunctionExpression);
         super.write(output);
         output.write(function.code());
         output.writeList(arguments, arg0 -> arg0.write(output));
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new FunctionExpression(function, Utils.map(arguments, a -> a.accept(transformer)));
     }
 }

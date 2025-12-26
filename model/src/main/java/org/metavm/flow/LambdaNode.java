@@ -6,20 +6,15 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
-import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 @Entity
 public class LambdaNode extends Node {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
     private final LambdaRef lambda;
     private final @Nullable ClassType functionalInterface;
 
@@ -99,41 +94,6 @@ public class LambdaNode extends Node {
         super.forEachReference(action);
         lambda.forEachReference(action);
         if (functionalInterface != null) functionalInterface.forEachReference(action);
-    }
-
-    @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        var functionalInterface = this.getFunctionalInterface();
-        if (functionalInterface != null) map.put("functionalInterface", functionalInterface.toJson());
-        map.put("lambda", this.getLambda().getStringId());
-        map.put("stackChange", this.getStackChange());
-        map.put("length", this.getLength());
-        map.put("flow", this.getFlow().getStringId());
-        map.put("name", this.getName());
-        var successor = this.getSuccessor();
-        if (successor != null) map.put("successor", successor.getStringId());
-        var predecessor = this.getPredecessor();
-        if (predecessor != null) map.put("predecessor", predecessor.getStringId());
-        map.put("code", this.getCode().toJson());
-        map.put("exit", this.isExit());
-        map.put("unconditionalJump", this.isUnconditionalJump());
-        map.put("sequential", this.isSequential());
-        var error = this.getError();
-        if (error != null) map.put("error", error);
-        map.put("expressionTypes", this.getExpressionTypes());
-        map.put("nextExpressionTypes", this.getNextExpressionTypes());
-        map.put("offset", this.getOffset());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
     }
 
     @Override

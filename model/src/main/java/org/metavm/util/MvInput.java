@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.wire.DefaultWireInput;
 import org.metavm.entity.Entity;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.FunctionRef;
@@ -9,72 +10,18 @@ import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 
-import javax.annotation.Nullable;
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.function.IntFunction;
-import java.util.function.Supplier;
 
-public abstract class MvInput implements Closeable {
-
-    private final InputStream in;
+public abstract class MvInput extends DefaultWireInput implements Closeable {
 
     public MvInput(InputStream in) {
-        this.in = in;
+        super(in);
     }
 
     public Type readType() {
         return (Type) readValue();
-    }
-
-    public byte[] readBytes() {
-        var buf = new byte[readInt()];
-        read(buf);
-        return buf;
-    }
-
-    public int read(byte[] buf) {
-        try {
-            int offset = 0;
-            int len = buf.length;
-            while (offset < len) {
-                offset += in.read(buf, offset, len - offset);
-            }
-            return len;
-        } catch (IOException e) {
-            throw new InternalException("Failed to read from the underlying input steam", e);
-        }
-    }
-
-    public int read() {
-        try {
-            return in.read();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void skip(int len) {
-        try {
-            //noinspection ResultOfMethodCallIgnored
-            in.skip(len);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void close() throws IOException {
-        in.close();
-    }
-
-    public InputStream getIn() {
-        return in;
     }
 
     public String readUTF() {
@@ -84,97 +31,15 @@ public abstract class MvInput implements Closeable {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
-    public int readShort() {
-        return (short) (read() << 8 | read());
-    }
-
-    public int readInt() {
-        return (int) readLong();
-    }
-
-    public int readFixedInt() {
-        return (read() & 0xff) << 24 | (read() & 0xff) << 16 | (read() & 0xff) << 8 | read() & 0xff;
-    }
-
-    public long readLong() {
-        int b = read();
-        boolean negative = (b & 1) == 1;
-        long v = b >> 1 & 0x3f;
-        int shifts = 6;
-        for (int i = 0; (b & 0x80) != 0 && i < 10; i++, shifts += 7) {
-            b = read();
-            v |= (long) (b & 0x7f) << shifts;
-        }
-        return negative ? -v : v;
-    }
-
-    public Date readDate() {
-        return new Date(readLong());
-    }
-
-    public float readFloat() {
-        return Float.intBitsToFloat(readInt());
-    }
-
-    public double readDouble() {
-        long l = 0;
-        for (int shifts = 0; shifts < 64; shifts += 8)
-            l |= (long) read() << shifts;
-        return Double.longBitsToDouble(l);
-    }
-
-    public boolean readBoolean() {
-        return read() != 0;
-    }
-
-    public char readChar() {
-        int firstByte = read();
-        if (firstByte == -1)
-            throw new InternalException("End of stream reached");
-        if ((firstByte & 0x80) == 0) {
-            return (char) firstByte;
-        } else if ((firstByte & 0xE0) == 0xC0) {
-            int secondByte = read();
-            return (char) (((firstByte & 0x1F) << 6) | (secondByte & 0x3F));
-        } else if ((firstByte & 0xF0) == 0xE0) {
-            int secondByte = read();
-            int thirdByte = read();
-            return (char) (((firstByte & 0x0F) << 12) | ((secondByte & 0x3F) << 6) | (thirdByte & 0x3F));
-        } else
-            throw new InternalException("Invalid UTF-8 byte sequence");
-    }
-
     public Id readId() {
         return Id.readId(this);
-    }
-
-    public <T> List<T> readList(Supplier<T> read) {
-        var size = readInt();
-        var list = new ArrayList<T>(size);
-        for (int i = 0; i < size; i++) {
-            list.add(read.get());
-        }
-        return list;
-    }
-
-    public <T> T[] readArray(Supplier<T> read, IntFunction<T[]> newArray) {
-        var size = readInt();
-        var array = newArray.apply(size);
-        for (int i = 0; i < size; i++) {
-            array[i] = read.get();
-        }
-        return array;
-    }
-
-    public <T> @Nullable T readNullable(Supplier<T> read) {
-        return readBoolean() ? read.get() : null;
     }
 
     public Value readValue() {
         return readValue(read());
     }
 
-    protected Value readValue(int wireType) {
+    private Value readValue(int wireType) {
         return switch (wireType) {
             case WireTypes.NULL -> new NullValue();
             case WireTypes.DOUBLE -> new DoubleValue(readDouble());
@@ -234,19 +99,7 @@ public abstract class MvInput implements Closeable {
 
     public abstract Value readInstance();
 
-    public <T extends Entity> T readEntity(Class<T> klass, Entity parent) {
-        var entity = getEntity(klass, readId());
-        entity.readHeadAndBody(this, parent);
-        return entity;
-    }
-
     public abstract Reference readReference();
-
-    protected <T extends Entity> T getEntity(Class<T> klass, Id id) {
-        var entity = ReflectionUtils.allocateInstance(klass);
-        entity.initState(id, 0, 0, false, false);
-        return entity;
-    }
 
     public abstract Entity readEntityMessage();
 

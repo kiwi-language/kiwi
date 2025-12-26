@@ -1,29 +1,23 @@
 package org.metavm.task;
 
-import org.metavm.annotation.NativeEntity;
+import lombok.Getter;
+import lombok.Setter;
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
-import org.metavm.entity.EntityRegistry;
+import org.metavm.wire.Wire;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-@NativeEntity(45)
+@Wire(45)
 @Entity
 public class ShadowTask extends org.metavm.entity.Entity {
 
@@ -38,15 +32,19 @@ public class ShadowTask extends org.metavm.entity.Entity {
                                     Instances.stringInstance(shadowTask.executorIP) : Instances.nullInstance(),
                             Instances.longInstance(shadowTask.startAt)
                     ));
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
+    @Setter
+    @Getter
     private TaskState state = TaskState.RUNNABLE;
     private @Nullable String executorIP;
-    private long startAt;
+    private final long startAt;
+    @Setter
+    @Getter
     private long runAt;
-    private long appId;
-    private Id appTaskId;
+    @Getter
+    private final long appId;
+    @Getter
+    private final Id appTaskId;
     public static BiConsumer<Long, List<Task>> saveShadowTasksHook;
 
     public ShadowTask(Id id, long appId, Id appTaskId, long startAt) {
@@ -54,40 +52,6 @@ public class ShadowTask extends org.metavm.entity.Entity {
         this.appId = appId;
         this.appTaskId = appTaskId;
         this.startAt = startAt;
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitByte();
-        visitor.visitNullable(visitor::visitUTF);
-        visitor.visitLong();
-        visitor.visitLong();
-        visitor.visitLong();
-        visitor.visitId();
-    }
-
-    public long getAppId() {
-        return appId;
-    }
-
-    public Id getAppTaskId() {
-        return appTaskId;
-    }
-
-    public TaskState getState() {
-        return state;
-    }
-
-    public void setState(TaskState state) {
-        this.state = state;
-    }
-
-    public long getRunAt() {
-        return runAt;
-    }
-
-    public void setRunAt(long runAt) {
-        this.runAt = runAt;
     }
 
     @Nullable
@@ -110,57 +74,7 @@ public class ShadowTask extends org.metavm.entity.Entity {
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("appId", this.getAppId());
-        map.put("appTaskId", this.getAppTaskId());
-        map.put("state", this.getState().name());
-        map.put("runAt", this.getRunAt());
-        var executorIP = this.getExecutorIP();
-        if (executorIP != null) map.put("executorIP", executorIP);
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
     }
 
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_ShadowTask;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.state = TaskState.fromCode(input.read());
-        this.executorIP = input.readNullable(input::readUTF);
-        this.startAt = input.readLong();
-        this.runAt = input.readLong();
-        this.appId = input.readLong();
-        this.appTaskId = input.readId();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        output.write(state.code());
-        output.writeNullable(executorIP, output::writeUTF);
-        output.writeLong(startAt);
-        output.writeLong(runAt);
-        output.writeLong(appId);
-        output.writeId(appTaskId);
-    }
-
-    @Override
-    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
-    }
 }

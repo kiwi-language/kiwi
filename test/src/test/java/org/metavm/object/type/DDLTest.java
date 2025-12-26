@@ -469,7 +469,7 @@ public class DDLTest extends TestCase {
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "kind", Map.of(
-                        "name", "DEFAULT",
+                        "label", "DEFAULT",
                         "code", 0
                 )
         ));
@@ -594,7 +594,7 @@ public class DDLTest extends TestCase {
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "kind", Map.of(
-                        "name", "DEFAULT",
+                        "label", "DEFAULT",
                         "code", 0
                 )
         ));
@@ -615,7 +615,7 @@ public class DDLTest extends TestCase {
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "kind", Map.of(
-                        "name", "DEFAULT",
+                        "label", "DEFAULT",
                         "code", 0
                 )
         ));
@@ -918,14 +918,6 @@ public class DDLTest extends TestCase {
                         "ddl.ProductKind", "CLOTHING"
                 )
         ));
-        try (var context = newContext()) {
-            context.loadKlasses();
-            var pk = context.getKlassByQualifiedName("ddl.ProductKind");
-            var sft = StaticFieldTable.getInstance(pk.getType(), context);
-            sft.getEnumConstants().forEach(ec -> {
-                logger.debug("ec: {}", ec.getId());
-            });
-        }
         assemble("kiwi/ddl/remove_enum_cls_after.kiwi");
         assemble("kiwi/ddl/remove_enum_cls_after.kiwi");
         var product = getObject(id);
@@ -958,15 +950,6 @@ public class DDLTest extends TestCase {
                 "kind", ApiNamedObject.of("ddl.ProductKind", "ELECTRONICS")
         ));
 
-        try (var context = newContext()) {
-            context.loadKlasses();
-            var k = context.getKlassByQualifiedName("ddl.ProductKind");
-            for (Field f : k.getEnumConstants()) {
-                var ec = f.getStatic(context).resolveDurable();
-                logger.debug("Enum constant {}: {}, {}", f.getName(), ec.getId(), ec.getId().getTreeId());
-            }
-        }
-
         assemble("kiwi/ddl/delete_class_and_referring_field_after.kiwi");
         var product = getObject(id);
         assertEquals("MacBook Pro", product.get("name"));
@@ -990,7 +973,6 @@ public class DDLTest extends TestCase {
 
     public void testManualAbortion() {
         var commitId = assemble("kiwi/ddl_before.kiwi", false);
-        logger.debug("Commit ID: {}", commitId);
         TestUtils.doInTransactionWithoutResult(() -> deployService.abortDeployment(TestConstants.APP_ID));
         try (var context = newContext()) {
             var commit = context.getCommit(commitId);

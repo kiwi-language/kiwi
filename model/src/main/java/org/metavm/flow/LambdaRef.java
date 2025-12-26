@@ -1,12 +1,11 @@
 package org.metavm.flow;
 
+import lombok.Getter;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.Writable;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
 import org.metavm.object.type.FunctionType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeMetadata;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -18,13 +17,11 @@ import java.util.function.Consumer;
 @Entity
 public class LambdaRef implements Writable, CallableRef {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
-
     public static LambdaRef read(MvInput input) {
         return new LambdaRef((FlowRef) input.readValue(), input.readReference());
     }
 
+    @Getter
     private final FlowRef flowRef;
 //    public Lambda rawLambda;
     private final Reference lambdaReference;
@@ -76,10 +73,6 @@ public class LambdaRef implements Writable, CallableRef {
         return getRawLambda().getType(flowRef.getTypeMetadata());
     }
 
-    public FlowRef getFlowRef() {
-        return flowRef;
-    }
-
     public Lambda getRawLambda() {
         return (Lambda) lambdaReference.get();
     }
@@ -92,11 +85,6 @@ public class LambdaRef implements Writable, CallableRef {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitLambdaRef(this);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

@@ -5,23 +5,20 @@ import org.metavm.entity.DefContext;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.MetaContextCache;
+import org.metavm.context.sql.Transactional;
+import org.metavm.jdbc.TransactionCallback;
+import org.metavm.jdbc.TransactionOperations;
+import org.metavm.jdbc.TransactionStatus;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.search.SearchSync;
 import org.metavm.task.MigratingSyncSearchTask;
 import org.metavm.task.SyncSearchTask;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.DebugEnv;
-import org.metavm.util.Instances;
-import org.metavm.util.Utils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionOperations;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.metavm.context.Component;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -49,7 +46,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         if (Utils.isEmpty(logs))
             return;
         try (var ignored = ContextUtil.getProfiler().enter("InstanceLogServiceImpl.process")) {
-            var instanceIds = Utils.filterAndMapUnique(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getId);
+            var instanceIds = Utils.filterAndMapUnique(logs, InstanceLog::isInsertOrUpdate, InstanceLog::id);
             handleMigration(appId, instanceIds);
         }
     }
@@ -58,7 +55,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     @Override
     public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext, boolean migrating) {
         if (ContextUtil.isWaitForEsSync()) {
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                TransactionStatus.registerCallback(new TransactionCallback() {
                         @Override
                         public void afterCommit () {
                             try (var context = entityContextFactory.newContext(appId, metaContextCache.get(appId, false))){
@@ -83,7 +80,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             return;
         var tracing = DebugEnv.traceMigration;
         try (var ignored = ContextUtil.getProfiler().enter("handleDDL")) {
-            transactionOperations.executeWithoutResult(s -> {
+            transactionOperations.execute(() -> {
                 try (var context = newContext(appId, builder -> builder.timeout(0))) {
                     var commit = context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
                     if (commit != null) {

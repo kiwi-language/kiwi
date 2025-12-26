@@ -1,16 +1,14 @@
 package org.metavm.task;
 
+import lombok.Getter;
 import org.metavm.entity.*;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.Instances;
-import org.metavm.util.NetworkUtils;
-import org.metavm.util.Utils;
+import org.metavm.context.sql.Transactional;
+import org.metavm.jdbc.TransactionOperations;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionOperations;
+import org.metavm.context.Component;
+import org.metavm.context.Scheduled;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -25,6 +23,7 @@ public class Scheduler extends EntityContextFactoryAware {
 
     private final TransactionOperations transactionOperations;
 
+    @Getter
     public volatile boolean active;
     public volatile String nextWorkerIP;
 
@@ -37,7 +36,7 @@ public class Scheduler extends EntityContextFactoryAware {
     public void schedule() {
         if (active) {
             ContextUtil.resetProfiler();
-            transactionOperations.executeWithoutResult(s -> schedule0());
+            transactionOperations.execute(this::schedule0);
         }
     }
 
@@ -78,7 +77,7 @@ public class Scheduler extends EntityContextFactoryAware {
                 return;
             }
             executors = executors.stream().sorted(Comparator.comparing(ExecutorData::getIp)).toList();
-            logger.info("Scheduling tasks {}", Utils.join(tasks, t -> EntityUtils.getRealType(t).getSimpleName()));
+            logger.info("Scheduling tasks {}", Utils.join(tasks, t -> t.getClass().getSimpleName()));
             logger.info("Online executors {}", Utils.join(executors, ExecutorData::getIp));
             var i = 0;
             if (nextWorkerIP != null) {
@@ -98,7 +97,7 @@ public class Scheduler extends EntityContextFactoryAware {
     @Scheduled(fixedDelay = 50000)
     public void processTimeoutTasks() {
         if (active) {
-            transactionOperations.executeWithoutResult(s -> processTimeoutTasks0());
+            transactionOperations.execute(this::processTimeoutTasks0);
         }
     }
 
@@ -129,7 +128,7 @@ public class Scheduler extends EntityContextFactoryAware {
     @Scheduled(fixedDelay = 10000)
     @Transactional
     public void sendHeartbeat() {
-        transactionOperations.executeWithoutResult(s -> {
+        transactionOperations.execute(() -> {
             try (var context = newPlatformContext()) {
                 var registry = SchedulerRegistry.getInstance(context);
                 var now = System.currentTimeMillis();
@@ -147,7 +146,4 @@ public class Scheduler extends EntityContextFactoryAware {
         });
     }
 
-    public boolean isActive() {
-        return active;
-    }
 }

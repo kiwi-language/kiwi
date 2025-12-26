@@ -1,12 +1,10 @@
 package org.metavm.util;
 
 import org.metavm.api.ValueObject;
-import org.metavm.entity.*;
+import org.metavm.entity.Entity;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeCategory;
 import org.metavm.object.type.Types;
 
-import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -76,14 +74,6 @@ public class ValueUtils {
         return isPrimitiveType(object.getClass());
     }
 
-    public static boolean isJavaType(Object object) {
-        return java.lang.reflect.Type.class.isAssignableFrom(object.getClass());
-    }
-
-    public static boolean isEnumConstant(Object object) {
-        return isEnumType(object.getClass());
-    }
-
     public static boolean isPrimitiveType(Class<?> klass) {
         return PRIMITIVE_TYPES.contains(klass);
     }
@@ -98,52 +88,6 @@ public class ValueUtils {
 
     public static boolean isEnumType(Class<?> klass) {
         return Enum.class.isAssignableFrom(klass);
-    }
-
-    public static TypeCategory getTypeCategory(Class<?> klass) {
-        return getTypeCategory((java.lang.reflect.Type) klass);
-    }
-
-    public static TypeCategory getTypeCategory(java.lang.reflect.Type type) {
-        if (type instanceof Class<?> klass) {
-            if (BiUnion.class.isAssignableFrom(klass))
-                return TypeCategory.UNION;
-            if (klass.isInterface())
-                return TypeCategory.INTERFACE;
-            if(isInteger(klass))
-                return TypeCategory.INT;
-            if (isLong(klass))
-                return TypeCategory.LONG;
-            if (isDouble(klass))
-                return TypeCategory.DOUBLE;
-            if (isTime(klass))
-                return TypeCategory.TIME;
-            if (isBoolean(klass))
-                return TypeCategory.BOOLEAN;
-            if (isString(klass))
-                return TypeCategory.STRING;
-            if (isPassword(klass))
-                return TypeCategory.PASSWORD;
-            if (Date.class.equals(klass))
-                return TypeCategory.TIME;
-            if (Password.class.equals(klass))
-                return TypeCategory.PASSWORD;
-            if (Null.class.equals(klass))
-                return TypeCategory.NULL;
-            if (Object.class.equals(klass) || Record.class.isAssignableFrom(klass) || isValueType(klass))
-                return TypeCategory.VALUE;
-            if (isEnumType(klass))
-                return TypeCategory.ENUM;
-            if (isEntityType(klass))
-                return TypeCategory.CLASS;
-            if (Class.class == klass)
-                return TypeCategory.CLASS;
-        }
-        if (type instanceof ParameterizedType parameterizedType) {
-            if (parameterizedType.getRawType() instanceof Class<?> rawClass)
-                return getTypeCategory(rawClass);
-        }
-        return TypeCategory.CLASS;
     }
 
     public static boolean isAssignable(Type from, Type to) {

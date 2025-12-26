@@ -1,8 +1,7 @@
 package org.metavm.perf;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import org.jsonk.Jsonk;
 import org.metavm.util.Headers;
-import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,8 +129,7 @@ public class ApiPerf {
     }
 
     private static Map<String, Object> getObject(String id) {
-        return Utils.readJSONString(get("/" + id), new TypeReference<>() {
-        });
+        return Jsonk.fromJson(get("/" + id), Map.class);
     }
 
     private static String createCoupon(String code, double amount, String currency) {
@@ -183,7 +181,7 @@ public class ApiPerf {
                 .header(Headers.X_APP_ID, Long.toString(appId))
                 .POST(
                         request != null ?
-                                HttpRequest.BodyPublishers.ofString(Utils.toJSONString(request)) :
+                                HttpRequest.BodyPublishers.ofString(Jsonk.toJson(request)) :
                                 HttpRequest.BodyPublishers.noBody()
                 )
                 .build();
@@ -212,7 +210,7 @@ public class ApiPerf {
                 .header(Headers.X_APP_ID, Long.toString(appId))
                 .PUT(
                         request != null ?
-                                HttpRequest.BodyPublishers.ofString(Utils.toJSONString(request)) :
+                                HttpRequest.BodyPublishers.ofString(Jsonk.toJson(request)) :
                                 HttpRequest.BodyPublishers.noBody()
                 )
                 .build();

@@ -1,8 +1,9 @@
 package org.metavm.object.instance.core;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.TreeTags;
-import org.metavm.entity.natives.NativeBase;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
 import org.metavm.util.*;
@@ -17,12 +18,12 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public abstract class MvInstance extends BaseInstance {
 
+    @Setter
     private Type type;
+    @Getter
     private transient boolean loadedFromCache;
     private transient boolean modified;
 
-
-    private transient NativeBase nativeObject;
 
     public MvInstance(Type type, boolean isNew) {
         this(null, type, 0L, 0L, false, isNew);
@@ -43,10 +44,6 @@ public abstract class MvInstance extends BaseInstance {
 
     public @Nullable Id tryGetId() {
         return state.id;
-    }
-
-    public boolean isLoadedFromCache() {
-        return loadedFromCache;
     }
 
     void setLoadedFromCache(boolean loadedFromCache) {
@@ -122,14 +119,6 @@ public abstract class MvInstance extends BaseInstance {
         return !isRoot() && this.getParent() == instance;
     }
 
-    public NativeBase getNativeObject() {
-        return nativeObject;
-    }
-
-    public void setNativeObject(NativeBase nativeObject) {
-        this.nativeObject = nativeObject;
-    }
-
     @Override
     public final String toString() {
         return getInstanceType().getTypeDesc() + "-" + getTitle();
@@ -188,7 +177,4 @@ public abstract class MvInstance extends BaseInstance {
         return state().isRemoving();
     }
 
-    public void setType(Type type) {
-        this.type = type;
-    }
 }

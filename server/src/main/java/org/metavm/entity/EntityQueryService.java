@@ -9,7 +9,7 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.search.*;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Utils;
-import org.springframework.stereotype.Component;
+import org.metavm.context.Component;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -64,7 +64,7 @@ public class EntityQueryService {
 
     private SearchQuery buildSearchQuery(EntityQuery<?> query) {
         var expression = buildCondition(query);
-        var type = ModelDefRegistry.getDefContext().getKlass(query.entityType()).getType();
+        var type = StdKlassRegistry.instance.getKlass(query.entityType()).getType();
         var typeExpressions = Utils.mapToSet(type.getKlass().getDescendantTypes(), k -> k.getType().toExpression());
         return new SearchQuery(
                 ContextUtil.getAppId(),

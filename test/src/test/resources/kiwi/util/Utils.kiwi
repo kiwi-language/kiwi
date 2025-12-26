@@ -1,39 +1,30 @@
 package util
 
-import java.util.List
-import java.util.ArrayList
-import java.lang.Iterable
-
 class Utils {
 
 
-    static fn test(list: List<string>, tests: List<string>) -> bool {
+    static fn test(list: string[], tests: string[]) -> bool {
        return Utils.containsAny<string>(list, tests)
     }
 
-    static fn test2(list: List<string>, s1: string, s2: string) -> bool {
+    static fn test2(list: string[], s1: string, s2: string) -> bool {
         return Utils.containsAny<string>(list, s1, s2)
     }
 
-    static fn containsAny<T>(iterable: Iterable<[never, T]>, values: Iterable<[never, T]>) -> bool {
-        var it = iterable.iterator()!!
-        while (it.hasNext()) {
-            var next = it.next()!!
-            var it1 = values.iterator()!!
-            while (it1.hasNext()) {
-                var next1 = it1.next()!!
-                if(equals(next, next1)) {
+    static fn containsAny<T>(array: T[], values: T[]) -> bool {
+        for (e1 in array) {
+            for (e2 in values) {
+                if (equals(e1, e2))
                     return true
-                }
             }
         }
         return false
     }
 
-    static fn containsAny<T>(iterable: Iterable<[never, T]>, value1: T, value2: T) -> bool {
-        var list = ArrayList<T>()
-        list.add(value1)
-        list.add(value2)
+    static fn containsAny<T>(iterable: T[], value1: T, value2: T) -> bool {
+        var list = new T[]
+        list.append(value1)
+        list.append(value2)
         return Utils.containsAny<T>(iterable, list)
     }
 

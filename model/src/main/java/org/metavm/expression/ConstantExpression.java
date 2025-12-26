@@ -1,27 +1,25 @@
 package org.metavm.expression;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Type;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
-import org.metavm.util.Utils;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Getter
+@Wire
 @Entity
 public class ConstantExpression extends Expression {
 
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
     private final Value value;
 
     public ConstantExpression(@NotNull Value value) {
@@ -36,10 +34,6 @@ public class ConstantExpression extends Expression {
     @Generated
     public static void visit(StreamVisitor visitor) {
         visitor.visitValue();
-    }
-
-    public Value getValue() {
-        return value;
     }
 
     @Override
@@ -106,20 +100,15 @@ public class ConstantExpression extends Expression {
         else if (value instanceof NativeValue t) t.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("value", this.getValue().toJson());
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_ConstantExpression);
         super.write(output);
         output.writeValue(value);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new ConstantExpression(value);
     }
 }

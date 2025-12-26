@@ -2,16 +2,9 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.util.TestUtils;
 
 public class ArrayTypeTest extends TestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
-    }
 
     public void testIsAssignable() {
         var anyType = Types.getAnyType();

@@ -1,32 +1,24 @@
 package org.metavm.http;
 
-import org.metavm.api.Entity;
 import org.metavm.api.EntityFlow;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpResponse;
-import org.metavm.entity.StdKlass;
-import org.metavm.entity.natives.CallContext;
-import org.metavm.object.instance.core.*;
+import org.metavm.entity.StdKlassRegistry;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceState;
+import org.metavm.object.instance.core.NativeEphemeralObject;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
-import org.metavm.util.Instances;
-import org.metavm.util.Utils;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
-@Entity(ephemeral = true)
 public class HttpResponseImpl implements HttpResponse, NativeEphemeralObject {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+    public static final Klass __klass__ = StdKlassRegistry.instance.getKlass(HttpResponseImpl.class);
     private final transient InstanceState state = InstanceState.ephemeral(this);
 
     private final List<HttpHeader> headers = new ArrayList<>();
@@ -49,14 +41,20 @@ public class HttpResponseImpl implements HttpResponse, NativeEphemeralObject {
 
     @Override
     @EntityFlow
-    public List<HttpCookie> getCookies() {
-        return Collections.unmodifiableList(cookies);
+    public HttpCookie[] getCookies() {
+        return cookies.toArray(HttpCookie[]::new);
+    }
+
+    public void forEachCookie(Consumer<? super HttpCookie> action) {
+        for (HttpCookie cookie : cookies) {
+            action.accept(cookie);
+        }
     }
 
     @Override
     @EntityFlow
-    public List<HttpHeader> getHeaders() {
-        return Collections.unmodifiableList(headers);
+    public HttpHeader[] getHeaders() {
+        return headers.toArray(HttpHeader[]::new);
     }
 
     @Override
@@ -64,34 +62,8 @@ public class HttpResponseImpl implements HttpResponse, NativeEphemeralObject {
         return state;
     }
 
-    public Value addCookie(Value name, Value value, CallContext callContext) {
-        addCookie(name.stringValue(), value.stringValue());
-        return Instances.nullInstance();
-    }
-
-    public Value addHeader(Value name, Value value, CallContext callContext) {
-        addHeader(name.stringValue(), value.stringValue());
-        return Instances.nullInstance();
-    }
-
-    public Value getCookies(CallContext callContext) {
-        return Instances.list(StdKlass.httpCookie.type(),
-                Utils.map(getCookies(), c -> (Value) c));
-    }
-
-    public Value getHeaders(CallContext callContext) {
-        return Instances.list(StdKlass.httpHeader.type(),
-                Utils.map(getHeaders(), h -> (Value) h));
-    }
-
     @Override
     public void forEachReference(Consumer<Reference> action) {
-    }
-
-    @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("cookies", this.getCookies());
-        map.put("headers", this.getHeaders());
     }
 
     @Override

@@ -2,23 +2,22 @@ package org.metavm.expression;
 
 import org.metavm.api.Generated;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.InstanceVisitor;
+import org.metavm.entity.StdKlassRegistry;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
+import org.metavm.wire.Wire;
 
 import java.util.List;
 import java.util.function.Consumer;
 
+@Wire
 public class NeverExpression extends Expression {
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
+    public static final org.metavm.object.type.Klass __klass__ = StdKlassRegistry.instance.getKlass(NeverExpression.class);
 
     @Generated
     public static NeverExpression read(MvInput input) {
@@ -68,18 +67,14 @@ public class NeverExpression extends Expression {
         super.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_NeverExpression);
         super.write(output);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new NeverExpression();
     }
 }

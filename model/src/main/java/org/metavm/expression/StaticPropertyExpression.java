@@ -3,6 +3,7 @@ package org.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.MethodRef;
@@ -10,8 +11,6 @@ import org.metavm.object.instance.core.FlowValue;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.Type;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -21,11 +20,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public class StaticPropertyExpression extends Expression {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
     private final PropertyRef propertyRef;
 
     public StaticPropertyExpression(@NotNull PropertyRef propertyRef) {
@@ -113,20 +111,15 @@ public class StaticPropertyExpression extends Expression {
         propertyRef.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("property", this.getProperty());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_StaticPropertyExpression);
         super.write(output);
         output.writeValue(propertyRef);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new StaticPropertyExpression(propertyRef);
     }
 }

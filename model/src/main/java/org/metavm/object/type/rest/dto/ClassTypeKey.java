@@ -1,16 +1,12 @@
 package org.metavm.object.type.rest.dto;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.GenericDeclarationRef;
+import org.jsonk.Json;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.KlassType;
-import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
-import java.util.List;
-
+@Json
 public record ClassTypeKey(@NotNull Id id) implements TypeKey, GenericDeclarationRefKey {
     @Override
     public void write(MvOutput output) {
@@ -19,18 +15,8 @@ public record ClassTypeKey(@NotNull Id id) implements TypeKey, GenericDeclaratio
     }
 
     @Override
-    public GenericDeclarationRef toGenericDeclarationRef(TypeDefProvider typeDefProvider) {
-        return toType(typeDefProvider);
-    }
-
-    @Override
     public String toTypeExpression() {
         return String.format("$$%s", id);
-    }
-
-    @Override
-    public ClassType toType(TypeDefProvider typeDefProvider) {
-        return new KlassType(null, typeDefProvider.getKlass(id), List.of());
     }
 
     @Override
@@ -43,8 +29,4 @@ public record ClassTypeKey(@NotNull Id id) implements TypeKey, GenericDeclaratio
         return WireTypes.CLASS_TYPE;
     }
 
-    @Override
-    public ClassType resolve(TypeDefProvider typeDefProvider) {
-        return toType(typeDefProvider);
-    }
 }

@@ -1,36 +1,18 @@
-import java.util.List
-import java.util.ArrayList
 
 class LivingBeing(
     var age: int,
     var extra: any?
 ) {
 
-    var offsprings: List<LivingBeing> = ArrayList<LivingBeing>()
-    var ancestors: List<LivingBeing> = ArrayList<LivingBeing>()
-
-    fn getAge() -> int {
-        return this.age
-    }
-
-    fn getExtra() -> any|null {
-        return this.extra
-    }
-
-    fn getOffsprings() -> List<LivingBeing> {
-        return ArrayList<LivingBeing>(this.offsprings)
-    }
-
-    fn getAncestors() -> List<LivingBeing> {
-        return ArrayList<LivingBeing>(this.ancestors)
-    }
+    var offsprings: LivingBeing[] = new LivingBeing[]
+    var ancestors: LivingBeing[] = new LivingBeing[]
 
     fn addOffspring(offspring: LivingBeing) {
-        this.offsprings.add(offspring)
+        this.offsprings.append(offspring)
     }
 
     fn addAncestor(ancestor: LivingBeing) {
-        this.ancestors.add(ancestor)
+        this.ancestors.append(ancestor)
     }
 
     fn makeSound() -> string {
@@ -44,10 +26,6 @@ class Animal(
     extra: any|null,
     var intelligence: int
 ): LivingBeing(age, extra) {
-
-    fn getIntelligence() -> int {
-        return this.intelligence
-    }
 
     fn makeSound() -> string {
         return "Howl~"
@@ -63,14 +41,6 @@ class Human(
 ): Animal(age, extra, intelligence), Sentient {
 
    var thinking = false
-
-   fn getOccupation() -> string {
-        return this.occupation
-   }
-
-   fn isThinking() -> bool {
-        return this.thinking
-   }
 
    fn makeSound() -> string {
         return "I am a human being"

@@ -20,11 +20,6 @@ public class InstanceIOTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceIOTest.class);
 
-    @Override
-    protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-    }
-
     public void testWriteString() {
         String s = "hello world";
         var bout = new ByteArrayOutputStream();

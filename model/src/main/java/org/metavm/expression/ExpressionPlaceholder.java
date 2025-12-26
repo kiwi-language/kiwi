@@ -2,12 +2,10 @@ package org.metavm.expression;
 
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.NeverType;
 import org.metavm.object.type.Type;
 import org.metavm.util.MvInput;
@@ -17,10 +15,9 @@ import org.metavm.util.StreamVisitor;
 import java.util.List;
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public class ExpressionPlaceholder extends Expression {
-    @SuppressWarnings("unused")
-    private static org.metavm.object.type.Klass __klass__;
 
     @Generated
     public static ExpressionPlaceholder read(MvInput input) {
@@ -70,18 +67,14 @@ public class ExpressionPlaceholder extends Expression {
         super.forEachReference(action);
     }
 
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("variableComponent", this.getVariableComponent().toJson());
-        map.put("constantComponent", this.getConstantComponent().toJson());
-        map.put("fieldComponent", this.getFieldComponent().toJson());
-        map.put("arrayComponent", this.getArrayComponent().toJson());
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.write(TYPE_ExpressionPlaceholder);
         super.write(output);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new ExpressionPlaceholder();
     }
 }

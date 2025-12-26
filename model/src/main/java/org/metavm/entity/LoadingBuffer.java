@@ -135,10 +135,11 @@ public class LoadingBuffer {
             }
 
             @Override
-            public void visitEntityBody(int tag, Id id, int refcount) {
+            public void visitEntityHead() {
+                var id = readId();
+                readInt();
                 invertedIndex.put(id, tree);
                 ids.add(id);
-                super.visitEntityBody(tag, id, refcount);
             }
 
             @Override

@@ -1,13 +1,13 @@
 package org.metavm.expression;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.ModelDefRegistry;
+import org.metavm.entity.StdKlassRegistry;
 import org.metavm.flow.Node;
 import org.metavm.object.type.NeverType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.UnionType;
-import org.metavm.util.Utils;
 import org.metavm.util.Null;
+import org.metavm.util.Utils;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -171,7 +171,7 @@ public class TypeNarrower {
             if (op == UnaryOperator.IS_NOT_NULL) {
                 return Map.of(operand, getType(operand).getUnderlyingType());
             } else {
-                return Map.of(operand, ModelDefRegistry.getType(Null.class));
+                return Map.of(operand, StdKlassRegistry.instance.getType(Null.class));
             }
         } else if (op == UnaryOperator.NOT) {
             return process(operand, !negated);

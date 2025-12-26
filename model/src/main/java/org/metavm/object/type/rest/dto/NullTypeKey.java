@@ -1,11 +1,10 @@
 package org.metavm.object.type.rest.dto;
 
-import org.metavm.object.type.NullType;
-import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeDefProvider;
+import org.jsonk.Json;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
+@Json
 public record NullTypeKey() implements TypeKey {
 
     @Override
@@ -16,11 +15,6 @@ public record NullTypeKey() implements TypeKey {
     @Override
     public String toTypeExpression() {
         return "null";
-    }
-
-    @Override
-    public Type toType(TypeDefProvider typeDefProvider) {
-        return NullType.instance;
     }
 
     @Override

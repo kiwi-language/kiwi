@@ -1,41 +1,39 @@
 package org.metavm.object.type.rest.dto;
 
+import org.jsonk.Json;
 import org.metavm.object.type.PrimitiveKind;
-import org.metavm.object.type.PrimitiveType;
-import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.MvOutput;
-import org.metavm.util.ReflectionUtils;
-import org.metavm.util.WireTypes;
 
-public record PrimitiveTypeKey(int kind) implements TypeKey {
+import static org.metavm.util.WireTypes.*;
 
-    private static final int[] typeKeyCodesMap;
+@Json
+public record PrimitiveTypeKey(int primitiveKind) implements TypeKey {
 
-    static {
-        int maxPrimKind = 0;
-        for (PrimitiveKind kind : PrimitiveKind.values()) {
-            maxPrimKind = Math.max(maxPrimKind, kind.code());
-        }
-        typeKeyCodesMap = new int[maxPrimKind + 1];
-        for (PrimitiveKind kind : PrimitiveKind.values()) {
-            var field = ReflectionUtils.getField(WireTypes.class, kind.name() + "_TYPE");
-            typeKeyCodesMap[kind.code()] = ReflectionUtils.getIntField(field, null);
-        }
-    }
+    private static final int[] typeKeyCodesMap = new int[] {
+            0,
+            LONG_TYPE,
+            DOUBLE_TYPE,
+            0,
+            BOOLEAN_TYPE,
+            TIME_TYPE,
+            PASSWORD_TYPE,
+            0,
+            VOID_TYPE,
+            CHAR_TYPE,
+            INT_TYPE,
+            FLOAT_TYPE,
+            SHORT_TYPE,
+            BYTE_TYPE
+    };
 
     @Override
     public void write(MvOutput output) {
-        output.write(typeKeyCodesMap[kind]);
+        output.write(typeKeyCodesMap[primitiveKind]);
     }
 
     @Override
     public String toTypeExpression() {
-        return PrimitiveKind.fromCode(kind).name().toLowerCase();
-    }
-
-    @Override
-    public PrimitiveType toType(TypeDefProvider typeDefProvider) {
-        return PrimitiveKind.fromCode(kind).getType();
+        return PrimitiveKind.fromCode(primitiveKind).name().toLowerCase();
     }
 
     @Override
@@ -45,7 +43,7 @@ public record PrimitiveTypeKey(int kind) implements TypeKey {
 
     @Override
     public int getCode() {
-        return getTypeKeyCode(kind);
+        return getTypeKeyCode(primitiveKind);
     }
 
     public static int getTypeKeyCode(int kind) {

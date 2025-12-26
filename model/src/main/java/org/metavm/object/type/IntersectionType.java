@@ -25,8 +25,6 @@ import java.util.stream.Collectors;
 @Entity
 public class IntersectionType extends CompositeType {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
     private final Type[] types;
 
     public IntersectionType(Set<Type> types) {
@@ -175,11 +173,6 @@ public class IntersectionType extends CompositeType {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitIntersectionType(this, s);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

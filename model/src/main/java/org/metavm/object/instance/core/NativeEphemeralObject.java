@@ -1,10 +1,11 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.entity.NativeObject;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -71,14 +72,6 @@ public interface NativeEphemeralObject extends NativeObject {
         return null;
     }
 
-    default Map<String, Object> toJson() {
-        var map = new HashMap<String, Object>();
-        buildJson(map);
-        return map;
-    }
-
-    void buildJson(Map<String, Object> map);
-
     @Override
     default Map<String, Value> buildSource() {
         throw new UnsupportedOperationException();
@@ -95,5 +88,15 @@ public interface NativeEphemeralObject extends NativeObject {
     @Override
     default int getRefcount() {
         return 0;
+    }
+
+    @Override
+    default Klass getInstanceKlass() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default ClassType getInstanceType() {
+        throw new UnsupportedOperationException();
     }
 }

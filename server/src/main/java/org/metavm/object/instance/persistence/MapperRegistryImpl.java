@@ -4,7 +4,7 @@ import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapperImpl;
 import org.metavm.object.instance.persistence.mappers.InstanceMapper;
 import org.metavm.object.instance.persistence.mappers.InstanceMapperImpl;
-import org.springframework.stereotype.Component;
+import org.metavm.context.Component;
 
 import javax.sql.DataSource;
 import java.util.Map;

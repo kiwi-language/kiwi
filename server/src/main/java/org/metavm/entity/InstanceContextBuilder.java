@@ -1,8 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.event.EventQueue;
 import org.metavm.object.instance.*;
-import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.InstanceContext;
 import org.metavm.object.instance.persistence.MapperRegistry;
@@ -35,8 +33,6 @@ public class InstanceContextBuilder {
     private TypeDefProvider typeDefProvider;
     private ActiveCommitProvider activeCommitProvider;
     private boolean childLazyLoading;
-    private Cache cache;
-    private EventQueue eventQueue;
     private boolean readonly;
     private boolean skipPostprocessing;
     private boolean relocationEnabled;
@@ -102,16 +98,6 @@ public class InstanceContextBuilder {
         return this;
     }
 
-    public InstanceContextBuilder eventQueue(EventQueue eventQueue) {
-        this.eventQueue = eventQueue;
-        return this;
-    }
-
-    public InstanceContextBuilder cache(Cache cache) {
-        this.cache = cache;
-        return this;
-    }
-
     public InstanceContextBuilder skipPostProcessing(boolean skipPostprocessing) {
         this.skipPostprocessing = skipPostprocessing;
         return this;
@@ -158,8 +144,8 @@ public class InstanceContextBuilder {
         return new InstanceContext(
                 appId, getInstanceStore(), idInitializer, executor,
                 plugins, parent,
-                childLazyLoading, cache,
-                eventQueue, readonly, skipPostprocessing, relocationEnabled, migrating, timeout);
+                childLazyLoading,
+                readonly, skipPostprocessing, relocationEnabled, migrating, timeout);
     }
 
 }

@@ -1,12 +1,8 @@
 package org.metavm.flow;
 
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import java.util.List;
 
@@ -66,18 +62,6 @@ public class DummyCallable implements Callable, ConstantScope {
     @Override
     public ConstantPool getConstantPool() {
         return new ConstantPool(this) {
-
-            public int getEntityTag() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Generated
-            public static void visitBody(StreamVisitor visitor) {
-                ConstantPool.visitBody(visitor);
-            }
-
-            @SuppressWarnings("unused")
-            private static org.metavm.object.type.Klass __klass__;
 
             @Override
             public int addValue(Value value) {

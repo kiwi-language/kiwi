@@ -1,49 +1,20 @@
 package org.metavm.util;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.jsonk.Jsonk;
 import org.metavm.common.ErrorCode;
-import org.metavm.common.Result;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.metavm.common.ErrorResponse;
+import org.metavm.server.Filter;
+import org.metavm.server.HttpRequest;
+import org.metavm.context.Component;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 
 @Component
-@Order(1)
-public class ExceptionHandlingFilter extends OncePerRequestFilter {
-
-    public static final Logger logger = LoggerFactory.getLogger(ExceptionHandlingFilter.class);
-
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        try {
-            filterChain.doFilter(request, response);
-        }
-        catch (Exception e) {
-            BusinessException bizExp = extractBusinessException(e);
-            if(bizExp != null) {
-                Result<?> failureResult = Result.failure(bizExp.getErrorCode(), bizExp.getParams());
-                if(bizExp.getErrorCode() == ErrorCode.VERIFICATION_FAILED)
-                    response.setStatus(401);
-                else
-                    response.setStatus(400);
-                response.setHeader("content-type","application/json;charset=UTF-8");
-                response.setCharacterEncoding("UTF-8");
-                response.getOutputStream().write(Utils.toJSONString(failureResult).getBytes(StandardCharsets.UTF_8));
-                logger.info("business exception", bizExp);
-            }
-            else {
-                throw e;
-            }
-        }
-    }
+@Slf4j
+public class ExceptionHandlingFilter implements Filter {
 
     private BusinessException extractBusinessException(Throwable e) {
         while (e != null) {
@@ -55,4 +26,33 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
         return null;
     }
 
+    @SneakyThrows
+    @Override
+    public void filter(HttpRequest request, Consumer<HttpRequest> proceed) {
+        try {
+            proceed.accept(request);
+        }
+        catch (Exception e) {
+            BusinessException bizExp = extractBusinessException(e);
+            if(bizExp != null) {
+                var failureResult = ErrorResponse.create(bizExp.getErrorCode(), bizExp.getParams());
+                if(bizExp.getErrorCode() == ErrorCode.VERIFICATION_FAILED)
+                    request.setStatus(401);
+                else
+                    request.setStatus(400);
+                request.addHeader("content-type","application/json;charset=UTF-8");
+//                request.setCharacterEncoding("UTF-8");
+                request.getOut().write(Jsonk.toJson(failureResult).getBytes(StandardCharsets.UTF_8));
+                log.info("business exception", bizExp);
+            }
+            else {
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public int order() {
+        return 1;
+    }
 }

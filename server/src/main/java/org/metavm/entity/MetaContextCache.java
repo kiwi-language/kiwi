@@ -1,41 +1,22 @@
 package org.metavm.entity;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import org.jetbrains.annotations.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.ddl.Commit;
+import org.metavm.context.Component;
 import org.metavm.object.instance.InstanceStore;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.DebugEnv;
-import org.metavm.util.InternalException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import org.metavm.util.LoadingCache;
 
 @Component
+@Slf4j
 public class MetaContextCache extends EntityContextFactoryAware {
 
-    private static final Logger logger = LoggerFactory.getLogger(MetaContextCache.class);
+//    public static final int MAX_SIZE = 16;
 
-    public static final int MAX_SIZE = 16;
+    private final LoadingCache<CacheKey, IInstanceContext> cache = new LoadingCache<>(this::createMetaContext);
 
-    private final LoadingCache<CacheKey, IInstanceContext> cache = CacheBuilder.newBuilder()
-            .maximumSize(MAX_SIZE)
-            .build(new CacheLoader<>() {
-
-                @Override
-                public @NotNull IInstanceContext load(@NotNull CacheKey key) {
-                    return createMetaContext(key);
-                }
-            });
-
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public MetaContextCache(EntityContextFactory entityContextFactory) {
         super(entityContextFactory);
@@ -47,11 +28,7 @@ public class MetaContextCache extends EntityContextFactoryAware {
     }
 
     public IInstanceContext get(long appId, boolean migrating) {
-        try {
-            return cache.get(new CacheKey(appId, migrating));
-        } catch (ExecutionException e) {
-            throw new InternalException(e);
-        }
+        return cache.get(new CacheKey(appId, migrating));
     }
 
     public void invalidate(long appId, boolean migrating) {
@@ -73,7 +50,7 @@ public class MetaContextCache extends EntityContextFactoryAware {
                 context.setDescription("MetaContext");
             context.loadKlasses();
             if (DebugEnv.dumpMetaContext) {
-                logger.trace("MetaContext Dump");
+                log.trace("MetaContext Dump");
                 context.dumpContext();
             }
             return context;

@@ -1,14 +1,14 @@
 package org.metavm.object.type.rest.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.jsonk.Json;
+import org.jsonk.JsonIgnore;
 import org.metavm.object.type.ArrayKind;
-import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.TypeTags;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
-public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey {
+@Json
+public record ArrayTypeKey(int arrayKind, TypeKey elementTypeKey) implements TypeKey {
 
     private static final int[] typeKeyCodes = new int[5];
     private static final int[] typeTags = new int[5];
@@ -22,18 +22,13 @@ public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey 
 
     @Override
     public void write(MvOutput output) {
-        output.write(typeKeyCodes[kind]);
+        output.write(typeKeyCodes[arrayKind]);
         elementTypeKey.write(output);
     }
 
     @Override
     public String toTypeExpression() {
-        return elementTypeKey.toTypeExpression() + ArrayKind.fromCode(kind).getSuffix().toLowerCase();
-    }
-
-    @Override
-    public ArrayType toType(TypeDefProvider typeDefProvider) {
-        return new ArrayType(elementTypeKey.toType(typeDefProvider), ArrayKind.fromCode(kind));
+        return elementTypeKey.toTypeExpression() + ArrayKind.fromCode(arrayKind).getSuffix().toLowerCase();
     }
 
     @Override
@@ -43,7 +38,7 @@ public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey 
 
     @Override
     public int getCode() {
-        return getTypeKeyCode(kind);
+        return getTypeKeyCode(arrayKind);
     }
 
     public static int getTypeKeyCode(int kind) {
@@ -58,6 +53,6 @@ public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey 
 
     @Override
     public int getTypeTag() {
-        return typeTags[kind];
+        return typeTags[arrayKind];
     }
 }

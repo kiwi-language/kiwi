@@ -2,13 +2,15 @@ package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.util.*;
+import org.metavm.util.DebugEnv;
+import org.metavm.util.Instances;
+import org.metavm.util.InternalException;
+import org.metavm.util.Utils;
+import org.metavm.wire.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +18,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
-@NativeEntity(58)
+@Wire(58)
 @Entity
 @Slf4j
 public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAware, GlobalKey {
@@ -25,8 +27,6 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
 
     public static final IndexDef<StaticFieldTable> IDX_KLASS = IndexDef.createUnique(StaticFieldTable.class,
             1, staticFieldTable -> List.of(staticFieldTable.klassReference));
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     public static StaticFieldTable getInstance(ClassType type, EntityRepository repository) {
         var klass = type.getKlass();
@@ -40,21 +40,15 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
         return sft;
     }
 
-    private Reference klassReference;
+    private final Reference klassReference;
 
-    private List<StaticFieldTableEntry> entries = new ArrayList<>();
+    private final List<StaticFieldTableEntry> entries = new ArrayList<>();
 
     private transient Map<Field, StaticFieldTableEntry> map = new HashMap<>();
 
     public StaticFieldTable(@NotNull Id id, Klass klass) {
         super(id);
         this.klassReference = klass.getReference();
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitValue();
-        visitor.visitList(() -> StaticFieldTableEntry.visit(visitor));
     }
 
     @Override
@@ -158,46 +152,7 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("enumConstants", this.getEnumConstants());
-        map.put("klass", this.getKlass().getStringId());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_StaticFieldTable;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.klassReference = (Reference) input.readValue();
-        this.entries = input.readList(() -> StaticFieldTableEntry.read(input, this));
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        output.writeValue(klassReference);
-        output.writeList(entries, arg0 -> arg0.write(output));
-    }
-
-    @Override
-    protected void buildSource(Map<String, Value> source) {
     }
 
     public void purgeRemovedFields() {

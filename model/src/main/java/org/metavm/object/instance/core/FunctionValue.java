@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Consumer;
 
-public abstract class FunctionValue implements Value, CallableRef {
+public abstract class FunctionValue implements Value, CallableRef, EphemeralValue {
 
     public FunctionValue() {
     }

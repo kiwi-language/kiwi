@@ -1,6 +1,5 @@
 package org.metavm.ddl;
 
-import org.metavm.api.Entity;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import static org.metavm.object.instance.core.Instance.log;
 import static org.metavm.task.DDLTask.DISABLE_DELAY;
 
-@Entity
 public enum CommitState {
     MIGRATING(0) {
         @Override

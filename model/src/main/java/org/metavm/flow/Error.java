@@ -1,8 +1,10 @@
 package org.metavm.flow;
 
+import lombok.Getter;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.api.ValueObject;
+import org.metavm.wire.Wire;
 import org.metavm.entity.Element;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -12,13 +14,16 @@ import org.metavm.util.StreamVisitor;
 
 import java.util.function.Consumer;
 
+@Wire
 @Entity
 public class Error implements ValueObject {
 
     private final Reference elementReference;
 
+    @Getter
     private final ErrorLevel level;
 
+    @Getter
     private final String message;
 
     public Error(Element element, ErrorLevel level, String message) {
@@ -45,14 +50,6 @@ public class Error implements ValueObject {
 
     public Element getElement() {
         return (Element) elementReference.get();
-    }
-
-    public ErrorLevel getLevel() {
-        return level;
-    }
-
-    public String getMessage() {
-        return message;
     }
 
     @Override

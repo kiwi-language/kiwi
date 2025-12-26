@@ -1,7 +1,7 @@
 package org.metavm.object.instance.persistence;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.metavm.context.Component;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;

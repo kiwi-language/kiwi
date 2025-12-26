@@ -1,11 +1,11 @@
 package org.metavm.object.type.rest.dto;
 
+import org.jsonk.Json;
 import org.metavm.entity.StdKlass;
-import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
+@Json
 public record StringTypeKey() implements TypeKey {
     @Override
     public void write(MvOutput output) {
@@ -15,11 +15,6 @@ public record StringTypeKey() implements TypeKey {
     @Override
     public String toTypeExpression() {
         return String.format("$$%s", StdKlass.string.get().getId());
-    }
-
-    @Override
-    public Type toType(TypeDefProvider typeDefProvider) {
-        return StdKlass.string.type();
     }
 
     @Override

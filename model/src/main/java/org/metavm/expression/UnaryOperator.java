@@ -1,7 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.api.Entity;
-import org.metavm.entity.ModelDefRegistry;
+import org.metavm.entity.StdKlassRegistry;
 import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.NumberValue;
@@ -12,7 +11,6 @@ import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 
-@Entity
 public enum UnaryOperator {
 
     NOT(1, "!", 1, true, Boolean.class) {
@@ -103,7 +101,7 @@ public enum UnaryOperator {
     }
 
     public Type resultType() {
-        return Utils.safeCall(resultType, ModelDefRegistry::getType);
+        return Utils.safeCall(resultType, StdKlassRegistry.instance::getType);
     }
 
     public boolean isPrefix() {

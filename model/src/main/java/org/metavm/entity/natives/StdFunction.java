@@ -1,13 +1,11 @@
 package org.metavm.entity.natives;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.lang.EmailUtils;
-import org.metavm.api.lang.*;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.DefContext;
 import org.metavm.entity.StdField;
 import org.metavm.entity.StdKlass;
-import org.metavm.entity.StdMethod;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Function;
@@ -16,20 +14,20 @@ import org.metavm.object.type.*;
 import org.metavm.user.Session;
 import org.metavm.util.*;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
 import java.text.DecimalFormat;
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
-public enum StdFunction implements ValueHolderOwner<Function> {
+public enum StdFunction {
 
     functionToInstance(
-            "T functionToInstance<T>(any function)", true, List.of(),
+            "functionToInstance<T>(function: any) -> T", true,
             (func, args, callContext) -> {
                 if (args.getFirst() instanceof FunctionValue functionValue) {
                     var samInterface = ((ClassType) func.getTypeArguments().getFirst());
@@ -40,9 +38,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 }
             }),
     getSessionEntry(
-            "any|null getSessionEntry(string key)",
+            "getSessionEntry(key: string) -> any|null",
             false,
-            List.of(ReflectionUtils.getMethod(SessionUtils.class, "getEntry", String.class)),
             (func, args, callContext) -> {
                 var key = Instances.toJavaString(args.getFirst());
                 var entityContext = ContextUtil.getEntityContext();
@@ -53,9 +50,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Utils.orElse(value, Instances.nullInstance()));
             }),
     setSessionEntry(
-            "void setSessionEntry(string key, any value)",
+            "setSessionEntry(key: string, value: any) -> void",
             false,
-            List.of(ReflectionUtils.getMethod(SessionUtils.class, "setEntry", String.class, Object.class)),
             (func, args, callContext) -> {
                 var key = Instances.toJavaString(args.getFirst());
                 var value = args.get(1);
@@ -67,9 +63,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(null);
             }),
     removeSessionEntry(
-            "boolean removeSessionEntry(string key)",
+            "removeSessionEntry(key: string) -> boolean",
             false,
-            List.of(ReflectionUtils.getMethod(SessionUtils.class, "removeEntry", String.class)),
             (func, args, callContext) -> {
                 var key = Instances.toJavaString(args.getFirst());
                 var entityContext = ContextUtil.getEntityContext();
@@ -79,70 +74,59 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.intInstance(session.removeEntry(key)));
             }),
     typeCast(
-            "T typeCast<T>(any|null instance)",
+            "typeCast<T>(instance: any|null) -> T",
             true,
-            List.of(),
             (func, args, callContext) -> {
                 var type = func.getTypeArguments().getFirst();
                 var value = args.getFirst();
                 if (type.isInstance(value))
                     return FlowExecResult.of(value);
                 else {
-                    var exception = ClassInstance.allocate(TmpId.random(), StdKlass.classCastException.type());
-                    var nat = new ClassCastExceptionNative(exception);
+                    var exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
                     var msg = value.getValueType().getTypeDesc() + " cannot be cast to " + type.getTypeDesc();
-                    nat.ClassCastException(Instances.stringInstance(msg), callContext);
+                    ExceptionNative.Exception(exception, Instances.stringInstance(msg));
                     return FlowExecResult.ofException(exception);
                 }
             }),
     print(
-            "void print(any|null content)",
+            "print(content: any|null) -> void",
             true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "print", Object.class)),
             (func, args, callContext) -> {
                 System.out.println(args.getFirst().getTitle());
                 return FlowExecResult.of(null);
             }),
     setContext(
-            "void setContext(string key, any value)",
+            "setContext(key: string, value: any) -> void",
             true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "setContext", String.class, Object.class)),
             (func, args, callContext) -> {
                 var key = Instances.toJavaString(args.getFirst());
                 ContextUtil.setUserData(key, args.get(1));
                 return FlowExecResult.of(null);
             }),
     getContext(
-            "any|null getContext(string key)",
+            "getContext(key: string) -> any|null",
             true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "getContext", String.class)),
             (func, args, callContext) -> {
                 var key = Instances.toJavaString(args.getFirst());
                 return FlowExecResult.of(ContextUtil.getUserData(key));
             }),
     toString(
-            "string toString(any|null instance)",
+            "toString(instance: any|null) -> string",
             true,
-            List.of(ReflectionUtils.getMethod(Object.class, "toString"),
-                    ReflectionUtils.getMethod(Objects.class, "toString", Object.class)
-            ),
             (func, args, callContext) -> FlowExecResult.of(
                     Instances.stringInstance(Instances.toString(args.getFirst(), callContext)))
     ),
     hashCode(
-            "int hashCode(any instance)",
+            "hashCode(instance: any) -> int",
             true,
-            List.of(ReflectionUtils.getMethod(Object.class, "hashCode")
-            ),
             (func, args, callContext) -> {
                 var value = args.getFirst();
                 return FlowExecResult.of(Instances.intInstance(Instances.hashCode(value, callContext)));
             }
     ),
     requireNonNull(
-            "T requireNonNull<T>(T|null value)",
+            "requireNonNull<T>(value: T|null) -> T",
             true,
-            List.of(ReflectionUtils.getMethod(Objects.class, "requireNonNull", Object.class)),
             (func, args, ctx) -> {
                 if (args.size() != 1) {
                     throw new IllegalArgumentException("requireNonNull requires exactly one argument");
@@ -151,16 +135,14 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.get().getType());
-                    var nat = new NullPointerExceptionNative(npe);
-                    nat.NullPointerException(ctx);
+                    var npe = ClassInstance.allocate(TmpId.random(), StdKlass.exception.get().getType());
+                    ExceptionNative.Exception(npe, Instances.stringInstance("Null pointer"));
                     return FlowExecResult.ofException(npe);
                 }
             }),
     requireNonNull1(
-            "T requireNonNull1<T>(T|null value, string message)",
+            "requireNonNull1<T>(value: T|null, message: string) -> T",
             true,
-            List.of(ReflectionUtils.getMethod(Objects.class, "requireNonNull", Object.class, String.class)),
             (func, args, ctx) -> {
                 if (args.size() != 2) {
                     throw new IllegalArgumentException("requireNonNull requires exactly two arguments");
@@ -170,181 +152,136 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.get().getType());
-                    var nat = new NullPointerExceptionNative(npe);
-                    nat.NullPointerException(message, ctx);
-                    return FlowExecResult.ofException(npe);
-                }
-            }),
-    requireNonNull2(
-            "T requireNonNull2<T>(T|null value, java.util.function.Supplier<string> messageSupplier)",
-            false,
-            List.of(ReflectionUtils.getMethod(Objects.class, "requireNonNull", Object.class, Supplier.class)),
-            (func, args, ctx) -> {
-                if (args.size() != 2) {
-                    throw new IllegalArgumentException("requireNonNull requires exactly three arguments");
-                }
-                var value = args.getFirst();
-                var messageSupplier = args.get(1).resolveObject();
-                if (value.isNotNull())
-                    return FlowExecResult.of(value);
-                else {
-                    var npe = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.get().getType());
-                    var nat = new NullPointerExceptionNative(npe);
-                    var getMethod = messageSupplier.getInstanceType().getMethodByNameAndParamTypes("get", List.of());
-                    var getResult = getMethod.execute(messageSupplier.getReference(), List.of(), ctx);
-                    if (getResult.exception() != null)
-                        return FlowExecResult.ofException(getResult.exception());
-                    var message = getResult.ret();
-                    nat.NullPointerException(message, ctx);
+                    var npe = ClassInstance.allocate(TmpId.random(), StdKlass.exception.get().getType());
+                    ExceptionNative.Exception(npe, message);
                     return FlowExecResult.ofException(npe);
                 }
             }),
     dateBefore(
-            "boolean dateBefore(time date1, time date2)",
+            "dateBefore(date1: time, date2: time) -> boolean",
             true,
-            List.of(ReflectionUtils.getMethod(Date.class, "before", Date.class)),
             (func, args, ctx) -> {
                 var date1 = (TimeValue) args.getFirst();
                 var date2 = (TimeValue) args.get(1);
                 return FlowExecResult.of(date1.before(date2));
             }),
     dateAfter(
-            "boolean dateAfter(time date1, time date2)",
+            "dateAfter(date1: time, date2: time) -> boolean",
             true,
-            List.of(ReflectionUtils.getMethod(Date.class, "after", Date.class)),
             (func, args, ctx) -> {
                 var date1 = (TimeValue) args.getFirst();
                 var date2 = (TimeValue) args.get(1);
                 return FlowExecResult.of(date1.after(date2));
             }),
     replace(
-            "string replace(string str, string target, string replacement)",
+            "replace(str: string, target: string, replacement: string) -> string",
             true,
-            List.of(ReflectionUtils.getMethod(String.class, "replace", CharSequence.class, CharSequence.class)),
             (func, args, ctx) -> {
-                var str = Instances.toJavaString(args.getFirst());
-                var target = Instances.toJavaString(args.get(1));
-                var replacement = Instances.toJavaString(args.get(2));
+                var str = requireNonNull(Instances.toJavaString(args.getFirst()));
+                var target = requireNonNull(Instances.toJavaString(args.get(1)));
+                var replacement = requireNonNull(Instances.toJavaString(args.get(2)));
                 return FlowExecResult.of(Instances.stringInstance(str.replace(target, replacement)));
             }),
     uuid(
-            "string uuid()",
+            "uuid() -> string",
             true,
-            List.of(ReflectionUtils.getMethod(UUIDUtils.class, "randomUUID")),
             (func, args, ctx) -> FlowExecResult.of(Instances.stringInstance(UUID.randomUUID().toString()))
     ),
     currentTimeMillis(
-            "long currentTimeMillis()",
+            "currentTimeMillis() -> long",
             true,
-            List.of(ReflectionUtils.getMethod(System.class, "currentTimeMillis")),
             (func, args, ctx) -> FlowExecResult.of(Instances.longInstance(System.currentTimeMillis()))
     ),
     equals(
-            "boolean equals(any obj1, any obj2)",
+            "equals(obj1: any|null, obj2: any|null) -> boolean",
             true,
-            List.of(ReflectionUtils.getMethod(Objects.class, "equals", Object.class, Object.class),
-                    ReflectionUtils.getMethod(Object.class, "equals", Object.class)),
             (func, args, ctx) -> FlowExecResult.of(Instances.intInstance(Instances.equals(args.getFirst(), args.getLast(), ctx)))
     ),
     md5(
-            "string md5(string str)",
+            "md5(str: string) -> string",
             true,
-            List.of(ReflectionUtils.getMethod(MD5Utils.class, "md5", String.class)),
             (func, args, ctx) -> {
-                var str = Instances.toJavaString(args.getFirst());
+                var str = requireNonNull(Instances.toJavaString(args.getFirst()));
                 return FlowExecResult.of(Instances.stringInstance(EncodingUtils.md5(str)));
             }),
     randomPassword(
-            "string randomPassword()",
+            "randomPassword() -> string",
             true,
-            List.of(ReflectionUtils.getMethod(PasswordUtils.class, "randomPassword")),
             (func, args, ctx) -> FlowExecResult.of(Instances.stringInstance(Utils.randomPassword()))
     ),
     password(
-            "password passwd(string s)",
+            "passwd(s: string) -> password",
             true,
-            List.of(),
             (func, args, ctx) -> {
-                var s = Instances.toJavaString(args.getFirst());
+                var s = requireNonNull(Instances.toJavaString(args.getFirst()));
                 return FlowExecResult.of(Instances.passwordInstance(EncodingUtils.md5(s)));
             }
     ),
     regexMatch(
-            "boolean regexMatch(string pattern, string str)",
+            "regexMatch(pattern: string, str: string) -> boolean",
             true,
-            List.of(ReflectionUtils.getMethod(RegexUtils.class, "match", String.class, String.class)),
             (func, args, ctx) -> {
-                var pattern = Instances.toJavaString(args.getFirst());
-                var str = Instances.toJavaString(args.get(1));
+                var pattern = requireNonNull(Instances.toJavaString(args.getFirst()));
+                var str = requireNonNull(Instances.toJavaString(args.get(1)));
                 return FlowExecResult.of(Instances.intInstance(Pattern.compile(pattern).matcher(str).matches()));
             }),
     random(
-            "long random(long bound)",
+            "random(bound: long) -> long",
             true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "random", long.class)),
             (func, args, ctx) -> {
                 var bound = (LongValue) args.getFirst();
                 return FlowExecResult.of(Instances.longInstance(Utils.random(bound.getValue())));
             }
     ),
     timeToLong(
-            "long timeToLong(time value)",
+            "timeToLong(value: time) -> long",
             true,
-            List.of(ReflectionUtils.getMethod(Date.class, "getTime")),
             (func, args, ctx) -> {
                 var date = (TimeValue) args.getFirst();
                 return FlowExecResult.of(Instances.longInstance(date.getValue()));
             }),
     now(
-            "long now()",
+            "now() -> long",
             true,
-            List.of(),
             (func, args, ctx) -> FlowExecResult.of(Instances.longInstance(System.currentTimeMillis()))
     ),
     newDate(
-            "time newDate()",
+            "newDate() -> time",
             true,
-            List.of(),
             (func, args, ctx) -> FlowExecResult.of(Instances.timeInstance(System.currentTimeMillis()))
     ),
     dateFromTime(
-            "time timeFromMillis(long millis)",
+            "timeFromMillis(millis: long) -> time",
             true,
-            List.of(),
             (func, args, ctx) -> {
                 var millis = (LongValue) args.getFirst();
                 return FlowExecResult.of(Instances.timeInstance(millis.getValue()));
             }
     ),
     formatNumber(
-            "string formatNumber(string format, long number)",
+            "formatNumber(format: string, number: long) -> string",
             true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "formatNumber", String.class, long.class)),
             (func, args, ctx) -> {
-                var format = Instances.toJavaString(args.getFirst());
+                var format = requireNonNull(Instances.toJavaString(args.getFirst()));
                 var number = (LongValue) args.get(1);
                 return FlowExecResult.of(Instances.stringInstance(new DecimalFormat(format).format(number.getValue())));
             }),
     getId(
-            "string getId(any obj)",
+            "getId(obj: any) -> string",
             true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "getId", Object.class)),
             (func, args, ctx) -> {
                 var obj = args.getFirst();
                 if (obj instanceof EntityReference r)
                     return FlowExecResult.of(Instances.stringInstance(r.getStringId()));
-                var npe = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.get().getType());
-                var nat = new NullPointerExceptionNative(npe);
-                nat.NullPointerException(Instances.stringInstance("Object has no ID"), ctx);
+                var npe = ClassInstance.allocate(TmpId.random(), StdKlass.exception.get().getType());
+                ExceptionNative.Exception(npe, Instances.stringInstance("Object has no ID"));
                 return FlowExecResult.ofException(npe);
             }),
     sendEmail(
-            "void sendEmail(string recipient, string subject, string content)",
+            "sendEmail(recipient: string, subject: string, content: string) -> void",
             false,
-            List.of(ReflectionUtils.getMethod(EmailUtils.class, "send", String.class, String.class, String.class)),
             (func, args, callContext) -> {
-                Constants.emailSender.send(
+                EmailUtils.emailSender.send(
                         Instances.toJavaString(args.getFirst()),
                         Instances.toJavaString(args.get(1)),
                         Instances.toJavaString(args.get(2))
@@ -352,18 +289,16 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(null);
             }),
     secureRandom(
-            "string secureRandom(int length)",
+            "secureRandom(length: int) -> string",
             true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "secureRandom", int.class)),
             (func, args, callContext) -> {
                 var len = ((IntValue) args.getFirst()).value;
                 return FlowExecResult.of(Instances.stringInstance(EncodingUtils.secureRandom(len)));
             }
     ),
     secureHash(
-            "string secureHash(string value, string|null salt)",
+            "secureHash(value: string, salt: string|null) -> string",
             true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "secureHash", String.class, String.class)),
             (func, args, callContext) -> {
                 var v = Instances.toJavaString(args.getFirst());
                 var s = args.get(1) instanceof StringReference sr ? sr.getValue() : null;
@@ -372,84 +307,24 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     getParent(
-            "any|null getParent(any object)",
+            "getParent(object: any) -> any|null",
             true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "getParent", Object.class)),
             (func, args, callContext) -> {
                 var obj = args.getFirst().resolveDurable();
                 return FlowExecResult.of(Utils.getOrElse(obj.getParent(), Instance::getReference, Instances.nullInstance()));
             }
     ),
     getRoot(
-            "any getRoot(any object)",
+            "getRoot(object: any) -> any",
             true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "getRoot", Object.class)),
             (func, args, callContext) -> {
                 var obj = args.getFirst().resolveDurable();
                 return FlowExecResult.of(obj.getRoot().getReference());
             }
     ),
-    sortList(
-            "void sortList(java.util.List<[never, any]> list)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Collections.class, "sort", List.class)
-            ),
-            (func, args, callContext) -> {
-                var list = args.getFirst().resolveObject();
-                var nat = Instances.getListNative(list);
-                nat.sort(callContext);
-                return FlowExecResult.of(null);
-            }
-    ),
-    sortArray0(
-            "void sortArray0([never, any|null][] array, java.util.Comparator<[never,any]>|null comparator)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Arrays.class, "sort", Object[].class, Comparator.class)
-            ),
-            (func, args, callContext) -> {
-                var array = args.getFirst().resolveArray();
-                var c = args.get(1);
-                if(c.isNull())
-                    array.sort((e1,e2) -> Instances.compare(e1, e2, callContext));
-                else {
-                    var comparator = c.resolveObject();
-                    var cmpMethod = comparator.getInstanceType().getMethod(StdMethod.comparatorCompare.get());
-                    array.sort((e1, e2) -> Instances.toInt(
-                            Flows.invokeVirtual(cmpMethod, comparator, List.of(e1,e2), callContext
-                            )));
-                }
-                return FlowExecResult.of(null);
-            }
-    ),
-    sortArray(
-            "void sortArray([never, any|null][] array, int from, int to, java.util.Comparator<[never,any]>|null comparator)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Arrays.class, "sort", Object[].class, int.class, int.class, Comparator.class)
-            ),
-            (func, args, callContext) -> {
-                var array = args.getFirst().resolveArray();
-                var from = ((IntValue) args.get(1)).value;
-                var to = ((IntValue) args.get(2)).value;
-                var c = args.get(3);
-                if(c.isNull())
-                    array.sort(from, to, (e1,e2) -> Instances.compare(e1, e2, callContext));
-                else {
-                    var comparator = c.resolveObject();
-                    var cmpMethod = comparator.getInstanceType().getMethod(StdMethod.comparatorCompare.get());
-                    array.sort(from, to, (e1, e2) -> Instances.toInt(
-                            Flows.invokeVirtual(cmpMethod, comparator, List.of(e1,e2), callContext
-                    )));
-                }
-                return FlowExecResult.of(null);
-            }
-    ),
     sort(
-            "void sort<E>(E[] a, (E, E)->int c)",
+            "sort<E>(a: E[], c: (E, E)->int) -> void",
             false,
-            List.of(),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var c = args.get(1);
@@ -461,9 +336,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     reverse(
-            "void reverse<E>(E[] a)",
+            "reverse<E>(a: E[]) -> void",
             false,
-            List.of(),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 array.reverse();
@@ -471,11 +345,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     copyOfArray(
-            "(T|null)[] copyOfArray<T>((T|null)[] array, int newLength)",
+            "copyOfArray<T>(array: (T|null)[], newLength: int) -> (T|null)[]",
             false,
-            List.of(
-                    ReflectionUtils.getMethod(Arrays.class, "copyOf", Object[].class, int.class)
-            ),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var newLength = ((IntValue) args.get(1)).value;
@@ -483,36 +354,17 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     copyOfLongArray(
-            "long[] copyOfLongArray(long[] array, int newLength)",
+            "copyOfLongArray(array: long[], newLength: int) -> long[]",
             false,
-            List.of(
-                    ReflectionUtils.getMethod(Arrays.class, "copyOf", long[].class, int.class)
-            ),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var newLength = ((IntValue) args.get(1)).value;
                 return FlowExecResult.of(array.copyOf(newLength).getReference());
             }
     ),
-    copyOfArray2(
-            "(T|null)[] copyOfArray2<T, U>((U|null)[] array, int newLength, org.metavm.object.type.Klass newType)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Arrays.class, "copyOf", Object[].class, int.class, Class.class)
-            ),
-            (func, args, callContext) -> {
-                var array = args.getFirst().resolveArray();
-                var newLength = ((IntValue) args.get(1)).value;
-                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().getFirst()), ArrayKind.DEFAULT);
-                return FlowExecResult.of(array.copyOf(newLength, newType).getReference());
-            }
-    ),
     copyOfArrayRange(
-            "(T|null)[] copyOfArrayRange<T>((T|null)[] array, int from, int to)",
+            "copyOfArrayRange<T>(array: (T|null)[], from: int, to: int) -> (T|null)[]",
             false,
-            List.of(
-                    ReflectionUtils.getMethod(Arrays.class, "copyOfRange", Object[].class, int.class, int.class)
-            ),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var from = ((IntValue) args.get(1)).value;
@@ -520,26 +372,9 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(array.copyOfRange(from, to).getReference());
             }
     ),
-    copyOfArrayRange2(
-            "(T|null)[] copyOfArrayRange2<T, U>((U|null)[] array, int from, int to, org.metavm.object.type.Klass newType)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Arrays.class, "copyOfRange", Object[].class, int.class, int.class, Class.class)
-            ),
-            (func, args, callContext) -> {
-                var array = args.getFirst().resolveArray();
-                var from = ((IntValue) args.get(1)).value;
-                var to = ((IntValue) args.get(2)).value;
-                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().getFirst()), ArrayKind.DEFAULT);
-                return FlowExecResult.of(array.copyOfRange(from, to, newType).getReference());
-            }
-    ),
     arraycopy(
-            "void arraycopy(any source, int srcPos, any dest, int destPos, int length)",
+            "arraycopy(source: any, srcPos: int, dest: any, destPos: int, length: int) -> void",
             false,
-            List.of(
-                    ReflectionUtils.getMethod(System.class, "arraycopy", Object.class, int.class, Object.class, int.class, int.class)
-            ),
             (func, args, callContext) -> {
                 var src = args.getFirst().resolveArray();
                 var srcPos = ((IntValue) args.get(1)).value;
@@ -551,59 +386,24 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(null);
             }
     ),
-    getClass(
-            "org.metavm.object.type.Klass getClass(any o)",
-            false,
-            List.of(ReflectionUtils.getMethod(Object.class, "getClass")),
-            (func, args, callContext) -> {
-                var o = args.getFirst().resolveDurable();
-                return FlowExecResult.of(Instances.getGeneralClass(o).getReference());
-            }
-    ),
-    newArray(
-            "any newArray(org.metavm.object.type.Klass klass, int length)",
-            false,
-            List.of(ReflectionUtils.getMethod(Array.class, "newInstance", Class.class, int.class)),
-            (func, args, callContext) -> {
-                var k = (Klass) args.getFirst().resolveObject();
-                var len = ((IntValue) args.get(1)).value;
-                var type = new ArrayType(Types.getNullableType(Types.getGeneralType(k)), ArrayKind.DEFAULT);
-                var array = new ArrayInstance(type);
-                Instances.initArray(array, new int[] {len}, 0);
-                return FlowExecResult.of(array.getReference());
-            }
-    ),
-    getComponentClass(
-            "org.metavm.object.type.Klass getComponentClass(org.metavm.object.type.Klass klass)",
-            false,
-            List.of(ReflectionUtils.getMethod(Class.class, "getComponentType")),
-            (func, args, callContext) -> {
-                var k = (Klass) args.getFirst().resolveDurable();
-                var c = Objects.requireNonNull(k.getComponentKlass());
-                return FlowExecResult.of(c.getReference());
-            }
-    ),
     checkIndex(
-            "int checkIndex(int index, int length)",
+            "checkIndex(index: int, length: int) -> int",
             false,
-            List.of(ReflectionUtils.getMethod(Objects.class, "checkIndex", int.class, int.class)),
             (func, args, callContext) -> {
                 var index = ((IntValue) args.getFirst()).value;
                 var length = ((IntValue) args.get(1)).value;
                 if(index >= 0 && index < length)
                     return FlowExecResult.of(Instances.intInstance(index));
                 else {
-                    var exception = ClassInstance.allocate(TmpId.random(), StdKlass.indexOutOfBoundsException.type());
-                    var nat = new IndexOutOfBoundsExceptionNative(exception);
-                    nat.IndexOutOfBoundsException(callContext);
+                    var exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
+                    ExceptionNative.Exception(exception, Instances.stringInstance("Index out of bound"));
                     return FlowExecResult.ofException(exception);
                 }
             }
     ),
     maxInt(
-            "int maxInt(int v1, int v2)",
+            "maxInt(v1: int, v2: int) -> int",
             false,
-            List.of(ReflectionUtils.getMethod(Math.class, "max", int.class, int.class)),
             (func, args, callContext) -> {
                 var v1 = ((IntValue) args.getFirst());
                 var v2 = ((IntValue) args.get(1));
@@ -614,9 +414,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     maxLong(
-            "long maxLong(long v1, long v2)",
+            "maxLong(v1: long, v2: long) -> long",
             false,
-            List.of(ReflectionUtils.getMethod(Math.class, "max", long.class, long.class)),
             (func, args, callContext) -> {
                 var v1 = ((LongValue) args.getFirst());
                 var v2 = ((LongValue) args.get(1));
@@ -627,9 +426,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     clone(
-            "any clone(any o)",
+            "clone(o: any) -> any",
             false,
-            List.of(ReflectionUtils.getDeclaredMethod(Object.class, "clone", List.of())),
             (func, args, callContext) -> {
                 var context = ContextUtil.getEntityContext();
                 var clone = args.getFirst().resolveMv().copy(context::allocateRootId);
@@ -638,9 +436,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     concat(
-            "string concat(any|null s1, any|null s2)",
+            "concat(s1: any|null, s2: any|null) -> string",
             false,
-            List.of(ReflectionUtils.getMethod(Lang.class, "concat", Object.class, Object.class)),
             (func, args, callContext) -> {
                 var s1 = Instances.toString(args.getFirst(), callContext);
                 var s2 = Instances.toString(args.get(1), callContext);
@@ -648,26 +445,23 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     checkFromIndexSize(
-            "int checkFromIndexSize(int fromIndex, int size, int length)",
+            "checkFromIndexSize(fromIndex: int, size: int, length: int) -> int",
             false,
-            List.of(ReflectionUtils.getMethod(Objects.class, "checkFromIndexSize", int.class, int.class, int.class)),
             (func, args, callContext) -> {
                 var from = ((IntValue) args.getFirst()).getValue();
                 var size = ((IntValue) args.get(1)).getValue();
                 var len = ((IntValue) args.get(2)).getValue();
                 if(from < 0 || size < 0 || from + size > len || len < 0) {
-                    var e = ClassInstance.allocate(TmpId.random(), StdKlass.indexOutOfBoundsException.type());
-                    var nat = new IndexOutOfBoundsExceptionNative(e);
-                    nat.IndexOutOfBoundsException(callContext);
+                    var e = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
+                    ExceptionNative.Exception(e, Instances.stringInstance("Index out of bound"));
                     return FlowExecResult.ofException(e);
                 }
                 return FlowExecResult.of(Instances.intInstance(from));
             }
     ),
     enumValueOf(
-            "T|null enumValueOf<T>(T[] values, string name)",
+            "enumValueOf<T>(values: T[], name: string) -> T|null",
             false,
-            List.of(),
             (func, args, callContext) -> {
                 var values = args.getFirst().resolveArray();
                 var name = (StringReference) args.get(1);
@@ -680,24 +474,21 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     require(
-            "void require(boolean condition, string message)",
+            "require(condition: boolean, message: string) -> void",
             false,
-            List.of(),
             (func, args, callContext) -> {
                 var cond = (IntValue) args.getFirst();
                 if (cond.value != 0)
                     return FlowExecResult.of(Instances.nullInstance());
                 else {
-                    var e = ClassInstance.allocate(TmpId.random(), StdKlass.illegalArgumentException.type());
-                    var nat = new IllegalArgumentExceptionNative(e);
-                    nat.IllegalArgumentException(args.get(1), callContext);
+                    var e = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
+                    ExceptionNative.Exception(e, args.get(1));
                     return FlowExecResult.ofException(e);
                 }
             }),
     forEach(
-            "void forEach<E>(E[] a, (E) -> void action)",
+            "forEach<E>(a: E[], action: (E) -> void) -> void",
             false,
-            List.of(),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var action = (FunctionValue) args.get(1);
@@ -705,9 +496,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.nullInstance());
             }),
     map(
-            "R[] map<T, R>(T[] a, (T) -> R mapper)",
+            "map<T, R>(a: T[], mapper: (T) -> R) -> R[]",
             false,
-            List.of(),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var action = (FunctionValue) args.get(1);
@@ -720,9 +510,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(result.getReference());
             }),
     sumInt(
-            "int sumInt(int[] a)",
+            "sumInt(a: int[]) -> int",
             false,
-            List.of(),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var sum = 0;
@@ -733,9 +522,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.intInstance(sum));
             }),
     sumLong(
-            "long sumLong(long[] a)",
+            "sumLong(a: long[]) -> long",
             false,
-            List.of(),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var sum = 0L;
@@ -746,9 +534,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.longInstance(sum));
             }),
     sumFloat(
-            "float sumFloat(float[] a)",
+            "sumFloat(a: float[]) -> float",
             false,
-            List.of(),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var sum = 0f;
@@ -759,9 +546,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.floatInstance(sum));
             }),
     sumDouble(
-            "double sumDouble(double[] a)",
+            "sumDouble(a: double[]) -> double",
             false,
-            List.of(),
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var sum = 0.0;
@@ -773,17 +559,18 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }),
     ;
 
+    @Getter
     private final String name;
+    @Getter
     private final String signature;
+    @Getter
     private final boolean system;
-    private ValueHolder<Function> functionHolder;
+    private final ValueHolder<Function> functionHolder;
     private final FunctionImpl impl;
-    private final List<Method> javaMethods;
 
-    StdFunction(String signature, boolean system, List<Method> javaMethods, FunctionImpl impl) {
+    StdFunction(String signature, boolean system, FunctionImpl impl) {
         this.signature = signature;
         this.system = system;
-        this.javaMethods = new ArrayList<>(javaMethods);
         this.impl = impl;
         this.functionHolder = new HybridValueHolder<>();
         var typeParser = new TypeParserImpl((String name) -> {
@@ -793,7 +580,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
     }
 
     public static void setEmailSender(EmailSender emailSender) {
-        Constants.emailSender = emailSender;
+        EmailUtils.emailSender = emailSender;
     }
 
     public static List<Function> defineSystemFunctions(DefContext defContext) {
@@ -810,26 +597,6 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 .toList();
     }
 
-    public static void initializeFromDefContext(DefContext defContext, boolean local) {
-        for (StdFunction def : values()) {
-            var func = requireNonNull(
-                    defContext.selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance(def.getName())),
-                    "Function not found: " + def.getName());
-            if(local)
-                def.setLocal(func);
-            else
-                def.set(func);
-        }
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public boolean isSystem() {
-        return system;
-    }
-
     public Function define(DefContext defContext) {
         var function = parseFunction(defContext);
         function.setNative(true);
@@ -841,20 +608,9 @@ public enum StdFunction implements ValueHolderOwner<Function> {
     private Function parseFunction(DefContext defContext) {
         return new TypeParserImpl(
                 (String name1) -> {
-                    if (defContext != null)
-                        return defContext.getKlass(ReflectionUtils.classForName(name1));
-                    else
-                        throw new NullPointerException("defContext is null");
+                    throw new NullPointerException("Unrecognized type: " + name1);
                 }
         ).parseFunction(signature, defContext::getModelId);
-    }
-
-    public List<Method> getJavaMethods() {
-        return javaMethods;
-    }
-
-    public String getSignature() {
-        return signature;
     }
 
     public void set(Function function) {
@@ -862,25 +618,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
         functionHolder.set(function);
     }
 
-    public void setLocal(Function function) {
-        function.setNativeCode(impl);
-        functionHolder.setLocal(function);
-    }
-
     public Function get() {
         return functionHolder.get();
     }
 
-    public void setValueHolder(ValueHolder<Function> functionHolder) {
-        this.functionHolder = functionHolder;
-    }
-
-    @Override
-    public ValueHolder<Function> getValueHolder() {
-        return functionHolder;
-    }
-
-    public FunctionImpl getImpl() {
-        return impl;
-    }
 }

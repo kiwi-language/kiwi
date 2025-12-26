@@ -1,19 +1,9 @@
-import java.io.ObjectOutputStream
-import java.io.ObjectInputStream
-
 class Foo {
 
     var bar = Bar(this)
 
     fn getBar() -> Bar {
         return this.bar
-    }
-
-    priv fn writeObject(s: ObjectOutputStream) {
-    }
-
-    priv fn readObject(s: ObjectInputStream) {
-         this.bar = Bar(this)
     }
 
 }

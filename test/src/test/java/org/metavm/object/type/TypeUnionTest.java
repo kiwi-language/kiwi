@@ -2,17 +2,11 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.util.MockUtils;
 
 import java.util.Set;
 
 public class TypeUnionTest extends TestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        MockStandardTypesInitializer.init();
-    }
 
     public void testIsAssignable() {
         var fooTypes = MockUtils.createFooTypes();

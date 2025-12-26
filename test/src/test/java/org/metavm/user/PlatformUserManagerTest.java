@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.EntityQueryService;
-import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.user.rest.dto.RoleDTO;
 import org.metavm.user.rest.dto.UserDTO;
@@ -27,7 +26,7 @@ public class PlatformUserManagerTest extends TestCase {
         var entityContextFactory = bootResult.entityContextFactory();
         var loginService = new LoginService(entityContextFactory);
         var entityQueryService = new EntityQueryService(bootResult.instanceSearchService());
-        platformUserManager = new PlatformUserManager(entityContextFactory,  loginService, entityQueryService, new MockEventQueue(),
+        platformUserManager = new PlatformUserManager(entityContextFactory,  loginService, entityQueryService,
                 new VerificationCodeService(entityContextFactory, new MockEmailService()));
         roleManager = new RoleManager(entityContextFactory, entityQueryService);
         ContextUtil.setAppId(Constants.PLATFORM_APP_ID);

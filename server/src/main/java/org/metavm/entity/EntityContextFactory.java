@@ -1,5 +1,8 @@
 package org.metavm.entity;
 
+import lombok.Getter;
+import lombok.Setter;
+import org.metavm.jdbc.TransactionStatus;
 import org.metavm.object.instance.ChangeLogPlugin;
 import org.metavm.object.instance.CheckConstraintPlugin;
 import org.metavm.object.instance.IndexConstraintPlugin;
@@ -7,9 +10,8 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.metavm.context.Autowired;
+import org.metavm.context.Component;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -18,8 +20,10 @@ import java.util.function.Consumer;
 @Component
 public class EntityContextFactory {
 
+    @Getter
     private final InstanceContextFactory instanceContextFactory;
     private InstanceLogService instanceLogService;
+    @Setter
     private DefContext defContext;
 
     public EntityContextFactory(InstanceContextFactory instanceContextFactory) {
@@ -79,7 +83,6 @@ public class EntityContextFactory {
         customizer.accept(builder);
         builder.plugins(
                 currentStore -> List.of(
-//                        new MetaVersionPlugin(bridge, bridge),
                         new CheckConstraintPlugin(),
                         new IndexConstraintPlugin(currentStore),
                         new ChangeLogPlugin(currentStore, instanceLogService)
@@ -88,21 +91,13 @@ public class EntityContextFactory {
     }
 
     private boolean isReadonlyTransaction() {
-        return !TransactionSynchronizationManager.isActualTransactionActive()
-                || TransactionSynchronizationManager.isCurrentTransactionReadOnly();
+        return TransactionStatus.isTransactionActive()
+                && TransactionStatus.isTransactionReadonly();
     }
 
     @Autowired
     public void setInstanceLogService(InstanceLogService instanceLogService) {
         this.instanceLogService = instanceLogService;
-    }
-
-    public InstanceContextFactory getInstanceContextFactory() {
-        return instanceContextFactory;
-    }
-
-    public void setDefContext(DefContext defContext) {
-        this.defContext = defContext;
     }
 
 }

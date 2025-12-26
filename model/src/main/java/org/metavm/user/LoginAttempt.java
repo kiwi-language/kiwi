@@ -1,28 +1,21 @@
 package org.metavm.user;
 
-import org.metavm.annotation.NativeEntity;
+import lombok.Getter;
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
-import org.metavm.entity.EntityRegistry;
+import org.metavm.wire.Wire;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
-@NativeEntity(57)
+@Getter
+@Wire(57)
 @Entity
 public class LoginAttempt extends org.metavm.entity.Entity {
 
@@ -41,16 +34,14 @@ public class LoginAttempt extends org.metavm.entity.Entity {
                             Instances.booleanInstance(loginAttempt.successful),
                             Instances.longInstance(loginAttempt.time.getTime())
                     ));
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
-    private boolean successful;
+    private final boolean successful;
 
-    private String loginName;
+    private final String loginName;
 
-    private String clientIP;
+    private final String clientIP;
 
-    private Date time;
+    private final Date time;
 
     public LoginAttempt(Id id, boolean successful, String loginName, String clientIP, Date time) {
         super(id);
@@ -58,30 +49,6 @@ public class LoginAttempt extends org.metavm.entity.Entity {
         this.loginName = loginName;
         this.clientIP = clientIP;
         this.time = time;
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitBoolean();
-        visitor.visitUTF();
-        visitor.visitUTF();
-        visitor.visitLong();
-    }
-
-    public boolean isSuccessful() {
-        return successful;
-    }
-
-    public String getLoginName() {
-        return loginName;
-    }
-
-    public String getClientIP() {
-        return clientIP;
-    }
-
-    public Date getTime() {
-        return time;
     }
 
     @Nullable
@@ -100,51 +67,7 @@ public class LoginAttempt extends org.metavm.entity.Entity {
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("successful", this.isSuccessful());
-        map.put("loginName", this.getLoginName());
-        map.put("clientIP", this.getClientIP());
-        map.put("time", this.getTime().getTime());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
     }
 
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_LoginAttempt;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.successful = input.readBoolean();
-        this.loginName = input.readUTF();
-        this.clientIP = input.readUTF();
-        this.time = input.readDate();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        output.writeBoolean(successful);
-        output.writeUTF(loginName);
-        output.writeUTF(clientIP);
-        output.writeDate(time);
-    }
-
-    @Override
-    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
-    }
 }

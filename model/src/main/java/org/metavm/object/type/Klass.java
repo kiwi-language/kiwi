@@ -1,48 +1,35 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.EntityField;
-import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.natives.NativeBase;
 import org.metavm.expression.Var;
 import org.metavm.flow.Error;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.metavm.wire.*;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.*;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static org.metavm.util.Utils.*;
 
-@NativeEntity(26)
+@Wire(26)
 @org.metavm.api.Entity
 @Slf4j
 public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, GlobalKey, LoadAware, LocalKey, Message, ConstantScope, KlassDeclaration {
-
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
-
-    public static final Logger logger = LoggerFactory.getLogger(Klass.class);
 
     public static final IndexDef<Klass> IDX_ALL_FLAG = IndexDef.create(Klass.class, 1,
             e -> List.of(Instances.booleanInstance(e.allFlag)));
@@ -56,17 +43,23 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     public static final IndexDef<Klass> UNIQUE_SOURCE_TAG = IndexDef.createUnique(Klass.class,
             1, klass -> List.of(klass.sourceTag != null ? Instances.intInstance(klass.sourceTag) : Instances.nullInstance())
             );
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     private @Nullable Integer sourceTag;
+    @Setter
     @EntityField(asTitle = true)
     private String name;
     @Nullable
     private String qualifiedName;
+    @Setter
+    @Getter
     private ClassKind kind;
+    @Setter
+    @Getter
     private boolean anonymous;
+    @Setter
     private boolean ephemeral;
+    @Getter
+    @Setter
     private boolean searchable;
 
     @Nullable
@@ -78,23 +71,30 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     private List<Integer> interfaceIndexes = new ArrayList<>();
 //    private transient List<Klass> interfaces = new ArrayList<>();
 //    private transient @Nullable Klass superKlass;
+    @Getter
+    @Setter
     private ClassSource source;
     @Nullable
     private String desc;
 
+    @Setter
+    @Getter
     private int nextFieldTag;
 
+    @Setter
+    @Getter
     private int nextFieldSourceCodeTag = 1000000;
 
-    private List<Field> fields = new ArrayList<>();
+    private final List<Field> fields = new ArrayList<>();
     @Nullable
     private Reference titleField;
-    private List<Method> methods = new ArrayList<>();
+    private final List<Method> methods = new ArrayList<>();
+    @Parent
     private @Nullable KlassDeclaration scope;
-    private List<Klass> klasses = new ArrayList<>();
+    private final List<Klass> klasses = new ArrayList<>();
 
-    private List<Field> staticFields = new ArrayList<>();
-    private List<Index> indices = new ArrayList<>();
+    private final List<Field> staticFields = new ArrayList<>();
+    private final List<Index> indices = new ArrayList<>();
     // Don't remove, for search
     @SuppressWarnings("unused")
     private boolean isAbstract;
@@ -102,8 +102,10 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     // Don't remove, used for search
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private boolean isParameterized;
-    private List<TypeVariable> typeParameters = new ArrayList<>();
-    private List<Error> errors = new ArrayList<>();
+    private final List<TypeVariable> typeParameters = new ArrayList<>();
+    private final List<Error> errors = new ArrayList<>();
+    @Setter
+    @Getter
     private boolean error;
 
     // For unit test. Do not remove
@@ -111,14 +113,22 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     @Nullable
     private KlassFlags flags;
 
+    @Setter
+    @Getter
     private ClassTypeState state = ClassTypeState.INIT;
+    @Setter
+    @Getter
     private long tag;
 
+    @Setter
+    @Getter
     private int since;
 
     @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private boolean templateFlag = false;
 
+    @Setter
+    @Getter
     private boolean struct;
 
     @SuppressWarnings({"FieldMayBeFinal", "unused"}) // for unit test
@@ -126,9 +136,10 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
 
     private boolean methodTableBuildDisabled;
 
-    private ConstantPool constantPool = new ConstantPool(this);
+    @Getter
+    private final ConstantPool constantPool = new ConstantPool(this);
 
-    private boolean allFlag = true;
+    private final boolean allFlag = true;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
@@ -138,6 +149,7 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     // length of the longest path from the current type upwards to a root in the type hierarchy
     private transient int rank;
 
+    @Getter
     private transient int level;
 
     private transient Map<Long,Integer> tag2level = new HashMap<>();
@@ -155,9 +167,8 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     @CopyIgnore
     private transient volatile Closure closure;
 
+    @Setter
     private transient ClassType type;
-
-    private transient Class<? extends NativeBase> nativeClass;
 
     private transient boolean frozen;
 
@@ -219,48 +230,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         resetSortedClasses();
         Utils.require(getAncestorClasses().size() <= Constants.MAX_INHERITANCE_DEPTH,
                 "Inheritance depth of class " + name + "  exceeds limit: " + Constants.MAX_INHERITANCE_DEPTH);
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        TypeDef.visitBody(visitor);
-        visitor.visitNullable(visitor::visitInt);
-        visitor.visitUTF();
-        visitor.visitNullable(visitor::visitUTF);
-        visitor.visitByte();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        visitor.visitNullable(visitor::visitValue);
-        visitor.visitList(visitor::visitValue);
-        visitor.visitNullable(visitor::visitInt);
-        visitor.visitList(visitor::visitInt);
-        visitor.visitByte();
-        visitor.visitNullable(visitor::visitUTF);
-        visitor.visitInt();
-        visitor.visitInt();
-        visitor.visitList(visitor::visitEntity);
-        visitor.visitNullable(visitor::visitValue);
-        visitor.visitList(visitor::visitEntity);
-        visitor.visitList(visitor::visitEntity);
-        visitor.visitList(visitor::visitEntity);
-        visitor.visitList(visitor::visitEntity);
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        visitor.visitList(visitor::visitEntity);
-        visitor.visitList(() -> Error.visit(visitor));
-        visitor.visitBoolean();
-        visitor.visitNullable(visitor::visitEntity);
-        visitor.visitByte();
-        visitor.visitLong();
-        visitor.visitInt();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        ConstantPool.visit(visitor);
-        visitor.visitBoolean();
     }
 
     public void setDesc(@Nullable String desc) {
@@ -338,10 +307,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
             if(!field.isMetadataRemoved())
                 action.accept(field);
         }
-    }
-
-    public long getTag() {
-        return tag;
     }
 
     @Nullable
@@ -432,14 +397,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         return Collections.unmodifiableList(errors);
     }
 
-    public boolean isError() {
-        return error;
-    }
-
-    public void setError(boolean error) {
-        this.error = error;
-    }
-
     public void clearElementErrors(Element element) {
         errors.removeIf(e -> e.getElement() == element);
     }
@@ -460,14 +417,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     public void sortFields(Comparator<Field> comparator) {
         this.fields.sort(comparator);
         this.staticFields.sort(comparator);
-    }
-
-    public ClassTypeState getState() {
-        return state;
-    }
-
-    public void setState(ClassTypeState state) {
-        this.state = state;
     }
 
     @JsonIgnore
@@ -507,7 +456,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         sortedFields = new ArrayList<>();
         sortedFields.addAll(this.fields);
         sortedFields.sort(Comparator.comparingInt(Field::getTag));
-        assert fields.size() <= 1 || Utils.allMatch(fields, EntityUtils::isModelInitialized);
     }
 
     public MethodTable getMethodTable() {
@@ -720,7 +668,7 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
             throw new RuntimeException("Field " + field.tryGetId() + " is already added");
         if (findSelfInstanceField(f -> f.getName().equals(field.getName())) != null
                 || findSelfStaticField(f -> f.getName().equals(field.getName())) != null)
-            throw BusinessException.invalidField(field, "Field name '" + field.getName() + "' is already used in class " + getName());
+            throw new BusinessException(ErrorCode.INVALID_FIELD, field.getName(), "Duplicate field name");
         if (field.isStatic())
             staticFields.add(field);
         else
@@ -779,10 +727,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         if (frozen)
             throw new IllegalStateException("Already frozen");
         this.frozen = true;
-    }
-
-    public int getLevel() {
-        return level;
     }
 
     public void addConstraint(Index constraint) {
@@ -877,7 +821,7 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         if (found != null)
             return found;
         if (DebugEnv.resolveVerbose)
-            forEachField(f -> logger.info(f.getQualifiedName()));
+            forEachField(f -> log.info(f.getQualifiedName()));
         throw new NullPointerException("Fail to find field satisfying the specified criteria in klass: " + this);
     }
 
@@ -946,10 +890,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         if (field != null)
             return field;
         return Utils.find(methods, predicate);
-    }
-
-    public void setSource(ClassSource source) {
-        this.source = source;
     }
 
     @Nullable
@@ -1060,18 +1000,8 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         return null;
     }
 
-    public ClassSource getSource() {
-        return source;
-    }
-
     public boolean isBuiltin() {
         return source == ClassSource.BUILTIN;
-    }
-
-    public Field getFieldByJavaField(java.lang.reflect.Field javaField) {
-        String fieldName = EntityUtils.getMetaFieldName(javaField);
-        return Objects.requireNonNull(findFieldByName(fieldName),
-                "Can not find field for java field " + javaField);
     }
 
     public boolean checkColumnAvailable(Column column) {
@@ -1153,10 +1083,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     @Override
     public String getTitle() {
         return name;
-    }
-
-    public void setType(ClassType type) {
-        this.type = type;
     }
 
     @Nullable
@@ -1294,10 +1220,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     @Nullable
     @Override
     public String getQualifiedName() {
@@ -1312,22 +1234,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         this.qualifiedName = qualifiedName;
     }
 
-    public ClassKind getKind() {
-        return kind;
-    }
-
-    public void setKind(ClassKind kind) {
-        this.kind = kind;
-    }
-
-    public boolean isAnonymous() {
-        return anonymous;
-    }
-
-    public void setAnonymous(boolean anonymous) {
-        this.anonymous = anonymous;
-    }
-
     @Nullable
     @Override
     public org.metavm.entity.Entity getParentEntity() {
@@ -1336,18 +1242,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
 
     public boolean isEphemeralKlass() {
         return ephemeral;
-    }
-
-    public void setEphemeral(boolean ephemeral) {
-        this.ephemeral = ephemeral;
-    }
-
-    public boolean isSearchable() {
-        return searchable;
-    }
-
-    public void setSearchable(boolean searchable) {
-        this.searchable = searchable;
     }
 
     @JsonIgnore
@@ -1566,10 +1460,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     }
 
     @JsonIgnore
-    public boolean isList() {
-        return StdKlass.list.get().isAssignableFrom(this);
-    }
-    @JsonIgnore
     public boolean isSAMInterface() {
         return isInterface() && Utils.count(methods, m -> m.isAbstract() && !m.isStatic()) == 1;
     }
@@ -1579,14 +1469,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         if (!isSAMInterface())
             throw new InternalException("Type " + getName() + " is not a SAM interface");
         return getMethod(m -> m.isAbstract() && !m.isStatic());
-    }
-
-    public boolean isStruct() {
-        return struct;
-    }
-
-    public void setStruct(boolean struct) {
-        this.struct = struct;
     }
 
     public void setAbstract(boolean anAbstract) {
@@ -1614,31 +1496,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         nextFieldSourceCodeTag = Math.max(nextFieldSourceCodeTag, maxSourceFieldTag);
     }
 
-    public int getNextFieldTag() {
-        return nextFieldTag;
-    }
-
-    public int getNextFieldSourceCodeTag() {
-        return nextFieldSourceCodeTag;
-    }
-
-    public void setNextFieldTag(int nextFieldTag) {
-        this.nextFieldTag = nextFieldTag;
-    }
-
-    public void setNextFieldSourceCodeTag(int nextFieldSourceCodeTag) {
-        this.nextFieldSourceCodeTag = nextFieldSourceCodeTag;
-    }
-
-    @JsonIgnore
-    public Class<? extends NativeBase> getNativeClass() {
-        return nativeClass;
-    }
-
-    public void setNativeClass(Class<? extends NativeBase> nativeClass) {
-        this.nativeClass = nativeClass;
-    }
-
     public List<Field> getEnumConstants() {
         return Utils.filter(staticFields, Field::isEnumConstant);
     }
@@ -1659,13 +1516,14 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         return nextFieldSourceCodeTag++;
     }
 
-    public int getSince() {
-        return since;
-    }
-
     @Nullable
     public KlassFlags getFlags() {
         return flags;
+    }
+
+    public int getKlassFlags() {
+        // TODO to implement
+        return 0;
     }
 
     public boolean isFlag1() {
@@ -1717,49 +1575,34 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         klasses.forEach(Klass::emitCode);
     }
 
-    public void setTag(long tag) {
-        this.tag = tag;
-    }
-
     public void setSourceTag(@Nullable Integer sourceTag) {
         this.sourceTag = sourceTag;
     }
 
-    public static final int FLAG_ABSTRACT = 1;
-    public static final int FLAG_STRUCT = 2;
-    public static final int FLAG_SEARCHABLE = 4;
-    public static final int FLAG_EPHEMERAL = 8;
-    public static final int FLAG_ANONYMOUS = 16;
-    public static final int FLAG_TEMPLATE = 32;
-
     public int getClassFlags() {
         int flags = 0;
         if(isAbstract)
-            flags |= FLAG_ABSTRACT;
+            flags |= org.metavm.entity.KlassFlags.FLAG_ABSTRACT;
         if(struct)
-            flags |= FLAG_STRUCT;
+            flags |= org.metavm.entity.KlassFlags.FLAG_STRUCT;
         if(searchable)
-            flags |= FLAG_SEARCHABLE;
+            flags |= org.metavm.entity.KlassFlags.FLAG_SEARCHABLE;
         if(ephemeral)
-            flags |= FLAG_EPHEMERAL;
+            flags |= org.metavm.entity.KlassFlags.FLAG_EPHEMERAL;
         if(anonymous)
-            flags |= FLAG_ANONYMOUS;
+            flags |= org.metavm.entity.KlassFlags.FLAG_ANONYMOUS;
         if(templateFlag)
-            flags |= FLAG_TEMPLATE;
+            flags |= org.metavm.entity.KlassFlags.FLAG_TEMPLATE;
         return flags;
     }
 
     public void setClassFlags(int flags) {
-        isAbstract = (flags & FLAG_ABSTRACT) != 0;
-        struct = (flags & FLAG_STRUCT) != 0;
-        searchable = (flags & FLAG_SEARCHABLE) != 0;
-        ephemeral = (flags & FLAG_EPHEMERAL) != 0;
-        anonymous = (flags & FLAG_ANONYMOUS) != 0;
-        templateFlag = (flags & FLAG_TEMPLATE) != 0;
-    }
-
-    public void setSince(int since) {
-        this.since = since;
+        isAbstract = (flags & org.metavm.entity.KlassFlags.FLAG_ABSTRACT) != 0;
+        struct = (flags & org.metavm.entity.KlassFlags.FLAG_STRUCT) != 0;
+        searchable = (flags & org.metavm.entity.KlassFlags.FLAG_SEARCHABLE) != 0;
+        ephemeral = (flags & org.metavm.entity.KlassFlags.FLAG_EPHEMERAL) != 0;
+        anonymous = (flags & org.metavm.entity.KlassFlags.FLAG_ANONYMOUS) != 0;
+        templateFlag = (flags & org.metavm.entity.KlassFlags.FLAG_TEMPLATE) != 0;
     }
 
     public boolean isInner() {
@@ -1784,10 +1627,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
         return name;
-    }
-
-    public ConstantPool getConstantPool() {
-        return constantPool;
     }
 
     public int addConstant(Value value) {
@@ -1815,6 +1654,7 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         methodTableBuildDisabled = true;
     }
 
+    /** @noinspection unused*/
     private void onRead() {
         stage = ResolutionStage.INIT;
     }
@@ -1888,70 +1728,6 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("tag2level", this.getTag2level());
-        var desc = this.getDesc();
-        if (desc != null) map.put("desc", desc);
-        map.put("fields", this.getFields().stream().map(Entity::getStringId).toList());
-        map.put("tag", this.getTag());
-        var sourceTag = this.getSourceTag();
-        if (sourceTag != null) map.put("sourceTag", sourceTag);
-        map.put("errors", this.getErrors().stream().map(Error::toJson).toList());
-        map.put("error", this.isError());
-        map.put("state", this.getState().name());
-        map.put("methods", this.getMethods().stream().map(Entity::getStringId).toList());
-        map.put("klasses", this.getKlasses().stream().map(Entity::getStringId).toList());
-        map.put("level", this.getLevel());
-        map.put("abstract", this.isAbstract());
-        map.put("source", this.getSource().name());
-        map.put("builtin", this.isBuiltin());
-        map.put("type", this.getType().toJson());
-        var superType = this.getSuperType();
-        if (superType != null) map.put("superType", superType.toJson());
-        var superTypeIndex = this.getSuperTypeIndex();
-        if (superTypeIndex != null) map.put("superTypeIndex", superTypeIndex);
-        map.put("interfaces", this.getInterfaces().stream().map(ClassType::toJson).toList());
-        map.put("interfaceIndexes", this.getInterfaceIndexes());
-        map.put("typeParameters", this.getTypeParameters().stream().map(Entity::getStringId).toList());
-        map.put("name", this.getName());
-        var qualifiedName = this.getQualifiedName();
-        if (qualifiedName != null) map.put("qualifiedName", qualifiedName);
-        map.put("classFilePath", this.getClassFilePath());
-        map.put("kind", this.getKind().name());
-        map.put("anonymous", this.isAnonymous());
-        map.put("ephemeralKlass", this.isEphemeralKlass());
-        map.put("indices", this.getIndices().stream().map(Entity::getStringId).toList());
-        map.put("local", this.isLocal());
-        var titleField = this.getTitleField();
-        if (titleField != null) map.put("titleField", titleField.getStringId());
-        map.put("staticFields", this.getStaticFields().stream().map(Entity::getStringId).toList());
-        map.put("struct", this.isStruct());
-        map.put("nextFieldTag", this.getNextFieldTag());
-        map.put("nextFieldSourceCodeTag", this.getNextFieldSourceCodeTag());
-        map.put("enumConstants", this.getEnumConstants().stream().map(Entity::getStringId).toList());
-        map.put("since", this.getSince());
-        var flags = this.getFlags();
-        if (flags != null) map.put("flags", flags.getStringId());
-        map.put("flag1", this.isFlag1());
-        map.put("classFlags", this.getClassFlags());
-        map.put("inner", this.isInner());
-        var scope = this.getScope();
-        if (scope != null) map.put("scope", scope.getStringId());
-        map.put("constantPool", this.getConstantPool().toJson());
-        map.put("attributes", this.getAttributes().stream().map(Attribute::toJson).toList());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
         for (var fields_ : fields) action.accept(fields_);
@@ -1963,102 +1739,5 @@ public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, 
         if (flags != null) action.accept(flags);
     }
 
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_Klass;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, Entity parent) {
-        super.readBody(input, parent);
-        this.scope = (KlassDeclaration) parent;
-        this.sourceTag = input.readNullable(input::readInt);
-        this.name = input.readUTF();
-        this.qualifiedName = input.readNullable(input::readUTF);
-        this.kind = ClassKind.fromCode(input.read());
-        this.anonymous = input.readBoolean();
-        this.ephemeral = input.readBoolean();
-        this.searchable = input.readBoolean();
-        this.superType = input.readNullable(() -> (ClassType) input.readType());
-        this.interfaces = input.readList(() -> (ClassType) input.readType());
-        this.superTypeIndex = input.readNullable(input::readInt);
-        this.interfaceIndexes = input.readList(input::readInt);
-        this.source = ClassSource.fromCode(input.read());
-        this.desc = input.readNullable(input::readUTF);
-        this.nextFieldTag = input.readInt();
-        this.nextFieldSourceCodeTag = input.readInt();
-        this.fields = input.readList(() -> input.readEntity(Field.class, this));
-        this.titleField = input.readNullable(() -> (Reference) input.readValue());
-        this.methods = input.readList(() -> input.readEntity(Method.class, this));
-        this.klasses = input.readList(() -> input.readEntity(Klass.class, this));
-        this.staticFields = input.readList(() -> input.readEntity(Field.class, this));
-        this.indices = input.readList(() -> input.readEntity(Index.class, this));
-        this.isAbstract = input.readBoolean();
-        this.isTemplate = input.readBoolean();
-        this.isParameterized = input.readBoolean();
-        this.typeParameters = input.readList(() -> input.readEntity(TypeVariable.class, this));
-        this.errors = input.readList(() -> Error.read(input));
-        this.error = input.readBoolean();
-        this.flags = input.readNullable(() -> input.readEntity(KlassFlags.class, this));
-        this.state = ClassTypeState.fromCode(input.read());
-        this.tag = input.readLong();
-        this.since = input.readInt();
-        this.templateFlag = input.readBoolean();
-        this.struct = input.readBoolean();
-        this.dummyFlag = input.readBoolean();
-        this.methodTableBuildDisabled = input.readBoolean();
-        this.constantPool = ConstantPool.read(input, this);
-        this.allFlag = input.readBoolean();
-        this.onRead();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        super.writeBody(output);
-        output.writeNullable(sourceTag, output::writeInt);
-        output.writeUTF(name);
-        output.writeNullable(qualifiedName, output::writeUTF);
-        output.write(kind.code());
-        output.writeBoolean(anonymous);
-        output.writeBoolean(ephemeral);
-        output.writeBoolean(searchable);
-        output.writeNullable(superType, output::writeValue);
-        output.writeList(interfaces, output::writeValue);
-        output.writeNullable(superTypeIndex, output::writeInt);
-        output.writeList(interfaceIndexes, output::writeInt);
-        output.write(source.code());
-        output.writeNullable(desc, output::writeUTF);
-        output.writeInt(nextFieldTag);
-        output.writeInt(nextFieldSourceCodeTag);
-        output.writeList(fields, output::writeEntity);
-        output.writeNullable(titleField, output::writeValue);
-        output.writeList(methods, output::writeEntity);
-        output.writeList(klasses, output::writeEntity);
-        output.writeList(staticFields, output::writeEntity);
-        output.writeList(indices, output::writeEntity);
-        output.writeBoolean(isAbstract);
-        output.writeBoolean(isTemplate);
-        output.writeBoolean(isParameterized);
-        output.writeList(typeParameters, output::writeEntity);
-        output.writeList(errors, arg0 -> arg0.write(output));
-        output.writeBoolean(error);
-        output.writeNullable(flags, output::writeEntity);
-        output.write(state.code());
-        output.writeLong(tag);
-        output.writeInt(since);
-        output.writeBoolean(templateFlag);
-        output.writeBoolean(struct);
-        output.writeBoolean(dummyFlag);
-        output.writeBoolean(methodTableBuildDisabled);
-        constantPool.write(output);
-        output.writeBoolean(allFlag);
-    }
-
-    @Override
-    protected void buildSource(Map<String, Value> source) {
-        super.buildSource(source);
-    }
 }
 

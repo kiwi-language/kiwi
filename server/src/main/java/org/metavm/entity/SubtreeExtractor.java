@@ -8,6 +8,7 @@ import org.metavm.util.InstanceOutput;
 import org.metavm.util.StreamCopier;
 import org.metavm.util.StreamVisitor;
 import org.metavm.util.WireTypes;
+import org.metavm.wire.WireAdapter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -61,35 +62,40 @@ public class SubtreeExtractor extends StreamVisitor {
     }
 
     @Override
-    public void visitEntityBody(int tag, Id id, int refcount) {
+    public void visitEntity0(WireAdapter<?> adapter) {
+        visitEntity1(adapter);
+    }
+
+    private Subtree visitEntity1(WireAdapter<?> adapter) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
-        output.write(tag);
-        output.writeId(id);
-        output.writeInt(refcount);
-        var oldParentId = parentId;
-        parentId = id;
-        new StreamCopier(getInput(), output) {
+        var ref = new Object() {
+            Id id;
+            int refcount;
+        };
+        adapter.visit(new StreamCopier(getInput(), output) {
 
             @Override
-            public void visitEntity() {
-                var tag = read();
-                var id = readId();
-                var refcount = readInt();
-                write(tag);
-                writeId(id);
-                writeInt(refcount);
-                SubtreeExtractor.this.visitEntityBody(tag, id, refcount);
+            public void visitEntityHead() {
+                ref.id = readId();
+                ref.refcount = readInt();
+                writeId(ref.id);
+                writeInt(ref.refcount);
             }
 
-        }.visitEntityBody(tag, id, refcount);
-        parentId = oldParentId;
-        add.accept(new Subtree(
-                id,
-                parentId,
-                bout.toByteArray(),
-                tag
-        ));
+            @Override
+            public void visitEntity0(WireAdapter<?> adapter) {
+                var t = visitEntity1(adapter);
+                if (t.id() != null)
+                    writeId(t.id());
+                else
+                    getOutput().write(t.data());
+            }
+        });
+        var subTree = new Subtree(ref.id, parentId, bout.toByteArray(), -1);
+        if (subTree.id() != null)
+            add.accept(subTree);
+        return subTree;
     }
 
 }

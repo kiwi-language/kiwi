@@ -2,7 +2,6 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.TmpId;
@@ -31,7 +30,6 @@ public class InstanceTest extends TestCase {
     @Override
     protected void setUp() {
         ContextUtil.setAppId(APP_ID);
-        MockStandardTypesInitializer.init();
     }
 
     public void testBar() {

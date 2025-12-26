@@ -1,57 +1,69 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
-import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.entity.*;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.flow.CodeWriter;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
+import org.metavm.wire.*;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-@NativeEntity(72)
+@Wire(72)
 @Entity
 public class Field extends AttributedElement implements Property, ITypeDef {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
     private @Nullable Integer sourceTag;
     @EntityField(asTitle = true)
     private String name;
+    @Setter
+    @Parent
     private Klass declaringType;
     private Access access;
     private boolean _static;
+    @Getter
+    @Setter
     private Value defaultValue;
+    @Setter
+    @Getter
     private boolean lazy;
+    @Getter
     private Column column;
+    @Setter
+    @Getter
     private boolean readonly;
     private boolean isTransient;
     private MetadataState state;
+    @Getter
     private int typeIndex;
+    @Getter
     private Type type;
-    private int originalTag = -1;
+    private final int originalTag = -1;
+    @Getter
+    @Setter
     private int tag;
+    @Setter
+    @Getter
     private int since;
+    @Setter
+    @Getter
     public transient int offset;
     private @Nullable Reference initializerReference;
     private boolean isEnumConstant;
+    @Setter
+    @Getter
     private int ordinal;
 
     public Field(
@@ -100,29 +112,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         declaringType.addField(this);
     }
 
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        AttributedElement.visitBody(visitor);
-        visitor.visitNullable(visitor::visitInt);
-        visitor.visitUTF();
-        visitor.visitByte();
-        visitor.visitBoolean();
-        visitor.visitValue();
-        visitor.visitBoolean();
-        Column.visit(visitor);
-        visitor.visitBoolean();
-        visitor.visitBoolean();
-        visitor.visitByte();
-        visitor.visitInt();
-        visitor.visitValue();
-        visitor.visitInt();
-        visitor.visitInt();
-        visitor.visitInt();
-        visitor.visitNullable(visitor::visitValue);
-        visitor.visitBoolean();
-        visitor.visitInt();
-    }
-
     public boolean isTitle() {
         return declaringType.getTitleField() == this;
     }
@@ -130,18 +119,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
     @JsonIgnore
     public Type getConcreteType() {
         return getType().getConcreteType();
-    }
-
-    public void setDefaultValue(Value defaultValue) {
-        this.defaultValue = defaultValue;
-    }
-
-    public boolean isLazy() {
-        return lazy;
-    }
-
-    public void setLazy(boolean lazy) {
-        this.lazy = lazy;
     }
 
     @Nullable
@@ -160,10 +137,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
 
     public Value get(@NotNull ClassInstance instance) {
         return Objects.requireNonNull((instance)).getField(this);
-    }
-
-    public Type getType() {
-        return type;
     }
 
     public boolean isEnum() {
@@ -209,10 +182,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         return getConcreteType().isString();
     }
 
-    public Value getDefaultValue() {
-        return defaultValue;
-    }
-
     @JsonIgnore
     public boolean isPrimitive() {
         return getType().isPrimitive();
@@ -221,10 +190,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
     @JsonIgnore
     public boolean isNotNull() {
         return getType().isNotNull();
-    }
-
-    public Column getColumn() {
-        return column;
     }
 
     @JsonIgnore
@@ -250,11 +215,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
     }
 
     @JsonIgnore
-    public String getStrRawDefaultValue() {
-        return DefaultValueUtil.convertToStr(defaultValue, getType().getCategory().code(), isArray());
-    }
-
-    @JsonIgnore
     @Override
     public String getQualifiedName() {
         return declaringType.getName() + "." + getName();
@@ -272,14 +232,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
 
     private String getDesc() {
         return getQualifiedName() + ":" + getType().getName();
-    }
-
-    public boolean isReadonly() {
-        return readonly;
-    }
-
-    public void setReadonly(boolean readonly) {
-        this.readonly = readonly;
     }
 
     public boolean isTransient() {
@@ -357,10 +309,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         this.tag = tag;
     }
 
-    public void setTag(int tag) {
-        this.tag = tag;
-    }
-
     @Override
     public boolean isStatic() {
         return _static;
@@ -389,10 +337,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         return declaringType.getTag();
     }
 
-    public int getTag() {
-        return tag;
-    }
-
     public @Nullable Integer getSourceTag() {
         return sourceTag;
     }
@@ -405,14 +349,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         return tag;
     }
 
-    public int getOffset() {
-        return offset;
-    }
-
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
     public void setMetadataRemoved() {
         this.state = MetadataState.REMOVED;
     }
@@ -422,46 +358,23 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         return state == MetadataState.REMOVED;
     }
 
-    public int getSince() {
-        return since;
-    }
-
-    public void setSince(int since) {
-        this.since = since;
-    }
-
-    public void setDeclaringType(Klass declaringType) {
-        this.declaringType = declaringType;
-    }
-
-    public static final int FLAG_STATIC = 1;
-    public static final int FLAG_CHILD = 2;
-    public static final int FLAG_READONLY = 4;
-    public static final int FLAG_TRANSIENT = 8;
-    public static final int FLAG_LAZY = 16;
-    public static final int FLAG_ENUM_CONSTANT = 32;
-
     public int getFlags() {
         int flags = 0;
-        if (_static) flags |= FLAG_STATIC;
+        if (_static) flags |= FieldFlags.FLAG_STATIC;
 //        if(readonly)
 //            flags |= FLAG_READONLY;
-        if (isTransient) flags |= FLAG_TRANSIENT;
-        if (lazy) flags |= FLAG_LAZY;
-        if (isEnumConstant) flags |= FLAG_ENUM_CONSTANT;
+        if (isTransient) flags |= FieldFlags.FLAG_TRANSIENT;
+        if (lazy) flags |= FieldFlags.FLAG_LAZY;
+        if (isEnumConstant) flags |= FieldFlags.FLAG_ENUM_CONSTANT;
         return flags;
     }
 
     public void setFlags(int flags) {
-        setStatic((flags & FLAG_STATIC) != 0);
-        setTransient((flags & FLAG_TRANSIENT) != 0);
+        setStatic((flags & FieldFlags.FLAG_STATIC) != 0);
+        setTransient((flags & FieldFlags.FLAG_TRANSIENT) != 0);
 //        setReadonly((flags & FLAG_READONLY) != 0);
-        setLazy((flags & FLAG_LAZY) != 0);
-        setEnumConstant((flags & FLAG_ENUM_CONSTANT) != 0);
-    }
-
-    public int getTypeIndex() {
-        return typeIndex;
+        setLazy((flags & FieldFlags.FLAG_LAZY) != 0);
+        setEnumConstant((flags & FieldFlags.FLAG_ENUM_CONSTANT) != 0);
     }
 
     @Nullable
@@ -509,14 +422,6 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         isEnumConstant = enumConstant;
     }
 
-    public int getOrdinal() {
-        return ordinal;
-    }
-
-    public void setOrdinal(int ordinal) {
-        this.ordinal = ordinal;
-    }
-
     public Value getStatic(IInstanceContext context) {
         assert _static;
         return  StaticFieldTable.getInstance(declaringType.getType(), context).get(this);
@@ -558,105 +463,4 @@ public class Field extends AttributedElement implements Property, ITypeDef {
         if (initializerReference != null) action.accept(initializerReference);
     }
 
-    @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("lazy", this.isLazy());
-        map.put("type", this.getType().toJson());
-        map.put("defaultValue", this.getDefaultValue().toJson());
-        map.put("column", this.getColumn().toJson());
-        map.put("readonly", this.isReadonly());
-        map.put("transient", this.isTransient());
-        map.put("declaringType", this.getDeclaringType().getStringId());
-        map.put("name", this.getName());
-        map.put("access", this.getAccess().name());
-        map.put("static", this.isStatic());
-        map.put("state", this.getState().name());
-        map.put("ref", this.getRef().toJson());
-        map.put("klassTag", this.getKlassTag());
-        map.put("tag", this.getTag());
-        var sourceTag = this.getSourceTag();
-        if (sourceTag != null) map.put("sourceTag", sourceTag);
-        map.put("offset", this.getOffset());
-        map.put("since", this.getSince());
-        map.put("flags", this.getFlags());
-        map.put("typeIndex", this.getTypeIndex());
-        var initializer = this.getInitializer();
-        if (initializer != null) map.put("initializer", initializer.getStringId());
-        var initializerReference = this.getInitializerReference();
-        if (initializerReference != null) map.put("initializerReference", initializerReference.toJson());
-        map.put("enumConstant", this.isEnumConstant());
-        map.put("ordinal", this.getOrdinal());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
-    public void forEachChild(Consumer<? super Instance> action) {
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_Field;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        super.readBody(input, parent);
-        this.declaringType = (Klass) parent;
-        this.sourceTag = input.readNullable(input::readInt);
-        this.name = input.readUTF();
-        this.access = Access.fromCode(input.read());
-        this._static = input.readBoolean();
-        this.defaultValue = input.readValue();
-        this.lazy = input.readBoolean();
-        this.column = Column.read(input);
-        this.readonly = input.readBoolean();
-        this.isTransient = input.readBoolean();
-        this.state = MetadataState.fromCode(input.read());
-        this.typeIndex = input.readInt();
-        this.type = input.readType();
-        this.originalTag = input.readInt();
-        this.tag = input.readInt();
-        this.since = input.readInt();
-        this.initializerReference = input.readNullable(() -> (Reference) input.readValue());
-        this.isEnumConstant = input.readBoolean();
-        this.ordinal = input.readInt();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        super.writeBody(output);
-        output.writeNullable(sourceTag, output::writeInt);
-        output.writeUTF(name);
-        output.write(access.code());
-        output.writeBoolean(_static);
-        output.writeValue(defaultValue);
-        output.writeBoolean(lazy);
-        column.write(output);
-        output.writeBoolean(readonly);
-        output.writeBoolean(isTransient);
-        output.write(state.code());
-        output.writeInt(typeIndex);
-        output.writeValue(type);
-        output.writeInt(originalTag);
-        output.writeInt(tag);
-        output.writeInt(since);
-        output.writeNullable(initializerReference, output::writeValue);
-        output.writeBoolean(isEnumConstant);
-        output.writeInt(ordinal);
-    }
-
-    @Override
-    protected void buildSource(Map<String, Value> source) {
-    }
 }

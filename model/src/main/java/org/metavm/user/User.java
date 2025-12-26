@@ -1,22 +1,19 @@
 package org.metavm.user;
 
-import org.metavm.annotation.NativeEntity;
+import lombok.Getter;
+import lombok.Setter;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
-import org.metavm.api.Generated;
-import org.metavm.entity.EntityRegistry;
+import org.metavm.wire.Wire;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.SearchField;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.user.rest.dto.UserDTO;
-import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
+import org.metavm.util.EncodingUtils;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -24,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@NativeEntity(16)
+@Wire(16)
 @Entity(searchable = true)
 public class User extends org.metavm.entity.Entity {
 
@@ -37,26 +34,29 @@ public class User extends org.metavm.entity.Entity {
             1, user -> List.of(Instances.stringInstance(user.loginName)));
 
     public static final SearchField<User> esName =
-            SearchField.createTitle("s0", user -> Instances.stringInstance(user.name));
+            SearchField.createTitle(0, "s0", user -> Instances.stringInstance(user.name));
 
     public static final SearchField<User> esLoginName =
-            SearchField.createTitle("s1", user -> Instances.stringInstance(user.loginName));
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+            SearchField.createTitle(0, "s1", user -> Instances.stringInstance(user.loginName));
 
-    private String loginName;
+    @Getter
+    private final String loginName;
 
+    @Getter
     private String password;
 
+    @Getter
+    @Setter
     @EntityField(asTitle = true)
     private String name;
 
+    @Setter
     private UserState state = UserState.ACTIVE;
 
     @Nullable
     private String platformUserId;
 
-    private List<Reference> roles = new ArrayList<>();
+    private final List<Reference> roles = new ArrayList<>();
 
 
     public User(Id id, String loginName, String password, String name, List<Role> roles) {
@@ -67,34 +67,8 @@ public class User extends org.metavm.entity.Entity {
         setRoles(roles);
     }
 
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitUTF();
-        visitor.visitUTF();
-        visitor.visitUTF();
-        visitor.visitByte();
-        visitor.visitNullable(visitor::visitUTF);
-        visitor.visitList(visitor::visitValue);
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public void setPassword(String password) {
         this.password = EncodingUtils.md5(password);
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getLoginName() {
-        return loginName;
     }
 
     public List<Role> getRoles() {
@@ -104,10 +78,6 @@ public class User extends org.metavm.entity.Entity {
     public void setRoles(List<Role> roles) {
         this.roles.clear();
         roles.forEach(r -> this.roles.add(r.getReference()));
-    }
-
-    public void setState(UserState state) {
-        this.state = state;
     }
 
     public void setPlatformUserId(@Nullable String platformUserId) {
@@ -136,52 +106,7 @@ public class User extends org.metavm.entity.Entity {
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("password", this.getPassword());
-        map.put("name", this.getName());
-        map.put("loginName", this.getLoginName());
-        map.put("roles", this.getRoles().stream().map(org.metavm.entity.Entity::getStringId).toList());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_User;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.loginName = input.readUTF();
-        this.password = input.readUTF();
-        this.name = input.readUTF();
-        this.state = UserState.fromCode(input.read());
-        this.platformUserId = input.readNullable(input::readUTF);
-        this.roles = input.readList(() -> (Reference) input.readValue());
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        output.writeUTF(loginName);
-        output.writeUTF(password);
-        output.writeUTF(name);
-        output.write(state.code());
-        output.writeNullable(platformUserId, output::writeUTF);
-        output.writeList(roles, output::writeValue);
     }
 
     @Override

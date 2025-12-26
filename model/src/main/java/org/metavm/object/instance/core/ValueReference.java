@@ -1,9 +1,11 @@
 package org.metavm.object.instance.core;
 
+import org.metavm.wire.Wire;
 import org.metavm.flow.ClosureContext;
 import org.metavm.object.type.Type;
 import org.metavm.util.MvOutput;
 
+@Wire(adapter = ValueAdapter.class)
 public class ValueReference implements Reference {
 
     private final Instance instance;

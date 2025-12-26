@@ -1,9 +1,7 @@
 package org.metavm.task;
 
-import org.metavm.api.Entity;
 import org.metavm.util.Utils;
 
-@Entity
 public enum TaskState {
 
     RUNNABLE(1),

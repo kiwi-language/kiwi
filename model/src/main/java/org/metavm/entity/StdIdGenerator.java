@@ -22,11 +22,9 @@ public class StdIdGenerator {
     }
 
     public void generate() {
-        for (Class<?> c : StandardDefBuilder.classes) {
-            generate(c);
-        }
-        for (Class<?> c : EntityUtils.getModelClasses()) {
-            parsingGenerate(c);
+        var builders = ServiceLoader.load(StdKlassBuilder.class, StdIdGenerator.class.getClassLoader());
+        for (var c : builders) {
+            parsingGenerate(c.getJavaClass());
         }
         for (StdKlass value : StdKlass.values()) {
             parsingGenerate(value.getJavaClass());

@@ -2,7 +2,6 @@ package org.metavm.flow;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.TestUtils;
@@ -12,11 +11,6 @@ import org.slf4j.LoggerFactory;
 public class FlowCheckerTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(FlowCheckerTest.class);
-
-    @Override
-    protected void setUp() throws Exception {
-        MockStandardTypesInitializer.init();
-    }
 
     public void testBranch() {
         var klass = TestUtils.newKlassBuilder("Foo").build();

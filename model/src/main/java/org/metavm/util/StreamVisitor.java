@@ -1,7 +1,10 @@
 package org.metavm.util;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.EntityRegistry;
+import org.metavm.wire.AdapterRegistry;
+import org.metavm.wire.WireAdapter;
+import org.metavm.wire.WireVisitor;
 import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
@@ -10,8 +13,9 @@ import org.metavm.object.type.rest.dto.TypeKey;
 
 import java.io.InputStream;
 
+@Getter
 @Slf4j
-public class StreamVisitor {
+public class StreamVisitor implements WireVisitor {
 
     private final InstanceInput input;
 
@@ -240,10 +244,6 @@ public class StreamVisitor {
         visitValue();
     }
 
-    public InstanceInput getInput() {
-        return input;
-    }
-
     public void visitGrove() {
         int trees = readInt();
         for (int i = 0; i < trees; i++) {
@@ -420,6 +420,16 @@ public class StreamVisitor {
         return input.readUTF();
     }
 
+    @Override
+    public void visitString() {
+        visitUTF();
+    }
+
+    @Override
+    public void visitDate() {
+        visitLong();
+    }
+
     public void visitBytes() {
         input.readBytes();
     }
@@ -428,8 +438,8 @@ public class StreamVisitor {
         input.readLong();
     }
 
-    public void visitInt() {
-        input.readInt();
+    public int visitInt() {
+        return input.readInt();
     }
 
     public void visitDouble() {
@@ -483,21 +493,36 @@ public class StreamVisitor {
         }
     }
 
+    @Override
+    public void visitArray(Runnable visitElement) {
+        visitList(visitElement);
+    }
+
     public void visitId() {
         input.readId();
     }
 
-    public void visitEntity() {
-        visitEntityBody(read(), readId(), readInt());
+    @Override
+    public final void visitEntity() {
+        var tag = visitByte();
+        var adapter = AdapterRegistry.instance.getAdapter(tag);
+        visitEntity0(adapter);
     }
 
-    public void visitEntityBody(int tag, Id id, int refcount) {
-        var h = EntityRegistry.getVisitBodyHandle(tag);
-        try {
-            h.invokeExact(this);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+    @Override
+    public final void visitEntity(WireAdapter<?> adapter) {
+        if (adapter.getTag() != -1)
+            visitByte();
+        visitEntity0(adapter);
+    }
+
+    protected void visitEntity0(WireAdapter<?> adapter) {
+        adapter.visit(this);
+    }
+
+    public void visitEntityHead() {
+        input.readId();
+        input.readInt();
     }
 
 }

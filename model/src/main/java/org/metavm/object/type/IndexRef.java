@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.ElementVisitor;
@@ -7,8 +8,8 @@ import org.metavm.entity.Entity;
 import org.metavm.entity.Writable;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.*;
 import org.metavm.util.*;
 
 import java.util.ArrayList;
@@ -19,10 +20,10 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
+@org.metavm.api.Entity
 public class IndexRef implements org.metavm.entity.Reference, Writable {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+    @Getter
     private final ClassType declaringType;
     private final Reference indexReference;
 
@@ -63,10 +64,6 @@ public class IndexRef implements org.metavm.entity.Reference, Writable {
 
     public String getName() {
         return getRawIndex().getName();
-    }
-
-    public ClassType getDeclaringType() {
-        return declaringType;
     }
 
     public List<IndexKeyRT> createIndexKey(ClassInstance instance) {
@@ -117,11 +114,6 @@ public class IndexRef implements org.metavm.entity.Reference, Writable {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitIndexRef(this);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

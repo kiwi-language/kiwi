@@ -52,8 +52,8 @@ public class PersistenceUtil {
     public static boolean isSqlState(Exception e, String sqlState) {
         Throwable ex = e;
         do {
-            if (ex instanceof SQLException qslEx)
-                return qslEx.getSQLState().equals(sqlState);
+            if (ex instanceof SQLException qslEx && qslEx.getSQLState().equals(sqlState))
+                return true;
             ex = ex.getCause();
         } while (ex != null);
         return false;

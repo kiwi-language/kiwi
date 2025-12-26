@@ -1,5 +1,6 @@
 package org.metavm.object.type.rest.dto;
 
+import org.jsonk.Json;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
@@ -10,6 +11,7 @@ import org.metavm.util.WireTypes;
 import javax.annotation.Nullable;
 import java.util.List;
 
+@Json
 public record ParameterizedTypeKey(GenericDeclarationRefKey owner, Id templateId, List<TypeKey> typeArgumentKeys) implements TypeKey, GenericDeclarationRefKey {
 
     public static ParameterizedTypeKey create(@Nullable GenericDeclarationRef owner, Klass template, List<Type> typeArguments) {
@@ -30,20 +32,8 @@ public record ParameterizedTypeKey(GenericDeclarationRefKey owner, Id templateId
     }
 
     @Override
-    public GenericDeclarationRef toGenericDeclarationRef(TypeDefProvider typeDefProvider) {
-        return toType(typeDefProvider);
-    }
-
-    @Override
     public String toTypeExpression() {
         return "$$" + templateId + "<" + Utils.join(typeArgumentKeys, TypeKey::toTypeExpression) + ">";
-    }
-
-    @Override
-    public ClassType toType(TypeDefProvider typeDefProvider) {
-        return new KlassType(
-                owner != null ? owner.toGenericDeclarationRef(typeDefProvider) : null,
-                typeDefProvider.getKlass(templateId), Utils.map(typeArgumentKeys, k -> k.toType(typeDefProvider)));
     }
 
     @Override
@@ -56,8 +46,4 @@ public record ParameterizedTypeKey(GenericDeclarationRefKey owner, Id templateId
         return WireTypes.PARAMETERIZED_TYPE;
     }
 
-    @Override
-    public GenericDeclarationRef resolve(TypeDefProvider typeDefProvider) {
-        return toType(typeDefProvider);
-    }
 }

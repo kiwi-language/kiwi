@@ -1,13 +1,14 @@
 package org.metavm.object.type.rest;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
+import org.metavm.context.http.*;
 import org.metavm.ddl.DeployService;
 import org.metavm.object.type.TypeManager;
-import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping("/internal-api/deploy")
+import java.io.InputStream;
+
+@Controller
+@Mapping("/internal-api/deploy")
 public class DeployInternalApi {
 
     private final TypeManager typeManager;
@@ -19,24 +20,24 @@ public class DeployInternalApi {
     }
 
     @SneakyThrows
-    @PostMapping("/{appId}")
-    public String deploy(HttpServletRequest servletRequest, @PathVariable("appId") long appId,
+    @Post("/{appId}")
+    public String deploy(InputStream input, @PathVariable("appId") long appId,
                          @RequestParam(value = "no-backup", defaultValue = "false") boolean noBackup
-                         ) {
-        return typeManager.deploy(appId, noBackup, servletRequest.getInputStream());
+    ) {
+        return typeManager.deploy(appId, noBackup, input);
     }
 
-    @GetMapping("/status/{appId}/{deployId}")
+    @Get("/status/{appId}/{deployId}")
     public String getDeployStatus(@PathVariable("appId") long appId, @PathVariable("deployId") String deployId) {
         return deployService.getDeployStatus(appId, deployId).name();
     }
 
-    @PostMapping("/revert/{appId}")
+    @Post("/revert/{appId}")
     public void revert(@PathVariable("appId") long appId) {
         deployService.revert(appId);
     }
 
-    @PostMapping("/abort/{appId}")
+    @Post("/abort/{appId}")
     public void abort(@PathVariable("appId") long appId) {
         deployService.abortDeployment(appId);
     }

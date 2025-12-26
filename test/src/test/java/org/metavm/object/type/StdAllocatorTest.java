@@ -16,7 +16,7 @@ public class StdAllocatorTest extends TestCase {
         allocator = new StdAllocator(
                 new MemAllocatorStore(),
                 "/id/Type.properties",
-                Klass.class
+                Klass.class.getName()
         );
     }
 
@@ -42,7 +42,7 @@ public class StdAllocatorTest extends TestCase {
 //    }
 
     public void testTypeCode() {
-        Assert.assertEquals(Klass.class, allocator.getJavaType());
+        Assert.assertEquals(Klass.class.getName(), allocator.getJavaType());
     }
 
 }

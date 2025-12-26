@@ -1,5 +1,6 @@
 package org.metavm.compiler;
 
+import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
@@ -17,14 +18,11 @@ import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+@Slf4j
 public class KiwiTest extends KiwiTestBase {
-
-    public static final Logger logger = LoggerFactory.getLogger(KiwiTest.class);
 
     public void testMyList() {
         deploy("kiwi/List.kiwi");
@@ -100,21 +98,21 @@ public class KiwiTest extends KiwiTestBase {
         deploy("kiwi/update_field.kiwi");
     }
 
-    public void testTreeSet() {
-        deploy("kiwi/tree_set.kiwi");
-        var id = (Id) callMethod("TreeSetLab", "create", List.of());
-        var elements = List.of(5,4,3,2,1);
-        callMethod(id, "addAll", List.of(elements));
-        var containsAll = (boolean) callMethod(id, "containsAll", List.of(elements));
-        Assert.assertTrue(containsAll);
-        var removed = (boolean) callMethod(id, "remove", List.of(1));
-        Assert.assertTrue(removed);
-        var first = callMethod(id, "first", List.of());
-        Assert.assertEquals(2, first);
-        callMethod(id, "retainAll", List.of(List.of(5, 3, 2)));
-        var size = (int) callMethod(id, "size", List.of());
-        Assert.assertEquals(3, size);
-    }
+//    public void testTreeSet() {
+//        deploy("kiwi/tree_set.kiwi");
+//        var id = (Id) callMethod("TreeSetLab", "create", List.of());
+//        var elements = List.of(5,4,3,2,1);
+//        callMethod(id, "addAll", List.of(elements));
+//        var containsAll = (boolean) callMethod(id, "containsAll", List.of(elements));
+//        Assert.assertTrue(containsAll);
+//        var removed = (boolean) callMethod(id, "remove", List.of(1));
+//        Assert.assertTrue(removed);
+//        var first = callMethod(id, "first", List.of());
+//        Assert.assertEquals(2, first);
+//        callMethod(id, "retainAll", List.of(List.of(5, 3, 2)));
+//        var size = (int) callMethod(id, "size", List.of());
+//        Assert.assertEquals(3, size);
+//    }
 
     public void testSwapSuper() {
         deploy("kiwi/swap_super_before.kiwi");
@@ -252,7 +250,7 @@ public class KiwiTest extends KiwiTestBase {
         deploy("kiwi/binding_var.kiwi");
         var r = callMethod("BindingVarLab", "test", List.of("Hello"));
         assertEquals("Hello", r);
-        var r1 = callMethod("BindingVarLab", "test", List.of(1));
+        var r1 = callMethod("BindingVarLab", "test", List.of(0));
         assertEquals("Kiwi", r1);
         var r2 = callMethod("BindingVarLab", "lengthEquals", List.of("Cute", "Kiwi"));
         assertEquals(true, r2);

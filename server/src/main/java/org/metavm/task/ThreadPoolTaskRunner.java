@@ -1,6 +1,6 @@
 package org.metavm.task;
 
-import org.springframework.stereotype.Component;
+import org.metavm.context.Component;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;

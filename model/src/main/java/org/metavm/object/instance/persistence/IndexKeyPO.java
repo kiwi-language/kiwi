@@ -1,6 +1,5 @@
 package org.metavm.object.instance.persistence;
 
-import com.google.common.primitives.UnsignedBytes;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
@@ -130,10 +129,10 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
 
     @Override
     public int compareTo(@NotNull IndexKeyPO o) {
-        var indexCmpResult = UnsignedBytes.lexicographicalComparator().compare(indexId, o.indexId);
+        var indexCmpResult = Utils.compareBytes(indexId, o.indexId);
         if (indexCmpResult != 0)
             return indexCmpResult;
-        return UnsignedBytes.lexicographicalComparator().compare(data, o.data);
+        return Utils.compareBytes(data, o.data);
     }
 
 }

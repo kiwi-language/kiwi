@@ -5,10 +5,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.UncertainTypeKey;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -24,8 +21,6 @@ import java.util.function.Function;
 public class UncertainType extends CompositeType {
 
     public static final UncertainType asterisk = new UncertainType(NeverType.instance, UnionType.nullableAnyType);
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     public static UncertainType createLowerBounded(Type lowerBound) {
         return new UncertainType(lowerBound, UnionType.nullableAnyType);
@@ -158,11 +153,6 @@ public class UncertainType extends CompositeType {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitUncertainType(this, s);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

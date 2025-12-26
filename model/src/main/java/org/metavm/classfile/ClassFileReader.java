@@ -198,7 +198,7 @@ public class ClassFileReader {
         else {
             field = FieldBuilder.newBuilder(name, klass, typeIndex)
                     .sourceTag(Objects.requireNonNullElseGet(sourceTag, klass::nextFieldSourceCodeTag))
-                    .isStatic((flags & Field.FLAG_STATIC) != 0)
+                    .isStatic((flags & FieldFlags.FLAG_STATIC) != 0)
                     .build();
         }
         field.setAccess(acc);

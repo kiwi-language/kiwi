@@ -13,7 +13,7 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
-import org.springframework.stereotype.Component;
+import org.metavm.context.Component;
 
 import javax.annotation.Nullable;
 import java.util.*;

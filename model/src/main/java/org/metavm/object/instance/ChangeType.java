@@ -1,9 +1,7 @@
 package org.metavm.object.instance;
 
-import org.metavm.api.Entity;
 import org.metavm.util.Utils;
 
-@Entity
 public enum ChangeType {
     INSERT(1),
     UPDATE(2),

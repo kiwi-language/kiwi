@@ -5,15 +5,13 @@ import org.metavm.util.MvOutput;
 
 public class NullId extends Id {
 
-    public static final byte[] BYTES = new byte[] {0};
-
     public NullId() {
         super();
     }
 
     @Override
     public void write(MvOutput output) {
-        output.writeIdTag(IdTag.NULL, false);
+        output.writeIdTag(IdTag.NULL);
     }
 
     @Override

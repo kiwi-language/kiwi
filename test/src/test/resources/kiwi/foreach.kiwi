@@ -1,8 +1,6 @@
-import java.util.List
-
 class ForeachLab {
 
-    static fn sumList(list: List<int>) -> int {
+    static fn sumList(list: int[]) -> int {
         var sum = 0
         for (i in list)
             sum += i

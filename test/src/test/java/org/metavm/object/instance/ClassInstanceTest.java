@@ -2,8 +2,6 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
@@ -19,12 +17,6 @@ import java.util.Set;
 public class ClassInstanceTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(ClassInstanceTest.class);
-
-    @Override
-    protected void setUp() throws Exception {
-        TestUtils.ensureStringKlassInitialized();
-        MockStandardTypesInitializer.init();
-    }
 
 //    public void testToDTO() {
 //        var fooType = MockUtils.createFooTypes(true);
@@ -124,7 +116,6 @@ public class ClassInstanceTest extends TestCase {
         var klassId = TestUtils.doInTransaction(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                 var klass = context.bind(TestUtils.newKlassBuilder("Foo", "Foo")
-                        .superType(StdKlass.entity.type())
                         .build());
                 context.finish();
                 return klass.getId();

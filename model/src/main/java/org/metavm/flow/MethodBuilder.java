@@ -2,16 +2,17 @@ package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Attribute;
+import org.metavm.entity.NativeFunction;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
-import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 public class MethodBuilder {
+
 
     public static MethodBuilder newBuilder(Klass declaringType, String name) {
         return new MethodBuilder(declaringType, name);
@@ -32,6 +33,7 @@ public class MethodBuilder {
     private boolean hidden;
     private boolean _static;
     private final List<Attribute> attributes = new ArrayList<>();
+    private NativeFunction nativeFunction;
     private MetadataState state;
 
     private MethodBuilder(Klass declaringType, String name) {
@@ -46,6 +48,11 @@ public class MethodBuilder {
 
     public MethodBuilder isNative(boolean isNative) {
         this.isNative = isNative;
+        return this;
+    }
+
+    public MethodBuilder nativeFunction(NativeFunction nativeFunction) {
+        this.nativeFunction = nativeFunction;
         return this;
     }
 
@@ -139,6 +146,7 @@ public class MethodBuilder {
                 _static,
                 access,
                 hidden,
+                nativeFunction,
                 state
         );
         if (returnTypeIndex == -1) {

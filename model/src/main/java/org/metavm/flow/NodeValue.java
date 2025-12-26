@@ -2,6 +2,7 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Generated;
+import org.metavm.wire.Wire;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.expression.NodeExpression;
@@ -14,6 +15,7 @@ import org.metavm.util.StreamVisitor;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Wire
 public class NodeValue extends Value {
 
     private final Reference node;
@@ -63,13 +65,6 @@ public class NodeValue extends Value {
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
         action.accept(node);
-    }
-
-    public void buildJson(java.util.Map<String, Object> map) {
-        map.put("type", this.getType().toJson());
-        map.put("node", this.getNode().getStringId());
-        map.put("text", this.getText());
-        map.put("expression", this.getExpression().toJson());
     }
 
     @Generated

@@ -1,17 +1,17 @@
 package org.metavm.api.dto;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.jsonk.Json;
+import org.jsonk.SubType;
 
-@JsonSubTypes(
-        {
-                @JsonSubTypes.Type(value = PrimitiveTypeDTO.class, name = "primitive"),
-                @JsonSubTypes.Type(value = ClassTypeDTO.class, name = "class"),
-                @JsonSubTypes.Type(value = ArrayTypeDTO.class, name = "array"),
-                @JsonSubTypes.Type(value = UnionTypeDTO.class, name = "union"),
+@Json(
+        typeProperty = "kind",
+        subTypes = {
+                @SubType(value ="primitive", type = PrimitiveTypeDTO.class),
+                @SubType(value ="class", type = ClassTypeDTO.class),
+                @SubType(value ="array", type = ArrayTypeDTO.class),
+                @SubType(value ="union", type = UnionTypeDTO.class),
         }
 )
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public interface TypeDTO {
 
     String getKind();

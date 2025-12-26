@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import org.metavm.api.Entity;
 import org.metavm.api.JsonIgnore;
 import org.metavm.object.type.ConstantPool;
 import org.metavm.object.type.FunctionType;
@@ -11,6 +12,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Predicate;
 
+@Entity
 public interface Callable {
 
     Type getReturnType();

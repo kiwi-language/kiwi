@@ -1,33 +1,26 @@
 package org.metavm.entity;
 
-import org.metavm.annotation.NativeEntity;
-import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
-import org.metavm.util.*;
+import org.metavm.util.NamingUtils;
+import org.metavm.util.StreamVisitor;
+import org.metavm.util.Utils;
+import org.metavm.wire.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
-@NativeEntity(74)
+@org.metavm.api.Entity
+@Wire(74)
 public abstract class AttributedElement extends Entity implements Element {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
     protected List<Attribute> attributes = new ArrayList<>();
 
     public AttributedElement(Id id) {
         super(id);
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitList(() -> Attribute.visit(visitor));
     }
 
     public String getAttributeNonNull(String name) {
@@ -92,42 +85,7 @@ public abstract class AttributedElement extends Entity implements Element {
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("attributes", this.getAttributes().stream().map(Attribute::toJson).toList());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
     }
 
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_AttributedElement;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, Entity parent) {
-        this.attributes = input.readList(() -> Attribute.read(input));
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        output.writeList(attributes, arg0 -> arg0.write(output));
-    }
-
-    @Override
-    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
-    }
 }

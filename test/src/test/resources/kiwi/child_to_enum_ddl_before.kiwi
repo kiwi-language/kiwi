@@ -3,29 +3,7 @@ class Product(
     var kind: Product.Kind
 ) {
 
-    fn getName() -> string {
-        return this.name
-    }
-
-    fn setName(name: string) {
-        this.name = name
-    }
-
-    fn  getKind() -> Product.Kind {
-        return this.kind
-    }
-
-    fn setKind(kind: Product.Kind) {
-        this.kind = kind
-    }
-
     @Tag(1)
-    class Kind(val name: string) {
-
-        fn getName() -> string {
-            return this.name
-        }
-
-    }
+    class Kind(val label: string)
 
 }

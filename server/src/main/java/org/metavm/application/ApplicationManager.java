@@ -20,8 +20,8 @@ import org.metavm.task.RemoveAppTaskGroup;
 import org.metavm.user.*;
 import org.metavm.user.rest.dto.*;
 import org.metavm.util.*;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.metavm.context.Component;
+import org.metavm.context.sql.Transactional;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -83,11 +83,11 @@ public class ApplicationManager extends ApplicationStatusAware {
 
     public ApplicationDTO get(long id) {
         try (var context = newPlatformContext()) {
-            return context.getEntity(Application.class, Constants.getAppId(id)).toDTO();
+            return context.getEntity(Application.class, Id.getAppId(id)).toDTO();
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readonly = true)
     public AppInvitationDTO getInvitation(String id) {
         try (var context = newPlatformContext()) {
             return context.getEntity(AppInvitation.class, id).toDTO();
@@ -130,7 +130,7 @@ public class ApplicationManager extends ApplicationStatusAware {
                 var owner = platformCtx.getEntity(PlatformUser.class, appDTO.ownerId());
                 app = createApp(platformCtx.allocateTreeId(), appDTO.name(), owner, platformCtx);
             } else {
-                app = platformCtx.getEntity(Application.class, Constants.getAppId(appDTO.id()));
+                app = platformCtx.getEntity(Application.class, Id.getAppId(appDTO.id()));
                 app.setName(appDTO.name());
             }
             platformCtx.finish();
@@ -143,7 +143,7 @@ public class ApplicationManager extends ApplicationStatusAware {
         try(var context = newPlatformContext()) {
             var user = context.getEntity(PlatformUser.class, ContextUtil.getUserId());
             verificationCodeService.checkVerificationCode(user.getLoginName(), verificationCode, context);
-            var app = context.getEntity(Application.class, Constants.getAppId(appId));
+            var app = context.getEntity(Application.class, Id.getAppId(appId));
             var secret = generateSecret();
             var s = EncodingUtils.secureRandom(16);
             var h = EncodingUtils.secureHash(secret, s);
@@ -205,7 +205,7 @@ public class ApplicationManager extends ApplicationStatusAware {
         setupContextInfo(applicationDTO.id());
         Objects.requireNonNull(applicationDTO.id());
         try (IInstanceContext platformContext = newPlatformContext()) {
-            Application app = platformContext.getEntity(Application.class, Constants.getAppId(applicationDTO.id()));
+            Application app = platformContext.getEntity(Application.class, Id.getAppId(applicationDTO.id()));
             app.setName(applicationDTO.name());
             platformContext.finish();
         }
@@ -214,7 +214,7 @@ public class ApplicationManager extends ApplicationStatusAware {
     @Transactional
     public void delete(long appId) {
         try (IInstanceContext platformContext = newPlatformContext()) {
-            var id = Constants.getAppId(appId);
+            var id = Id.getAppId(appId);
             var app = platformContext.getEntity(Application.class, id);
             app.deactivate();
             platformContext.bind(new RemoveAppTaskGroup(platformContext.allocateRootId(), id));
@@ -225,7 +225,7 @@ public class ApplicationManager extends ApplicationStatusAware {
     @Transactional
     public void evict(AppEvictRequest request) {
         try (var platformCtx = newPlatformContext()) {
-            var app = platformCtx.getEntity(Application.class, Constants.getAppId(request.appId()));
+            var app = platformCtx.getEntity(Application.class, Id.getAppId(request.appId()));
             var users = Utils.map(request.userIds(), uId -> platformCtx.getEntity(PlatformUser.class, uId));
             PlatformUsers.leaveApp(users, app, platformCtx);
             platformCtx.finish();
@@ -235,7 +235,7 @@ public class ApplicationManager extends ApplicationStatusAware {
     @Transactional
     public void invite(AppInvitationRequest request) {
         try (var platformCtx = newPlatformContext()) {
-            var app = platformCtx.getEntity(Application.class, Constants.getAppId(request.appId()));
+            var app = platformCtx.getEntity(Application.class, Id.getAppId(request.appId()));
             var invitee = platformCtx.getEntity(PlatformUser.class, request.userId());
             if (invitee.hasJoinedApplication(app))
                 throw new BusinessException(ErrorCode.ALREADY_JOINED_APP, invitee.getLoginName());
@@ -255,7 +255,7 @@ public class ApplicationManager extends ApplicationStatusAware {
     @Transactional
     public void promote(long appId, Id userId) {
         try (var context = newPlatformContext()) {
-            var app = context.getEntity(Application.class, Constants.getAppId(appId));
+            var app = context.getEntity(Application.class, Id.getAppId(appId));
             var user = context.getEntity(PlatformUser.class, userId);
             app.addAdmin(user);
             context.bind(new Message(context.allocateRootId(),
@@ -269,7 +269,7 @@ public class ApplicationManager extends ApplicationStatusAware {
     @Transactional
     public void demote(long appId, Id userId) {
         try (var context = newPlatformContext()) {
-            var app = context.getEntity(Application.class, Constants.getAppId(appId));
+            var app = context.getEntity(Application.class, Id.getAppId(appId));
             var user = context.getEntity(PlatformUser.class, userId);
             app.removeAdmin(user);
             context.bind(new Message(context.allocateRootId(),
@@ -280,10 +280,10 @@ public class ApplicationManager extends ApplicationStatusAware {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readonly = true)
     public Page<AppMemberDTO> queryMembers(AppMemberQuery query) {
         try (var context = newPlatformContext()) {
-            var appId = Constants.getAppId(query.appId());
+            var appId = Id.getAppId(query.appId());
             var app = context.getEntity(Application.class, appId);
             var dataPage = platformUserManager.query(new PlatformUserQuery(
                     appId.toString(),
@@ -303,7 +303,7 @@ public class ApplicationManager extends ApplicationStatusAware {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readonly = true)
     public Page<InviteeDTO> queryInvitees(InviteeQuery query) {
         try (var context = newPlatformContext()) {
             var dataPage = platformUserManager.query(
@@ -315,7 +315,7 @@ public class ApplicationManager extends ApplicationStatusAware {
                 invitees.add(new InviteeDTO(
                         user.getStringId(),
                         user.getLoginName(),
-                        Utils.anyMatch(user.getApplications(), app -> app.idEquals(Constants.getAppId(query.appId())))
+                        Utils.anyMatch(user.getApplications(), app -> app.idEquals(Id.getAppId(query.appId())))
                 ));
             }
             return new Page<>(invitees, dataPage.total());

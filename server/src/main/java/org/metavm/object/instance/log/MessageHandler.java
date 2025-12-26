@@ -4,7 +4,7 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.message.Message;
 import org.metavm.task.SendMessageTask;
-import org.springframework.stereotype.Component;
+import org.metavm.context.Component;
 
 import javax.annotation.Nullable;
 import java.util.List;

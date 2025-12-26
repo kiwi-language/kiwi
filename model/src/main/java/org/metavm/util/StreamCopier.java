@@ -1,11 +1,13 @@
 package org.metavm.util;
 
+import lombok.Getter;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeOrTypeKey;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 
+@Getter
 public class StreamCopier extends StreamVisitor {
 
     protected final InstanceOutput output;
@@ -109,17 +111,6 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
-    public void visitEntity() {
-        var tag = read();
-        var id = readId();
-        var refcount = readInt();
-        output.write(tag);
-        output.writeId(id);
-        output.writeInt(refcount);
-        visitEntityBody(tag, id, refcount);
-    }
-
-    @Override
     public void visitValueInstance() {
         var typeKey = readTypeKey();
         typeKey.write(output);
@@ -220,8 +211,10 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
-    public void visitInt() {
-        output.writeLong(readInt());
+    public int visitInt() {
+        var v = readInt();
+        output.writeInt(v);
+        return v;
     }
 
     @Override
@@ -398,7 +391,10 @@ public class StreamCopier extends StreamVisitor {
         output.writeId(readId());
     }
 
-    public InstanceOutput getOutput() {
-        return output;
+    @Override
+    public void visitEntityHead() {
+        writeId(readId());
+        writeInt(readInt());
     }
+
 }

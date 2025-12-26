@@ -4,8 +4,6 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.ModelIdentity;
 import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.util.ReflectionUtils;
-import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +21,7 @@ public class StdAllocatorsTest extends TestCase {
     }
 
     public void testSmoking() {
-        java.lang.reflect.Field klassNameField = ReflectionUtils.getField(Klass.class, "name");
+        var klassNameField = ModelIdentity.create(Field.class, "org.metavm.object.type.Klass.name");
         var ids = allocators.allocate(2);
 
         allocators.putId(Field.class, PhysicalId.of(ids.getFirst(), 0L));
@@ -37,14 +35,13 @@ public class StdAllocatorsTest extends TestCase {
     }
 
     public void testGetTypeId() {
-        java.lang.reflect.Field klassNameReflectField = ReflectionUtils.getField(Klass.class, "name");
+        var klassNameReflectField = ModelIdentity.create(Field.class, "org.metavm.object.type.Klass.name");
 
         var ids = allocators.allocate(5);
         allocators.putId(Klass.class, PhysicalId.of(ids.getFirst(), 0L));
         allocators.putId(Field.class, PhysicalId.of(ids.get(1), 0L));
         allocators.putId(TypeCategory.class, PhysicalId.of(ids.get(2), 0L));
         allocators.putId(klassNameReflectField, PhysicalId.of(ids.get(3), 0L));
-        allocators.putId(TypeCategory.CLASS, PhysicalId.of(ids.get(4), 0L));
 
         var typeClassId = allocators.getId(Klass.class);
         var fieldClassId = allocators.getId(Field.class);
@@ -55,9 +52,6 @@ public class StdAllocatorsTest extends TestCase {
 
         var typeCategoryClassId = allocators.getId(TypeCategory.class);
         Assert.assertEquals(typeClassId.getTreeId(), allocators.getTypeId(typeCategoryClassId).id());
-
-        var enumConstantId = allocators.getId(TypeCategory.CLASS);
-        Assert.assertEquals(typeCategoryClassId.getTreeId(), allocators.getTypeId(enumConstantId).id());
 
         allocators.save();
     }

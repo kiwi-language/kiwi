@@ -3,16 +3,12 @@ class Product(var name: string) {
 
     priv static var nameIdx = Index<string, Product>(true, p -> p.name)
 
-    fn getName() -> string {
-        return this.name
-    }
-
 }
 
 @Bean
 class ProductService {
 
-    fn  findByName(name: string) -> Product|null {
+    fn findByName(name: string) -> Product|null {
         return Product.nameIdx.getFirst(name)
     }
 

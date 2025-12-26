@@ -15,16 +15,20 @@ class UserUtil {
         val len = template.length()
         var i = 0
         var j = 0
-        val buf = StringBuilder()
+        var buf = ""
+        var last = 0
         while (i < len) {
             val c = template.charAt(i++)
             if (c == '{' && i < len && template.charAt(i) == '}' && j < params.length) {
-                i++
-                buf.append(params[j++])
-            } else
-                buf.append(c)
+                if (last < i - 1)
+                    buf += template.substring(last, i - 1)
+                last = ++i
+                buf += params[j++]
+            }
         }
-        return buf.toString()
+        if (last < template.length())
+            buf += template.substring(last)
+        return buf
     }
 
     static fn contains<T>(array: T[], elem: T) -> bool {

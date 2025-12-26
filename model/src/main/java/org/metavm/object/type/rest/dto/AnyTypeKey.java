@@ -1,10 +1,10 @@
 package org.metavm.object.type.rest.dto;
 
-import org.metavm.object.type.AnyType;
-import org.metavm.object.type.TypeDefProvider;
+import org.jsonk.Json;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
+@Json
 public record AnyTypeKey() implements TypeKey {
 
     @Override
@@ -15,11 +15,6 @@ public record AnyTypeKey() implements TypeKey {
     @Override
     public String toTypeExpression() {
         return "any";
-    }
-
-    @Override
-    public AnyType toType(TypeDefProvider typeDefProvider) {
-        return AnyType.instance;
     }
 
     @Override

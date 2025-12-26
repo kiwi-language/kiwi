@@ -8,7 +8,7 @@ import org.metavm.entity.MetaContextCache;
 import org.metavm.mocks.TestTask;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.*;
-import org.springframework.transaction.support.TransactionOperations;
+import org.metavm.jdbc.TransactionOperations;
 
 import static org.metavm.util.TestConstants.APP_ID;
 

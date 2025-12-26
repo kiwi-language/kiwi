@@ -116,7 +116,7 @@ public class MigrationInstanceStore implements IInstanceStore {
             for (InstancePO instancePO : migrated) {
                 log.trace("ID: {}, version: {}", instancePO.getId(), instancePO.getVersion());
             }
-            log.debug("Unmigrated:");
+            log.trace("Unmigrated:");
             for (InstancePO instancePO : unmigrated) {
                 log.trace("ID: {}, version: {}", instancePO.getId(), instancePO.getVersion());
             }

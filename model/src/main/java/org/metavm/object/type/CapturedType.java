@@ -24,10 +24,6 @@ import java.util.function.Function;
 @Entity
 public class CapturedType extends Type {
 
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
-
     private final Reference variable;
 
     public CapturedType(CapturedTypeVariable variable) {
@@ -159,11 +155,6 @@ public class CapturedType extends Type {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitCapturedType(this, s);
-    }
-
-    @Override
-    public ClassType getValueType() {
-        return __klass__.getType();
     }
 
     @Override

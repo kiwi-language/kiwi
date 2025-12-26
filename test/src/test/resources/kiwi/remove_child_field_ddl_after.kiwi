@@ -1,4 +1,3 @@
-import java.util.List
 
 class Product(priv var name: string) {
 

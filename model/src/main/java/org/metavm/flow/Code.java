@@ -1,30 +1,43 @@
 package org.metavm.flow;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Generated;
+import org.metavm.api.ValueObject;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
+import org.metavm.wire.Parent;
+import org.metavm.wire.Wire;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
+@Wire
 @Slf4j
-public class Code implements Element, LocalKey, Struct {
+public class Code implements Element, LocalKey, Struct, ValueObject {
 
+    @Getter
+    @Parent
     private Callable callable;
     private transient LinkedList<Node> nodes = new LinkedList<>();
+    @Setter
+    @Getter
     private int maxLocals;
+    @Getter
+    @Setter
     private int maxStack;
+    @Setter
+    @Getter
     private byte[] code;
 
     public Code(Callable callable) {
@@ -112,11 +125,6 @@ public class Code implements Element, LocalKey, Struct {
         getFlow().removeNode(node);
     }
 
-    public Callable getCallable() {
-        return callable;
-    }
-
-    @JsonIgnore
     public Flow getFlow() {
         return callable instanceof Flow flow ? flow : ((Lambda) callable).getFlow();
     }
@@ -153,24 +161,8 @@ public class Code implements Element, LocalKey, Struct {
         return getFlow().nextNodeName(prefix);
     }
 
-    public int getMaxLocals() {
-        return maxLocals;
-    }
-
     public int getFrameSize() {
         return maxLocals + maxStack;
-    }
-
-    public void setMaxLocals(int maxLocals) {
-        this.maxLocals = maxLocals;
-    }
-
-    public int getMaxStack() {
-        return maxStack;
-    }
-
-    public void setMaxStack(int maxStack) {
-        this.maxStack = maxStack;
     }
 
     public int nextVariableIndex() {
@@ -179,32 +171,29 @@ public class Code implements Element, LocalKey, Struct {
         return i;
     }
 
+    @SneakyThrows
     public void emitCode() {
         int offset = 0;
         for (Node node : nodes) {
             node.setOffset(offset);
             offset += node.getLength();
         }
-        var output = new CodeOutput(getFlow().getConstantPool());
-        nodes.forEach(node -> node.writeCode(output));
-        code = output.toByteArray();
+        try (var output = new CodeOutput(getFlow().getConstantPool())) {
+            nodes.forEach(node -> node.writeCode(output));
+            code = output.toByteArray();
+        }
     }
 
+    @SneakyThrows
     public void rebuildNodes() {
         nodes.clear();
-        new CodeInput(this).readNodes();
-    }
-
-    public byte[] getCode() {
-        return code;
+        try (var in = new CodeInput(this)) {
+            in.readNodes();
+        }
     }
 
     public int length() {
         return code.length;
-    }
-
-    public void setCode(byte[] code) {
-        this.code = code;
     }
 
     @Override
@@ -248,20 +237,6 @@ public class Code implements Element, LocalKey, Struct {
     public void forEachReference(Consumer<Reference> action) {
     }
 
-    public void buildJson(Map<String, Object> map) {
-        map.put("nodes", this.getNodes());
-        map.put("callable", this.getCallable());
-        map.put("flow", this.getFlow().getStringId());
-        map.put("empty", this.isEmpty());
-        map.put("notEmpty", this.isNotEmpty());
-        var lastNode = this.getLastNode();
-        if (lastNode != null) map.put("lastNode", lastNode.toJson());
-        map.put("maxLocals", this.getMaxLocals());
-        map.put("frameSize", this.getFrameSize());
-        map.put("maxStack", this.getMaxStack());
-        map.put("code", org.metavm.util.EncodingUtils.encodeBase64(this.getCode()));
-    }
-
     @Generated
     public void write(MvOutput output) {
         output.writeInt(maxLocals);
@@ -269,9 +244,4 @@ public class Code implements Element, LocalKey, Struct {
         output.writeBytes(code);
     }
 
-    public Map<String, Object> toJson() {
-        var map = new java.util.HashMap<String, Object>();
-        buildJson(map);
-        return map;
-    }
 }

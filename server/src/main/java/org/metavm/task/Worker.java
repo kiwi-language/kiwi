@@ -1,7 +1,5 @@
 package org.metavm.task;
 
-//import org.metavm.ddl.DefContextUtils;
-
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -10,9 +8,9 @@ import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionOperations;
+import org.metavm.context.Scheduled;
+import org.metavm.context.Component;
+import org.metavm.jdbc.TransactionOperations;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -39,7 +37,7 @@ public class Worker extends EntityContextFactoryAware {
 
     @Scheduled(fixedDelay = 10000)
     public void sendHeartbeat() {
-        transactionOperations.executeWithoutResult(s -> {
+        transactionOperations.execute(() -> {
             try (var context = newPlatformContext()) {
                 var executorData = context.selectFirstByKey(ExecutorData.IDX_IP, Instances.stringInstance(NetworkUtils.localIP));
                 if (executorData == null) {
@@ -128,7 +126,7 @@ public class Worker extends EntityContextFactoryAware {
 
     private @Nullable Task runTask(ShadowTask shadowTask) {
         var tracing = DebugEnv.traceTaskExecution;
-        return transactionOperations.execute(s -> {
+        return transactionOperations.execute(() -> {
             if (isAppRemoved(shadowTask.getAppId())) {
                 removeShadowTask(shadowTask.getId());
                 return null;

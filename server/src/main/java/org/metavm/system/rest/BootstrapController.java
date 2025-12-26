@@ -1,64 +1,53 @@
 package org.metavm.system.rest;
 
 import org.metavm.application.ApplicationManager;
-import org.metavm.common.Result;
+import org.metavm.context.http.Controller;
+import org.metavm.context.http.Mapping;
+import org.metavm.context.http.Post;
 import org.metavm.entity.Bootstrap;
-import org.metavm.task.Scheduler;
 import org.metavm.task.TaskManager;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
-@RestController
-@RequestMapping("/bootstrap")
+@Controller
+@Mapping("/bootstrap")
 public class BootstrapController {
 
     private final Bootstrap bootstrap;
-    private final Scheduler scheduler;
     private final TaskManager jobManager;
     private final ApplicationManager applicationManager;
 
     public BootstrapController(Bootstrap bootstrap,
-                               Scheduler scheduler,
                                TaskManager jobManager,
                                ApplicationManager applicationManager) {
         this.bootstrap = bootstrap;
-        this.scheduler = scheduler;
         this.jobManager = jobManager;
         this.applicationManager = applicationManager;
     }
 
-    @PostMapping
-    public Result<Void> boot(@RequestParam(value = "saveIds", defaultValue = "true") boolean saveIds) {
+    @Post
+    public void boot() {
         initSystemEntities();
         initBuiltinApplications();
-        return Result.success(null);
     }
 
-//    @PostMapping("/save")
-//    public Result<Void> save(@RequestParam(value = "saveIds", defaultValue = "true") boolean saveIds) {
+//    @Post("/save")
+//    public void save(@RequestParam(value = "saveIds", defaultValue = "true") boolean saveIds) {
 //        bootstrap.save(saveIds);
-//        return Result.success(null);
 //    }
 
-    @PostMapping("/init-system-entities")
-    public Result<Void> initSystemEntities() {
+    @Post("/init-system-entities")
+    public void initSystemEntities() {
         bootstrap.initSystemEntities();
-        return Result.success(null);
     }
 
-    @PostMapping("/rebuild-index")
-    public Result<Void> rebuildIndex()  {
+    @Post("/rebuild-index")
+    public void rebuildIndex()  {
         jobManager.addIndexRebuildGlobalTask();
-        return Result.voidSuccess();
     }
 
-    @PostMapping("/init-builtin-applications")
-    public Result<Void> initBuiltinApplications() {
+    @Post("/init-builtin-applications")
+    public void initBuiltinApplications() {
         applicationManager.createRoot();
         applicationManager.createPlatform();
-        return Result.voidSuccess();
     }
 
 }

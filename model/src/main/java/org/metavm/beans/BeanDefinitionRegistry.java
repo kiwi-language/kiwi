@@ -1,43 +1,46 @@
 package org.metavm.beans;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
 import org.metavm.entity.AttributeNames;
-import org.metavm.entity.EntityRegistry;
+import org.metavm.wire.Wire;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Method;
 import org.metavm.flow.Parameter;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.*;
-import org.metavm.util.*;
+import org.metavm.object.type.ArrayType;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.KlassType;
+import org.metavm.object.type.Type;
+import org.metavm.util.Instances;
+import org.metavm.util.InternalException;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
-@NativeEntity(53)
+@Wire(53)
 @Entity
 @Slf4j
 public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements Message {
     public static final IndexDef<BeanDefinitionRegistry> IDX_ALL_FLAGS = IndexDef.create(BeanDefinitionRegistry.class,
             1, bdr -> List.of(Instances.booleanInstance(bdr.allFlags))
             );
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
 
     @SuppressWarnings("unused")
-    private boolean allFlags = true;
+    private final boolean allFlags = true;
 
     private transient List<BeanDefinition> interceptorDefinitions = new ArrayList<>();
 
     private transient @Nullable BeanDefinition tokenValidatorDef;
 
-    private List<BeanDefinition> beanDefinitions = new ArrayList<>();
+    private final List<BeanDefinition> beanDefinitions = new ArrayList<>();
 
     public static BeanDefinitionRegistry getInstance(IInstanceContext context) {
         return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()),
@@ -53,12 +56,6 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
 
     private BeanDefinitionRegistry(Id id) {
         super(id);
-    }
-
-    @Generated
-    public static void visitBody(StreamVisitor visitor) {
-        visitor.visitBoolean();
-        visitor.visitList(visitor::visitEntity);
     }
 
     @Nullable
@@ -180,15 +177,6 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
 
     public Value getDependency(Type type) {
         if (type.getUnderlyingType() instanceof KlassType paramType) {
-            if (paramType.isList()) {
-                if (paramType.getFirstTypeArgument() instanceof KlassType beanType) {
-                    var matchingBeans = getBeansOfType(beanType);
-                    var beanReferences = Utils.map(matchingBeans, Instance::getReference);
-                    return Instances.createList(paramType, beanReferences).getReference();
-                } else {
-                    throw new InternalException("Cannot autowire List: unsupported element type '" + paramType.getFirstTypeArgument() + "'.");
-                }
-            } else {
                 var beans = getBeansOfType(paramType);
                 if (beans.isEmpty()) {
                     if (type.isNullable())
@@ -198,7 +186,6 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
                 if (beans.size() > 1)
                     throw new InternalException("Expected 1 bean of type '" + paramType + "', but found " + beans.size() + ".");
                 return beans.getFirst().getReference();
-            }
         } else if (type.getUnderlyingType() instanceof ArrayType arrayType) {
             if (arrayType.getElementType() instanceof KlassType beanType) {
                 var matchingBeans = getBeansOfType(beanType);
@@ -232,15 +219,13 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
                 return List.of(getBeanDefinition(beanName));
             var type = parameter.getType().getUnderlyingType();
             if(type instanceof KlassType classType) {
-                if (classType.isList()) {
-                    if(classType.getFirstTypeArgument() instanceof KlassType elementType)
-                        return getBeanDefinitionsByType(elementType);
-                    else
-                        return List.of();
-                }
                 return getBeanDefinitionsByType(classType);
-            }
-            else
+            } else if (type instanceof ArrayType arrayType) {
+                if(arrayType.getElementType() instanceof KlassType elementType)
+                    return getBeanDefinitionsByType(elementType);
+                else
+                    return List.of();
+            } else
                 return List.of();
         });
 
@@ -276,50 +261,12 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
     }
 
     @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("interceptors", this.getInterceptors());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
     public void forEachChild(Consumer<? super Instance> action) {
         for (var beanDefinitions_ : beanDefinitions) action.accept(beanDefinitions_);
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_BeanDefinitionRegistry;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.allFlags = input.readBoolean();
-        this.beanDefinitions = input.readList(() -> input.readEntity(BeanDefinition.class, this));
-        this.onRead();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        output.writeBoolean(allFlags);
-        output.writeList(beanDefinitions, output::writeEntity);
     }
 
     public List<BeanDefinition> getBeanDefinitions() {
         return Collections.unmodifiableList(beanDefinitions);
     }
 
-    @Override
-    protected void buildSource(Map<String, Value> source) {
-    }
 }

@@ -1,37 +1,9 @@
 class Product(
     var name: string,
     var kind: ProductKind
-) {
-
-    fn getName() -> string {
-        return this.name
-    }
-
-    fn setName(name: string) {
-        this.name = name
-    }
-
-    fn getKind() -> ProductKind {
-        return this.kind
-    }
-
-    fn setKind(kind: ProductKind) {
-        this.kind = kind
-    }
-
-}
+)
 
 class ProductKind(
-    val name: string,
+    val label: string,
     val code: int
-) {
-
-    fn getName() -> string {
-        return this.name
-    }
-
-    fn getCode() -> int {
-        return this.code
-    }
-
-}
+)

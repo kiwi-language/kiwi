@@ -13,7 +13,7 @@
     <dependencySets>
         <dependencySet>
             <includes>
-                <include>org.metavm:metavm-assembly</include>
+                <include>org.metavm:metavm-server</include>
             </includes>
             <outputDirectory>bin</outputDirectory>
             <outputFileNameMapping>server.jar</outputFileNameMapping>
@@ -24,7 +24,7 @@
 
         <dependencySet>
             <includes>
-                <include>org.metavm:metavm-compiler-asm</include>
+                <include>org.metavm:metavm-compiler</include>
             </includes>
             <outputDirectory>bin</outputDirectory>
             <outputFileNameMapping>compiler.jar</outputFileNameMapping>
@@ -36,7 +36,7 @@
 
     <fileSets>
         <fileSet>
-            <directory>src/main/scripts</directory>
+            <directory>src/main/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>kiwi</include>
@@ -47,7 +47,7 @@
         </fileSet>
 
         <fileSet>
-            <directory>src/main/scripts</directory>
+            <directory>src/main/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>kiwi.cmd</include>
@@ -58,12 +58,24 @@
         </fileSet>
 
         <fileSet>
-            <directory>src/main/config</directory>
-            <outputDirectory>config</outputDirectory>
+            <directory>src/main/conf</directory>
+            <outputDirectory>conf</outputDirectory>
             <includes>
                 <include>kiwi.yml</include>
             </includes>
             <fileMode>0644</fileMode>
         </fileSet>
+
+        <fileSet>
+            <directory>../stdlib</directory>
+            <outputDirectory>pkg/std</outputDirectory>
+            <fileMode>0644</fileMode>
+            <excludes>
+                <exclude>.gitignore</exclude>
+                <exclude>target/**</exclude>
+                <exclude>.metavm/**</exclude>
+            </excludes>
+        </fileSet>
+
     </fileSets>
 </assembly>

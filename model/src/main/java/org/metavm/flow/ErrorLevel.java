@@ -1,9 +1,7 @@
 package org.metavm.flow;
 
-import org.metavm.api.Entity;
 import org.metavm.util.Utils;
 
-@Entity
 public enum ErrorLevel {
     WARNING(1),
     ERROR(2);

@@ -2,7 +2,7 @@ package genericoverride
 
 class Sub: Base {
 
-    fn containsAny<T>(iterable: Iterable<[never, T]>, values: Iterable<[never, T]>) -> bool {
+    fn containsAny<T>(iterable: T[], values: T[]) -> bool {
         for (t in iterable) {
             for (value in values) {
                 if (equals(value, t)) return true

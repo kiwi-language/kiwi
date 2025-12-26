@@ -1,9 +1,9 @@
 package org.metavm.object.instance.core;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.NoProxy;
-import org.metavm.entity.natives.StatefulNative;
 import org.metavm.flow.ClosureContext;
 import org.metavm.flow.Flows;
 import org.metavm.flow.MethodRef;
@@ -34,11 +34,13 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     private Klass klass;
     private final @NotNull MvClassInstance root;
     private final MvClassInstance parent;
+    @Setter
     private int refcount;
     private transient Map<MethodRef, FlowValue> functions;
     private final @Nullable ClosureContext closureContext;
     private final List<ClassInstance> children = new ArrayList<>();
     public InstanceField[] fields;
+    @Getter
     private boolean initialized;
 
     public MvClassInstance(Id id,
@@ -72,7 +74,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         this(id, klass.getType(), 0, 0, null, data, false, true, isNew, null);
     }
 
-    @NoProxy
     public void reset(Map<Field, ? extends Value> data, long version, long syncVersion) {
 //        try (var ignored = ContextUtil.getProfiler().enter("ClassInstance.reset")) {
         setModified();
@@ -126,10 +127,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
-        if (getNativeObject() instanceof StatefulNative statefulNative) {
-            statefulNative.forEachChild(action);
-            return;
-        }
         children.forEach(action);
     }
 
@@ -141,10 +138,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public void forEachValue(Consumer<? super Instance> action) {
-        if (getNativeObject() instanceof StatefulNative statefulNative) {
-            statefulNative.forEachValue(action);
-            return;
-        }
         forEachField((f, v) -> {
             if(v instanceof ValueReference vr)
                 action.accept(vr.get());
@@ -152,10 +145,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     }
 
     public void forEachReference(Consumer<Reference> action) {
-        if (getNativeObject() instanceof StatefulNative statefulNative) {
-            statefulNative.forEachReference(action);
-            return;
-        }
         forEachField((f, v) -> {
             if (v instanceof Reference r)
                 action.accept(r);
@@ -164,10 +153,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     }
 
     public void forEachReference(BiConsumer<Reference, Boolean> action) {
-        if (getNativeObject() instanceof StatefulNative statefulNative) {
-            statefulNative.forEachReference(action);
-            return;
-        }
         forEachField((f, v) -> {
             if(v instanceof Reference r)
                 action.accept(r, false);
@@ -177,10 +162,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public void forEachReference(TriConsumer<Reference, Boolean, Type> action) {
-        if (getNativeObject() instanceof StatefulNative statefulNative) {
-            statefulNative.forEachReference(action);
-            return;
-        }
         forEachField((f, v) -> {
             if(v instanceof Reference r)
                 action.accept(r, false, f.getType());
@@ -190,10 +171,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public void transformReference(TriFunction<Reference, Boolean, Type, Reference> function) {
-        if (getNativeObject() instanceof StatefulNative statefulNative) {
-            statefulNative.transformReference(function);
-            return;
-        }
         forEachField((f, v) -> {
             if(v instanceof EntityReference r) {
                 var r1 = function.apply(r, r.isResolved() && r.get().isChildOf(this), f.getType());
@@ -292,7 +269,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     }
 
     @Override
-    @NoProxy
     protected void readBody(InstanceInput input) {
         var tracing = DebugEnv.traceInstanceIO;
         if (tracing) log.trace("Reading instance {} {}", getInstanceType().getTypeDesc(), tryGetId());
@@ -502,10 +478,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         return visitor.visitClassInstance(this);
     }
 
-    public boolean isList() {
-        return klass.isList();
-    }
-
     public ArrayInstance getInstanceArray(Field field) {
                 return field(field).getInstanceArray();
     }
@@ -517,20 +489,16 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     //    @Override
     public Object toJson(IInstanceContext context) {
-        if (isList()) {
-            return Instances.toJavaList(this);
-        } else {
-            var map = new HashMap<String, Object>();
-            forEachField((f, v) -> {
-                if (f.isPublic())
-                    map.put(f.getName(), v.toJson());
-            });
-            getInstanceKlass().forEachMethod(m -> {
-                if (m.isGetter())
-                    map.put(m.getPropertyName(), Flows.invokeGetter(m.getRef(), this, context));
-            });
-            return map;
-        }
+        var map = new HashMap<String, Object>();
+        forEachField((f, v) -> {
+            if (f.isPublic())
+                map.put(f.getName(), v.toJson());
+        });
+        getInstanceKlass().forEachMethod(m -> {
+            if (m.isGetter())
+                map.put(m.getPropertyName(), Flows.invokeGetter(m.getRef(), this, context));
+        });
+        return map;
     }
 
     private void ensureFieldInitialized(Field field) {
@@ -747,10 +715,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         return refcount;
     }
 
-    public void setRefcount(int refcount) {
-        this.refcount = refcount;
-    }
-
     public @Nullable Instance getParent(int index) {
         var v = this.parent;
         for (int i = 0; i < index; i++) {
@@ -780,10 +744,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         klass = ((ClassType) type).getKlass();
     }
 
-    public boolean isInitialized() {
-        return initialized;
-    }
-
     public void setInitialized() {
         initialized = true;
     }
@@ -791,6 +751,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     private static class FieldSubTable implements KlassDataSlot, Iterable<InstanceField> {
         private final FieldTable table;
         private final ClassType type;
+        @Getter
         private final long klassTag;
         private final List<InstanceField> fields = new ArrayList<>();
 
@@ -835,10 +796,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         public Iterator<InstanceField> iterator() {
             return fields.iterator();
        }
-
-        public long getKlassTag() {
-            return klassTag;
-        }
 
         private boolean shouldSkipWrite() {
             return type.getKlass().getWriteObjectMethod() == null && countFieldsForWriting() == 0;

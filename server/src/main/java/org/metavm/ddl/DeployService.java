@@ -10,8 +10,8 @@ import org.metavm.task.IndexRebuildTask;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Hooks;
 import org.metavm.util.Instances;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.metavm.context.Component;
+import org.metavm.context.sql.Transactional;
 
 @Component
 public class DeployService extends EntityContextFactoryAware {
