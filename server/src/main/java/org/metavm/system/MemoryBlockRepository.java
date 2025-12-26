@@ -1,7 +1,10 @@
 package org.metavm.system;
 
+import org.metavm.context.Component;
+
 import java.util.concurrent.atomic.AtomicLong;
 
+@Component(module = "memory")
 public class MemoryBlockRepository implements BlockRepository {
 
     private final AtomicLong next = new AtomicLong(DefaultBlockRepository.INITIAL);

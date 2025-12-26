@@ -7,6 +7,7 @@ import org.metavm.user.Tokens;
 import org.metavm.util.ContentTypes;
 import org.metavm.util.Headers;
 
+import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -45,8 +46,10 @@ public interface HttpRequest {
 
     String getQueryParameter(String name);
 
+    @Nullable String getOptionalQueryParameter(String name);
+
     default String getQueryParameter(String name, String defaultValue) {
-        var v = getQueryParameter(name);
+        var v = getOptionalQueryParameter(name);
         return v != null ? v : defaultValue;
     }
 

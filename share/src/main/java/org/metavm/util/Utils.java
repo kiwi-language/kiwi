@@ -1375,7 +1375,7 @@ public class Utils {
         return t != null ? mapping.apply(t) : defaultSupplier.get();
     }
 
-    public static <T, R> R getOrElse(@Nullable T t, Function<T, R> mapping, R defaultValue) {
+    public static <T, R> R safeCall(@Nullable T t, Function<T, R> mapping, R defaultValue) {
         return t != null ? mapping.apply(t) : defaultValue;
     }
 

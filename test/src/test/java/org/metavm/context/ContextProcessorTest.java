@@ -312,6 +312,31 @@ public class ContextProcessorTest extends TestCase {
         System.out.println(file.getCharContent(true));
     }
 
+    @SneakyThrows
+    public void testModule() {
+        var source = """
+                import org.metavm.context.Component;
+                
+                @Component(module = "default")
+                class Foo {
+                
+                    Foo(Bar bar) {}
+                
+                }
+                
+                interface Bar {}
+                
+                @Component(module = "default")
+                class Bar1 implements Bar {}
+                
+                @Component(module = "bar2")
+                class Bar2 implements Bar {}
+                """;
+        var c = compile(source);
+        var file = c.generatedSourceFile("Foo__BeanDef__").orElseThrow();
+        System.out.println(file.getCharContent(true));
+    }
+
     private Compilation compile(String source) {
         var c = javac().withProcessors(new ContextProcessor())
                 .compile(JavaFileObjects.forSourceString("Dummy", source));

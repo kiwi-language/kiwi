@@ -31,7 +31,7 @@ public class BootstrapUtils {
     public static BootstrapResult bootstrap() {
         ContextUtil.resetProfiler();
         if (state == null)
-            createState(new MemAllocatorStore(), new MemTypeTagStore());
+            createState(new DirectoryAllocatorStore("nonexistent"), new MemTypeTagStore());
         return fromState();
     }
 
@@ -82,9 +82,8 @@ public class BootstrapUtils {
         );
     }
 
-    public static void createState(MemAllocatorStore allocatorStore,
-                                              MemTypeTagStore typeTagStore) {
-        generateIds(allocatorStore);
+    public static void createState(DirectoryAllocatorStore allocatorStore,
+                                   MemTypeTagStore typeTagStore) {
         StdFunction.setEmailSender(MockEmailSender.INSTANCE);
         var blockRepository = new MemoryBlockRepository();
         var idProvider = new IdService(new IdGenerator(blockRepository));
@@ -109,7 +108,7 @@ public class BootstrapUtils {
                 blockRepository.copy(),
                 typeTagStore.copy(),
                 stdIdStore.copy(),
-                allocatorStore.copy(),
+                allocatorStore,
                 instanceSearchService.copy(),
                 mapperRegistry.copy()
         );
@@ -118,6 +117,8 @@ public class BootstrapUtils {
     private static void createPlatformApp(EntityContextFactory entityContextFactory) {
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                SchedulerRegistry.initialize(platformContext);
+                GlobalKlassTagAssigner.initialize(platformContext);
                 var platformUser = new PlatformUser(platformContext.allocateRootId(), "platform", UUID.randomUUID().toString(), "platform", List.of());
                 platformContext.bind(platformUser);
                 platformContext.bind(new Application(PhysicalId.of(Constants.PLATFORM_APP_ID, 0), "platform", platformUser));
@@ -129,8 +130,7 @@ public class BootstrapUtils {
     private static Id createApp(EntityContextFactory entityContextFactory, MemMapperRegistry mapperRegistry, InstanceSearchService instanceSearchService) {
         return TestUtils.doInTransaction(() -> {
             try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                SchedulerRegistry.initialize(platformContext);
-                var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
+                var globalTagAssigner = GlobalKlassTagAssigner.getInstance(platformContext);
                 var user = new PlatformUser(platformContext.allocateRootId(), "demo", "123456", "demo", List.of());
                 var app = new Application(platformContext.allocateRootId(), "demo", user);
                 platformContext.bind(app);
@@ -148,20 +148,6 @@ public class BootstrapUtils {
                 return user.getId();
             }
         });
-    }
-
-    private static void generateIds(AllocatorStore allocatorStore) {
-        var stdAllocators = new StdAllocators(allocatorStore);
-        var idGenerator = new StdIdGenerator(() -> stdAllocators.allocate(1).getFirst());
-        idGenerator.generate();
-
-        idGenerator.getIds().forEach((identity, id) -> {
-            if (id.getNodeId() == 0L)
-                stdAllocators.putId(identity, id, idGenerator.getNextNodeId(identity));
-            else
-                stdAllocators.putId(identity, id);
-        });
-        stdAllocators.save();
     }
 
     private static SystemDefContext copyDefContext(SystemDefContext sysDefContext) {

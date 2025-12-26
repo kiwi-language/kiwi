@@ -21,7 +21,6 @@ public class ChangeLogManager extends EntityContextFactoryAware {
     public void createChangeLog(long appId, ChangeLog changeLog) {
         try(var context = newContext(appId, builder -> builder
                 .changeLogDisabled(true)
-                .activeCommitProvider(() -> null)
         )) {
             context.setDescription("ChangeLog");
             context.bind(changeLog);

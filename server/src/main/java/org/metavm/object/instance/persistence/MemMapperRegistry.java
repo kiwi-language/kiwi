@@ -1,6 +1,7 @@
 package org.metavm.object.instance.persistence;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.context.Component;
 import org.metavm.entity.MemIndexEntryMapper;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.instance.persistence.mappers.InstanceMapper;
@@ -15,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 @Slf4j
+@Component(module = "memory")
 public class MemMapperRegistry implements MapperRegistry {
 
     private final Map<TableKey, MemInstanceMapper> instanceMappers = new ConcurrentHashMap<>();

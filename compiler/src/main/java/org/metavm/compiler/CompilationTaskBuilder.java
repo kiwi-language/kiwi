@@ -11,20 +11,20 @@ public class CompilationTaskBuilder {
 
     private final Collection<Path> sourcePaths;
     private final Path targetDir;
-    private boolean aiLint;
+    private boolean senseLint;
 
     public CompilationTaskBuilder(Collection<Path> sourcePaths, Path targetDir) {
         this.sourcePaths = sourcePaths;
         this.targetDir = targetDir;
     }
 
-    public CompilationTaskBuilder withAiLint(boolean aiLint) {
-        this.aiLint = aiLint;
+    public CompilationTaskBuilder withSenseLint(boolean senseLint) {
+        this.senseLint = senseLint;
         return this;
     }
 
     public CompilationTask build() {
-        return new CompilationTask(sourcePaths, targetDir, aiLint);
+        return new CompilationTask(sourcePaths, targetDir, senseLint);
     }
 
 }

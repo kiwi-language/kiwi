@@ -1,4 +1,4 @@
-package org.metavm.springconfig;
+package org.metavm.config;
 
 import org.metavm.server.Controller;
 import org.metavm.server.Filter;

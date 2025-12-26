@@ -1,20 +1,17 @@
 package org.metavm.object.type;
 
 import org.metavm.util.InternalException;
-import org.metavm.util.Utils;
 import org.metavm.util.PropertiesUtils;
+import org.metavm.util.Utils;
 
 import java.io.*;
 import java.util.*;
-import java.util.regex.Pattern;
 
 public class DirectoryAllocatorStore implements AllocatorStore {
 
     private static final String ID_FILE_DIR = "/id";
 
     public static final String NEXT_ID_FILE = "/id/next_id";
-
-    private static final Pattern ID_FILE_NAME_PATTERN = Pattern.compile(".+\\.properties");
 
     private final String saveDir;
 

@@ -1,10 +1,10 @@
-package org.metavm.springconfig;
+package org.metavm.config;
 
 
 import lombok.Getter;
+import lombok.SneakyThrows;
 import org.metavm.context.Component;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.FileInputStream;
 import java.util.Map;
@@ -43,15 +43,12 @@ public class KiwiConfig {
         return new ServerConfig(port);
     }
 
+    @SneakyThrows
     private Map<String, Object> getConfig() {
         Objects.requireNonNull(CONFIG_PATH, "Config path is not specified");
         var yaml = new Yaml();
         try (var inputStream = new FileInputStream(CONFIG_PATH)) {
             return yaml.load(inputStream);
-        } catch (YAMLException e) {
-            throw new RuntimeException("Error parsing YAML file: " + CONFIG_PATH, e);
-        } catch (Exception e) {
-            throw new RuntimeException("An error occurred: " + e.getMessage(), e);
         }
     }
 

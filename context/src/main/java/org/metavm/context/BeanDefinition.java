@@ -1,5 +1,7 @@
 package org.metavm.context;
 
+import javax.annotation.Nullable;
+
 public abstract class BeanDefinition<T> {
 
     protected BeanRegistry registry;
@@ -31,5 +33,9 @@ public abstract class BeanDefinition<T> {
     public abstract Class<T> getSupportedType();
 
     public abstract boolean isPrimary();
+
+    public @Nullable String getModule() {
+        return null;
+    }
 
 }

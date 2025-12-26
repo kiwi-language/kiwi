@@ -8,4 +8,6 @@ public @interface Component {
 
     String value() default "";
 
+    String module() default "";
+
 }

@@ -303,41 +303,32 @@ public class ProxyGenerator extends AbstractGenerator {
 
     private void writeParse(VariableElement param, Runnable writeValue) {
         var type = param.asType();
+        if (types.isString(type)) {
+            writeValue.run();
+            return;
+        }
+        write("RequestUtil.");
         switch (type.getKind()) {
-            case BYTE -> write("Byte.parseByte");
-            case SHORT -> write("Short.parseShort");
-            case INT -> write("Integer.parseInt");
-            case LONG -> write("Long.parseLong");
-            case FLOAT -> write("Float.parseFloat");
-            case DOUBLE -> write("Double.parseDouble");
-            case BOOLEAN -> write("Boolean.parseBoolean");
-            case CHAR -> {
-                write("(");
-                writeValue.run();
-                write(").charAt(0)");
-                return;
-            }
+            case BYTE -> write("parseByte");
+            case SHORT -> write("parseShort");
+            case INT -> write("parseInt");
+            case LONG -> write("parseLong");
+            case FLOAT -> write("parseFloat");
+            case DOUBLE -> write("parseDouble");
+            case BOOLEAN -> write("parseBoolean");
+            case CHAR -> write("parseChar");
             case DECLARED -> {
                 var dt = (DeclaredType) type;
                 var cl = (TypeElement) dt.asElement();
                 switch (cl.getQualifiedName().toString()) {
-                    case "java.lang.String" -> {
-                        writeValue.run();
-                        return;
-                    }
-                    case "java.lang.Byte" -> write("Byte.valueOf");
-                    case "java.lang.Short" -> write("Short.valueOf");
-                    case "java.lang.Integer" -> write("Integer.value(");
-                    case "java.lang.Long" -> write("Long.valueOf");
-                    case "java.lang.Float" -> write("Float.valueOf");
-                    case "java.lang.Double" -> write("Double.valueOf");
-                    case "java.lang.Boolean" -> write("Boolean.valueOf");
-                    case "java.lang.Character" -> {
-                        write("(");
-                        writeValue.run();
-                        write(").charAt(0)");
-                        return;
-                    }
+                    case "java.lang.Byte" -> write("byteValueOf");
+                    case "java.lang.Short" -> write("shortValueOf");
+                    case "java.lang.Integer" -> write("integerValueOf");
+                    case "java.lang.Long" -> write("longValueOf");
+                    case "java.lang.Float" -> write("floatValueOf");
+                    case "java.lang.Double" -> write("doubleValueOf");
+                    case "java.lang.Boolean" -> write("booleanValueOf");
+                    case "java.lang.Character" -> write("characterValueOf");
                     default -> throw new ContextConfigException("Cannot parse parameter of type: " + type, param);
                 }
             }
@@ -348,9 +339,12 @@ public class ProxyGenerator extends AbstractGenerator {
     }
 
     private void writeGetQueryParam(RequestParam requestParam) {
-        write("r.getQueryParameter(");
+        if (!requestParam.required() && requestParam.defaultValue().isEmpty())
+            write("r.getOptionalQueryParameter(");
+        else
+            write("r.getQueryParameter(");
         writeStringLit(requestParam.value());
-        if (requestParam.defaultValue() != null) {
+        if (!requestParam.defaultValue().isEmpty()) {
             write(", ");
             writeStringLit(requestParam.defaultValue());
         }
@@ -439,6 +433,7 @@ public class ProxyGenerator extends AbstractGenerator {
         writeImport("org.metavm.context.http.ResponseEntity");
         writeImport("org.jsonk.Type");
         writeImport("java.util.List");
+        writeImport("org.metavm.server.RequestUtil");
         writeln();
     }
 

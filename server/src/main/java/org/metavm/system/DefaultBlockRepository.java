@@ -1,17 +1,13 @@
 package org.metavm.system;
 
-import org.metavm.context.sql.TransactionPropagation;
-import org.metavm.system.persistence.IdSequenceMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.context.Component;
 import org.metavm.context.sql.TransactionIsolation;
+import org.metavm.context.sql.TransactionPropagation;
 import org.metavm.context.sql.Transactional;
+import org.metavm.system.persistence.IdSequenceMapper;
 
-@Component
+@Component(module = "persistent")
 public class DefaultBlockRepository implements BlockRepository {
-
-    public static final Logger logger = LoggerFactory.getLogger("block");
 
     public static final long INITIAL = 1000000000L;
     public static final long BLOCK_SIZE = 1000;

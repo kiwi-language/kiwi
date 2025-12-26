@@ -96,15 +96,17 @@ public class Main {
 
     @SneakyThrows
     private CompilationTask createTask(List<Option> options) {
-        var aiLint = false;
+        var senseLint = false;
         for (Option option : options) {
-            if (option.kind == OptionKind.SENSE_LINT)
-                aiLint = true;
+            if (option.kind == OptionKind.SENSE_LINT) {
+                senseLint = true;
+                break;
+            }
         }
         var sourcePaths = new ArrayList<>(listFilePathsRecursively(sourceRoot));
         sourcePaths.addAll(listFilePathsRecursively(findStdLibRoot().resolve("src")));
         return CompilationTaskBuilder.newBuilder(sourcePaths, targetRoot)
-                .withAiLint(aiLint)
+                .withSenseLint(senseLint)
                 .build();
     }
 
@@ -552,7 +554,7 @@ public class Main {
         }
     }
 
-    private class InvalidUsageException extends RuntimeException {
+    private static class InvalidUsageException extends RuntimeException {
         public InvalidUsageException(String message) {
             super(message);
         }
