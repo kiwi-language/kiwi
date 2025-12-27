@@ -31,7 +31,7 @@ public class Constants {
 //    public static final String DEFAULT_HOST = "https://api.metavm.tech/rest";
     public static final String DEFAULT_HOST = "http://localhost:8080";
 
-    public final static long DEFAULT_SESSION_TIMEOUT = 5000L;
+    public final static long DEFAULT_SESSION_TIMEOUT = 10000L;
     public static long SESSION_TIMEOUT = DEFAULT_SESSION_TIMEOUT;
     public static long DDL_SESSION_TIMEOUT = 64000;
 
