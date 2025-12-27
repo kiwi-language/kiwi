@@ -1,17 +1,22 @@
 package org.metavm.compiler.diag;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.metavm.compiler.file.SourceFile;
 import org.metavm.compiler.util.List;
 
 import java.io.PrintWriter;
 
 public class DefaultLog implements Log {
+    @Setter
     private DiagSource source;
     private final DiagFactory diagFactory;
     private final PrintWriter out;
     private final PrintWriter errOut;
     private List<Diag> diags = List.of();
+    @Getter
     private int errorCount;
+    @Setter
     private boolean delayed = true;
 
     public DefaultLog(SourceFile file, DiagFactory diagFactory, PrintWriter out, PrintWriter errOut) {
@@ -39,10 +44,6 @@ public class DefaultLog implements Log {
     @Override
     public void note(DiagPos pos, Note note) {
         report(diagFactory.note(source, pos, note));
-    }
-
-    public int getErrorCount() {
-        return errorCount;
     }
 
     private void report(Diag diag) {
@@ -103,14 +104,6 @@ public class DefaultLog implements Log {
     @Override
     public void setSourceFile(SourceFile sourceFile) {
         source = new DiagSource(sourceFile, this);
-    }
-
-    public void setSource(DiagSource source) {
-        this.source = source;
-    }
-
-    public void setDelayed(boolean delayed) {
-        this.delayed = delayed;
     }
 
 }
