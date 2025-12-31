@@ -28,7 +28,7 @@ public class LogTest extends TestCase {
                 out, err);
         log.error(new MockDiagPos(0), new Error("symbol.not.found", "name"));
         log.flush();
-        assertEquals("dummy.kiwi:1: Symbol 'name' not found\n", errBout.toString());
+        assertEquals("dummy.kiwi:1: Symbol 'name' not found\n", errBout.toString().replace(System.lineSeparator(), "\n"));
     }
 
 
