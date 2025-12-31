@@ -12,7 +12,7 @@ import org.metavm.context.Bean;
 import org.metavm.context.Configuration;
 
 @Slf4j
-@Configuration
+@Configuration(module = "persistent")
 public class ElasticSearchConfig {
     private final KiwiConfig kiwiConfig;
 

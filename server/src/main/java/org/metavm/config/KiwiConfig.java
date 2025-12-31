@@ -28,7 +28,8 @@ public class KiwiConfig {
     }
 
     private EsConfig buildEsConfig(Map<String, Object> config) {
-        Objects.requireNonNull(config);
+        if (config == null)
+            return null;
         var host = (String) config.get("host");
         var port = (int) config.get("port");
         var user = (String) config.get("user");
@@ -37,8 +38,7 @@ public class KiwiConfig {
     }
 
     private ServerConfig buildServerConfig(Map<String, Object> config) {
-        if (config == null)
-            throw new RuntimeException("server config is missing");
+        Objects.requireNonNull(config, "Server config is missing");
         var port = (int) config.getOrDefault("port", 8080);
         return new ServerConfig(port);
     }
@@ -54,7 +54,7 @@ public class KiwiConfig {
 
     private DbConfig buildDbConfig(Map<String, Object> config) {
         if (config == null)
-            throw new RuntimeException("datasource config is missing");
+            return null;
         var userName = (String) config.get("username");
         var passwd = Objects.toString(config.get("password"));
         var dbName = (String) config.get("database");

@@ -36,6 +36,7 @@ public class KiwiServerManager {
         try {
             ObjectApplication.main(new String[]{"-config", CONFIG_FILE.toString()});
         } catch (Throwable e) {
+            e.printStackTrace();
             System.err.println("Error: Failed to start " + APP_NAME + ". Check " + LOG_FILE + " for details.");
             System.exit(1);
         }
