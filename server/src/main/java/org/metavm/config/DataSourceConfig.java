@@ -1,17 +1,17 @@
-package org.metavm.springconfig;
+package org.metavm.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.context.sql.TransactionIsolation;
-import org.metavm.jdbc.TransactionTemplate;
-import org.metavm.context.Qualifier;
 import org.metavm.context.Bean;
 import org.metavm.context.Configuration;
 import org.metavm.context.Primary;
+import org.metavm.context.Qualifier;
+import org.metavm.context.sql.TransactionIsolation;
+import org.metavm.jdbc.TransactionTemplate;
 
 import javax.sql.DataSource;
 
-@Configuration
+@Configuration(module = "persistent")
 @Slf4j
 public class DataSourceConfig {
 

@@ -7,7 +7,7 @@ import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.persistence.MemMapperRegistry;
 import org.metavm.object.instance.persistence.SchemaManager;
-import org.metavm.object.type.MemAllocatorStore;
+import org.metavm.object.type.AllocatorStore;
 import org.metavm.object.type.MemTypeTagStore;
 import org.metavm.object.type.TypeManager;
 import org.metavm.task.TaskManager;
@@ -17,7 +17,7 @@ public record BootstrapResult(
         EntityContextFactory entityContextFactory,
         EntityIdProvider idProvider,
         MemInstanceSearchServiceV2 instanceSearchService,
-        MemAllocatorStore allocatorStore,
+        AllocatorStore allocatorStore,
         MemoryStdIdStore stdIdStore,
         MemTypeTagStore typeTagStore,
         MetaContextCache metaContextCache,

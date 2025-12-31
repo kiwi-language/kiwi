@@ -8,4 +8,6 @@ public @interface Configuration {
 
     String value() default "";
 
+    String module() default "";
+
 }

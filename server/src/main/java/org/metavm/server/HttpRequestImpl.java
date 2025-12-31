@@ -3,6 +3,7 @@ package org.metavm.server;
 import com.sun.net.httpserver.Headers;
 import org.apache.http.HttpStatus;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -76,7 +77,16 @@ public class HttpRequestImpl implements HttpRequest {
     @Override
     public String getQueryParameter(String name) {
         var params = queryParameters.get(name);
-        return params != null ? params.getFirst() : null;
+        if (params == null || params.isEmpty())
+            throw new BadRequestException("Missing query parameter: " + name);
+        return params.getFirst();
+    }
+
+    @Nullable
+    @Override
+    public String getOptionalQueryParameter(String name) {
+        var params = queryParameters.get(name);
+        return params != null && !params.isEmpty() ? params.getFirst() : null;
     }
 
     @Override

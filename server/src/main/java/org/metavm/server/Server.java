@@ -77,6 +77,8 @@ public class Server implements DisposableBean {
                             var status = req.getStatus() == HttpStatus.SC_OK ? HttpStatus.SC_NO_CONTENT : req.getStatus();
                             exchange.sendResponseHeaders(status, -1);
                         }
+                    } catch(BadRequestException e) {
+                        exchange.sendResponseHeaders(HttpStatus.SC_BAD_REQUEST, -1);
                     } catch (Exception e) {
                         var resp = toJsonBytes(ErrorResponse.create(ErrorCode.UNKNOWN));
                         log.error("Failed handle request " + req.getRequestURI(), e);

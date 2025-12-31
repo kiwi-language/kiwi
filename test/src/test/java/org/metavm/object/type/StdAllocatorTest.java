@@ -2,12 +2,8 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class StdAllocatorTest extends TestCase {
-
-    private static final Logger logger = LoggerFactory.getLogger(StdAllocatorTest.class);
 
     private StdAllocator allocator;
 

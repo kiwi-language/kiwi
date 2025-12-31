@@ -14,7 +14,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 @Slf4j
-@Component
+@Component(module = "persistent")
 public class SchemaManagerImpl implements SchemaManager {
 
     private final DataSource dataSource;

@@ -311,7 +311,7 @@ public enum StdFunction {
             true,
             (func, args, callContext) -> {
                 var obj = args.getFirst().resolveDurable();
-                return FlowExecResult.of(Utils.getOrElse(obj.getParent(), Instance::getReference, Instances.nullInstance()));
+                return FlowExecResult.of(Utils.safeCall(obj.getParent(), Instance::getReference, Instances.nullInstance()));
             }
     ),
     getRoot(

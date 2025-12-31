@@ -9,7 +9,7 @@ import org.metavm.context.Component;
 
 import javax.sql.DataSource;
 
-@Component
+@Component(module = "persistent")
 @Slf4j
 public class IdSequenceMapperImpl implements IdSequenceMapper {
 

@@ -1,13 +1,16 @@
 package org.metavm.util;
 
 
+import org.metavm.context.Component;
 import org.metavm.context.sql.TransactionIsolation;
 import org.metavm.context.sql.TransactionPropagation;
+import org.metavm.jdbc.MockTransactionUtils;
 import org.metavm.jdbc.TransactionOperations;
 import org.metavm.jdbc.TransactionStatus;
 
 import java.util.function.Supplier;
 
+@Component(module = "memory")
 public class MockTransactionOperations implements TransactionOperations {
     @Override
     public <T> T execute(Supplier<T> action) {
@@ -26,7 +29,7 @@ public class MockTransactionOperations implements TransactionOperations {
     public <T> T execute(Supplier<T> action, boolean readonly, TransactionPropagation propagation) {
         boolean transactionActive = TransactionStatus.isTransactionActive();
         if(!transactionActive)
-            return TestUtils.doInTransaction(action);
+            return MockTransactionUtils.doInTransaction(action);
         else
             return action.get();
     }

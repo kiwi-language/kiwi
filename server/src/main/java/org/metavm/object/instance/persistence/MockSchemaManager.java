@@ -1,9 +1,11 @@
 package org.metavm.object.instance.persistence;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.context.Component;
 import org.metavm.util.Hooks;
 
 @Slf4j
+@Component(module = "memory")
 public class MockSchemaManager implements SchemaManager  {
 
     private final MemMapperRegistry mapperRegistry;

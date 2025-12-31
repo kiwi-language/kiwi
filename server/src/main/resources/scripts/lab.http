@@ -1626,3 +1626,71 @@ X-App-ID: 2
 
 ###
 POST http://127.0.0.1:8080/system/test
+
+###
+POST http://localhost:8080/internal-api/user/save
+Content-Type: application/json
+
+{
+  "name": "leen",
+  "loginName": "leen",
+  "password": "123456"
+}
+
+###
+POST http://localhost:8080/internal-api/user/issue-token
+Content-Type: application/json
+
+{
+  "userId": "018c897a00"
+}
+
+###
+POST http://localhost:8080/internal-api/user/authenticate
+Content-Type: application/json
+
+{
+  "token": "e0521629-cdbd-4cf7-a3a9-6d8e4112e34c"
+}
+
+###
+POST http://localhost:8080/internal-api/app/save
+Content-Type: application/json
+
+{
+  "name": "demo",
+  "ownerId": "018c897a00"
+}
+
+### 1000012
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "appId": 2,
+  "loginName": "leen",
+  "password": "123456"
+}
+
+####
+GET http://localhost:8080/app
+Authorization: Bearer f40b3d4e-dc52-4d88-bb62-daac39384d20
+
+###
+POST http://localhost:8080/internal-api/user/save
+Content-Type: application/json
+
+{
+  "name": "chat",
+  "loginName": "chat",
+  "password": "123456"
+}
+
+###
+POST http://localhost:8080/internal-api/app/save
+Content-Type: application/json
+
+{
+  "name": "chat",
+  "ownerId": "01d0897a00"
+}

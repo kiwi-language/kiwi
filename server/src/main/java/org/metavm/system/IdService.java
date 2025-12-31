@@ -6,7 +6,7 @@ import org.metavm.context.sql.Transactional;
 
 import java.util.List;
 
-@Component
+@Component(module = "persistence")
 public class IdService implements EntityIdProvider {
 
     private final IdGenerator idGenerator;

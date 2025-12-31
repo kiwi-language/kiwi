@@ -2,15 +2,18 @@ package org.metavm.context;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Arrays;
+import java.util.HashSet;
+
 @Slf4j
 public class ApplicationContext {
 
     private static volatile boolean isShutdown;
 
-    public static void start() {
+    public static void start(String...modules) {
         try {
             var start = System.currentTimeMillis();
-            BeanRegistry.instance.initialize();
+            BeanRegistry.instance.initialize(new HashSet<>(Arrays.asList(modules)));
             Runtime.getRuntime().addShutdownHook(new Thread(ApplicationContext::shutdown));
             var elapsed = System.currentTimeMillis() - start;
             log.info("Application started in {} ms", elapsed);

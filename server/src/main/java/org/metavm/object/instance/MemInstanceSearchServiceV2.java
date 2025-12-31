@@ -1,6 +1,7 @@
 package org.metavm.object.instance;
 
 import org.metavm.common.Page;
+import org.metavm.context.Component;
 import org.metavm.jdbc.TransactionCallback;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
@@ -17,6 +18,7 @@ import java.util.*;
 import static org.metavm.util.Constants.ROOT_APP_ID;
 import static org.metavm.util.ContextUtil.getAppId;
 
+@Component(module = "memory")
 public class MemInstanceSearchServiceV2 implements InstanceSearchService {
 
     public static final String MAIN_ALIAS_PREFIX = "instance-main-";

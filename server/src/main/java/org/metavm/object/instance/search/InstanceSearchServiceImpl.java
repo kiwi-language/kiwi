@@ -23,7 +23,7 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 @Slf4j
-@Component
+@Component(module = "persistent")
 public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     public static final String INDEX_PREFIX = "instance-";

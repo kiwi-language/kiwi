@@ -4,8 +4,6 @@ import org.metavm.object.instance.*;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.InstanceContext;
 import org.metavm.object.instance.persistence.MapperRegistry;
-import org.metavm.object.type.ActiveCommitProvider;
-import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
@@ -30,8 +28,6 @@ public class InstanceContextBuilder {
     private Executor executor;
     private @Nullable IInstanceContext parent;
     private List<ContextPlugin> plugins = List.of();
-    private TypeDefProvider typeDefProvider;
-    private ActiveCommitProvider activeCommitProvider;
     private boolean childLazyLoading;
     private boolean readonly;
     private boolean skipPostprocessing;
@@ -113,18 +109,8 @@ public class InstanceContextBuilder {
         return this;
     }
 
-    public InstanceContextBuilder typeDefProvider(TypeDefProvider typeDefProvider) {
-        this.typeDefProvider = typeDefProvider;
-        return this;
-    }
-
     public InstanceContextBuilder changeLogDisabled(boolean changeLogDisabled) {
         this.changeLogDisabled = changeLogDisabled;
-        return this;
-    }
-
-    public InstanceContextBuilder activeCommitProvider(ActiveCommitProvider activeCommitProvider) {
-        this.activeCommitProvider = activeCommitProvider;
         return this;
     }
 

@@ -7,7 +7,7 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 
 @Slf4j
-@Component
+@Component(module = "persistent")
 public class DbInit {
 
     private final DataSource dataSource;

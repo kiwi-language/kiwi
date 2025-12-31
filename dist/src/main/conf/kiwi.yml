@@ -1,6 +1,8 @@
 server:
   port: 8080
 
+mode: memory # persistent
+
 #Data source configuration
 #datasource:
 #  host: <your_postgres_host>

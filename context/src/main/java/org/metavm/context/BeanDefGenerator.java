@@ -1,5 +1,7 @@
 package org.metavm.context;
 
+import org.metavm.context.http.Controller;
+
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
@@ -17,14 +19,16 @@ class BeanDefGenerator extends AbstractGenerator {
     private final ProxyManager proxyManager;
     private final StaticBeanReg beanReg;
     private final MyTypes myTypes;
+    private final String module;
 
-    BeanDefGenerator(Elements elements, TypeElement clazz, AppConfig appConfig, ProxyManager proxyManager, StaticBeanReg beanReg, MyTypes myTypes) {
+    BeanDefGenerator(TypeElement clazz, Elements elements, AppConfig appConfig, ProxyManager proxyManager, StaticBeanReg beanReg, MyTypes myTypes) {
         this.elements = elements;
         this.clazz = clazz;
         this.appConfig = appConfig;
         this.proxyManager = proxyManager;
         this.beanReg = beanReg;
         this.myTypes = myTypes;
+        module = getModule(clazz);
     }
 
     String generate() {
@@ -46,6 +50,8 @@ class BeanDefGenerator extends AbstractGenerator {
         generateIsPrimary();
         if (config != null)
             generateCreateInnerDefs();
+        if (!module.isEmpty())
+            generateGetModule();
         deIndent();
         writeln("}");
         return toString();
@@ -161,6 +167,7 @@ class BeanDefGenerator extends AbstractGenerator {
         writeImport("java.util.List");
         writeImport("org.metavm.context.BeanRegistry");
         writeImport("org.metavm.context.BeanDefinition");
+        writeImport("javax.annotation.Nullable");
         if (clazz.getAnnotation(Configuration.class) != null)
             writeImport("org.metavm.context.ConfigBeanDefinition");
         writeln();
@@ -181,7 +188,7 @@ class BeanDefGenerator extends AbstractGenerator {
         if (transactional) {
             if (!contr.getParameters().isEmpty())
                 write(", ");
-            write("registry.getBean(org.metavm.jdbc.TransactionOperations.class, \"primaryTransactionTemplate\")");
+            write("registry.getBean(org.metavm.jdbc.TransactionOperations.class, \"primaryTransactionTemplate\", \"mockTransactionOperations\")");
         }
         if (ProxyGenerator.isScheduled(clazz)) {
             if (!contr.getParameters().isEmpty() || transactional)
@@ -262,7 +269,7 @@ class BeanDefGenerator extends AbstractGenerator {
                 var elemType = declaredType.getTypeArguments().getFirst();
                 if (elemType instanceof DeclaredType elemCt) {
                     var elemCl = (TypeElement) elemCt.asElement();
-                    var names = beanReg.getBeanNames(elemCt);
+                    var names = beanReg.getBeanNames(elemCt, module);
                     write("registry.getBeans(").write(elemCl.getQualifiedName()).write(".class, List.of(");
                     writeList(names, this::writeStringLit, ", ");
                     write("))");
@@ -271,7 +278,8 @@ class BeanDefGenerator extends AbstractGenerator {
             } else {
                 write("registry.getBean(").write(cl.getQualifiedName()).write(".class, ");
                 var qual = param.getAnnotation(Qualifier.class);
-                writeStringLit(beanReg.getBeanName(declaredType, qual != null ? qual.value() : null, param));
+                var names = beanReg.getBeanName(declaredType, qual != null ? qual.value() : null, module, param);
+                writeList(names, this::writeStringLit, ", ");
                 write(")");
             }
         } else
@@ -319,6 +327,29 @@ class BeanDefGenerator extends AbstractGenerator {
         deIndent();
         writeln("}");
         writeln();
+    }
+
+    private void generateGetModule() {
+        writeln("@Override");
+        writeln("public @Nullable String getModule() {");
+        indent();
+        write("return ");
+        writeStringLit(module);
+        writeln(";");
+        deIndent();
+        writeln("}");
+        writeln();
+    }
+
+    static String getModule(TypeElement clazz) {
+        var component = clazz.getAnnotation(Component.class);
+        if (component != null)
+            return component.module();
+        var config = clazz.getAnnotation(Configuration.class);
+        if (config != null)
+            return config.module();
+        var controller = clazz.getAnnotation(Controller.class);
+        return controller != null ? controller.module() : "";
     }
 
 }

@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
+@Component(module = "persistent")
 public class MapperRegistryImpl implements MapperRegistry {
 
     private final DataSource dataSource;

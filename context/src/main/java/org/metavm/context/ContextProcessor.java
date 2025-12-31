@@ -91,7 +91,7 @@ public class ContextProcessor extends AbstractProcessor {
         if (!classes.add(clazz))
             return;
         try {
-            var gen = new BeanDefGenerator(elements, clazz, appConfig, proxyManager, beanReg, myTypes);
+            var gen = new BeanDefGenerator(clazz, elements, appConfig, proxyManager, beanReg, myTypes);
             var text = gen.generate();
             var file = processingEnv.getFiler().createSourceFile(clazz.getQualifiedName() + "__BeanDef__");
             try (var w = file.openWriter()) {

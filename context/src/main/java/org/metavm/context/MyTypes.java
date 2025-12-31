@@ -2,6 +2,7 @@ package org.metavm.context;
 
 import org.metavm.context.http.ResponseEntity;
 
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
@@ -34,6 +35,18 @@ public class MyTypes {
 
     boolean isAssignable(TypeMirror from, TypeMirror to) {
         return types.isAssignable(from, to);
+    }
+
+    boolean isString(TypeMirror type) {
+        return isClassType(type, "java.lang.String");
+    }
+
+    boolean isClassType(TypeMirror type, String className) {
+        if (type instanceof DeclaredType dt) {
+            var cl = (TypeElement) dt.asElement();
+            return cl.getQualifiedName().contentEquals(className);
+        } else
+            return false;
     }
 
     boolean isSame(TypeMirror t1, TypeMirror t2) {

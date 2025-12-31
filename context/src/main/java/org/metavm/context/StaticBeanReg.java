@@ -54,34 +54,54 @@ class StaticBeanReg {
         this.types = types;
     }
 
-    String getBeanName(DeclaredType type, @Nullable String qualifier, Element context) {
-        BeanDef matched = null;
+    Collection<String> getBeanName(DeclaredType type, @Nullable String qualifier, String module, Element context) {
+        var bds = new ArrayList<BeanDef>();
         for (BeanDef def : defs.values()) {
-            if (isBeanApplicable(def.clazz, type)) {
-                if (qualifier != null) {
-                    if (def.name.equals(qualifier))
-                        return def.name;
-                } else if (def.primary)
-                    return def.name;
-                else if (matched == null)
-                    matched = def;
-                else
-                    throw new ContextConfigException("Multiple bean definitions found but none is marked as @Primary", context);
-            }
+            if (isBeanApplicable(def.clazz, type, module))
+                bds.add(def);
         }
-        if (matched == null)
+        if (bds.isEmpty())
             throw new ContextConfigException("Cannot find bean definition", context);
-        return matched.name;
+        var result = new HashSet<String>();
+        var modules = bds.stream().map(BeanDef::module).collect(Collectors.toSet());
+        for (String mod : modules) {
+            BeanDef matched = null;
+            for (var def : bds) {
+                if (def.module.isEmpty() || mod.equals(def.module)) {
+                    if (qualifier != null) {
+                        if (def.name.equals(qualifier)) {
+                            matched = def;
+                            break;
+                        }
+                    } else if (def.primary) {
+                        matched = def;
+                        break;
+                    }
+                    else if (matched == null)
+                        matched = def;
+                    else
+                        throw new ContextConfigException("Multiple bean definitions found but none is marked as @Primary", context);
+                }
+            }
+            if (matched != null)
+                result.add(matched.name);
+            else
+                throw new ContextConfigException("Cannot find bean definition", context);
+        }
+        return result;
     }
 
-    List<String> getBeanNames(DeclaredType type) {
+    List<String> getBeanNames(DeclaredType type, String module) {
         return defs.values().stream()
-                .filter(def -> isBeanApplicable(def.clazz, type))
+                .filter(def -> isBeanApplicable(def.clazz, type, module))
                 .map(BeanDef::name)
                 .collect(Collectors.toList());
     }
 
-    private boolean isBeanApplicable(TypeElement beanCls, DeclaredType type) {
+    private boolean isBeanApplicable(TypeElement beanCls, DeclaredType type, String module) {
+        var mod = BeanDefGenerator.getModule(beanCls);
+        if (!mod.isEmpty() && !module.isEmpty() && !mod.equals(module))
+            return false;
         if (types.isSame(type, types.controller) && beanCls.getAnnotation(Controller.class) != null)
             return true;
         return types.isAssignable(beanCls.asType(), type);
@@ -90,10 +110,12 @@ class StaticBeanReg {
     void addBean(TypeElement cls) {
         if (!beanClasses.add(cls))
             return;
+        var mod = BeanDefGenerator.getModule(cls);
         addBeanDef(new BeanDef(
                 BeanDefGenerator.decapitalize(cls.getSimpleName().toString()),
                 cls,
-                cls.getAnnotation(Primary.class) != null
+                cls.getAnnotation(Primary.class) != null,
+                mod
         ));
         if (cls.getAnnotation(Configuration.class) != null) {
             for (Element mem : cls.getEnclosedElements()) {
@@ -102,7 +124,7 @@ class StaticBeanReg {
                     var retType = m.getReturnType();
                     if (retType instanceof DeclaredType dt) {
                         var cl = (TypeElement) dt.asElement();
-                        addBeanDef(new BeanDef(m.getSimpleName().toString(), cl, m.getAnnotation(Primary.class) != null));
+                        addBeanDef(new BeanDef(m.getSimpleName().toString(), cl, m.getAnnotation(Primary.class) != null, mod));
                     } else
                         throw new ContextConfigException("@Bean method must return a class type", mem);
                 }
@@ -116,7 +138,7 @@ class StaticBeanReg {
         defs.put(beanDef.name(), beanDef);
     }
 
-    private record BeanDef(String name, TypeElement clazz, boolean primary) {
+    private record BeanDef(String name, TypeElement clazz, boolean primary, String module) {
     }
 
 }

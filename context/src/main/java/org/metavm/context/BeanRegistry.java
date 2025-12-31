@@ -2,6 +2,7 @@ package org.metavm.context;
 
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -13,17 +14,6 @@ public class BeanRegistry {
     private final Map<String, BeanDefinition<?>> beanDefs = new HashMap<>();
 
     private BeanRegistry() {
-        //noinspection rawtypes
-        Iterable<BeanDefinition> beanDefs = ServiceLoader.load(BeanDefinition.class, BeanRegistry.class.getClassLoader());
-        for(;;) {
-            var newDefs = addBeanDefs(beanDefs);
-            if (newDefs.isEmpty())
-                break;
-            beanDefs = newDefs;
-        }
-        for (BeanDefinition<?> beanDef : this.beanDefs.values()) {
-            beanDef.getBean();
-        }
     }
 
     /** @noinspection rawtypes*/
@@ -45,15 +35,23 @@ public class BeanRegistry {
         return newDefs;
     }
 
-    public <T> T getBean(Class<T> cls, String name) {
+    public <T> T getBean(Class<T> cls, String...names) {
+        for (String name : names) {
+            var bean = findBean(cls, name);
+            if (bean != null)
+                return bean;
+        }
+        throw new IllegalStateException("Cannot find bean definition for: " + cls.getName() + " for name(s): " +
+                String.join(", ", Arrays.asList(names)));
+    }
+
+    private <T> @Nullable T findBean(Class<T> cls, String name) {
         var def = beanDefs.get(name);
-        if (def == null)
-            throw new IllegalStateException("Cannot find bean definition for: " + cls.getName() + " with name: " + name);
-        return cls.cast(def.getBean());
+        return def != null ? cls.cast(def.getBean()) : null;
     }
 
     public <T> List<T> getBeans(Class<T> cls, List<String> names) {
-        return names.stream().map(name -> getBean(cls, name)).toList();
+        return names.stream().map(name -> findBean(cls, name)).filter(Objects::nonNull).toList();
     }
 
     public void forEachBean(Consumer<Object> action) {
@@ -62,7 +60,20 @@ public class BeanRegistry {
         }
     }
 
-    public void initialize() {
+    public void initialize(Set<String> modules) {
+        var beanDefs = ServiceLoader.load(BeanDefinition.class, BeanRegistry.class.getClassLoader()).stream()
+                .map(ServiceLoader.Provider::get)
+                .filter(bd -> bd.getModule() == null || modules.contains(bd.getModule()))
+                .toList();
+        for(;;) {
+            var newDefs = addBeanDefs(beanDefs);
+            if (newDefs.isEmpty())
+                break;
+            beanDefs = newDefs;
+        }
+        for (BeanDefinition<?> beanDef : this.beanDefs.values()) {
+            beanDef.getBean();
+        }
     }
 
 }
