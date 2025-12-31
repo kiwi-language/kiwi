@@ -6,7 +6,7 @@
 
 set -e
 
-KIWI_VERSION="0.0.3"
+KIWI_VERSION="0.0.1"
 REPO="kiwi-language/kiwi"
 INSTALL_DIR="/usr/local/kiwi"
 BIN_LINK_DIR="/usr/local/bin"
