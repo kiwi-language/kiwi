@@ -169,7 +169,6 @@ Type=simple
 ExecStart=${INSTALL_DIR}/bin/kiwi-server
 WorkingDirectory=${INSTALL_DIR}
 Restart=always
-# No User/Group needed, runs as current user
 
 [Install]
 WantedBy=default.target
@@ -178,28 +177,89 @@ EOF
         systemctl --user daemon-reload
         systemctl --user enable kiwi-server
         systemctl --user restart kiwi-server
-
-        # Ensure user services run even if user isn't logged in (optional)
-        # loginctl enable-linger $USER 2>/dev/null || true
     else
         printf "${YELLOW}Warning: systemd not found. Service not started automatically.${NC}\n"
     fi
 fi
 
 # -----------------------------------------------------------------------------
-# 7. Post-Install Instructions
+# 7. Shell Configuration (PATH)
 # -----------------------------------------------------------------------------
-printf "${GREEN}Kiwi installed successfully!${NC}\n"
-printf "Location: ${INSTALL_DIR}\n"
+printf "Configuring shell environment...\n"
 
-# Check if ~/.local/bin is in PATH
-case ":$PATH:" in
-    *":$BIN_LINK_DIR:"*) ;;
+DETECTED_SHELL="$(basename "$SHELL")"
+SHELL_CONFIG=""
+REFRESH_CMD=""
+
+# Determine config file based on detected shell
+case "$DETECTED_SHELL" in
+    zsh)
+        SHELL_CONFIG="$HOME/.zshrc"
+        REFRESH_CMD="source $HOME/.zshrc"
+        ;;
+    bash)
+        if [ "$OS" = "Darwin" ]; then
+            SHELL_CONFIG="$HOME/.bash_profile"
+        else
+            SHELL_CONFIG="$HOME/.bashrc"
+        fi
+        REFRESH_CMD="source $SHELL_CONFIG"
+        ;;
+    fish)
+        SHELL_CONFIG="$HOME/.config/fish/config.fish"
+        REFRESH_CMD="source $HOME/.config/fish/config.fish"
+        ;;
     *)
-        printf "${YELLOW}NOTE:${NC} Please add ${BIN_LINK_DIR} to your PATH.\n"
-        printf "Run this command or add it to your shell config (~/.bashrc, ~/.zshrc):\n"
-        printf "${BLUE}export PATH=\"\$PATH:${BIN_LINK_DIR}\"${NC}\n"
+        # Fallback
+        SHELL_CONFIG="$HOME/.profile"
+        REFRESH_CMD="source $HOME/.profile"
         ;;
 esac
 
+# Function to update config safely
+add_to_path() {
+    local cfg="$1"
+    local shell_type="$2"
+
+    # Create file if it doesn't exist
+    if [ ! -f "$cfg" ]; then touch "$cfg"; fi
+
+    # Check if PATH is already configured
+    if grep -q "$BIN_LINK_DIR" "$cfg"; then
+        printf "${GREEN}Checked: ${cfg} already contains Kiwi path.${NC}\n"
+    else
+        printf "Adding Kiwi path to ${BLUE}${cfg}${NC}...\n"
+
+        # Append specific syntax based on shell
+        if [ "$shell_type" = "fish" ]; then
+            echo "" >> "$cfg"
+            echo "# Kiwi Programming Language" >> "$cfg"
+            echo "set -gx PATH \"$BIN_LINK_DIR\" \$PATH" >> "$cfg"
+        else
+            echo "" >> "$cfg"
+            echo "# Kiwi Programming Language" >> "$cfg"
+            echo "export PATH=\"\$PATH:$BIN_LINK_DIR\"" >> "$cfg"
+        fi
+    fi
+}
+
+# Apply configuration
+add_to_path "$SHELL_CONFIG" "$DETECTED_SHELL"
+
+# -----------------------------------------------------------------------------
+# 8. Completion & Instructions
+# -----------------------------------------------------------------------------
+printf "\n${GREEN}Kiwi installed successfully!${NC}\n"
 printf "Service is running as current user: $(whoami)\n"
+
+# Verify current session PATH
+case ":$PATH:" in
+    *":$BIN_LINK_DIR:"*)
+        # Already in path (rare for fresh install unless previously set)
+        printf "You can run ${BLUE}kiwi${NC} immediately.\n"
+        ;;
+    *)
+        printf "${YELLOW}Action Required:${NC} To use 'kiwi' in this terminal, run:\n"
+        printf "\n    ${BLUE}${REFRESH_CMD}${NC}\n\n"
+        ;;
+esac
