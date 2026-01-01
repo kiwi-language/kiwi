@@ -82,8 +82,10 @@ fi
 printf "Ensuring service user '${SERVICE_USER}' exists...\n"
 
 if [ "$OS" = "Darwin" ]; then
-    # Check if user exists, if not create using dscl
-    if ! id "$SERVICE_USER" &>/dev/null; then
+    # Check if user exists
+    if id "$SERVICE_USER" &>/dev/null; then
+        printf "User '${SERVICE_USER}' already exists. Skipping creation.\n"
+    else
         # Create a user with ID 499 (or find free one), hidden from login screen
         sudo dscl . -create /Users/$SERVICE_USER
         sudo dscl . -create /Users/$SERVICE_USER UserShell /usr/bin/false
@@ -94,8 +96,12 @@ if [ "$OS" = "Darwin" ]; then
         printf "User '${SERVICE_USER}' created.\n"
     fi
 elif [ "$OS" = "Linux" ]; then
-    if ! id "$SERVICE_USER" &>/dev/null; then
-        sudo useradd -r -s /bin/false "$SERVICE_USER"
+    # Check if user exists
+    if id "$SERVICE_USER" &>/dev/null; then
+        printf "User '${SERVICE_USER}' already exists. Skipping creation.\n"
+    else
+        # The '|| true' ensures that if useradd fails for a minor warning, the script doesn't exit
+        sudo useradd -r -s /bin/false "$SERVICE_USER" || true
         printf "User '${SERVICE_USER}' created.\n"
     fi
 fi
