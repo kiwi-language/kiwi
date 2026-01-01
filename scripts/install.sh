@@ -8,14 +8,14 @@ set -e
 
 KIWI_VERSION="0.0.1"
 REPO="kiwi-language/kiwi"
-INSTALL_DIR="/usr/local/kiwi"
-BIN_LINK_DIR="/usr/local/bin"
-SERVICE_USER="kiwi"
+INSTALL_DIR="$HOME/.kiwi"
+BIN_LINK_DIR="$HOME/.local/bin"
 
 # Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 printf "${BLUE}Starting Kiwi Installer (v${KIWI_VERSION})...${NC}\n"
@@ -69,6 +69,7 @@ mkdir -p "$EXTRACT_DIR"
 unzip -q "$ZIP_FILE" -d "$EXTRACT_DIR"
 
 SOURCE_DIR="$EXTRACT_DIR"
+# Handle nested folder if zip contains a root folder
 if [ $(ls -1 "$EXTRACT_DIR" | wc -l) -eq 1 ]; then
     NESTED_DIR=$(ls -1 "$EXTRACT_DIR")
     if [ -d "$EXTRACT_DIR/$NESTED_DIR" ]; then
@@ -77,88 +78,59 @@ if [ $(ls -1 "$EXTRACT_DIR" | wc -l) -eq 1 ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# 4. Create Service User
-# -----------------------------------------------------------------------------
-printf "Ensuring service user '${SERVICE_USER}' exists...\n"
-
-if [ "$OS" = "Darwin" ]; then
-    # Check if user exists
-    if id "$SERVICE_USER" &>/dev/null; then
-        printf "User '${SERVICE_USER}' already exists. Skipping creation.\n"
-    else
-        # Create a user with ID 499 (or find free one), hidden from login screen
-        sudo dscl . -create /Users/$SERVICE_USER
-        sudo dscl . -create /Users/$SERVICE_USER UserShell /usr/bin/false
-        sudo dscl . -create /Users/$SERVICE_USER RealName "Kiwi Language Server"
-        sudo dscl . -create /Users/$SERVICE_USER UniqueID "499"
-        sudo dscl . -create /Users/$SERVICE_USER PrimaryGroupID "20" # Staff group
-        sudo dscl . -create /Users/$SERVICE_USER NFSHomeDirectory /var/empty
-        printf "User '${SERVICE_USER}' created.\n"
-    fi
-elif [ "$OS" = "Linux" ]; then
-    # Check if user exists
-    if id "$SERVICE_USER" &>/dev/null; then
-        printf "User '${SERVICE_USER}' already exists. Skipping creation.\n"
-    else
-        # The '|| true' ensures that if useradd fails for a minor warning, the script doesn't exit
-        sudo useradd -r -s /bin/false "$SERVICE_USER" || true
-        printf "User '${SERVICE_USER}' created.\n"
-    fi
-fi
-
-# -----------------------------------------------------------------------------
-# 5. Install Files & Set Permissions
+# 4. Install Files
 # -----------------------------------------------------------------------------
 printf "Installing to ${INSTALL_DIR}...\n"
 
-if [ -d "$INSTALL_DIR" ]; then sudo rm -rf "$INSTALL_DIR"; fi
-sudo mkdir -p "$INSTALL_DIR"
-sudo cp -R "$SOURCE_DIR/"* "$INSTALL_DIR/"
+# Remove previous install if exists
+if [ -d "$INSTALL_DIR" ]; then rm -rf "$INSTALL_DIR"; fi
+
+mkdir -p "$INSTALL_DIR"
+cp -R "$SOURCE_DIR/"* "$INSTALL_DIR/"
 rm -rf "$TEMP_DIR"
 
-# Change ownership so the service user can read config/write temp files if needed
-sudo chown -R "$SERVICE_USER" "$INSTALL_DIR"
+# -----------------------------------------------------------------------------
+# 5. Link Binaries
+# -----------------------------------------------------------------------------
+printf "Linking binaries to ${BIN_LINK_DIR}...\n"
+mkdir -p "$BIN_LINK_DIR"
 
-# -----------------------------------------------------------------------------
-# 6. Link Binaries
-# -----------------------------------------------------------------------------
-printf "Linking binaries...\n"
 link_binary() {
     local BIN_NAME=$1
     local SOURCE="${INSTALL_DIR}/bin/${BIN_NAME}"
     local TARGET="${BIN_LINK_DIR}/${BIN_NAME}"
 
     if [ ! -f "$SOURCE" ]; then printf "${RED}Error: Binary $SOURCE missing.${NC}\n"; exit 1; fi
-    if [ -f "$TARGET" ] || [ -L "$TARGET" ]; then sudo rm "$TARGET"; fi
+    # Remove existing link/file if it exists
+    if [ -f "$TARGET" ] || [ -L "$TARGET" ]; then rm "$TARGET"; fi
 
-    sudo ln -s "$SOURCE" "$TARGET"
-    sudo chmod +x "$SOURCE"
+    ln -s "$SOURCE" "$TARGET"
+    chmod +x "$SOURCE"
 }
+
 link_binary "kiwi"
 link_binary "kiwi-server"
 
 # -----------------------------------------------------------------------------
-# 7. Configure Service
+# 6. Configure Service
 # -----------------------------------------------------------------------------
-printf "Configuring ${BLUE}kiwi-server${NC} service as user '${SERVICE_USER}'...\n"
+printf "Configuring ${BLUE}kiwi-server${NC} as a service...\n"
 
 if [ "$OS" = "Darwin" ]; then
-    PLIST_PATH="/Library/LaunchDaemons/com.kiwi.server.plist"
-    LOG_OUT="/var/log/kiwi-server.log"
+    # --- macOS: LaunchAgents (User specific) ---
+    LAUNCH_AGENT_DIR="$HOME/Library/LaunchAgents"
+    PLIST_PATH="${LAUNCH_AGENT_DIR}/com.kiwi.server.plist"
+    LOG_DIR="$HOME/Library/Logs/Kiwi"
+    mkdir -p "$LAUNCH_AGENT_DIR"
+    mkdir -p "$LOG_DIR"
 
-    # Ensure log files exist and are writable by kiwi user
-    sudo touch "$LOG_OUT"
-    sudo chown "$SERVICE_USER" "$LOG_OUT"
-
-    sudo bash -c "cat > $PLIST_PATH" <<EOF
+    cat > "$PLIST_PATH" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
     <string>com.kiwi.server</string>
-    <key>UserName</key>
-    <string>${SERVICE_USER}</string>
     <key>ProgramArguments</key>
     <array>
         <string>${INSTALL_DIR}/bin/kiwi-server</string>
@@ -170,44 +142,64 @@ if [ "$OS" = "Darwin" ]; then
     <key>KeepAlive</key>
     <true/>
     <key>StandardErrorPath</key>
-    <string>${LOG_OUT}</string>
+    <string>${LOG_DIR}/kiwi-server.log</string>
     <key>StandardOutPath</key>
-    <string>${LOG_OUT}</string>
+    <string>${LOG_DIR}/kiwi-server.log</string>
 </dict>
 </plist>
 EOF
-    sudo chown root:wheel "$PLIST_PATH"
-    sudo chmod 644 "$PLIST_PATH"
-    sudo launchctl unload "$PLIST_PATH" 2>/dev/null || true
-    sudo launchctl load "$PLIST_PATH"
+    # Reload service
+    launchctl unload "$PLIST_PATH" 2>/dev/null || true
+    launchctl load "$PLIST_PATH"
 
 elif [ "$OS" = "Linux" ]; then
+    # --- Linux: systemd --user ---
     if command -v systemctl > /dev/null; then
-        SERVICE_PATH="/etc/systemd/system/kiwi-server.service"
-        sudo bash -c "cat > $SERVICE_PATH" <<EOF
+        SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
+        SERVICE_PATH="${SYSTEMD_USER_DIR}/kiwi-server.service"
+        mkdir -p "$SYSTEMD_USER_DIR"
+
+        cat > "$SERVICE_PATH" <<EOF
 [Unit]
-Description=Kiwi Language Server
+Description=Kiwi Language Server (User)
 After=network.target
 
 [Service]
 Type=simple
-User=${SERVICE_USER}
-Group=${SERVICE_USER}
 ExecStart=${INSTALL_DIR}/bin/kiwi-server
 WorkingDirectory=${INSTALL_DIR}
 Restart=always
+# No User/Group needed, runs as current user
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 EOF
-        sudo systemctl daemon-reload
-        sudo systemctl enable kiwi-server
-        sudo systemctl restart kiwi-server
+        # Reload systemd user daemon
+        systemctl --user daemon-reload
+        systemctl --user enable kiwi-server
+        systemctl --user restart kiwi-server
+
+        # Ensure user services run even if user isn't logged in (optional)
+        # loginctl enable-linger $USER 2>/dev/null || true
+    else
+        printf "${YELLOW}Warning: systemd not found. Service not started automatically.${NC}\n"
     fi
 fi
 
 # -----------------------------------------------------------------------------
-# 8. Verify
+# 7. Post-Install Instructions
 # -----------------------------------------------------------------------------
 printf "${GREEN}Kiwi installed successfully!${NC}\n"
-printf "Service running as user: ${SERVICE_USER}\n"
+printf "Location: ${INSTALL_DIR}\n"
+
+# Check if ~/.local/bin is in PATH
+case ":$PATH:" in
+    *":$BIN_LINK_DIR:"*) ;;
+    *)
+        printf "${YELLOW}NOTE:${NC} Please add ${BIN_LINK_DIR} to your PATH.\n"
+        printf "Run this command or add it to your shell config (~/.bashrc, ~/.zshrc):\n"
+        printf "${BLUE}export PATH=\"\$PATH:${BIN_LINK_DIR}\"${NC}\n"
+        ;;
+esac
+
+printf "Service is running as current user: $(whoami)\n"

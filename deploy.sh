@@ -1,4 +1,5 @@
-rm -rf $HOME/develop/kiwi
-unzip -d $HOME/develop dist/target/kiwi.zip
-cp -f /etc/kiwi/kiwi.yml $HOME/develop/kiwi/conf
+rm -rf $HOME/.kiwi
+unzip -d $HOME dist/target/kiwi.zip
+mv $HOME/kiwi $HOME/.kiwi
+cp -f /etc/kiwi/kiwi.yml $HOME/.kiwi/conf
 kiwi-server

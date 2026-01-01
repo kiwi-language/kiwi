@@ -67,6 +67,10 @@ public class KiwiServerManager {
             //   .../kiwi/pkg/stdlib
 
             Path executable = Paths.get(binaryPath).toAbsolutePath().normalize();
+
+            if (Files.exists(executable))
+                executable = executable.toRealPath();
+
             return executable
                     .getParent() // bin
                     .normalize();
