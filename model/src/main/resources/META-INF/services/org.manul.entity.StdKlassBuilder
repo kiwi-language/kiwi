@@ -1,0 +1,13 @@
+org.manul.entity.StringKlassBuilder
+org.manul.entity.EnumKlassBuilder
+org.manul.entity.ExceptionKlassBuilder
+org.manul.entity.IndexKlassBuilder
+org.manul.entity.HttpRequestImplKlassBuilder
+org.manul.entity.HttpResponseImplKlassBuilder
+org.manul.entity.HttpCookieImplKlassBuilder
+org.manul.entity.HttpHeaderImplKlassBuilder
+org.manul.entity.InterceptorKlassBuilder
+org.manul.entity.HttpCookieKlassBuilder
+org.manul.entity.HttpHeaderKlassBuilder
+org.manul.entity.HttpRequestKlassBuilder
+org.manul.entity.HttpResponseKlassBuilder

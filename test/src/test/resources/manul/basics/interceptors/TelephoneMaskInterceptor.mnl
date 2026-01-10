@@ -1,0 +1,22 @@
+package interceptors
+
+import org.manul.api.Interceptor
+import org.manul.api.entity.HttpRequest
+import org.manul.api.entity.HttpResponse
+
+@Bean
+class TelephoneMaskInterceptor: Interceptor {
+
+    fn before(request: HttpRequest, response: HttpResponse) {
+    }
+
+    fn after(request: HttpRequest, response: HttpResponse, result: any?) -> any? {
+        if (result is UserDTO) {
+            var user = result!! as UserDTO
+            var tel = user.telephone
+            return UserDTO(user.name, tel.substring(0, 3) + "******" + tel.substring(9))
+        } else return result
+    }
+
+}
+

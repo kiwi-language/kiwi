@@ -1,6 +1,6 @@
 package valuetypes;
 
-import org.metavm.api.Value;
+import org.manul.api.Value;
 
 import java.util.List;
 

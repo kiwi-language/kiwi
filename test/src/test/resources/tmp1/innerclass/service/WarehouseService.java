@@ -1,6 +1,6 @@
 package innerclass.service;
 
-import org.metavm.api.Component;
+import org.manul.api.Component;
 
 import java.util.List;
 

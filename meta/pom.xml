@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.metavm</groupId>
-        <artifactId>metavm-parent</artifactId>
+        <groupId>org.manul</groupId>
+        <artifactId>manul-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>metavm-meta</artifactId>
+    <artifactId>manul-meta</artifactId>
 
     <dependencies>
         <dependency>
@@ -34,8 +34,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.metavm</groupId>
-            <artifactId>metavm-wire</artifactId>
+            <groupId>org.manul</groupId>
+            <artifactId>manul-wire</artifactId>
         </dependency>
 
     </dependencies>

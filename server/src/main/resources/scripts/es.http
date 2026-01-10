@@ -114,3 +114,7 @@ Content-Type: application/json
     }
   ]
 }
+
+###
+HEAD http://localhost:9200/instance-1000359052-v1
+Authorization: Basic elastic DjgoqCxwI9SOXqLCvotv

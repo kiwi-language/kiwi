@@ -1,5 +1,5 @@
-rm -rf $HOME/.kiwi
-unzip -d $HOME dist/target/kiwi.zip
-mv $HOME/kiwi $HOME/.kiwi
-cp -f /etc/kiwi/kiwi.yml $HOME/.kiwi/conf
-kiwi-server
+rm -rf $HOME/.manul
+unzip -d $HOME dist/target/manul.zip
+mv $HOME/manul $HOME/.manul
+cp -f /etc/manul/manul.yml $HOME/.manul/conf
+manul-server

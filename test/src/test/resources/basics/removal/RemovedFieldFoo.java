@@ -1,6 +1,6 @@
 package removal;
 
-import org.metavm.api.EntityField;
+import org.manul.api.EntityField;
 
 public class RemovedFieldFoo {
 

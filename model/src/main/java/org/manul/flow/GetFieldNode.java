@@ -1,0 +1,83 @@
+package org.manul.flow;
+
+import org.jetbrains.annotations.NotNull;
+import org.manul.api.Entity;
+import org.manul.entity.ElementVisitor;
+import org.manul.object.instance.core.Instance;
+import org.manul.object.instance.core.Reference;
+import org.manul.object.type.FieldRef;
+import org.manul.object.type.Type;
+
+import javax.annotation.Nullable;
+import java.util.function.Consumer;
+
+@Entity
+public class GetFieldNode extends Node {
+
+    private final FieldRef fieldRef;
+
+    public GetFieldNode(String name,
+                        @Nullable Node previous,
+                        @NotNull Code code,
+                        FieldRef fieldRef) {
+        super(name, null, previous, code);
+        this.fieldRef = fieldRef;
+    }
+
+    public static Node read(CodeInput input, String name) {
+        return new GetFieldNode(name, input.getPrev(), input.getCode(), (FieldRef) input.readConstant());
+    }
+
+    @NotNull
+    public Type getType() {
+        return fieldRef.getPropertyType();
+    }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("getfield " + fieldRef);
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.GET_FIELD);
+        output.writeConstant(fieldRef);
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitGetFieldNode(this);
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        fieldRef.accept(visitor);
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        fieldRef.forEachReference(action);
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+        super.forEachChild(action);
+    }
+}

@@ -1,217 +1,52 @@
-Kiwi: The Infrastructure-Free Programming Langauge
+Manul: The Language of Persistent Objects
 ===========================================
 
-Welcome to Kiwi! Kiwi is an infrastructure-free programming language designed to streamline the development of cloud-native applications.
+Welcome to Manul. Follow this guide to install the CLI and deploy your first project.
 
-Download Pre-built Release
---------------------------
+### 1. Install via CLI
+Run the following command to download and install the binary:
 
-You can find the latest official releases on the Kiwi GitHub Releases page:
-
-[**Visit the Kiwi Releases Page**](https://github.com/kiwi-language/kiwi/releases)
-
-Build From Source
------------------
-
-### Requirements
-
-*   JDK 21
-*   Maven
-
-### Steps
-
-1.  Clone the repository:
-    
-        git clone git@github.com:kiwi-language/kiwi.git
-    
-2.  Navigate into the cloned directory:
-    
-        cd kiwi
-    
-3.  Build the project using Maven:
-    
-        mvn package
-
-4.  Unpack the generated `dist/target/kiwi.zip` archive to a location of your choice.
-
-
-Add Kiwi to PATH
-----------------
-
-To run Kiwi commands like `kiwi-server`, `kiwi build`, and `kiwi deploy` from any location in your terminal, you should add the Kiwi `bin` directory to your system's PATH environment variable.
-
-The `bin` directory is located within the root directory of your Kiwi installation.
-
-### Linux / macOS
-
-1.  Identify the full path to the Kiwi `bin` directory (e.g., `/path/to/your/kiwi-install/bin`).
-2.  Open your shell configuration file (e.g., `~/.bashrc`, `~/.zshrc`, `~/.profile`, or `~/.bash_profile` depending on your shell).
-3.  Add the following line, replacing `/path/to/your/kiwi-install/bin` with the actual path:
-    
-        export PATH="$PATH:/path/to/your/kiwi-install/bin"
-    
-4.  Save the file and reload the configuration (e.g., by running `source ~/.bashrc` or opening a new terminal window).
-
-### Windows
-
-1.  Identify the full path to the Kiwi `bin` directory (e.g., `C:\path\to\your\kiwi-install\bin`).
-2.  Search for "Environment Variables" in the Windows search bar and select "Edit the system environment variables".
-3.  Click the "Environment Variables..." button.
-4.  In the "System variables" or "User variables" section, find the `Path` variable and click "Edit...".
-5.  Click "New" and paste the full path to the Kiwi `bin` directory.
-6.  Click "OK" on all open dialog boxes.
-7.  You may need to restart any open Command Prompt or PowerShell windows for the changes to take effect.
-
-Configure Datasource
---------------------
-
-1.  Install PostgreSQL.
-2.  Create a database within PostgreSQL that Kiwi will use.
-3.  Locate the `kiwi.yml` configuration file. It can be found in the `config` directory within your Kiwi installation root (e.g., `/path/to/your/kiwi-install/config/kiwi.yml`).
-4.  Edit the `kiwi.yml` file and update the datasource section with your PostgreSQL details:
-    
-        datasource:
-            host: <your_postgres_host>
-            port: <your_postgres_port>
-            username: <your_postgres_username>
-            password: <your_postgres_password>
-            database: <your_kiwi_database_name>
-
-Configure Elasticsearch
---------------------
-
-1.  Install Elasticsearch.
-2.  Edit the `kiwi.yml` file and update the es section with your Elasticsearch details:
-
-        es:
-            host: <your_elasticsearch_host>
-            port: <your_elasticsearch_port>
-            user: <your_elasticsearch_user>
-            password: <your_elasticsearch_password>
-
-Start the Server
-----------------
-
-### Requirements
-
-*   JDK 21
-
-Start the server using this command (assuming the `bin` directory is in your PATH):
-
-    kiwi-server start
-
-Initialize the Server
----------------------
-
-Once the server is running, you need to initialize it by sending the following HTTP request.
-
-    curl -X POST http://localhost:8080/system/init
-
-Test the Installation
----------------------
-
-1.  Create a new directory for your test project and navigate into it:
-    
-    ```bash
-    mkdir kiwi_demo
-    cd kiwi_demo
-    ```
-    
-2.  Create a subdirectory for source files:
-    
-    ```bash
-    mkdir src
-    ```
-    
-3.  Create a Kiwi source file named `src/test.kiwi` with the following example code:
-
-       ```kotlin
-       class Product(
-           var name: string,
-           var price: double,
-           var stock: int
-       ) {
-        
-           fn reduceStock(quantity: int) {
-               require(stock >= quantity, "Out of stock")
-               stock -= quantity
-           }
-
-       }
-       ```
-    
-4.  Build the project using the Kiwi compiler (assuming the `bin` directory is in your PATH):
-    
-    ```bash
-    kiwi build
-    ```
-    
-
-Deploy the Artifact to the Server
----------------------------------
-
-Use the Kiwi CLI to deploy your compiled application to the running Kiwi server (assuming the `bin` directory is in your PATH):
-    
 ```bash
-kiwi deploy
+curl --proto '=https' --tlsv1.2 -sSf https://manul-lang.org/install.sh | sh
 ```
 
-The command will prompt you for deployment details. Here are the expected inputs:
-
-*   `name: demo`
-*   `password: 123456`
-*   `application: demo`
-
-Interact with the Application
------------------------------
-
-After deployment, you can interact with your `Product` class via HTTP requests to the Kiwi server. Replace `<id>` in the URLs below with the actual ID returned by the server when you create a product.
-
-### Create a Product
-
-Send a POST request to create a new product.
+### 2. Configure Shell
+Reload your shell configuration to update your path (ensure you use the config file matching your active shell, e.g., `.zshrc` or `.bashrc`):
 
 ```bash
-curl -X POST --location "http://localhost:8080/object" \
--H "Content-Type: application/json" \
--H "X-App-ID: {app-id}" \
--d '{
-      "object": {
-        "type": "Product",
-        "fields": {
-          "name": "Kiwi Fruit",
-          "price": 10.0,
-          "stock": 100
-        }
-      }
-    }'    
+source ~/.zshrc
 ```
 
-**Note:** The server should respond with the ID of the newly created product.
-
-### Retrieve the Product
-
-Send a GET request using the product's ID:
+### 3. Verify Installation
+Confirm that Manul was installed correctly by checking the version:
 
 ```bash
-curl -X GET --location "http://localhost:8080/object/01dca8d6b90700" -H "X-App-ID: {app-id}"
+manul --version
 ```
 
-### Decrement the Stock
+### 4. Quick Start
+Create and deploy a basic "Hello World" project to ensure everything is working.
 
-Send a POST request to the `/object/invoke` endpoint to invoke the method.
+**Initialize Project:**
+```bash
+mkdir manul-test
+cd manul-test
+mkdir src
+
+# Create a sample file
+cat << EOF > test.manul
+class Product(var name: string)
+EOF
+
+# Deploy
+manul deploy
+```
+
+**Test Endpoint:**
+Send a request to the local instance to create a new product:
 
 ```bash
-curl -X POST --location "http://localhost:8080/object/invoke" \
--H "Content-Type: application/json" \
--H "X-App-ID: {app-id}" \
--d '{
-      "receiver": {
-        "id": "{id}"
-      },
-      "method": "reduceStock",
-      "arguments": {
-        "quantity": 1
-      }
-    }'
+curl -H "X-App-ID: {app-id}" \
+     -X POST http://localhost:8080/api/product \
+     --data-raw '{name: "Shoes"}'
 ```

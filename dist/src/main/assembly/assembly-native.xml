@@ -11,11 +11,11 @@
     <dependencySets>
         <dependencySet>
             <includes>
-                <include>org.metavm:metavm-server:*:native*</include>
-                <include>org.metavm:metavm-server:*:exe</include>
+                <include>org.manul:manul-server:*:native*</include>
+                <include>org.manul:manul-server:*:exe</include>
             </includes>
             <outputDirectory>bin</outputDirectory>
-            <outputFileNameMapping>kiwi-server${native.extension}</outputFileNameMapping>
+            <outputFileNameMapping>manul-server${native.extension}</outputFileNameMapping>
             <unpack>false</unpack>
             <useProjectArtifact>false</useProjectArtifact>
             <scope>runtime</scope>
@@ -24,11 +24,11 @@
 
         <dependencySet>
             <includes>
-                <include>org.metavm:metavm-compiler:*:native*</include>
-                <include>org.metavm:metavm-compiler:*:exe</include>
+                <include>org.manul:manul-compiler:*:native*</include>
+                <include>org.manul:manul-compiler:*:exe</include>
             </includes>
             <outputDirectory>bin</outputDirectory>
-            <outputFileNameMapping>kiwi${native.extension}</outputFileNameMapping>
+            <outputFileNameMapping>manul${native.extension}</outputFileNameMapping>
             <unpack>false</unpack>
             <useProjectArtifact>false</useProjectArtifact>
             <scope>runtime</scope>
@@ -42,7 +42,7 @@
             <directory>src/main/conf</directory>
             <outputDirectory>conf</outputDirectory>
             <includes>
-                <include>kiwi.yml</include>
+                <include>manul.yml</include>
             </includes>
             <fileMode>0644</fileMode>
         </fileSet>
@@ -54,7 +54,7 @@
             <excludes>
                 <exclude>.gitignore</exclude>
                 <exclude>target/**</exclude>
-                <exclude>.metavm/**</exclude>
+                <exclude>.manul/**</exclude>
             </excludes>
         </fileSet>
 

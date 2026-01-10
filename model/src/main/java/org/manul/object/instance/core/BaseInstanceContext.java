@@ -1,0 +1,801 @@
+package org.manul.object.instance.core;
+
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.manul.entity.*;
+import org.manul.entity.natives.CallContext;
+import org.manul.object.instance.IndexKeyRT;
+import org.manul.object.instance.IndexSource;
+import org.manul.object.type.Klass;
+import org.manul.object.type.RedirectStatusProvider;
+import org.manul.object.type.TypeDefProvider;
+import org.manul.util.*;
+import org.manul.util.profile.Profiler;
+
+import javax.annotation.Nullable;
+import java.io.Closeable;
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
+import java.util.*;
+import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
+
+@Slf4j
+public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<Instance>, CallContext, TypeDefProvider, RedirectStatusProvider {
+
+    protected final long appId;
+    private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
+    private final Map<Id, Instance> instanceMap = new HashMap<>();
+    private Instance head;
+    private Instance tail;
+    @Getter
+    private LockMode lockMode = LockMode.NONE;
+    @Getter
+    protected final Profiler profiler = ContextUtil.getProfiler();
+
+    @Getter
+    protected final IInstanceContext parent;
+    private final Set<ContextListener> listeners = new LinkedHashSet<>();
+    @Nullable
+    private Consumer<Object> bindHook;
+    private final InstanceMemoryIndex memIndex;
+    private boolean closed;
+    @Getter
+    private final boolean readonly;
+    private final String clientId = ContextUtil.getClientId();
+    private final IndexSource indexSource;
+    private final long startAt = System.currentTimeMillis();
+    private long timeout;
+    private String description = "unnamed";
+    private final Set<ClassInstance> reindexSet = new HashSet<>();
+    private final Set<ClassInstance> searchReindexSet = new HashSet<>();
+
+    private final transient WeakReference<IInstanceContext> enclosingEntityContext;
+    private final boolean tracing = DebugEnv.traceContextActivity;
+
+    public BaseInstanceContext(long appId,
+                               IInstanceContext parent,
+                               boolean readonly,
+                               IndexSource indexSource,
+                               long timeout) {
+        this.appId = appId;
+        this.readonly = readonly;
+        this.parent = parent;
+        this.indexSource = indexSource;
+        memIndex = new InstanceMemoryIndex();
+        enclosingEntityContext = new WeakReference<>(ContextUtil.getEntityContext());       this.timeout = timeout;
+        ContextUtil.setContext(this);
+    }
+
+
+    @Nullable
+    public Consumer<Object> getBindHook() {
+        return bindHook;
+    }
+
+    public void setBindHook(@Nullable Consumer<Object> bindHook) {
+        this.bindHook = bindHook;
+    }
+
+    @Override
+    public void setLockMode(LockMode lockMode) {
+        this.lockMode = lockMode;
+    }
+
+    @Override
+    public List<Reference> indexScan(IndexKeyRT from, IndexKeyRT to) {
+        return Utils.map(indexSource.scan(from, to, this), this::createReference);
+    }
+
+    public Reference createReference(Id id) {
+        return new EntityReference(id, () -> get(id));
+    }
+
+    @Override
+    public long indexCount(IndexKeyRT from, IndexKeyRT to) {
+        return indexSource.count(from, to, this);
+    }
+
+    public List<Reference> indexSelect(IndexKeyRT key) {
+        return query(key.toQuery());
+    }
+
+    @Override
+    public boolean containsUniqueKey(IndexKeyRT key) {
+        if(!memIndex.query(key.toQuery()).isEmpty())
+            return true;
+        return parent != null && parent.containsUniqueKey(key);
+    }
+
+    @Override
+    public List<Reference> query(InstanceIndexQuery query) {
+        var memResults = Utils.map(memIndex.query(query), Instance::getReference);
+        if (query.memoryOnly() || !memResults.isEmpty() && query.index().isUnique())
+            return memResults;
+        var storeResults = Utils.map(indexSource.query(query, this), this::createReference);
+        return Instances.merge(memResults, storeResults, query.desc(), Utils.orElse(query.limit(), -1L));
+    }
+
+    @Override
+    public long count(InstanceIndexQuery query) {
+        return indexSource.count(query, this);
+    }
+
+
+//    @Override
+//    public Instance get(InstanceId id) {
+//        return switch (id) {
+//            case PhysicalInstanceId durableId -> get(durableId.getId());
+//            case ViewInstanceId viewId -> getView(viewId);
+//            case TmpInstanceId tmpId -> getByTmpId(tmpId.getTmpId());
+//            default -> throw new IllegalStateException("Unexpected value: " + id);
+//        };
+//    }
+
+    @Override
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void updateMemoryIndex(ClassInstance instance) {
+        memIndex.save(instance);
+//        removeFromMemIndex(instance);
+//        var keys = instance.getIndexKeys(parameterizedFlowProvider);
+//        indexKeys.put(instance, keys);
+//        for (IndexKeyRT key : keys) {
+//            memIndex.computeIfAbsent(key, k -> new LinkedHashSet<>()).add(instance);
+//        }
+    }
+
+    private void removeFromMemIndex(ClassInstance instance) {
+        memIndex.remove(instance);
+//        var keys = indexKeys.get(instance);
+//        if (keys != null) {
+//            for (IndexKeyRT key : keys) {
+//                memIndex.get(key).remove(instance);
+//            }
+//        }
+    }
+
+//    @Override
+//    public Instance get(RefDTO ref) {
+//        if (ref.isEmpty())
+//            return null;
+//        if (ref.isPersisted())
+//            return get(ref.id());
+//        else
+//            return getByTmpId(ref.tmpId());
+//    }
+
+//    private Instance getByTmpId(long tmpId) {
+//        var found = getIfPresentByTmpId(tmpId);
+//        if (found == null && parent != null)
+//            found = parent.getIfPresentByTmpId(tmpId);
+//        if (found != null) {
+//            if (found.isRemoved())
+//                throw new InternalException(
+//                        String.format("Can not get instance '%s' because it's already removed", found));
+//            return found;
+//        } else
+//            return null;
+//    }
+
+    @Override
+    public boolean contains(Id id) {
+        return instanceMap.containsKey(id) || parent != null && parent.contains(id);
+//        return id.isPersisted() ? instanceMap.containsKey(id.id()) : tmpId2Instance.containsKey(id.tmpId())
+//                || parent != null && parent.containsRef(id);
+    }
+
+    @Override
+    public List<Instance> batchGet(Collection<Id> ids) {
+        ids.forEach(this::buffer);
+        return Utils.map(ids, this::get);
+    }
+
+    @Override
+    public Instance get(Id id) {
+        var found = getBuffered(id);
+        if (found != null) {
+            if (found.isRemoved())
+                throw new InternalException(
+                        String.format("Can not get instance '%s' because it's already removed", found));
+            return found;
+        } else if (id.isTemporary()) {
+            return null;
+        } else {
+            buffer(id);
+            initializeInstance(id);
+            return requireNonNull(getBuffered(id), () -> "Failed to initialize instance " + id);
+//            return add(id);
+        }
+    }
+
+    @Override
+    public Instance internalGet(Id id) {
+        var found = getBuffered(id);
+        if (found != null)
+            return found;
+        else {
+            buffer(id);
+            initializeInstance(id);
+            return getBuffered(id);
+//            return add(id);
+        }
+    }
+
+    @Override
+    public @Nullable Instance getBuffered(Id id) {
+        var found = instanceMap.get(id);
+        if (found == null && parent != null)
+            found = parent.getBuffered(id);
+        return found;
+    }
+
+    protected Instance getSelfBuffered(Id id) {
+        return instanceMap.get(id);
+    }
+
+    @Override
+    public List<Id> filterAlive(List<Id> ids) {
+        buffer(ids);
+        return Utils.filter(ids, this::isAlive);
+    }
+
+    @Override
+    public final boolean isAlive(Id id) {
+        if (parent != null && parent.containsId(id))
+            return parent.isAlive(id);
+        var instance = getSelfBuffered(id);
+        if (instance != null) {
+            return !instance.isRemoved();
+        }
+        return checkAliveInStore(id);
+    }
+
+//    private Type getTypeByInstanceId(Id id) {
+//        TypeKey typeKey = switch (id) {
+//            case PhysicalId physicalId -> physicalId.getTypeKey();
+//            case ViewId viewId -> viewId.getViewTypeKey(mappingProvider, typeDefProvider);
+//            default -> throw new IllegalStateException("Unexpected value: " + id);
+//        };
+//        return typeKey.toType(typeDefProvider);
+//    }
+
+//    protected abstract long getTypeId(long id);
+
+    protected abstract void initializeInstance(Id id);
+
+    protected abstract boolean checkAliveInStore(Id id);
+
+//    @Override
+//    public Instance getIfPresentByTmpId(long tmpId) {
+//        return tmpId2Instance.get(tmpId);
+//    }
+
+    private Reference add(Id id) {
+        var instance = allocateInstance(id);
+//        add(instance);
+        return instance;
+    }
+
+    protected Reference allocateInstance(Id id) {
+        return new EntityReference(id, () -> get(id));
+    }
+
+    @Override
+    public TypeDefProvider getTypeDefProvider() {
+        return this;
+    }
+
+    @Override
+    public RedirectStatusProvider getRedirectStatusProvider() {
+        return this;
+    }
+
+    @Override
+    public boolean containsInstance(Instance instance) {
+        return instance.getContext() == this || parent != null && parent.containsInstance(instance);
+    }
+
+    @Override
+    public boolean containsId(Id id) {
+        return instanceMap.containsKey(id) || parent != null && parent.containsId(id);
+    }
+
+    @Override
+    public boolean containsIdSelf(Id id) {
+        return instanceMap.containsKey(id);
+    }
+
+    @Override
+    public final void finish() {
+        if (closed)
+            throw new IllegalStateException("Context closed");
+        if (readonly)
+            throw new IllegalStateException("Can not finish a readonly context");
+        beforeFinish();
+        try (var ignored = getProfiler().enter("finish")) {
+            finishInternal();
+        }
+        if(timeout > 0) {
+            var elapsed = System.currentTimeMillis() - startAt;
+            if (elapsed > timeout)
+                throw new SessionTimeoutException("Timeout: " + timeout + ". Elapsed: " + elapsed);
+        }
+        if (DebugEnv.dumpContextAfterFinish) {
+            for (Instance instance : this) {
+                if (instance.isRoot()) log.trace("{} {}", instance.tryGetTreeId(), instance.getText());
+            }
+        }
+        if (DebugEnv.dumpClassAfterContextFinish) {
+            var klasses = new HashSet<Klass>();
+            for (Instance instance : this) {
+                if (instance instanceof MvClassInstance o) klasses.add(o.getInstanceKlass());
+            }
+            for (Klass klass : klasses) {
+                log.trace("{}", klass.getText());
+            }
+        }
+    }
+
+    private void beforeFinish() {
+        for (var o : this) {
+            if (o instanceof ContextFinishWare c)
+                c.onContextFinish(this);
+        }
+        for (ContextListener listener : listeners) {
+            listener.beforeFinish();
+        }
+    }
+
+    @Override
+    public void close() {
+        if (closed)
+            throw new IllegalStateException("Context already closed");
+        ContextUtil.setContext(enclosingEntityContext.get());
+        closed = true;
+    }
+
+    protected abstract void finishInternal();
+
+    public Instance getRemoved(Id id) {
+        var instance = requireNonNull(instanceMap.get(id));
+        Utils.require(instance.isRemoved());
+        return instance;
+    }
+
+    protected boolean isRemoved(Id id) {
+        var instance = instanceMap.get(id);
+        return instance != null && instance.isRemoved();
+    }
+
+    @Override
+    public abstract boolean isFinished();
+
+
+    protected void onIdInitialized(Instance instance) {
+        instanceMap.put(instance.tryGetId(), instance);
+        listeners.forEach(l -> l.onInstanceIdInit(instance));
+    }
+
+    protected boolean onChange(Instance instance) {
+        boolean anyChange = false;
+        if (instance instanceof ChangeAware changeAware && changeAware.isChangeAware()) {
+            changeAware.onChange(this);
+            anyChange = true;
+        }
+        for (ContextListener listener : listeners) {
+            if (listener.onChange(instance))
+                anyChange = true;
+        }
+        return anyChange;
+    }
+
+    protected boolean onRemove(Instance instance) {
+        boolean anyChange = false;
+        if (instance instanceof PostRemovalAware removalAware) {
+            removalAware.postRemove(this);
+            anyChange = true;
+        }
+        for (var listener : listeners) {
+            if (listener.onRemove(instance))
+                anyChange = true;
+        }
+        return anyChange;
+    }
+
+    @Override
+    public void addListener(ContextListener listener) {
+        listeners.add(listener);
+    }
+
+    @Override
+    public long getAppId() {
+        return appId;
+    }
+
+    @Override
+    public void batchRemove(Collection<Instance> instances) {
+        var removalBatch = getRemovalBatch(instances);
+        removalBatch.forEach(i -> remove0(i, removalBatch));
+    }
+
+    public boolean remove(Instance instance) {
+        if (instance.isRemoved())
+            return false;
+        batchRemove(List.of(instance));
+        return true;
+    }
+
+    private void remove0(Instance instance, RemovalSet removalBatch) {
+        if (instance.isRemoved())
+            return;
+        var parent = instance.getParent();
+        if (parent != null && !parent.isRemoved() && !removalBatch.contains(parent)) {
+            if (parent instanceof MvClassInstance clsParent && instance instanceof MvClassInstance clsInst)
+                clsParent.removeChildrenIf(c -> c == clsInst);
+        }
+        instance.setRemoved();
+        if (instance instanceof ClassInstance classInstance)
+            removeFromMemIndex(classInstance);
+        for (var listener : listeners) {
+            listener.onInstanceRemoved(instance);
+        }
+    }
+
+    private RemovalSet getRemovalBatch(Collection<Instance> instances) {
+        var results = new RemovalSet();
+        instances.forEach(i -> beforeRemove(i, results));
+        return results;
+    }
+
+    private void beforeRemove(Instance instance, RemovalSet removalSet) {
+        if (removalSet.add(instance))
+            instance.forEachChild(c -> beforeRemove(c, removalSet));
+    }
+
+    @Override
+    public void batchBind(Collection<Instance> instances) {
+        instances.forEach(this::checkForBind);
+        for (var inst : instances) {
+            if (inst instanceof BindAware bindAware)
+                bindAware.onBind(this);
+//            if (inst.tryGetTreeId() == null) add(inst);
+            add(inst);
+            if (inst instanceof Entity entity) updateMemoryIndex(entity);
+        }
+    }
+
+    private void checkForBind(Instance instance) {
+        //        NncUtils.requireFalse(instance.isEphemeral(), "Can not bind an ephemeral instance");
+//        NncUtils.requireFalse(instance.isValue(), "Can not bind a value instance");
+        Utils.require(instance.getContext() == null, () -> "Instance " + instance + "  already bound");
+//        Utils.require(instance.tryGetTreeId() == null,
+//                () -> "Can not bind a persisted instance: " + instance);
+        Utils.require(!instance.isRemoved(),
+                () -> "Can not bind instance " + instance + " because it's already removed");
+    }
+
+    protected void craw() {
+        try (var entry = getProfiler().enter("craw")) {
+            var added = doCraw(this);
+            entry.addMessage("numNewInstances", added.size());
+            for (var inst : added) {
+                if (!containsInstance(inst)) {
+                    add(inst);
+                }
+            }
+        }
+    }
+
+    protected void clearMarks() {
+        this.forEach(Instance::clearMarked);
+    }
+
+    protected List<Instance> computeNonPersistedOrphans() {
+        clearMarks();
+        for (var instance : this) {
+            if (instance.isRoot() && !instance.isRemoved())
+                instance.forEachDescendant(Instance::setMarked);
+        }
+        var orphans = new ArrayList<Instance>();
+        for (var instance : this) {
+            if (instance.isNew() && !instance.isValue() && !instance.isRemoved() && !instance.isMarked())
+                orphans.add(instance);
+        }
+        return orphans;
+    }
+
+    @Override
+    public InstanceInput createInstanceInput(InputStream stream) {
+        return new InstanceInput(stream, this::internalGet, this::add, this);
+    }
+
+    private void add(Instance instance) {
+        if (tracing)
+            log.trace("Adding instance {} to context", instance.tryGetId());
+        Utils.require(instance.getContext() == null);
+        instance.setContext(this);
+        if (!(instance.tryGetId() instanceof PhysicalId))
+            return;
+        Utils.require(instance.getNext() == null && instance.getPrev() == null);
+        Utils.require(!instance.isRemoved(),
+                () -> String.format("Can not add a removed instance: %d", instance.tryGetTreeId()));
+        if (tail == null)
+            head = tail = instance;
+        else {
+            tail.insertAfter(instance);
+            tail = instance;
+        }
+        var id = instance.tryGetId();
+        if (id != null) {
+//            logger.info("Adding instance {} to context, treeId: {}", instance.getId(), instance.getId().tryGetTreeId());
+            if (instanceMap.put(id, instance) != null)
+                log.warn("Duplicate instance add to context type: {}, ID: {}",
+                        instance.getInstanceType().getTypeDesc(), id);
+        }
+    }
+
+    protected void mapManually(Id id, Instance instance) {
+        instanceMap.put(id, instance);
+    }
+
+    protected void onInstanceInitialized(Instance instance) {
+        for (var listener : listeners) {
+            listener.onInstanceInitialized(instance);
+        }
+        if(instance instanceof Entity) {
+            var loadAware = new ArrayList<LoadAware>();
+            instance.accept(new StructuralInstanceVisitor() {
+
+                @Override
+                public Void visitInstance(Instance instance) {
+                    super.visitInstance(instance);
+                    if (instance instanceof LoadAware l)
+                        loadAware.add(l);
+                    return null;
+                }
+            });
+            loadAware.forEach(LoadAware::onLoadPrepare);
+            loadAware.forEach(LoadAware::onLoad);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public <T> void setAttribute(ContextAttributeKey<T> key, T value) {
+        if (key.isNotNull())
+            requireNonNull(value);
+        attributes.put(key, value);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T getAttribute(ContextAttributeKey<T> key) {
+        if (!attributes.containsKey(key) && key.getDefaultValueSupplier() != null) {
+            T defaultValue = key.getDefaultValueSupplier().get();
+            attributes.put(key, defaultValue);
+            return defaultValue;
+        } else
+            return (T) attributes.get(key);
+    }
+
+    private record CrawResult(
+            Collection<Instance> newInstances,
+            Set<Value> visited
+    ) {
+    }
+
+    private List<Instance> doCraw(Iterable<Instance> instances) {
+        var tracing = DebugEnv.traceCrawling;
+        var added = new ArrayList<Instance>();
+        var visited = new IdentitySet<Instance>();
+        for (var instance : instances) {
+            if (instance.isRoot() && !instance.isRemoved())
+                instance.visitGraph(i -> {
+                    if (tracing)
+                        log.trace("Crawler is visiting {} ({})", i, i.tryGetId());
+                    if (i instanceof StringInstance || i.isRemoved())
+                        return false;
+                    var ctx = i.getContext();
+                    if (ctx != null && ctx != BaseInstanceContext.this)
+                        return false;
+                    if (ctx == null) {
+                        if (tracing)
+                            log.trace("Crawler found new instance {} ({}) @ {}", i, i.tryGetId(), System.identityHashCode(i));
+                        added.add(i);
+                    }
+                    return true;
+                }, r -> {
+                    if (r instanceof EntityReference er && er.isNew() && r.resolveDurable().getContext() == null) {
+                        return true;
+                    }
+                    return !(r instanceof EntityReference er) || instanceMap.containsKey(er.getId());
+                }, visited);
+        }
+        return added;
+    }
+
+
+    //<editor-fold desc="getByType">
+
+    //</editor-fold>
+
+    @Override
+    public List<Reference> selectByKey(IndexKeyRT indexKey) {
+        return query(indexKey.toQuery());
+    }
+
+    @Override
+    public Reference selectFirstByKey(IndexKeyRT key) {
+        if(key.getIndex().isUnique() && parent != null && parent.containsUniqueKey(key))
+            return parent.selectFirstByKey(key);
+        return Utils.first(query(key.toQuery(false, 1L)));
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public Reference selectLastByKey(IndexKeyRT key) {
+        if(key.getIndex().isUnique() && parent != null && parent.containsUniqueKey(key))
+            return parent.selectLastByKey(key);
+        return Utils.first(query(key.toQuery(true, 1L)));
+    }
+
+    @Override
+    public void increaseVersionsForAll() {
+        for (var instance : this)
+            instance.incVersion();
+    }
+
+    @NotNull
+    @Override
+    public Iterator<Instance> iterator() {
+        return new Iterator<>() {
+
+            Instance current = head;
+
+            @Override
+            public boolean hasNext() {
+                return current != null;
+            }
+
+            @Override
+            public Instance next() {
+                var i = current;
+                current = i.getNext();
+                return i;
+            }
+        };
+    }
+
+    @Override
+    public long getTimeout() {
+        return timeout;
+    }
+
+    @Override
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceContext-" + description + "-" + System.identityHashCode(this);
+    }
+
+    @Override
+    public void forceReindex(ClassInstance instance) {
+        reindexSet.add(instance);
+    }
+
+    @Override
+    public Set<ClassInstance> getReindexSet() {
+        return Collections.unmodifiableSet(reindexSet);
+    }
+
+    @Override
+    public void forceSearchReindex(ClassInstance instance) {
+        searchReindexSet.add(instance);
+    }
+
+    public Set<ClassInstance> getSearchReindexSet() {
+        return Collections.unmodifiableSet(searchReindexSet);
+    }
+
+    @Override
+    public long getAppId(Instance instance) {
+        if (instance.getContext() == this)
+            return getAppId();
+        else if (parent != null)
+            return parent.getAppId(instance);
+        else
+            throw new InternalException("Instance " + instance + " is not contained in the context");
+    }
+
+    @Override
+    public <T> List<T> getAllBufferedEntities(Class<T> entityClass) {
+        return Utils.filterByType(this, entityClass);
+    }
+
+    @Override
+    public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef,
+                                                  Value... values) {
+        try (var ignored = getProfiler().enter("selectByKey")) {
+            IndexKeyRT indexKey = createIndexKey(indexDef, values);
+            var instances = selectByKey(indexKey);
+            return createEntityList(indexDef.getType(), instances);
+        }
+    }
+
+    @Nullable
+    @Override
+    public <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Value... values) {
+        var instance = selectFirstByKey(createIndexKey(indexDef, values));
+        return instance == null ? null : createEntityList(indexDef.getType(), List.of(instance)).getFirst();
+    }
+
+    private IndexKeyRT createIndexKey(IndexDef<?> indexDef, Value... values) {
+        var constraint = indexDef.getIndex();
+        Objects.requireNonNull(constraint);
+        return constraint.createIndexKey(List.of(values));
+    }
+
+    private <T> List<T> createEntityList(Class<T> javaType, List<? extends Reference> references) {
+        var list = new ArrayList<T>();
+        references.forEach(ref -> list.add(javaType.cast(ref.get())));
+        return list;
+    }
+
+
+    @Override
+    public <T extends Entity> List<T> query(EntityIndexQuery<T> query) {
+        Class<T> javaClass = query.indexDef().getType();
+        var instances = query(convertToInstanceIndexQuery(query));
+        return createEntityList(javaClass, instances);
+    }
+
+    @Override
+    public long count(EntityIndexQuery<?> query) {
+        return count(convertToInstanceIndexQuery(query));
+    }
+
+    private InstanceIndexQuery convertToInstanceIndexQuery(EntityIndexQuery<?> query) {
+        var index = query.indexDef().getIndex();
+        return new InstanceIndexQuery(
+                index,
+                query.from() != null ? new InstanceIndexKey(index, query.from().values()) : null,
+                query.to() != null ? new InstanceIndexKey(index, query.to().values()) : null,
+                query.desc(),
+                query.limit()
+        );
+    }
+
+    @Override
+    public boolean containsUniqueKey(IndexDef<?> indexDef, Value... values) {
+        for (var value : values) {
+            if(value instanceof EntityReference ref && !containsId(ref.getId()))
+                return false ;
+        }
+        return containsUniqueKey(createIndexKey(indexDef, values));
+    }
+
+    @Override
+    public void dumpContext() {
+        for (Instance instance : this) {
+            log.trace("Instance {}-{}", instance.getInstanceType().getTypeDesc(), instance.getId());
+        }
+    }
+
+}

@@ -1,0 +1,125 @@
+package org.manul.expression;
+
+import org.jetbrains.annotations.NotNull;
+import org.manul.api.Entity;
+import org.manul.api.Generated;
+import org.manul.wire.Wire;
+import org.manul.entity.ElementVisitor;
+import org.manul.entity.SerializeContext;
+import org.manul.flow.MethodRef;
+import org.manul.object.instance.core.FlowValue;
+import org.manul.object.instance.core.Reference;
+import org.manul.object.instance.core.Value;
+import org.manul.object.type.*;
+import org.manul.util.ContextUtil;
+import org.manul.util.MvInput;
+import org.manul.util.MvOutput;
+import org.manul.util.StreamVisitor;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+
+@Wire
+@Entity
+public class StaticPropertyExpression extends Expression {
+
+    private final PropertyRef propertyRef;
+
+    public StaticPropertyExpression(@NotNull PropertyRef propertyRef) {
+        this.propertyRef = propertyRef;
+    }
+
+    @Generated
+    public static StaticPropertyExpression read(MvInput input) {
+        return new StaticPropertyExpression((PropertyRef) input.readValue());
+    }
+
+    @Generated
+    public static void visit(StreamVisitor visitor) {
+        visitor.visitValue();
+    }
+
+    @Override
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
+        try(var serContext = SerializeContext.enter()) {
+            var property = getProperty();
+            return switch (symbolType) {
+                case NAME -> property.getDeclaringType().getName() + "." + property.getName();
+                case ID -> idVarName(serContext.getId(property.getDeclaringType())) + "." +
+                        idVarName(serContext.getId(property));
+            };
+        }
+    }
+
+    @Override
+    public int precedence() {
+        return 0;
+    }
+
+    @Override
+    public Type getType() {
+        return propertyRef.getPropertyType();
+    }
+
+    @Override
+    public List<Expression> getComponents() {
+        return List.of();
+    }
+
+    public Property getProperty() {
+        return propertyRef.getProperty();
+    }
+
+    @Override
+    protected Value evaluateSelf(EvaluationContext context) {
+        if(propertyRef instanceof FieldRef fieldRef) {
+            var staticFieldTable = StaticFieldTable.getInstance(fieldRef.getDeclaringType(), ContextUtil.getEntityContext());
+            return staticFieldTable.get(fieldRef.getRawField());
+        }
+        else if (propertyRef instanceof MethodRef method)
+            return new FlowValue(method, null);
+        else
+            throw new IllegalStateException("Unknown property type: " + propertyRef);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof StaticPropertyExpression that)) return false;
+        return Objects.equals(propertyRef, that.propertyRef);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(propertyRef);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitStaticPropertyExpression(this);
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        propertyRef.accept(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        propertyRef.forEachReference(action);
+    }
+
+    @Generated
+    public void write(MvOutput output) {
+        output.write(TYPE_StaticPropertyExpression);
+        super.write(output);
+        output.writeValue(propertyRef);
+    }
+
+    @Override
+    public Expression transform(ExpressionTransformer transformer) {
+        return new StaticPropertyExpression(propertyRef);
+    }
+}

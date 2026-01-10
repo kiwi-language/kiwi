@@ -1,0 +1,9 @@
+package org.manul.test
+
+class InstanceOfFoo {
+
+    fn isInstance(o: any) -> bool {
+        return o is InstanceOfFoo
+    }
+
+}

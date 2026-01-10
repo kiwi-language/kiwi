@@ -1,4 +1,4 @@
-import org.metavm.api.EntityField;
+import org.manul.api.EntityField;
 
 import javax.annotation.Nullable;
 

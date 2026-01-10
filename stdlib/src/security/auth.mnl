@@ -1,0 +1,11 @@
+package security
+
+import org.manul.api.Interceptor
+import org.manul.api.entity.HttpRequest
+import org.manul.api.entity.HttpResponse
+
+interface TokenValidator {
+
+    abstract fn validate(token: string) -> any?
+
+}

@@ -1,0 +1,89 @@
+package org.manul.beans;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.manul.api.Entity;
+import org.manul.wire.Wire;
+import org.manul.wire.Parent;
+import org.manul.wire.adapters.ObjectAdapter;
+import org.manul.object.instance.core.ClassInstance;
+import org.manul.object.instance.core.IInstanceContext;
+import org.manul.object.instance.core.Instance;
+import org.manul.object.instance.core.Reference;
+import org.manul.object.type.ClassType;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+
+@Wire(adapter = ObjectAdapter.class)
+@Entity
+public abstract class BeanDefinition extends org.manul.entity.Entity {
+
+    @Parent
+    private final BeanDefinitionRegistry registry;
+    @Setter
+    @Getter
+    private String name;
+    private @Nullable Reference bean;
+
+    public BeanDefinition(String name, BeanDefinitionRegistry registry) {
+        super(registry.nextChildId());
+        this.name = name;
+        this.registry = registry;
+    }
+
+    public ClassInstance resolveBean() {
+        return Objects.requireNonNull(bean, () -> "Bean '" + name + "' is not yet initialized").resolveObject();
+    }
+
+    @Nullable
+    public Reference getBean() {
+        return bean;
+    }
+
+    public abstract ClassType getBeanType();
+
+    public void initialize(BeanDefinitionRegistry registry, IInstanceContext context) {
+        if (bean == null)
+            bean = createBean(registry, context).getReference();
+        else
+            throw new IllegalStateException("Bean already created");
+    }
+
+    public boolean isInitialized() {
+        return bean != null;
+    }
+
+    protected abstract ClassInstance createBean(BeanDefinitionRegistry registry, IInstanceContext context);
+
+    public void updateBean(BeanDefinitionRegistry registry) {
+        var bean = Objects.requireNonNull(getBean(), "Bean not initialized").resolveObject();
+        bean.getInstanceType().forEachField(f -> {
+            if (f.isPublic() && !f.isStatic()) {
+                if (registry.isDependency(f.getPropertyType())) {
+                    bean.setField(f.getRawField(), registry.getDependency(f.getPropertyType()));
+                }
+            }
+        });
+    }
+
+    public abstract List<BeanDefinition> getDependencies(BeanDefinitionRegistry registry);
+
+    @Nullable
+    @Override
+    public org.manul.entity.Entity getParentEntity() {
+        return registry;
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        if (bean != null) action.accept(bean);
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+    }
+
+}

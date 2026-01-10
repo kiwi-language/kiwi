@@ -137,7 +137,7 @@ Represents a type that can be one of several alternative types (e.g., `string | 
 
 ## Example
 
-### Kiwi Code
+### Manul Code
 ```kotlin
 class Product(
     @Summary

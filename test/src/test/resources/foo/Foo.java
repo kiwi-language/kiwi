@@ -1,4 +1,4 @@
-import org.metavm.api.Entity;
+import org.manul.api.Entity;
 
 import javax.annotation.Nullable;
 

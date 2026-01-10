@@ -1,6 +1,6 @@
 package enum_;
 
-import org.metavm.api.EntityField;
+import org.manul.api.EntityField;
 
 public enum EnumFoo {
 

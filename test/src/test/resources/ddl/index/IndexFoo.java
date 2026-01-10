@@ -1,6 +1,6 @@
 package index;
 
-import org.metavm.api.Index;
+import org.manul.api.Index;
 
 public class IndexFoo {
 

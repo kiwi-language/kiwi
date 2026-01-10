@@ -1,0 +1,48 @@
+package org.manul.flow;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.manul.api.Entity;
+import org.manul.entity.ElementVisitor;
+
+@Entity
+public class DeleteNode extends Node {
+
+    public static Node read(CodeInput input, String name) {
+        return new DeleteNode(name, input.getPrev(), input.getCode());
+    }
+
+    protected DeleteNode(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
+        super(name, null, previous, code);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitDeleteNode(this);
+    }
+
+    @Override
+    public boolean hasOutput() {
+        return false;
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("delete");
+    }
+
+    @Override
+    public int getStackChange() {
+        return -1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.DELETE);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
+    }
+}

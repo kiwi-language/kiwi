@@ -1,0 +1,131 @@
+package org.manul.object.instance.persistence;
+
+import org.manul.entity.InstanceIndexQuery;
+import org.manul.entity.Tree;
+import org.manul.object.instance.core.ClassInstance;
+import org.manul.object.instance.core.Instance;
+import org.manul.object.instance.core.InstanceIndexKey;
+import org.manul.object.type.ClassType;
+import org.manul.object.type.Index;
+import org.manul.object.type.IndexRef;
+import org.manul.util.StreamCopier;
+import org.manul.util.StreamVisitor;
+import org.manul.util.Utils;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
+
+public class PersistenceUtils {
+
+    // Used for debug. DO NOT REMOVE!!!
+    @SuppressWarnings("unused")
+    public static List<IndexEntryPO> getIndexEntries(ClassInstance instance, long appId) {
+        var result = new ArrayList<IndexEntryPO>();
+        forEachIndexEntries(instance, appId, result::add, e -> {});
+        return result;
+    }
+
+    // Used for debug. DO NOT REMOVE!!!
+    @SuppressWarnings("unused")
+    public static List<IndexEntryPO> getIndexEntries(IndexRef index, ClassInstance instance, long appId) {
+        var result = new ArrayList<IndexEntryPO>();
+        forEachIndexEntries(index, instance, appId, result::add, e -> {});
+        return result;
+    }
+
+    public static void forEachIndexEntries(Instance instance, long appId, Consumer<IndexEntryPO> action,
+                                           Consumer<IndexEntryPO> actionForUnique) {
+        var type = ((ClassType) instance.getInstanceType());
+        type.foreachIndex(
+                index -> forEachIndexEntries(index, instance, appId, action, actionForUnique)
+        );
+    }
+
+    private static void forEachIndexEntries(IndexRef index, Instance instance,
+                                            long appId, Consumer<IndexEntryPO> action, Consumer<IndexEntryPO> actionForUnique) {
+        index.forEachIndexKey(instance,
+                key -> {
+                    var entryPO = new IndexEntryPO(appId, key.toPO(), requireNonNull(instance.tryGetId()).toBytes());
+                    action.accept(entryPO);
+                    if(key.getIndex().isUnique() && !containsNull(key.getIndex(), entryPO.getKey()))
+                        actionForUnique.accept(entryPO);
+                });
+    }
+
+    public static boolean containsNull(Index index, IndexKeyPO key) {
+        var columns = key.getColumns();
+        for (byte[] column : columns) {
+            if (Arrays.equals(column, IndexKeyPO.NULL))
+                return true;
+        }
+        return false;
+//        return NncUtils.anyMatch(index.getFields(), item -> isItemNull(item, key));
+    }
+
+    public static IndexQueryPO toIndexQueryPO(InstanceIndexQuery query, long appId, int lockMode) {
+        return new IndexQueryPO(
+                appId,
+                query.index().getId().toBytes(),
+                Utils.safeCall(query.from(), InstanceIndexKey::toPO),
+                Utils.safeCall(query.to(), InstanceIndexKey::toPO),
+                query.desc(),
+                query.limit(),
+                lockMode
+        );
+    }
+
+    public static InstancePO buildInstancePO(long appId, long id, byte[] treeBytes) {
+        var ref = new Object() {
+            long version;
+            long syncVersion;
+            long nextNodeId;
+        };
+        new StreamVisitor(new ByteArrayInputStream(treeBytes)) {
+            @Override
+            public void visitVersion(long version) {
+                ref.version = version;
+            }
+
+            @Override
+            public void visitNextNodeId(long nextNodeId) {
+                ref.nextNodeId = nextNodeId;
+            }
+        }.visitGrove();
+        return new InstancePO(
+                appId,
+                id,
+                treeBytes,
+                ref.version,
+                ref.syncVersion,
+                ref.nextNodeId
+        );
+    }
+
+    public static InstancePO buildInstancePO(long appId, Tree tree) {
+        return new InstancePO(
+                appId,
+                tree.id(),
+                incVersion(tree.data()),
+                tree.version() + 1,
+                0L,
+                tree.nextNodeId()
+        );
+    }
+
+    private static byte[] incVersion(byte[] tree) {
+        var bout = new ByteArrayOutputStream();
+        new StreamCopier(new ByteArrayInputStream(tree), bout) {
+            @Override
+            public void visitVersion(long version) {
+                output.writeLong(version + 1);
+            }
+        }.visitGrove();
+        return bout.toByteArray();
+    }
+}

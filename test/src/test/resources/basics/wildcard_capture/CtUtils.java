@@ -1,6 +1,6 @@
 package wildcard_capture;
 
-import org.metavm.api.lang.Lang;
+import org.manul.api.lang.Lang;
 
 import javax.annotation.Nullable;
 import java.util.function.Predicate;

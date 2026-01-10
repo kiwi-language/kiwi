@@ -1,0 +1,61 @@
+package org.manul.object.instance.core;
+
+import lombok.Getter;
+import org.manul.object.type.TypeDefProvider;
+import org.manul.util.MvOutput;
+
+import java.util.Objects;
+
+@Getter
+public class MockId extends Id {
+
+    private final long id;
+
+    public MockId(long id) {
+        super();
+        this.id = id;
+    }
+
+    @Override
+    public void write(MvOutput output) {
+        output.writeIdTag(IdTag.MOCK);
+        output.writeLong(id);
+    }
+
+    @Override
+    public boolean equals(Object entity) {
+        if (this == entity) return true;
+        if (!(entity instanceof MockId mockId)) return false;
+        return id == mockId.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public Long tryGetTreeId() {
+        return null;
+    }
+
+    @Override
+    public boolean isTemporary() {
+        return true;
+    }
+
+    @Override
+    public int getTypeTag(TypeDefProvider typeDefProvider) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int compareTo0(Id id) {
+        return Long.compare(this.id, ((MockId) id).id);
+    }
+
+    @Override
+    public int getTag() {
+        return 3;
+    }
+}

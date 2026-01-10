@@ -4,18 +4,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.metavm</groupId>
-    <artifactId>metavm-parent</artifactId>
+    <groupId>org.manul</groupId>
+    <artifactId>manul-parent</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>share</module>
         <module>api</module>
         <module>wire</module>
-        <module>model</module>
-        <module>server</module>
-        <module>test</module>
-        <module>compiler</module>
+         <module>model</module>
+         <module>server</module>
+         <module>test</module>
+         <module>compiler</module>
         <module>dist</module>
         <module>meta</module>
         <module>context</module>
@@ -35,50 +35,50 @@
         <dependencies>
 
             <dependency>
-                <groupId>org.metavm</groupId>
-                <artifactId>metavm-wire</artifactId>
+                <groupId>org.manul</groupId>
+                <artifactId>manul-wire</artifactId>
                 <version>${version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.metavm</groupId>
-                <artifactId>metavm-server</artifactId>
+                <groupId>org.manul</groupId>
+                <artifactId>manul-server</artifactId>
                 <version>${version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.metavm</groupId>
-                <artifactId>metavm-meta</artifactId>
+                <groupId>org.manul</groupId>
+                <artifactId>manul-meta</artifactId>
                 <version>${version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.metavm</groupId>
-                <artifactId>metavm-context</artifactId>
+                <groupId>org.manul</groupId>
+                <artifactId>manul-context</artifactId>
                 <version>${version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.metavm</groupId>
-                <artifactId>metavm-model</artifactId>
+                <groupId>org.manul</groupId>
+                <artifactId>manul-model</artifactId>
                 <version>${version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.metavm</groupId>
-                <artifactId>metavm-share</artifactId>
+                <groupId>org.manul</groupId>
+                <artifactId>manul-share</artifactId>
                 <version>${version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.metavm</groupId>
-                <artifactId>metavm-api</artifactId>
+                <groupId>org.manul</groupId>
+                <artifactId>manul-api</artifactId>
                 <version>${version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.metavm</groupId>
-                <artifactId>metavm-compiler</artifactId>
+                <groupId>org.manul</groupId>
+                <artifactId>manul-compiler</artifactId>
                 <version>${version}</version>
             </dependency>
 
