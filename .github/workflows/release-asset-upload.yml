@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'feat/expand-ci-matrix'
+      - 'working'
 
 permissions:
   contents: write
@@ -70,6 +70,21 @@ jobs:
         with:
           files: ${{ matrix.asset_name }}
 
+      - name: Upload Release Asset to Tmp
+        if: github.event_name != 'release'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if the 'tmp' release exists using GH CLI
+          if gh release view tmp > /dev/null 2>&1; then
+            echo "Uploading artifact to release 'tmp'..."
+            # --clobber overwrites the file if it exists
+            gh release upload tmp ${{ matrix.asset_name }} --clobber
+          else
+            echo "Release 'tmp' does not exist. Skipping upload."
+          fi
+
       - name: Save Artifact for Gitee
         uses: actions/upload-artifact@v4
         with:
@@ -88,15 +103,27 @@ jobs:
         include:
           - os: ubuntu-22.04
             asset_name: manul-linux-amd64.tar.gz
-            image: ghcr.io/graalvm/native-image-community:21-muslib
-            profiles: native,static-musl
-            alpine: false
+            image: ghcr.io/graalvm/native-image-community:21-ol8
+            profiles: native
+            alpine_zlib: false
 
           - os: ubuntu-22.04-arm
             asset_name: manul-linux-aarch64.tar.gz
+            image: ghcr.io/graalvm/native-image-community:21-ol8
+            profiles: native
+            alpine_zlib: false
+
+          - os: ubuntu-22.04
+            asset_name: manul-alpine-amd64.tar.gz
+            image: ghcr.io/graalvm/native-image-community:21-muslib
+            profiles: native,static-musl
+            alpine_zlib: false
+
+          - os: ubuntu-22.04-arm
+            asset_name: manul-alpine-aarch64.tar.gz
             image: bellsoft/liberica-native-image-kit-container:jdk-21-nik-23-musl
             profiles: native,static-musl,no-pie
-            alpine: true
+            alpine_zlib: true
 
     steps:
       - name: Checkout code
@@ -115,7 +142,7 @@ jobs:
           set -e
           EOF
           
-          if [[ "${{ matrix.alpine }}" == "true"  ]]; then
+          if [[ "${{ matrix.alpine_zlib }}" == "true"  ]]; then
             cat << 'EOF' >> build.sh
           echo ">>> Installing Compiler Dependencies..."
           apk update
@@ -170,6 +197,19 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ${{ matrix.asset_name }}
+
+      - name: Upload Release Asset to Tmp (Non-Release)
+        if: github.event_name != 'release'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view tmp > /dev/null 2>&1; then
+            echo "Uploading artifact to release 'tmp'..."
+            gh release upload tmp ${{ matrix.asset_name }} --clobber
+          else
+            echo "Release 'tmp' does not exist. Skipping upload."
+          fi
 
       - name: Save Artifact for Gitee
         uses: actions/upload-artifact@v4
