@@ -1,0 +1,105 @@
+package org.manul.object.type;
+
+import org.jetbrains.annotations.Nullable;
+import org.manul.api.Entity;
+import org.manul.entity.ElementVisitor;
+import org.manul.entity.SerializeContext;
+import org.manul.flow.Flow;
+import org.manul.object.instance.core.Id;
+import org.manul.object.instance.core.Reference;
+import org.manul.object.type.rest.dto.NeverTypeKey;
+import org.manul.object.type.rest.dto.TypeKey;
+import org.manul.util.MvOutput;
+import org.manul.util.WireTypes;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+@Entity
+public class NeverType extends Type {
+
+    public static final NeverType instance = new NeverType();
+
+    private NeverType() {
+        super();
+    }
+
+    @Override
+    public String getName() {
+        return "Never";
+    }
+
+    @Override
+    public TypeCategory getCategory() {
+        return TypeCategory.NEVER;
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return false;
+    }
+
+    @Override
+    public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
+        return new NeverTypeKey();
+    }
+
+    @Override
+    protected boolean isAssignableFrom0(Type that) {
+        return false;
+    }
+
+    @Override
+    public String getInternalName(@Nullable Flow current) {
+        return "Never";
+    }
+
+    @Override
+    public String toExpression(SerializeContext serializeContext, @javax.annotation.Nullable Function<ITypeDef, String> getTypeDefExpr) {
+        return "never";
+    }
+
+    @Override
+    public int getTypeKeyCode() {
+        return WireTypes.NEVER_TYPE;
+    }
+
+    @Override
+    public void write(MvOutput output) {
+        output.write(WireTypes.NEVER_TYPE);
+    }
+
+    @Override
+    public int getPrecedence() {
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof NeverType;
+    }
+
+    @Override
+    public int hashCode() {
+        return NeverType.class.hashCode();
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitNeverType(this);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitNeverType(this, s);
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+    }
+}

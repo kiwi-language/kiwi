@@ -1,0 +1,85 @@
+package org.manul.flow;
+
+import org.jetbrains.annotations.NotNull;
+import org.manul.api.Entity;
+import org.manul.api.Generated;
+import org.manul.api.ValueObject;
+import org.manul.wire.Wire;
+import org.manul.wire.SubType;
+import org.manul.expression.EvaluationContext;
+import org.manul.expression.Expression;
+import org.manul.object.instance.core.Reference;
+import org.manul.object.type.Type;
+import org.manul.util.MvInput;
+import org.manul.util.MvOutput;
+import org.manul.util.StreamVisitor;
+
+import java.util.function.Consumer;
+
+@Wire(subTypes = {
+        @SubType(value = 1, type = NodeValue.class),
+        @SubType(value = 2, type = ExpressionValue.class),
+        @SubType(value = 3, type = ArrayValue.class),
+        @SubType(value = 4, type = PropertyValue.class),
+        @SubType(value = 5, type = ConstantValue.class),
+        @SubType(value = 6, type = NeverValue.class)
+})
+@Entity
+public abstract class Value implements ValueObject {
+
+    protected static final int TYPE_ConstantValue = 0;
+    protected static final int TYPE_ArrayValue = 1;
+    protected static final int TYPE_ExpressionValue = 2;
+    protected static final int TYPE_NeverValue = 3;
+    protected static final int TYPE_NodeValue = 4;
+    protected static final int TYPE_PropertyValue = 5;
+
+    public Value() {
+        super();
+    }
+
+    @Generated
+    public static Value read(MvInput input) {
+        var type = input.read();
+        return switch (type) {
+            case TYPE_ExpressionValue -> ExpressionValue.read(input);
+            case TYPE_PropertyValue -> PropertyValue.read(input);
+            case TYPE_ConstantValue -> ConstantValue.read(input);
+            case TYPE_NeverValue -> NeverValue.read(input);
+            case TYPE_ArrayValue -> ArrayValue.read(input);
+            case TYPE_NodeValue -> NodeValue.read(input);
+            default -> throw new IllegalStateException("Unrecognized type: " + type);
+        };
+    }
+
+    @Generated
+    public static void visit(StreamVisitor visitor) {
+        var type = visitor.visitByte();
+        switch (type) {
+            case TYPE_ExpressionValue -> ExpressionValue.visit(visitor);
+            case TYPE_PropertyValue -> PropertyValue.visit(visitor);
+            case TYPE_ConstantValue -> ConstantValue.visit(visitor);
+            case TYPE_NeverValue -> NeverValue.visit(visitor);
+            case TYPE_ArrayValue -> ArrayValue.visit(visitor);
+            case TYPE_NodeValue -> NodeValue.visit(visitor);
+            default -> throw new IllegalStateException("Unrecognized type: " + type);
+        }
+    }
+
+    public abstract Type getType();
+
+    @NotNull
+    public abstract org.manul.object.instance.core.Value evaluate(EvaluationContext context);
+
+    public abstract String getText();
+
+    public abstract Expression getExpression();
+
+    public void forEachReference(Consumer<Reference> action) {
+    }
+
+    @Generated
+    public void write(MvOutput output) {
+    }
+
+}

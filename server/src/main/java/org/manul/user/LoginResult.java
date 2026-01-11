@@ -1,0 +1,9 @@
+package org.manul.user;
+
+import javax.annotation.Nullable;
+
+public record LoginResult(
+        @Nullable Token token,
+        String userId
+) {
+}

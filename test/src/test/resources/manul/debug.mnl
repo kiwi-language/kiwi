@@ -1,0 +1,521 @@
+// MES
+
+@Label("员工角色")
+enum EmployeeRole {
+    @Label("管理员")
+    ADMINISTRATOR,
+    @Label("经理")
+    MANAGER,
+    @Label("工人")
+    WORKER,
+    @Label("质检员")
+    INSPECTOR
+    ;
+}
+
+@Label("物料类型")
+enum MaterialType {
+    @Label("原料")
+    RAW_MATERIAL,
+    @Label("半成品")
+    SEMI_FINISHED_GOOD,
+    @Label("成品")
+    FINISHED_GOOD
+    ;
+}
+
+@Label("工单状态")
+enum WorkOrderStatus {
+    @Label("已创建")
+    CREATED,
+    @Label("执行中")
+    IN_PROGRESS,
+    @Label("已完成")
+    COMPLETED
+    ;
+}
+
+@Label("任务状态")
+enum TaskStatus {
+    @Label("待分配")
+    PENDING,
+    @Label("执行中")
+    IN_PROGRESS,
+    @Label("已完成")
+    COMPLETED
+    ;
+}
+
+@Label("员工")
+class Employee(
+    @Summary
+    @Label("用户名")
+    val username: string,
+    @Label("密码")
+    password: string,
+    @Label("角色")
+    val role: EmployeeRole
+) {
+    priv val passwordHash = secureHash(password, null)
+    static val usernameIdx = Index<string, Employee>(true, e -> e.username)
+
+    @Label("校验密码")
+    fn checkPassword(@Label("密码") password: string) -> bool {
+        return passwordHash == secureHash(password, null)
+    }
+}
+
+@Label("物料")
+class Material(
+    @Summary
+    @Label("物料编码")
+    var code: string,
+    @Label("物料名称")
+    var name: string,
+    @Label("物料类型")
+    var type: MaterialType,
+    @Label("库存")
+    var stock: double
+) {
+    static val codeIdx = Index<string, Material>(true, m -> m.code)
+
+    @Label("补库")
+    fn restock(@Label("数量") quantity: double) {
+        require(quantity > 0, "补库数量必须大于0")
+        stock += quantity
+    }
+
+    @Label("消耗")
+    fn consume(@Label("数量") quantity: double) {
+        require(stock >= quantity, "物料[" + code + "]库存不足")
+        stock -= quantity
+    }
+}
+
+@Label("工序")
+class Operation(
+    @Summary
+    @Label("名称")
+    val name: string,
+    @Label("产出物料")
+    val outputMaterial: Material,
+    @Label("产出数量(每成品)")
+    val outputQuantity: double,
+    @Label("需要质检")
+    val requiresInspection: bool
+)
+
+@Label("工艺路线")
+class Routing(
+    @Summary
+    @Label("名称")
+    val name: string,
+    @Label("产品")
+    val product: Material,
+    @Label("工序列表")
+    val operations: Operation[]
+)
+
+@Label("物料清单项")
+class BomItem(
+    @Label("原料")
+    val material: Material,
+    @Label("数量(每成品)")
+    val quantity: double,
+    @Label("投料工序")
+    val operation: Operation
+)
+
+@Label("物料清单")
+class BillOfMaterial(
+    @Label("产品")
+    val product: Material,
+    @Label("工艺路线")
+    val routing: Routing,
+    @Label("原料列表")
+    val items: BomItem[]
+) {
+    @Summary
+    priv val summary = "BOM for " + product.name
+
+    fn findBomItem(@Label("物料") material: Material, @Label("工序") operation: Operation) -> BomItem? {
+        for (item in items) {
+            if (item.material == material && item.operation == operation) {
+                return item
+            }
+        }
+        return null
+    }
+}
+
+@Label("工单")
+class WorkOrder(
+    @Label("物料清单")
+    val bom: BillOfMaterial,
+    @Label("计划数量")
+    val plannedQuantity: double
+) {
+    @Summary
+    @Label("工单号")
+    val orderNumber = "WO" + now()
+
+    @Label("状态")
+    var status = WorkOrderStatus.CREATED
+
+    @Label("已完成数量")
+    var completedQuantity = 0.0
+
+    fn checkAndComplete() {
+        var allInspectionsDone = true
+        for (child in children) {
+            if (child is WorkOrder.InspectionTask task) {
+                if (task.status != TaskStatus.COMPLETED) {
+                    allInspectionsDone = false
+                }
+            }
+        }
+        if (completedQuantity >= plannedQuantity && allInspectionsDone) {
+            status = WorkOrderStatus.COMPLETED
+        }
+    }
+
+    @Label("生产任务")
+    class ProductionTask(
+        @Label("工序")
+        val operation: Operation,
+        @Label("计划产出量")
+        val plannedQuantity: double,
+        @Label("负责人")
+        var assignee: Employee?
+    ) {
+        @Summary
+        priv val summary = operation.name + " - " + (assignee != null ? assignee!!.username : "未分配")
+        static val assigneeAndStatusIdx = Index<string, ProductionTask>(false, t -> (t.assignee != null ? t.assignee!!.username : "null") + ":" + t.status)
+
+        @Label("状态")
+        var status = TaskStatus.PENDING
+        @Label("已完成数量")
+        var completedQuantity = 0.0
+
+        @Label("已消耗原料")
+        class ConsumedRawMaterial(
+            @Label("原料")
+            val material: Material,
+            @Label("数量")
+            var quantity: double
+        )
+
+        fn consumeMaterial(@Label("原料") material: Material, @Label("数量") quantity: double) {
+            require(status != TaskStatus.COMPLETED, "任务已完成")
+            val workOrder = parent as WorkOrder
+            val bomItem = workOrder.bom.findBomItem(material, operation)
+            require(bomItem != null, "该工序不消耗此原料")
+
+            val totalRequiredForTask = bomItem!!.quantity * (plannedQuantity / operation.outputQuantity)
+            var consumed = 0.0
+            for (c in children) {
+                if (c is ConsumedRawMaterial crm && crm.material == material) {
+                    consumed = crm.quantity
+                }
+            }
+            require(consumed + quantity <= totalRequiredForTask, "原料投料超出需求总量")
+
+            material.consume(quantity)
+
+            var existingConsumption: ConsumedRawMaterial? = null
+            for (c in children) {
+                if (c is ConsumedRawMaterial crm && crm.material == material) {
+                    existingConsumption = crm
+                }
+            }
+            if (existingConsumption != null) {
+                existingConsumption!!.quantity += quantity
+            } else {
+                ConsumedRawMaterial(material, quantity)
+            }
+            if (status == TaskStatus.PENDING) {
+                status = TaskStatus.IN_PROGRESS
+            }
+        }
+
+        fn reportProduction(@Label("数量") quantity: double) {
+            require(status != TaskStatus.COMPLETED, "任务已完成")
+            require(quantity > 0, "报工数量必须大于0")
+            require(completedQuantity + quantity <= plannedQuantity, "报工数量超出任务计划量")
+
+            val workOrder = parent as WorkOrder
+            val routing = workOrder.bom.routing
+
+            // 检查原料投料
+            val finalProductsToMake = quantity / operation.outputQuantity
+            for (bomItem in workOrder.bom.items) {
+                if (bomItem.operation == operation) {
+                    val requiredRawMaterial = bomItem.quantity * finalProductsToMake
+                    var consumed = 0.0
+                    for (c in children) {
+                        if (c is ConsumedRawMaterial crm && crm.material == bomItem.material) {
+                            consumed = crm.quantity
+                        }
+                    }
+                    require(consumed * (operation.outputQuantity / bomItem.quantity) >= completedQuantity + quantity, "原料[" + bomItem.material.code + "]投料不足，无法报工")
+                }
+            }
+
+            // 检查并消耗前序半成品
+            var opIndex = -1
+            for (i in 0...routing.operations.length) {
+                if (routing.operations[i] == operation) {
+                    opIndex = i
+                }
+            }
+            if (opIndex > 0) {
+                val prevOp = routing.operations[opIndex - 1]
+                val inputMaterial = prevOp.outputMaterial
+                val requiredInputQty = (quantity / operation.outputQuantity) * prevOp.outputQuantity
+                inputMaterial.consume(requiredInputQty)
+            }
+
+            // 更新库存和任务状态
+            operation.outputMaterial.restock(quantity)
+            completedQuantity += quantity
+            if (completedQuantity >= plannedQuantity) {
+                status = TaskStatus.COMPLETED
+            } else {
+                status = TaskStatus.IN_PROGRESS
+            }
+
+            // 更新工单进度
+            if (opIndex == routing.operations.length - 1) {
+                workOrder.completedQuantity += quantity
+            }
+            workOrder.checkAndComplete()
+        }
+    }
+
+
+    @Label("检验任务")
+    class InspectionTask(
+        @Label("工序")
+        val operation: Operation,
+        @Label("负责人")
+        var assignee: Employee?
+    ) {
+        @Summary
+        priv val summary = operation.name + " - " + (assignee != null ? assignee!!.username : "未分配")
+        static val assigneeAndStatusIdx = Index<string, InspectionTask>(false, t -> (t.assignee != null ? t.assignee!!.username : "null") + ":" + t.status)
+
+        @Label("状态")
+        var status = TaskStatus.PENDING
+        @Label("合格数量")
+        var qualifiedQuantity = 0.0
+        @Label("不合格数量")
+        var unqualifiedQuantity = 0.0
+
+        fn execute(@Label("合格数量") qualified: double, @Label("不合格数量") unqualified: double) {
+            require(status != TaskStatus.COMPLETED, "任务已完成")
+            require(qualified >= 0 && unqualified >= 0, "数量不能为负")
+
+            val workOrder = parent as WorkOrder
+            var totalProduced = 0.0
+            for(child in workOrder.children) {
+                if (child is WorkOrder.ProductionTask task && task.operation == operation) {
+                    totalProduced += task.completedQuantity
+                }
+            }
+
+            val totalInspected = qualifiedQuantity + unqualifiedQuantity
+            require(totalInspected + qualified + unqualified <= totalProduced, "检验数量不能超过已生产数量")
+
+            qualifiedQuantity += qualified
+            unqualifiedQuantity += unqualified
+            status = TaskStatus.IN_PROGRESS
+
+            val totalPlannedForOp = workOrder.plannedQuantity * operation.outputQuantity
+            if (qualifiedQuantity + unqualifiedQuantity >= totalPlannedForOp) {
+                status = TaskStatus.COMPLETED
+                workOrder.checkAndComplete()
+            }
+        }
+    }
+}
+
+
+@Bean
+@Label("员工服务")
+class EmployeeService {
+    @Label("登录")
+    fn login(@Label("用户名") username: string, @Label("密码") password: string) -> Employee? {
+        val employee = Employee.usernameIdx.getFirst(username)
+        return employee != null && employee!!.checkPassword(password) ? employee : null
+    }
+}
+
+@Label("工序参数")
+value class OperationSpec(
+    @Label("名称") val name: string,
+    @Label("产出物料") val outputMaterial: Material,
+    @Label("产出数量(每成品)") val outputQuantity: double,
+    @Label("需要质检") val requiresInspection: bool
+)
+
+@Label("BOM项参数")
+value class BomItemSpec(
+    @Label("原料") val material: Material,
+    @Label("数量(每成品)") val quantity: double,
+    @Label("投料工序名称") val operationName: string
+)
+
+@Bean
+@Label("经理服务")
+class ManagerService {
+
+    @Label("创建物料")
+    fn createMaterial(@Label("物料编码") code: string, @Label("物料名称") name: string, @Label("物料类型") type: MaterialType, @Label("初始库存") stock: double) -> Material {
+        return Material(code, name, type, stock)
+    }
+
+    @Label("编辑物料")
+    fn editMaterial(@Label("物料") material: Material, @Label("物料编码") code: string, @Label("物料名称") name: string, @Label("物料类型") type: MaterialType) {
+        material.code = code
+        material.name = name
+        material.type = type
+    }
+
+    @Label("删除物料")
+    fn deleteMaterial(@Label("物料") material: Material) {
+        delete material
+    }
+
+    @Label("物料补库")
+    fn restockMaterial(@Label("物料") material: Material, @Label("数量") quantity: double) {
+        material.restock(quantity)
+    }
+
+    @Label("创建工艺路线")
+    fn createRouting(@Label("名称") name: string, @Label("产品") product: Material, @Label("工序列表") opSpecs: OperationSpec[]) -> Routing {
+        require(product.type == MaterialType.FINISHED_GOOD, "工艺路线必须关联一个成品")
+        require(opSpecs.length > 0, "工艺路线必须至少包含一个工序")
+
+        val finalOpSpec = opSpecs[opSpecs.length - 1]
+        require(finalOpSpec.outputMaterial == product, "最后一道工序的产出物料必须是产品本身")
+        require(finalOpSpec.outputQuantity == 1.0, "最后一道工序的产出数量必须为1")
+
+        for (i in 0...(opSpecs.length - 1)) {
+            require(opSpecs[i].outputMaterial.type == MaterialType.SEMI_FINISHED_GOOD, "中间工序的产出物料必须是半成品")
+        }
+
+        val operations = new Operation[]
+        for (spec in opSpecs) {
+            operations.append(Operation(spec.name, spec.outputMaterial, spec.outputQuantity, spec.requiresInspection))
+        }
+        return Routing(name, product, operations)
+    }
+
+    @Label("创建物料清单")
+    fn createBillOfMaterial(@Label("产品") product: Material, @Label("工艺路线") routing: Routing, @Label("原料列表") itemSpecs: BomItemSpec[]) -> BillOfMaterial {
+        require(product == routing.product, "物料清单的产品必须与工艺路线的产品一致")
+
+        val bomItems = new BomItem[]
+        var firstOpHasMaterial = false
+        val firstOpName = routing.operations[0].name
+
+        for (spec in itemSpecs) {
+            require(spec.material.type == MaterialType.RAW_MATERIAL, "物料清单项只能是原料")
+            var opFound: Operation? = null
+            for (op in routing.operations) {
+                if (op.name == spec.operationName) {
+                    opFound = op
+                }
+            }
+            require(opFound != null, "未在工艺路线中找到工序: " + spec.operationName)
+
+            if (spec.operationName == firstOpName) {
+                firstOpHasMaterial = true
+            }
+
+            for (existingItem in bomItems) {
+                require(!(existingItem.material == spec.material && existingItem.operation == opFound), "重复的物料和工序组合")
+            }
+
+            bomItems.append(BomItem(spec.material, spec.quantity, opFound!!))
+        }
+        require(firstOpHasMaterial, "第一道工序必须配置原料")
+        return BillOfMaterial(product, routing, bomItems)
+    }
+
+    @Label("创建工单")
+    fn createWorkOrder(@Label("物料清单") bom: BillOfMaterial, @Label("计划数量") quantity: double) -> WorkOrder {
+        val workOrder = WorkOrder(bom, quantity)
+        for (op in bom.routing.operations) {
+            if (op.requiresInspection) {
+                workOrder.InspectionTask(op, null)
+            }
+        }
+        return workOrder
+    }
+
+    @Label("开始工单")
+    fn startWorkOrder(@Label("工单") order: WorkOrder) {
+        require(order.status == WorkOrderStatus.CREATED, "工单已开始或已完成")
+        order.status = WorkOrderStatus.IN_PROGRESS
+    }
+
+    @Label("下发生产任务")
+    fn createProductionTask(@Label("工单") workOrder: WorkOrder, @Label("工序") operation: Operation, @Label("计划产出量") quantity: double) -> WorkOrder.ProductionTask {
+        require(workOrder.status == WorkOrderStatus.IN_PROGRESS, "工单未在执行中")
+        var totalTaskedQty = 0.0
+        for (child in workOrder.children) {
+            if (child is WorkOrder.ProductionTask task && task.operation == operation) {
+                totalTaskedQty += task.plannedQuantity
+            }
+        }
+        val totalAllowedQty = workOrder.plannedQuantity * operation.outputQuantity
+        require(totalTaskedQty + quantity <= totalAllowedQty, "任务下发总量超过工单计划总量")
+        return workOrder.ProductionTask(operation, quantity, null)
+    }
+
+    @Label("指派生产任务")
+    fn assignProductionTask(@Label("生产任务") task: WorkOrder.ProductionTask, @Label("工人") worker: Employee) {
+        require(worker.role == EmployeeRole.WORKER, "只能指派给工人")
+        task.assignee = worker
+    }
+
+    @Label("指派检验任务")
+    fn assignInspectionTask(@Label("检验任务") task: WorkOrder.InspectionTask, @Label("质检员") inspector: Employee) {
+        require(inspector.role == EmployeeRole.INSPECTOR, "只能指派给质检员")
+        task.assignee = inspector
+    }
+}
+
+@Bean
+@Label("工人服务")
+class WorkerService {
+    @Label("查询我的生产任务")
+    fn getMyProductionTasks(@Label("工人") worker: Employee, @Label("状态") status: TaskStatus) -> WorkOrder.ProductionTask[] {
+        return WorkOrder.ProductionTask.assigneeAndStatusIdx.getAll(worker.username + ":" + status)
+    }
+
+    @Label("任务投料")
+    fn consumeMaterialForTask(@Label("生产任务") task: WorkOrder.ProductionTask, @Label("原料") material: Material, @Label("数量") quantity: double) {
+        task.consumeMaterial(material, quantity)
+    }
+
+    @Label("任务报工")
+    fn reportProductionForTask(@Label("生产任务") task: WorkOrder.ProductionTask, @Label("数量") quantity: double) {
+        task.reportProduction(quantity)
+    }
+}
+
+@Bean
+@Label("质检员服务")
+class InspectorService {
+    @Label("查询我的检验任务")
+    fn getMyInspectionTasks(@Label("质检员") inspector: Employee, @Label("状态") status: TaskStatus) -> WorkOrder.InspectionTask[] {
+        return WorkOrder.InspectionTask.assigneeAndStatusIdx.getAll(inspector.username + ":" + status)
+    }
+
+    @Label("执行检验")
+    fn executeInspectionForTask(@Label("检验任务") task: WorkOrder.InspectionTask, @Label("合格数量") qualified: double, @Label("不合格数量") unqualified: double) {
+        task.execute(qualified, unqualified)
+    }
+}

@@ -1,0 +1,47 @@
+package org.manul.object.instance.search;
+
+import junit.framework.TestCase;
+import org.manul.object.instance.core.StringReference;
+import org.manul.util.Constants;
+import org.manul.util.MockUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Set;
+
+public class SearchBuilderTest extends TestCase {
+
+    private static final Logger logger = LoggerFactory.getLogger(SearchBuilderTest.class);
+
+    public void test() {
+        var fooTypes = MockUtils.createFooTypes(true);
+        var foo = MockUtils.createFoo(fooTypes);
+        var qux = foo.getClassInstance(fooTypes.fooQuxField());
+
+        var condition = new AndSearchCondition(
+                List.of(
+                    new PrefixSearchCondition(
+                            fooTypes.fooNameField().getColumn().name(),
+                            (StringReference) foo.getField(fooTypes.fooNameField())
+                    ),
+                    new MatchSearchCondition(
+                            fooTypes.fooQuxField().getColumn().name(), qux.getReference()
+                    )
+                )
+        );
+        var query = new SearchQuery(
+                Constants.ROOT_APP_ID,
+                Set.of("1"),
+                condition,
+                false,
+                1,
+                20,
+                0
+        );
+
+        var queryString = SearchBuilder.buildQueryString(query);
+        logger.info(queryString);
+    }
+
+}

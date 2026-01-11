@@ -1,5 +1,5 @@
 import junit.framework.TestCase;
-import org.metavm.util.InflectUtil;
+import org.manul.util.InflectUtil;
 
 import java.util.Map;
 

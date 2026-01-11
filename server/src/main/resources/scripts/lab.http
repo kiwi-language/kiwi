@@ -43,7 +43,7 @@ POST http://localhost:8080/platform-user/exit-app
 Accept: application/json
 
 ###
-POST https://api.metavm.tech/login
+POST https://api.manul.tech/login
 Accept: application/json
 Content-Type: application/json
 
@@ -54,7 +54,7 @@ Content-Type: application/json
 }
 
 ###
-POST https://api.metavm.tech/app
+POST https://api.manul.tech/app
 X-App-ID: 2
 Content-Type: application/json
 
@@ -64,7 +64,7 @@ Content-Type: application/json
 
 
 ###
-POST https://api.metavm.tech/object/invoke
+POST https://api.manul.tech/object/invoke
 Accept: application/json
 Content-Type: application/json
 X-App-ID: 1000000010
@@ -81,7 +81,7 @@ X-App-ID: 1000000010
 }
 
 ###
-POST https://api.metavm.tech/object/search
+POST https://api.manul.tech/object/search
 Content-Type: application/json
 X-App-ID: 1000000010
 
@@ -92,12 +92,12 @@ X-App-ID: 1000000010
 }
 
 ###
-GET https://api.metavm.tech/app?page=1&pageSize=5&searchText=root
+GET https://api.manul.tech/app?page=1&pageSize=5&searchText=root
 X-App-ID: 2
 
 
 ###
-DELETE https://api.metavm.tech/app/1000005051
+DELETE https://api.manul.tech/app/1000005051
 X-App-ID: 2
 
 ###
@@ -142,7 +142,7 @@ POST http://localhost:8080/logout
 X-App-ID: 2
 
 ###
-GET https://api.metavm.tech/app/1000000010
+GET https://api.manul.tech/app/1000000010
 X-App-ID: 2
 
 ###
@@ -807,7 +807,7 @@ Content-Type: application/json
 
 ###
 
-POST http://localhost:8080/object/tech/metavm/manufacturing/material/Unit/new
+POST http://localhost:8080/object/tech/manul/manufacturing/material/Unit/new
 Content-Type: application/json
 X-App-ID: 1843016862
 X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
@@ -821,7 +821,7 @@ X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
 ]
 
 ###
-POST http://localhost:8080/object/tech/metavm/manufacturing/material/Material/new
+POST http://localhost:8080/object/tech/manul/manufacturing/material/Material/new
 Content-Type: application/json
 X-App-ID: 1843016862
 X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
@@ -858,7 +858,7 @@ X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
 
 [
   {
-    "$class": "tech.metavm.manufacturing.storage.ByAmountInboundRequest",
+    "$class": "tech.manul.manufacturing.storage.ByAmountInboundRequest",
     "bizType": "$$01ceeedddd0d00",
     "material": "$$01b0efdddd0d00",
     "position": "$$01aeefdddd0d00",
@@ -875,7 +875,7 @@ X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
 
 [
   {
-    "$class": "tech.metavm.manufacturing.storage.ByQrCodeInboundRequest",
+    "$class": "tech.manul.manufacturing.storage.ByQrCodeInboundRequest",
     "bizType": "$$01ceeedddd0d00",
     "material": "$$01b0efdddd0d00",
     "position": "$$01aeefdddd0d00",
@@ -937,7 +937,7 @@ X-App-ID: 1843616873
 ]
 
 ###
-PUT http://localhost:8080/object/org/metavm/manufacturing/material/unit
+PUT http://localhost:8080/object/org/manul/manufacturing/material/unit
 Content-Type: application/json
 X-App-ID: 1843616873
 
@@ -969,19 +969,19 @@ GET http://localhost:8080/object/01e8da8ede0d00
 X-App-ID: 1843616873
 
 ###
-GET http://localhost:8080/object/org/metavm/mlab/Currency/YUAN
+GET http://localhost:8080/object/org/manul/mlab/Currency/YUAN
 X-App-ID: 1000001021
 
 ###
-GET http://localhost:8080/object/org/metavm/mlab/Currency/DOLLAR
+GET http://localhost:8080/object/org/manul/mlab/Currency/DOLLAR
 X-App-ID: 1000000024
 
 ###
-GET http://localhost:8080/object/org/metavm/mlab/ProductKind/DEFAULT
+GET http://localhost:8080/object/org/manul/mlab/ProductKind/DEFAULT
 X-App-ID: 1000001021
 
 ###
-PUT http://localhost:8080/object/org/metavm/mlab/Product
+PUT http://localhost:8080/object/org/manul/mlab/Product
 X-App-ID: 1000001021
 Content-Type: application/json
 
@@ -1003,38 +1003,38 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/object/org/metavm/mlab/Product
+PUT http://localhost:8080/object/org/manul/mlab/Product
 X-App-ID: 1000001021
 Content-Type: application/json
 
 {
-  "$class": "org.metavm.mlab.Product",
+  "$class": "org.manul.mlab.Product",
   "skus": [
     {
-      "$class": "org.metavm.mlab.SKU",
+      "$class": "org.manul.mlab.SKU",
       "price": {
-        "$class": "org.metavm.mlab.Price",
+        "$class": "org.manul.mlab.Price",
         "amount": 100.0,
         "currency": "01aed0b9df0d00"
       },
       "name": "40",
       "inventory": {
-        "$class": "org.metavm.mlab.Inventory",
+        "$class": "org.manul.mlab.Inventory",
         "quantity": 100,
         "$id": "0198d1b9df0d06"
       },
       "$id": "0198d1b9df0d08"
     },
     {
-      "$class": "org.metavm.mlab.SKU",
+      "$class": "org.manul.mlab.SKU",
       "price": {
-        "$class": "org.metavm.mlab.Price",
+        "$class": "org.manul.mlab.Price",
         "amount": 100.0,
         "currency": "01aed0b9df0d00"
       },
       "name": "41",
       "inventory": {
-        "$class": "org.metavm.mlab.Inventory",
+        "$class": "org.manul.mlab.Inventory",
         "quantity": 200,
         "$id": "0198d1b9df0d0c"
       },
@@ -1076,23 +1076,23 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8080/type/is-flag1?name=org.metavm.mlab.Product
+GET http://localhost:8080/type/is-flag1?name=org.manul.mlab.Product
 X-App-ID: 1850817017
 
 ###
-GET http://localhost:8080/object/org/metavm/mlab/ProductKind/DEFAULT
+GET http://localhost:8080/object/org/manul/mlab/ProductKind/DEFAULT
 X-App-ID: 1000000024
 
 ###
-GET http://localhost:8080/object/org/metavm/mlab/Currency/YUAN
+GET http://localhost:8080/object/org/manul/mlab/Currency/YUAN
 X-App-ID: 1000000024
 
 ###
-GET http://localhost:8080/object/org/metavm/mlab/CouponState/ACTIVE
+GET http://localhost:8080/object/org/manul/mlab/CouponState/ACTIVE
 X-App-ID: 1000000024
 
 ###
-PUT http://localhost:8080/object/org/metavm/mlab/Product
+PUT http://localhost:8080/object/org/manul/mlab/Product
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1166,7 +1166,7 @@ GET http://localhost:8080/object/01e6c2e2b90700
 X-App-ID: 1000000024
 
 ###
-PUT http://localhost:8080/object/org/metavm/mlab/Coupon
+PUT http://localhost:8080/object/org/manul/mlab/Coupon
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1180,7 +1180,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/object/org/metavm/mlab/Coupon
+PUT http://localhost:8080/object/org/manul/mlab/Coupon
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1195,7 +1195,7 @@ Content-Type: application/json
 
 
 ###
-PUT http://localhost:8080/object/org/metavm/mlab/Product
+PUT http://localhost:8080/object/org/manul/mlab/Product
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1205,7 +1205,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/object/org/metavm/mlab/Product
+PUT http://localhost:8080/object/org/manul/mlab/Product
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1376,7 +1376,7 @@ Content-Type: application/json
 }
 
 ###
-# curl -X PUT -H "Content-Type: application/json" -d '{"object": {"fields": {"name": "Kiwi Fruit", "price": 10.0, "stock": 100}}}' http://localhost:8080/object
+# curl -X PUT -H "Content-Type: application/json" -d '{"object": {"fields": {"name": "Manul Fruit", "price": 10.0, "stock": 100}}}' http://localhost:8080/object
 PUT http://localhost:8080/object
 Content-Type: application/json
 X-App-ID: 1000000011
@@ -1385,7 +1385,7 @@ X-App-ID: 1000000011
   "object": {
     "type": "Product",
     "fields": {
-      "name": "Kiwi Fruit",
+      "name": "Manul Fruit",
       "price": 10.0,
       "stock": 100
     }
@@ -1413,7 +1413,7 @@ X-App-ID: 1000000011
 }
 
 ###
-POST https://api.metavm.tech/object/invoke
+POST https://api.manul.tech/object/invoke
 X-App-ID: 1000000010
 Content-Type: application/json
 Accept: */*
@@ -1424,7 +1424,7 @@ Connection: keep-alive
 Content-Type: application/json;charset=UTF-8
 Cookie: __token_2__=e6f912b7-ca61-4afb-a175-3c31578e15d3
 DNT: 1
-Host: metavm.tech
+Host: manul.tech
 Origin: http://localhost:5173
 Pragma: no-cache
 Referer: http://localhost:5173/
@@ -1511,7 +1511,7 @@ Content-Type: application/json
 
 
 ###
-GET https://api.metavm.tech/platform-user?pageSize=100&searchText=tiedanli
+GET https://api.manul.tech/platform-user?pageSize=100&searchText=tiedanli
 X-App-ID: 2
 Cookie: __token_2__=4cc67433-5ec9-4da6-8e8a-c09479edddac
 

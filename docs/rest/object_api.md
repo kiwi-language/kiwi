@@ -2,14 +2,14 @@
 
 ## Overview
 
-API for managing Kiwi objects: save, retrieve, delete, search, and invoke methods.
+API for managing Manul objects: save, retrieve, delete, search, and invoke methods.
 
 ## Code Example
 
-This document uses the following Kiwi program for all examples:
+This document uses the following Manul program for all examples:
 
 ```kotlin
-package org.kiwi.demo
+package org.manul.demo
 
 class Order(val price: Money) {
 
@@ -65,12 +65,12 @@ class Product(
 
 ### Object Representation
 
-Kiwi objects are represented as JSON objects with the following fields. The specific fields available depend on the context (see notes below).
+Manul objects are represented as JSON objects with the following fields. The specific fields available depend on the context (see notes below).
 
 | Field      | Type        | Description                                                                               |
 |:-----------|:------------|:------------------------------------------------------------------------------------------|
 | `id`       | `string`    | Object ID                                                                                 |
-| `type`     | `string`    | Qualified class name (e.g., `org.kiwi.demo.Order`).                                       |
+| `type`     | `string`    | Qualified class name (e.g., `org.manul.demo.Order`).                                       |
 | `name`     | `string`    | Enum constant name or bean name (e.g., `USD`, `orderService`)                             |
 | `summary`  | `string`    | Brief text for display (e.g., `MacBook Pro` for a product)                                |
 | `fields`   | JSON object | Key-value pairs of public fields or constructor arguments (during creation)               |
@@ -91,14 +91,14 @@ Kiwi objects are represented as JSON objects with the following fields. The spec
 ```json
 {
   "id": "...",
-  "type": "org.kiwi.demo.Order",
+  "type": "org.manul.demo.Order",
   "fields": {
     "price": {
-      "type": "org.kiwi.demo.Money",
+      "type": "org.manul.demo.Money",
       "fields": {
         "amount": 14000,
         "currency": {
-          "type": "org.kiwi.demo.Currency",
+          "type": "org.manul.demo.Currency",
           "name": "CNY"
         }
       }
@@ -109,11 +109,11 @@ Kiwi objects are represented as JSON objects with the following fields. The spec
     "Item": [
       {
         "id": "...",
-        "type": "org.kiwi.demo.Order.Item",
+        "type": "org.manul.demo.Order.Item",
         "fields": {
           "product": {
             "id": "...",
-            "type": "org.kiwi.demo.Product",
+            "type": "org.manul.demo.Product",
             "summary": "MackBook Pro"
           },
           "quantity": 1
@@ -146,15 +146,15 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
   
     {
       "object": { 
-        "type": "org.kiwi.demo.Product",
+        "type": "org.manul.demo.Product",
         "fields": {
           "name": "MacBook Pro",
           "price": {
-            "type": "org.kiwi.demo.Money",
+            "type": "org.manul.demo.Money",
             "fields": {
               "amount": 14000,
               "currency": {
-                "type": "org.kiwi.demo.Currency",
+                "type": "org.manul.demo.Currency",
                 "name": "CNY"
               }
             }
@@ -182,15 +182,15 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
     {
       "object": { 
         "id": "..."
-        "type": "org.kiwi.demo.Product",
+        "type": "org.manul.demo.Product",
         "fields": {
           "name": "MacBook Pro",
           "price": {
-            "type": "org.kiwi.demo.Money",
+            "type": "org.manul.demo.Money",
             "fields": {
               "amount": 14000,
               "currency": {
-                "type": "org.kiwi.demo.Currency",
+                "type": "org.manul.demo.Currency",
                 "name": "CNY"
               }
             }
@@ -227,14 +227,14 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
       "code": 0,
       "data": {
         "id": "...",
-        "type": "org.kiwi.demo.Product",
+        "type": "org.manul.demo.Product",
         "fields": {
           "name": "MacBook Pro",
           "price": {
-            "type": "org.kiwi.demo.Money",
+            "type": "org.manul.demo.Money",
             "amount": 14000,
             "currency": {
-              "type": "org.kiwi.demo.Currency",
+              "type": "org.manul.demo.Currency",
               "name": "CNY"
             }
           },
@@ -276,20 +276,20 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
       "data": [
         {
           "id": "{order-id-1}",
-          "type": "org.kiwi.demo.Order",
+          "type": "org.manul.demo.Order",
           "fields": {
             "price": {
-              "type": "org.kiwi.demo.Money",
-              "fields": { "amount": 14000, "currency": { "type": "org.kiwi.demo.Currency", "name": "CNY" } }
+              "type": "org.manul.demo.Money",
+              "fields": { "amount": 14000, "currency": { "type": "org.manul.demo.Currency", "name": "CNY" } }
             },
             "confirmed": true
           },
           "children": {
             "Item": [{
               "id": "{item-id-1}",
-              "type": "org.kiwi.demo.Order.Item",
+              "type": "org.manul.demo.Order.Item",
               "fields": {
-                "product": { "id": "{product-id-1}", "type": "org.kiwi.demo.Product", "summary": "MacBook Pro" },
+                "product": { "id": "{product-id-1}", "type": "org.manul.demo.Product", "summary": "MacBook Pro" },
                 "quantity": 1
               },
               "children": {}
@@ -298,20 +298,20 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
         },
         {
           "id": "{order-id-2}",
-          "type": "org.kiwi.demo.Order",
+          "type": "org.manul.demo.Order",
           "fields": {
             "price": {
-              "type": "org.kiwi.demo.Money",
-              "fields": { "amount": 800, "currency": { "type": "org.kiwi.demo.Currency", "name": "USD" } }
+              "type": "org.manul.demo.Money",
+              "fields": { "amount": 800, "currency": { "type": "org.manul.demo.Currency", "name": "USD" } }
             },
             "confirmed": false
           },
           "children": {
             "Item": [{
               "id": "{item-id-2}",
-              "type": "org.kiwi.demo.Order.Item",
+              "type": "org.manul.demo.Order.Item",
               "fields": {
-                "product": { "id": "{product-id-2}", "type": "org.kiwi.demo.Product", "summary": "Magic Mouse" },
+                "product": { "id": "{product-id-2}", "type": "org.manul.demo.Product", "summary": "Magic Mouse" },
                 "quantity": 2
               },
               "children": {}
@@ -364,7 +364,7 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
     Content-Type: application/json
   
     {
-      "type": "org.kiwi.demo.Order"
+      "type": "org.manul.demo.Order"
       "criteria": {
         "name": "MacBook",
         "stock": [1, 200],
@@ -380,14 +380,14 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
         "items": [
           {
             "id": "...",
-            "type": "org.kiwi.demo.Product",
+            "type": "org.manul.demo.Product",
             "fields": {
               "name": "MacBook Pro",
               "price": {
-                "type": "org.kiwi.demo.Money",
+                "type": "org.manul.demo.Money",
                 "amount": 14000,
                 "currency": {
-                  "type": "org.kiwi.demo.Currency",
+                  "type": "org.manul.demo.Currency",
                   "name": "CNY"
                 }
               },

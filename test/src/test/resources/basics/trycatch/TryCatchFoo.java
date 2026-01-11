@@ -1,6 +1,6 @@
 package trycatch;
 
-import org.metavm.api.lang.Lang;
+import org.manul.api.lang.Lang;
 
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;

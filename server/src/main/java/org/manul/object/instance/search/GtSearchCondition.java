@@ -1,0 +1,23 @@
+package org.manul.object.instance.search;
+
+import org.manul.object.instance.core.NumberValue;
+import org.manul.object.instance.core.Value;
+
+import java.util.Map;
+
+public record GtSearchCondition(
+        String field,
+        NumberValue value
+) implements SearchCondition {
+
+    @Override
+    public String build() {
+        return field + ":>" + SearchBuilder.toString(value.toSearchConditionValue());
+    }
+
+    @Override
+    public boolean evaluate(Map<String, Value> source) {
+        var srcValue = source.get(field);
+        return srcValue instanceof NumberValue numberValue && numberValue.gt(value).value;
+    }
+}

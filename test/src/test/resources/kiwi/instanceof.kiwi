@@ -1,9 +1,0 @@
-package org.metavm.test
-
-class InstanceOfFoo {
-
-    fn isInstance(o: any) -> bool {
-        return o is InstanceOfFoo
-    }
-
-}

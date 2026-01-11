@@ -1,0 +1,22 @@
+package org.manul.object.instance.core;
+
+import junit.framework.TestCase;
+import org.junit.Assert;
+import org.manul.util.TestUtils;
+
+import static org.manul.util.BytesUtils.toIndexBytes;
+
+public class ReferenceTest extends TestCase {
+
+    public void testWrite() {
+        var fooKlass = TestUtils.newKlassBuilder("Foo").build();
+        var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType(), PhysicalId.of(1L, 0L)).build();
+        var ref1 = foo.getReference();
+        var ref2 = new EntityReference(foo.getId(), () -> foo);
+        Assert.assertEquals(ref1, ref2);
+        var bytes1 = toIndexBytes(ref1);
+        var bytes2 = toIndexBytes(ref2);
+        Assert.assertArrayEquals(bytes1, bytes2);
+    }
+
+}

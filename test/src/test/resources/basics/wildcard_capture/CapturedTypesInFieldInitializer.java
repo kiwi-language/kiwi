@@ -1,6 +1,6 @@
 package wildcard_capture;
 
-import org.metavm.api.Entity;
+import org.manul.api.Entity;
 
 import java.util.Comparator;
 

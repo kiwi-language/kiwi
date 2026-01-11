@@ -1,0 +1,36 @@
+package org.manul.flow;
+
+import junit.framework.TestCase;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.Assert;
+import org.manul.object.type.KlassType;
+import org.manul.object.type.TypeVariable;
+import org.manul.object.type.Types;
+import org.manul.object.type.UncertainType;
+import org.manul.util.TestUtils;
+
+import java.util.List;
+
+@Slf4j
+public class MethodTest extends TestCase {
+
+    public void testGetInternalName() {
+        var listKlass = TestUtils.newKlassBuilder("List").build();
+        new TypeVariable(listKlass.nextChildId(), "T", listKlass);
+        var klass = TestUtils.newKlassBuilder("Foo").build();
+        var testMethod = MethodBuilder.newBuilder(klass, "test").build();
+        var testTypeVar = new TypeVariable(klass.nextChildId(), "T", testMethod);
+        var param = new Parameter(klass.nextChildId(), "list",
+                Types.getNullableType(
+                    KlassType.create(
+                            listKlass,
+                            List.of(new UncertainType(Types.getNeverType(), testTypeVar.getType()))
+                    )
+                ),
+                testMethod
+        );
+        testMethod.setParameters(List.of(param));
+        Assert.assertEquals(testMethod.getInternalName(null), testMethod.getInternalName(null));
+    }
+
+}

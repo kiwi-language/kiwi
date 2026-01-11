@@ -1,0 +1,105 @@
+package org.manul.object.type;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+import org.manul.api.Generated;
+import org.manul.api.ValueObject;
+import org.manul.entity.*;
+import org.manul.object.instance.core.Reference;
+import org.manul.object.instance.core.Value;
+import org.manul.util.MvInput;
+import org.manul.util.MvOutput;
+import org.manul.util.StreamVisitor;
+import org.manul.wire.*;
+
+import java.util.Map;
+import java.util.function.Consumer;
+
+@Wire
+public class StaticFieldTableEntry implements LocalKey, Struct, ValueObject {
+    @Parent
+    private final StaticFieldTable table;
+    private Reference fieldReference;
+    @Setter
+    @Getter
+    private Value value;
+
+    public StaticFieldTableEntry(StaticFieldTable table) {
+        this.table = table;
+    }
+
+    public StaticFieldTableEntry(StaticFieldTable table, Field field, Value value) {
+        this.table = table;
+        this.fieldReference = field.getReference();
+        this.value = value;
+    }
+
+    @Generated
+    public static StaticFieldTableEntry read(MvInput input, Object parent) {
+        var r = new StaticFieldTableEntry((StaticFieldTable) parent);
+        r.fieldReference = (Reference) input.readValue();
+        r.value = input.readValue();
+        return r;
+    }
+
+    @Generated
+    public static void visit(StreamVisitor visitor) {
+        visitor.visitValue();
+        visitor.visitValue();
+    }
+
+    public Field getField() {
+        return (Field) fieldReference.get();
+    }
+
+    @Override
+    public boolean isValidLocalKey() {
+        return true;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return getField().getName();
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        action.accept(fieldReference);
+        if (value instanceof Reference r) action.accept(r);
+        else if (value instanceof org.manul.object.instance.core.NativeValue t) t.forEachReference(action);
+    }
+
+    public void buildJson(Map<String, Object> map) {
+        map.put("field", this.getField().getStringId());
+        map.put("value", this.getValue().toJson());
+    }
+
+    @Generated
+    public void write(MvOutput output) {
+        output.writeValue(fieldReference);
+        output.writeValue(value);
+    }
+
+    public Map<String, Object> toJson() {
+        var map = new java.util.HashMap<String, Object>();
+        buildJson(map);
+        return map;
+    }
+
+    //    public void buildJson(Map<String, Object> map) {
+//        map.put("field", this.getField().getStringId());
+//        map.put("value", this.getValue().toJson());
+//        var parentEntity = this.getParentEntity();
+//        if (parentEntity != null) map.put("parentEntity", parentEntity.getStringId());
+//        map.put("title", this.getTitle());
+//        map.put("instanceKlass", this.getInstanceKlass().getStringId());
+//        map.put("instanceType", this.getInstanceType().toJson());
+//        map.put("entityTag", this.getEntityTag());
+//    }
+
+    //    public Map<String, Object> toJson() {
+//        var map = new java.util.HashMap<String, Object>();
+//        buildJson(map);
+//        return map;
+//    }
+}

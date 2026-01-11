@@ -1,0 +1,541 @@
+package org.manul.entity;
+
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.manul.api.ValueObject;
+import org.manul.entity.natives.StdFunction;
+import org.manul.object.instance.IndexKeyRT;
+import org.manul.object.instance.core.Reference;
+import org.manul.object.instance.core.*;
+import org.manul.object.type.*;
+import org.manul.util.*;
+import org.manul.util.profile.Profiler;
+
+import javax.annotation.Nullable;
+import java.io.InputStream;
+import java.lang.reflect.Type;
+import java.util.*;
+import java.util.function.Consumer;
+
+@Slf4j
+public class SystemDefContext extends DefContext implements IInstanceContext {
+
+    public static final Set<Class<? extends GlobalKey>> BINDING_ALLOWED_CLASSES = Set.of();
+
+    private final Map<Class<?>, Klass> javaClass2klass = new HashMap<>();
+    private final Map<Klass, Type> klass2javaClass = new IdentityHashMap<>();
+    private final StdIdProvider stdIdProvider;
+    private final Set<Entity> entities = new IdentitySet<>();
+    private final IdentityContext identityContext;
+    private final EntityMemoryIndex memoryIndex = new EntityMemoryIndex();
+    private final Map<Id, Entity> entityMap = new HashMap<>();
+    private final Profiler profiler = new Profiler();
+
+    public SystemDefContext(StdAllocators allocators, IdentityContext identityContext) {
+        this.stdIdProvider = new StdIdProvider(allocators);
+        this.identityContext = identityContext;
+        addKlass(String.class, StdKlass.string.get());
+        addKlass(Enum.class, StdKlass.enum_.get());
+        addKlass(Exception.class, StdKlass.exception.get());
+        initSystemFunctions();
+    }
+
+    public Klass getKlass(Class<?> javaClass) {
+        var existing = javaClass2klass.get(javaClass);
+        if (existing != null)
+            return existing;
+        return parseType(javaClass);
+    }
+
+    @Override
+    public <T> T getEntity(Class<T> entityType, Id id) {
+        return entityType.cast(entityMap.get(id));
+    }
+
+    @Override
+    public Id getModelId(Object o) {
+        var identity = o instanceof ModelIdentity i ? i : ModelIdentities.getIdentity(o);
+        var id = stdIdProvider.getId(identity);
+        if (id == null)
+            throw new NullPointerException("Failed to get id for model: " + identity.name());
+        return id;
+    }
+
+    private @NotNull Klass parseType(Class<?> javaClass) {
+        var klass = StdKlassRegistry.instance.getKlass(javaClass);
+        writeEntityIfNotPresent(klass);
+        return klass;
+    }
+
+    public void addKlass(Class<?> javaClass, Klass klass) {
+        var tracing = DebugEnv.traceClassDefinition;
+        if (tracing) log.trace("Adding class: {}", klass.getQualifiedName());
+        var existing = javaClass2klass.get(javaClass);
+        if (existing != null && existing != klass)
+            throw new InternalException("Def for java type " + javaClass + " already exists");
+        javaClass2klass.put(javaClass, klass);
+        var existingJavaClass = klass2javaClass.get(klass);
+        if (existingJavaClass != null && existingJavaClass != javaClass)
+            throw new InternalException("Def for type " + klass + " already exists. Def: " + existing);
+        klass2javaClass.put(klass, javaClass);
+        writeEntityIfNotPresent(klass);
+    }
+
+    private void writeEntityIfNotPresent(Entity entity) {
+        if (!entities.contains(entity))
+            writeEntity(entity);
+    }
+
+    void writeEntity(Entity entity) {
+        if (entities.add(entity)) {
+            entity.setContext(this);
+            if (entity.tryGetId() != null)
+                entityMap.put(entity.getId(), entity);
+        }
+        else
+            throw new InternalException("Entity " + entity + " is already written to the context");
+    }
+
+    public void flush() {
+        try (var ignored = getProfiler().enter("flush")) {
+            crawNewEntities();
+            setupIdentityContext();
+        }
+    }
+
+    private void freezeKlasses() {
+        klass2javaClass.keySet().forEach(t -> {
+            if(t instanceof Klass k)
+                k.freeze();
+        });
+    }
+
+    private void setupIdentityContext() {
+        for (Entity entity : entities) {
+            if (!(entity instanceof ValueObject || entity.isEphemeral())) {
+                identityContext.getModelId(entity);
+            }
+        }
+    }
+
+    private void crawNewEntities() {
+        try (var entry = getProfiler().enter("crawNewEntities")) {
+            entry.addMessage("numSeedEntities", entities.size());
+            var newEntities = new HashSet<Entity>();
+            var visited = new IdentitySet<Instance>();
+            for (var entity : entities) {
+                entity.visitGraph(i -> {
+                    if(i instanceof Entity e && !entities.contains(e)) {
+                        newEntities.add(e);
+                    }
+                    return true;
+                }, r -> true, visited);
+            }
+            try (var ignored = getProfiler().enter("crawNewEntities")) {
+                newEntities.forEach(this::writeEntity);
+            }
+        }
+    }
+
+    @Override
+    public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Value... values) {
+        return memoryIndex.selectByKey(indexDef, List.of(values));
+    }
+
+    @Nullable
+    @Override
+    public <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Value... values) {
+        return memoryIndex.selectFirstByKey(indexDef, List.of(values));
+    }
+
+    @Override
+    public boolean containsUniqueKey(IndexDef<?> indexDef, Value... values) {
+        return memoryIndex.selectFirstByKey(indexDef, List.of(values)) != null;
+    }
+
+    @Override
+    public <T extends Instance> T bind(T object) {
+        if (object.isEphemeral())
+            throw new IllegalArgumentException("Can not bind an ephemeral entity");
+        if (object instanceof  Entity entity && BINDING_ALLOWED_CLASSES.contains(object.getClass())) {
+            writeEntity(entity);
+            return object;
+        } else
+            // Entities enter the DefContext through models def.
+            throw new UnsupportedOperationException("Binding not supported.");
+    }
+
+    @Override
+    public Profiler getProfiler() {
+        return profiler;
+    }
+
+    public Collection<Entity> entities() {
+        return Collections.unmodifiableSet(entities);
+    }
+
+    public void buildMemoryIndex() {
+        for (Entity entity : entities) memoryIndex.save(entity);
+    }
+
+    public void postProcess() {
+        log.info("Post processing system def context");
+        initUserFunctions();
+        buildMemoryIndex();
+        Klasses.loadKlasses(this);
+        freezeKlasses();
+        for (TypeDef typeDef : klass2javaClass.keySet()) {
+            if(typeDef instanceof Klass klass)
+                klass.rebuildMethodTable();
+        }
+    }
+
+
+    // Instance context implementation
+
+    @Override
+    public List<Instance> batchGet(Collection<Id> ids) {
+        return Utils.map(ids, this::get);
+    }
+
+    @Override
+    public <T> List<T> getAllBufferedEntities(Class<T> entityClass) {
+        return Utils.filterByType(entities, entityClass);
+    }
+
+    @Override
+    public void close() {
+
+    }
+
+    @Override
+    public boolean containsIdSelf(Id id) {
+        return containsId(id);
+    }
+
+    @Override
+    public InstanceInput createInstanceInput(InputStream stream) {
+        return null;
+    }
+
+    @Override
+    public long getTimeout() {
+        return 0;
+    }
+
+    @Override
+    public void setTimeout(long timeout) {
+
+    }
+
+    @Override
+    public String getDescription() {
+        return "";
+    }
+
+    @Override
+    public void setDescription(String description) {
+
+    }
+
+    @Override
+    public void forceReindex(ClassInstance instance) {
+
+    }
+
+    @Override
+    public Set<ClassInstance> getReindexSet() {
+        return Set.of();
+    }
+
+    @Override
+    public void forceSearchReindex(ClassInstance instance) {
+
+    }
+
+    @Override
+    public Set<ClassInstance> getSearchReindexSet() {
+        return Set.of();
+    }
+
+    @Override
+    public long getAppId(Instance model) {
+        return 1;
+    }
+
+    @Override
+    public long getAppId() {
+        return 1;
+    }
+
+    @Override
+    public void batchRemove(Collection<Instance> instances) {
+        for (var inst : instances) {
+            if (inst instanceof Entity e) {
+                if (entities.remove(e) && e.tryGetId() != null)
+                    entityMap.remove(e.getId());
+            }
+        }
+    }
+
+    @Override
+    public boolean remove(Instance instance) {
+        batchRemove(List.of(instance));
+        return true;
+    }
+
+    @Override
+    public List<Reference> selectByKey(IndexKeyRT indexKey) {
+        var entities = memoryIndex.selectByKey(indexKey.getIndex().getIndexDef(),
+                new ArrayList<>(indexKey.getValues()));
+        return Utils.map(entities, Instance::getReference);
+    }
+
+    @Override
+    public List<Reference> query(InstanceIndexQuery query) {
+        var entities = memoryIndex.query(new EntityIndexQuery<>(
+                query.index().getIndexDef(),
+                Utils.safeCall(query.from(), this::convertToEntityIndexKey),
+                Utils.safeCall(query.to(), this::convertToEntityIndexKey),
+                query.desc(),
+                query.limit() != null ? query.limit() : -1
+        ));
+        return Utils.map(entities, Instance::getReference);
+    }
+
+    private EntityIndexKey convertToEntityIndexKey(InstanceIndexKey key) {
+        return new EntityIndexKey(new ArrayList<>(key.values()));
+    }
+
+    @Override
+    public long count(InstanceIndexQuery query) {
+        return memoryIndex.query(new EntityIndexQuery<>(
+                query.index().getIndexDef(),
+                Utils.safeCall(query.from(), this::convertToEntityIndexKey),
+                Utils.safeCall(query.to(), this::convertToEntityIndexKey),
+                query.desc(),
+                query.limit() != null ? query.limit() : -1
+        )).size();
+    }
+
+    @Override
+    public boolean containsUniqueKey(IndexKeyRT key) {
+        return selectFirstByKey(key) != null;
+    }
+
+    @Override
+    public void batchBind(Collection<Instance> instances) {
+        instances.forEach(this::bind);
+    }
+
+    @Override
+    public void registerCommitCallback(Runnable action) {
+
+    }
+
+    @Override
+    public <E> E getAttribute(ContextAttributeKey<E> key) {
+        return null;
+    }
+
+    @Override
+    public void increaseVersionsForAll() {
+        for (Instance entity : entities) {
+            entity.incVersion();
+        }
+    }
+
+    @Override
+    public void updateMemoryIndex(ClassInstance instance) {
+    }
+
+    @Override
+    public long allocateTreeId() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Consumer<Object> getBindHook() {
+        return null;
+    }
+
+    @Override
+    public Instance getRemoved(Id id) {
+        return null;
+    }
+
+    @Override
+    public boolean isFinished() {
+        return false;
+    }
+
+    @Override
+    public void finish() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void addListener(ContextListener listener) {
+
+    }
+
+    @Override
+    public void setLockMode(LockMode mode) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public LockMode getLockMode() {
+        return LockMode.NONE;
+    }
+
+    @Override
+    public List<Id> filterAlive(List<Id> ids) {
+        return Utils.filter(ids, this::isAlive);
+    }
+
+    @Override
+    public boolean isAlive(Id id) {
+        return entityMap.containsKey(id);
+    }
+
+    @Override
+    public Instance get(Id id) {
+        return entityMap.get(id);
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public Reference selectFirstByKey(IndexKeyRT key) {
+        return Utils.first(selectByKey(key));
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public Reference selectLastByKey(IndexKeyRT key) {
+        return Utils.last(selectByKey(key));
+    }
+
+    @Override
+    public List<Reference> indexScan(IndexKeyRT from, IndexKeyRT to) {
+        return query(new InstanceIndexQuery(
+                from.getIndex(),
+                new InstanceIndexKey(from.getIndex(), new ArrayList<>(from.getValues())),
+                new InstanceIndexKey(to.getIndex(), new ArrayList<>(to.getValues())),
+                false,
+                -1L
+        ));
+    }
+
+    @Override
+    public long indexCount(IndexKeyRT from, IndexKeyRT to) {
+        return count(new InstanceIndexQuery(
+                from.getIndex(),
+                new InstanceIndexKey(from.getIndex(), new ArrayList<>(from.getValues())),
+                new InstanceIndexKey(to.getIndex(), new ArrayList<>(to.getValues())),
+                false,
+                -1L
+        ));
+    }
+
+    @Override
+    public List<Reference> indexSelect(IndexKeyRT key) {
+        var entities = memoryIndex.selectByKey(key.getIndex().getIndexDef(), new ArrayList<>(key.getValues()));
+        return Utils.map(entities, Instance::getReference);
+    }
+
+    @Override
+    public Reference createReference(Id id) {
+        return new EntityReference(id, () -> get(id));
+    }
+
+    @Override
+    public List<Instance> batchGetRoots(List<Long> treeIds) {
+        List<Id> ids = Utils.map(treeIds, treeId -> new PhysicalId(treeId, 0L));
+        return batchGet(ids);
+    }
+
+    @Nullable
+    @Override
+    public Instance getBuffered(Id id) {
+        return entityMap.get(id);
+    }
+
+    @Override
+    public String getClientId() {
+        return "";
+    }
+
+    @Override
+    public Instance internalGet(Id id) {
+        return entityMap.get(id);
+    }
+
+    @Override
+    public boolean contains(Id id) {
+        return entityMap.containsKey(id);
+    }
+
+    @Override
+    public ScanResult scan(long start, long limit) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void loadTree(long id) {
+
+    }
+
+    @Override
+    public TypeDefProvider getTypeDefProvider() {
+        return this;
+    }
+
+    @Override
+    public RedirectStatusProvider getRedirectStatusProvider() {
+        return this;
+    }
+
+    @Override
+    public boolean containsInstance(Instance instance) {
+        return instance instanceof Entity e && entities.contains(e);
+    }
+
+    @Override
+    public boolean containsId(Id id) {
+        return entityMap.containsKey(id);
+    }
+
+    @Override
+    public void buffer(Id id) {
+
+    }
+
+    public void initSystemFunctions() {
+        StdFunction.defineSystemFunctions(this).forEach(this::writeEntity);
+    }
+
+    public void initUserFunctions() {
+        StdFunction.defineUserFunctions(this).forEach(this::writeEntity);
+    }
+
+    @Override
+    public @NotNull Iterator<Instance> iterator() {
+        var it = entities.iterator();
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return it.hasNext();
+            }
+
+            @Override
+            public Instance next() {
+                return it.next();
+            }
+        };
+    }
+
+
+}
+

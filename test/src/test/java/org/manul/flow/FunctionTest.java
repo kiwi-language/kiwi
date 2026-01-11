@@ -1,0 +1,25 @@
+package org.manul.flow;
+
+import junit.framework.TestCase;
+import org.junit.Assert;
+import org.manul.object.type.TypeVariable;
+import org.manul.object.type.Types;
+import org.manul.util.TestUtils;
+
+import java.util.List;
+
+public class FunctionTest extends TestCase {
+
+    public void testGeneric() {
+        var function = FunctionBuilder.newBuilder(TestUtils.nextRootId(), "test").build();
+        var typeVar = new TypeVariable(function.nextChildId(), "T", function);
+        function.setTypeParameters(List.of(typeVar));
+        function.setParameters(List.of(new Parameter(function.nextChildId(), "p1", typeVar.getType(), function)));
+        Assert.assertFalse(function.getTypeParameters().isEmpty());
+        var parameterizedFunc = new FunctionRef(function, List.of(Types.getStringType()));
+        Assert.assertSame(function, parameterizedFunc.getRawFlow());
+        Assert.assertEquals(List.of(Types.getStringType()), parameterizedFunc.getTypeArguments());
+        Assert.assertEquals(Types.getStringType(), parameterizedFunc.getParameterTypes().getFirst());
+    }
+
+}

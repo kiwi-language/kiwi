@@ -1,6 +1,6 @@
 package search;
 
-import org.metavm.api.Entity;
+import org.manul.api.Entity;
 
 @Entity(searchable = true)
 public class SearchFoo {

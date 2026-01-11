@@ -1,0 +1,70 @@
+package org.manul.object.instance;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.manul.api.Entity;
+import org.manul.wire.Wire;
+import org.manul.entity.IndexDef;
+import org.manul.object.instance.core.Id;
+import org.manul.object.instance.core.Instance;
+import org.manul.object.instance.core.Message;
+import org.manul.object.instance.core.Reference;
+import org.manul.object.instance.log.InstanceLog;
+import org.manul.util.Instances;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+@Wire(27)
+@Entity
+public class ChangeLog extends org.manul.entity.Entity implements Message {
+
+    public static final Logger logger = LoggerFactory.getLogger(ChangeLog.class);
+
+    public static final IndexDef<ChangeLog> IDX_STATUS = IndexDef.create(ChangeLog.class,
+            1, changeLog -> List.of(Instances.intInstance(changeLog.status.code())));
+
+    public static volatile BiConsumer<Long, ChangeLog> saveHook;
+    private final List<InstanceLog> items = new ArrayList<>();
+    @Setter
+    @Getter
+    private ChangeLogStatus status;
+
+    public ChangeLog(Id id, List<InstanceLog> items) {
+        super(id);
+        this.items.addAll(items);
+        this.status = ChangeLogStatus.PENDING;
+    }
+
+    public List<InstanceLog> getItems() {
+        return Collections.unmodifiableList(items);
+    }
+
+    public void save(long appId) {
+        if(saveHook == null)
+            throw new NullPointerException("Save hook is missing");
+        saveHook.accept(appId, this);
+    }
+
+    @Nullable
+    @Override
+    public org.manul.entity.Entity getParentEntity() {
+        return null;
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        for (var items_ : items) items_.forEachReference(action);
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+    }
+
+}

@@ -1,0 +1,23 @@
+package deletes
+
+class App(var name: string) {
+
+    {
+        for (i in 0...5) {
+            val manulMod = Module("manul", new Module[])
+            Module("web", new Module[] { manulMod })
+        }
+    }
+
+    class Module(
+        var name: string,
+        var dependencies: Module[]
+    )
+
+    fn __run__() {
+        for (c in children) {
+            delete c
+        }
+    }
+
+}

@@ -31,17 +31,17 @@ server:
 
 management.health.elasticsearch.enabled: false
 
-metavm:
-  resource-cp-root: /Users/leen/workspace/kiwi/model/src/main/resources
+manul:
+  resource-cp-root: /Users/leen/workspace/manul/model/src/main/resources
   api:
     verify: true
   token:
     encrypt:
-      certificate: /etc/metavm/encrypt_key.pub
-      key: /etc/metavm/encrypt_key
+      certificate: /etc/manul/encrypt_key.pub
+      key: /etc/manul/encrypt_key
     sign:
-      certificate: /etc/metavm/sign_key.pub
-      key: /etc/metavm/sign_key
+      certificate: /etc/manul/sign_key.pub
+      key: /etc/manul/sign_key
   id:
     file:
       Type: /id/Type.properties

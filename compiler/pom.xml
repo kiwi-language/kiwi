@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.metavm</groupId>
-        <artifactId>metavm-parent</artifactId>
+        <groupId>org.manul</groupId>
+        <artifactId>manul-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>metavm-compiler</artifactId>
+    <artifactId>manul-compiler</artifactId>
 
     <properties>
         <native.extension/>
@@ -25,8 +25,8 @@
             <artifactId>slf4j-simple</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.metavm</groupId>
-            <artifactId>metavm-share</artifactId>
+            <groupId>org.manul</groupId>
+            <artifactId>manul-share</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -66,7 +66,7 @@
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.metavm.compiler.Main</mainClass>
+                                    <mainClass>org.manul.compiler.Main</mainClass>
                                 </transformer>
                             </transformers>
                             <shadedArtifactAttached>true</shadedArtifactAttached>

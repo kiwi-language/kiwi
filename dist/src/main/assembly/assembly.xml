@@ -6,6 +6,7 @@
 
     <formats>
         <format>zip</format>
+        <format>tar.gz</format>
     </formats>
 
     <includeBaseDirectory>true</includeBaseDirectory>
@@ -13,7 +14,7 @@
     <dependencySets>
         <dependencySet>
             <includes>
-                <include>org.metavm:metavm-server</include>
+                <include>org.manul:manul-server</include>
             </includes>
             <outputDirectory>bin</outputDirectory>
             <outputFileNameMapping>server.jar</outputFileNameMapping>
@@ -24,7 +25,7 @@
 
         <dependencySet>
             <includes>
-                <include>org.metavm:metavm-compiler</include>
+                <include>org.manul:manul-compiler</include>
             </includes>
             <outputDirectory>bin</outputDirectory>
             <outputFileNameMapping>compiler.jar</outputFileNameMapping>
@@ -39,8 +40,8 @@
             <directory>src/main/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <includes>
-                <include>kiwi</include>
-                <include>kiwi-server</include>
+                <include>manul</include>
+                <include>manul-server</include>
             </includes>
             <fileMode>0755</fileMode>
             <lineEnding>unix</lineEnding>
@@ -50,8 +51,8 @@
             <directory>src/main/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <includes>
-                <include>kiwi.cmd</include>
-                <include>kiwi-server.cmd</include>
+                <include>manul.cmd</include>
+                <include>manul-server.cmd</include>
             </includes>
             <fileMode>0755</fileMode>
             <lineEnding>dos</lineEnding>
@@ -61,7 +62,7 @@
             <directory>src/main/conf</directory>
             <outputDirectory>conf</outputDirectory>
             <includes>
-                <include>kiwi.yml</include>
+                <include>manul.yml</include>
             </includes>
             <fileMode>0644</fileMode>
         </fileSet>
@@ -73,7 +74,7 @@
             <excludes>
                 <exclude>.gitignore</exclude>
                 <exclude>target/**</exclude>
-                <exclude>.metavm/**</exclude>
+                <exclude>.manul/**</exclude>
             </excludes>
         </fileSet>
 

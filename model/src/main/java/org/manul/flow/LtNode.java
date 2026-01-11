@@ -1,0 +1,77 @@
+package org.manul.flow;
+
+import org.jetbrains.annotations.NotNull;
+import org.manul.api.Entity;
+import org.manul.entity.ElementVisitor;
+import org.manul.object.instance.core.Instance;
+import org.manul.object.instance.core.Reference;
+import org.manul.object.type.Type;
+import org.manul.object.type.Types;
+
+import javax.annotation.Nullable;
+import java.util.function.Consumer;
+
+@Entity
+public class LtNode extends Node {
+
+    public LtNode(String name,
+                  @Nullable Node previous,
+                  @NotNull Code code) {
+        super(name, Types.getBooleanType(), previous, code);
+    }
+
+    public static Node read(CodeInput input, String name) {
+        return new LtNode(name, input.getPrev(), input.getCode());
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("lt");
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.LT);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
+    }
+
+    @NotNull
+    @Override
+    public Type getType() {
+        return Types.getBooleanType();
+    }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitLtNode(this);
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+        super.forEachChild(action);
+    }
+}
