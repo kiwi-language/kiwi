@@ -35,7 +35,6 @@ jobs:
           cache: 'maven'
 
       - name: Build Native Image with Maven
-        # Maven will now generate BOTH .zip and .tar.gz in the target folder
         run: mvn -B -Pnative package --file pom.xml
 
       - name: Rename Release Asset
@@ -50,13 +49,11 @@ jobs:
           
           echo "Looking for built artifact with extension: .$EXTENSION"
           
-          # Find the generated file in target/ (ignoring version numbers in the filename)
-          # Finds: target/manul-*.zip or target/manul-*.tar.gz
-          SOURCE_FILE=$(find ./target -name "*.$EXTENSION" -type f | head -n 1)
+          SOURCE_FILE=$(find ./dist/target -name "*.$EXTENSION" -type f | head -n 1)
 
           if [ -z "$SOURCE_FILE" ]; then
-            echo "Error: Could not find a .$EXTENSION file in ./target"
-            ls -R ./target
+            echo "Error: Could not find a .$EXTENSION file in ./dist/target"
+            ls -R ./dist/target
             exit 1
           fi
 
