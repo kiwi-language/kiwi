@@ -17,10 +17,13 @@ jobs:
         include:
           - os: ubuntu-latest
             asset_name: manul-linux-amd64.tar.gz
+            build_args: "--static --libc=musl -J-Xmx6g"
           - os: macos-latest
             asset_name: manul-macos-aarch64.tar.gz
+            build_args: "-J-Xmx6g"
           - os: windows-latest
             asset_name: manul-windows-amd64.zip
+            build_args: "-J-Xmx6g"
 
     steps:
       - name: Checkout code
@@ -34,21 +37,47 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cache: 'maven'
 
+      - name: Install Musl Toolchain and Build Zlib (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools build-essential curl
+
+          # 1. Download zlib source
+          curl -L -o zlib.tar.gz https://zlib.net/zlib-1.3.1.tar.gz
+          tar xzf zlib.tar.gz
+          cd zlib-1.3.1
+
+          # 2. Configure zlib to use the musl-gcc wrapper
+          # We build a static library
+          CC=musl-gcc ./configure --static
+
+          # 3. Build
+          make
+
+          # 4. Copy the compiled library directly to the Musl library path
+          if [ -d "/usr/lib/x86_64-linux-musl" ]; then
+             sudo cp libz.a /usr/lib/x86_64-linux-musl/
+             echo "SUCCESS: Copied libz.a to /usr/lib/x86_64-linux-musl/"
+          else
+             echo "ERROR: Musl library directory not found."
+             exit 1
+          fi
+
       - name: Build Native Image with Maven
-        run: mvn -B -Pnative package --file pom.xml
+        shell: bash
+        run: mvn -B -Pnative package --file pom.xml "-Dnative.build.args=${{ matrix.build_args }}"
 
       - name: Rename Release Asset
         shell: bash
         run: |
-          # Detect the extension we want based on the matrix asset_name
           if [[ "${{ matrix.asset_name }}" == *.zip ]]; then
             EXTENSION="zip"
           else
             EXTENSION="tar.gz"
           fi
           
-          echo "Looking for built artifact with extension: .$EXTENSION"
-          
+          # Find the built file
           SOURCE_FILE=$(find ./dist/target -name "*.$EXTENSION" -type f | head -n 1)
 
           if [ -z "$SOURCE_FILE" ]; then
@@ -57,13 +86,139 @@ jobs:
             exit 1
           fi
 
-          echo "Found artifact: $SOURCE_FILE"
-          echo "Renaming to: ${{ matrix.asset_name }}"
-          
+          echo "Renaming $SOURCE_FILE to ${{ matrix.asset_name }}"
           mv "$SOURCE_FILE" ${{ matrix.asset_name }}
 
-      - name: Upload Release Asset
+      - name: Upload Release Asset to GitHub
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ${{ matrix.asset_name }}
+
+      - name: Save Artifact for Gitee
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}
+          if-no-files-found: error
+
+  gitee-release:
+    name: Sync to Gitee
+    needs: build-and-upload
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Sync Tag and Create Release
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          REPO: ${{ github.repository }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          # 1. Setup SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -t rsa gitee.com >> ~/.ssh/known_hosts
+          echo "Host gitee.com" >> ~/.ssh/config
+          echo "  ServerAliveInterval 60" >> ~/.ssh/config
+          echo "  ServerAliveCountMax 5" >> ~/.ssh/config
+
+          # 2. Sync Tag
+          git remote add gitee git@gitee.com:$REPO.git
+          for i in {1..3}; do
+            git push gitee ${GITHUB_REF} --force && break || sleep 15;
+          done
+
+          # 3. Prepare Data
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          RELEASE_NAME="${{ github.event.release.name }}"
+          PRERELEASE=${{ github.event.release.prerelease }}
+          TARGET_COMMITISH="${{ github.sha }}"
+
+          if [ -z "$RELEASE_BODY" ]; then
+            FINAL_BODY="Release $TAG_NAME"
+          else
+            FINAL_BODY="$RELEASE_BODY"
+          fi
+
+          echo "Preparing Release $TAG_NAME for $REPO..."
+
+          # Check if release exists
+          GET_RESPONSE=$(curl -s --retry 3 "https://gitee.com/api/v5/repos/$REPO/releases/tags/$TAG_NAME")
+          EXISTING_ID=$(echo "$GET_RESPONSE" | jq -r .id)
+
+          if [ "$EXISTING_ID" != "null" ] && [ -n "$EXISTING_ID" ]; then
+            echo "Release $TAG_NAME already exists on Gitee (ID: $EXISTING_ID). Deleting it..."
+            curl -s -X DELETE \
+              "https://gitee.com/api/v5/repos/$REPO/releases/$EXISTING_ID?access_token=$GITEE_TOKEN"
+          fi
+
+          echo "Creating new release..."
+          
+          JSON_PAYLOAD=$(jq -n \
+            --arg tag "$TAG_NAME" \
+            --arg name "$RELEASE_NAME" \
+            --arg body "$FINAL_BODY" \
+            --arg pre "$PRERELEASE" \
+            --arg target "$TARGET_COMMITISH" \
+            --arg token "$GITEE_TOKEN" \
+            '{access_token: $token, tag_name: $tag, name: $name, body: $body, prerelease: ($pre == "true"), target_commitish: $target}')
+
+          CREATE_RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" \
+            --retry 3 \
+            -d "$JSON_PAYLOAD" \
+            "https://gitee.com/api/v5/repos/$REPO/releases")
+          
+          RELEASE_ID=$(echo "$CREATE_RESPONSE" | jq -r .id)
+
+          if [ "$RELEASE_ID" == "null" ] || [ -z "$RELEASE_ID" ]; then
+             echo "FATAL: Could not resolve Release ID."
+             echo "Response: $CREATE_RESPONSE"
+             exit 1
+          fi
+
+          # 4. Upload Assets (Parallel + Retry)
+          upload_asset() {
+            local file=$1
+            local id=$2
+            local token=$3
+            local repo=$4
+          
+            # Use --retry-all-errors to handle connection resets
+            curl -s -X POST "https://gitee.com/api/v5/repos/$repo/releases/$id/attach_files" \
+              -f \
+              --retry 5 \
+              --retry-delay 10 \
+              --retry-all-errors \
+              --connect-timeout 60 \
+              -F "access_token=$token" \
+              -F "file=@$file" > /dev/null
+            return $?
+          }
+
+          PIDS=""
+          FAIL=0
+          
+          for file in manul-*; do
+            upload_asset "$file" "$RELEASE_ID" "$GITEE_TOKEN" "$REPO" &
+            PIDS="$PIDS $!"
+          done
+
+          for pid in $PIDS; do
+            wait $pid || FAIL=1
+          done
+
+          if [ $FAIL -ne 0 ]; then
+            echo "One or more assets failed to upload."
+            exit 1
+          fi
