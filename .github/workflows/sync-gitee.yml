@@ -1,0 +1,25 @@
+name: Sync to Gitee
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror to Gitee
+        uses: Yikun/hub-mirror-action@master
+        with:
+          src: github/wizardleeen
+
+          dst: gitee/wizardleeen
+
+          dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
+          dst_token: ${{ secrets.GITEE_TOKEN }}
+
+          static_list: "manul"
+
+          force_update: true
+          debug: true
