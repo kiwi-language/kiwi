@@ -115,25 +115,6 @@
 
     <profiles>
         <profile>
-            <id>windows</id>
-            <activation>
-                <os><family>windows</family></os>
-            </activation>
-            <properties>
-                <native.extension>.exe</native.extension>
-            </properties>
-        </profile>
-        <profile>
-            <id>unix</id>
-            <activation>
-                <os><family>!windows</family></os>
-            </activation>
-            <properties>
-                <native.extension/>
-            </properties>
-        </profile>
-
-        <profile>
             <id>native</id>
             <build>
                 <plugins>
@@ -147,6 +128,9 @@
                             <metadataRepository>
                                 <enabled>true</enabled>
                             </metadataRepository>
+                            <buildArgs>
+                                <buildArg>--no-fallback</buildArg>
+                            </buildArgs>
                         </configuration>
                         <executions>
                             <execution>
@@ -185,10 +169,7 @@
         </profile>
 
         <profile>
-            <id>linux-static</id>
-            <activation>
-                <os><name>linux</name></os>
-            </activation>
+            <id>static-musl</id>
             <build>
                 <plugins>
                     <plugin>
@@ -198,6 +179,53 @@
                             <buildArgs>
                                 <buildArg>--static</buildArg>
                                 <buildArg>--libc=musl</buildArg>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>macos</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <configuration>
+                            <buildArgs combine.children="append">
+                                <buildArg>-H:NativeLinkerOption=-mmacosx-version-min=11.0</buildArg>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <native.extension>.exe</native.extension>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <configuration>
+                            <buildArgs combine.children="append">
+                                <buildArg>-H:NativeLinkerOption=/SUBSYSTEM:CONSOLE,10.0</buildArg>
                             </buildArgs>
                         </configuration>
                     </plugin>
