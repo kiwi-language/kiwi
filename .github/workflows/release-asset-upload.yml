@@ -88,11 +88,15 @@ jobs:
         include:
           - os: ubuntu-22.04
             asset_name: manul-linux-amd64.tar.gz
-            no_pie: true
+            image: ghcr.io/graalvm/native-image-community:21-muslib
+            profiles: native,use-musl
+            alpine: false
 
           - os: ubuntu-22.04-arm
             asset_name: manul-linux-aarch64.tar.gz
-            no_pie: true
+            image: bellsoft/liberica-native-image-kit-container:jdk-21-nik-23-musl
+            profiles: native,use-musl,no-pie
+            alpine: true
 
     steps:
       - name: Checkout code
@@ -106,25 +110,25 @@ jobs:
 
       - name: Create Build Script
         run: |
-          PROFILES="native,static-musl"
-          if [ "${{ matrix.no_pie }}" == "true" ]; then
-            PROFILES="native,static-musl,no-pie"
-          fi
-          
-          cat << EOF > build.sh
+          cat << 'EOF' > build.sh
           #!/bin/sh
           set -e
-
-          echo ">>> Installing Compiler Dependencies..."
-          #apk update
-          #apk add zlib-static
-
+          EOF
+          
+          if [ "${{ matrix.alpine }}" == "true"  ]; then
+            cat << 'EOF' >> build.sh
+            echo ">>> Installing Compiler Dependencies..."
+            apk update
+            apk add zlib-static
+          fi
+          
+          cat << 'EOF' >> build.sh
           echo ">>> Building Native Image..."
           # Run the Maven we mounted from the host
-          ./apache-maven-3.9.9/bin/mvn -B -P${PROFILES} package -DskipTests
+          ./apache-maven-3.9.9/bin/mvn -B -P${{ matrix.profiles }} package -DskipTests
 
           echo ">>> Fixing file permissions..."
-          chown -R \$HOST_UID:\$HOST_GID .
+          chown -R $HOST_UID:$HOST_GID .
           EOF
           
           chmod +x build.sh
@@ -137,7 +141,7 @@ jobs:
             -w /workspace \
             -e HOST_UID=$(id -u) \
             -e HOST_GID=$(id -g) \
-            bellsoft/liberica-native-image-kit-container:jdk-21-nik-23-musl \
+            ${{ matrix.image }} \
             /workspace/build.sh
 
       - name: Rename Asset
