@@ -115,22 +115,24 @@ jobs:
           set -e
           EOF
           
-          if [ "${{ matrix.alpine }}" == "true"  ]; then
+          if [[ "${{ matrix.alpine }}" == "true"  ]]; then
             cat << 'EOF' >> build.sh
-            echo ">>> Installing Compiler Dependencies..."
-            apk update
-            apk add zlib-static
+          echo ">>> Installing Compiler Dependencies..."
+          apk update
+          apk add zlib-static
+          
+          EOF
           fi
           
           cat << 'EOF' >> build.sh
           echo ">>> Building Native Image..."
           # Run the Maven we mounted from the host
           ./apache-maven-3.9.9/bin/mvn -B -P${{ matrix.profiles }} package -DskipTests
-
+          
           echo ">>> Fixing file permissions..."
           chown -R $HOST_UID:$HOST_GID .
           EOF
-          
+  
           chmod +x build.sh
 
       - name: Run Build in Docker
