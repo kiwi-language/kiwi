@@ -89,13 +89,13 @@ jobs:
           - os: ubuntu-22.04
             asset_name: manul-linux-amd64.tar.gz
             image: ghcr.io/graalvm/native-image-community:21-muslib
-            profiles: native,use-musl
+            profiles: native,static-musl
             alpine: false
 
           - os: ubuntu-22.04-arm
             asset_name: manul-linux-aarch64.tar.gz
             image: bellsoft/liberica-native-image-kit-container:jdk-21-nik-23-musl
-            profiles: native,use-musl,no-pie
+            profiles: native,static-musl,no-pie
             alpine: true
 
     steps:
