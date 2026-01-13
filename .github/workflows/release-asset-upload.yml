@@ -4,9 +4,9 @@ on:
   release:
     types: [created]
   workflow_dispatch:
-#  push:
-#    branches:
-#      - 'feat/expand-ci-matrix'
+  push:
+    branches:
+      - 'feat/expand-ci-matrix'
 
 permissions:
   contents: write
@@ -88,9 +88,15 @@ jobs:
         include:
           - os: ubuntu-22.04
             asset_name: manul-linux-amd64.tar.gz
+            image: ghcr.io/graalvm/native-image-community:21-muslib
+            profiles: native,static-musl
+            alpine: false
 
           - os: ubuntu-22.04-arm
             asset_name: manul-linux-aarch64.tar.gz
+            image: bellsoft/liberica-native-image-kit-container:jdk-21-nik-23-musl
+            profiles: native,static-musl,no-pie
+            alpine: true
 
     steps:
       - name: Checkout code
@@ -107,19 +113,26 @@ jobs:
           cat << 'EOF' > build.sh
           #!/bin/sh
           set -e
-
+          EOF
+          
+          if [[ "${{ matrix.alpine }}" == "true"  ]]; then
+            cat << 'EOF' >> build.sh
           echo ">>> Installing Compiler Dependencies..."
           apk update
           apk add zlib-static
-
+          
+          EOF
+          fi
+          
+          cat << 'EOF' >> build.sh
           echo ">>> Building Native Image..."
           # Run the Maven we mounted from the host
-          ./apache-maven-3.9.9/bin/mvn -B -Pnative,static-musl,no-pie package -DskipTests
-
+          ./apache-maven-3.9.9/bin/mvn -B -P${{ matrix.profiles }} package -DskipTests
+          
           echo ">>> Fixing file permissions..."
           chown -R $HOST_UID:$HOST_GID .
           EOF
-          
+  
           chmod +x build.sh
 
       - name: Run Build in Docker
@@ -130,7 +143,7 @@ jobs:
             -w /workspace \
             -e HOST_UID=$(id -u) \
             -e HOST_GID=$(id -g) \
-            bellsoft/liberica-native-image-kit-container:jdk-21-nik-23-musl \
+            ${{ matrix.image }} \
             /workspace/build.sh
 
       - name: Rename Asset
@@ -150,13 +163,13 @@ jobs:
           fi
           
           echo "Found artifact: $SOURCE_FILE"
-          mv "$SOURCE_FILE" manul-linux-aarch64.tar.gz
+          mv "$SOURCE_FILE" ${{ matrix.asset_name }}
 
       - name: Upload Release Asset to GitHub
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: manul-linux-aarch64.tar.gz
+          files: ${{ matrix.asset_name }}
 
       - name: Save Artifact for Gitee
         uses: actions/upload-artifact@v4
