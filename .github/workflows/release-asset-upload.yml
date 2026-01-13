@@ -3,36 +3,33 @@ name: Upload Release Asset
 on:
   release:
     types: [created]
+  workflow_dispatch:
+#  push:
+#    branches:
+#      - 'feat/expand-ci-matrix'
 
 permissions:
   contents: write
 
 jobs:
   # ------------------------------------------------------------------
-  # JOB 1: Standard Builds (Windows, Mac, Linux x64 Musl)
+  # JOB 1: Mac and Windows Builds
   # ------------------------------------------------------------------
-  build-standard:
+  build-mac-win:
     name: Build ${{ matrix.asset_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
-            asset_name: manul-linux-amd64.tar.gz
-            use_musl: true
-
-          - os: macos-14
+          - os: macos-15
             asset_name: manul-macos-aarch64.tar.gz
-            use_musl: false
 
           - os: macos-15-intel
             asset_name: manul-macos-amd64.tar.gz
-            use_musl: false
 
           - os: windows-2022
             asset_name: manul-windows-amd64.zip
-            use_musl: false
 
     steps:
       - name: Checkout code
@@ -46,31 +43,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cache: 'maven'
 
-      - name: Install Musl Toolchain and Build Zlib (Linux Only)
-        if: matrix.use_musl == true
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools build-essential curl
-          curl -L -o zlib.tar.gz https://zlib.net/zlib-1.3.1.tar.gz
-          tar xzf zlib.tar.gz
-          cd zlib-1.3.1
-          CC=musl-gcc ./configure --static
-          make
-          if [ -d "/usr/lib/x86_64-linux-musl" ]; then
-             sudo cp libz.a /usr/lib/x86_64-linux-musl/
-          else
-             echo "ERROR: Musl library directory not found."
-             exit 1
-          fi
-
       - name: Build Native Image with Maven
         shell: bash
         run: |
-          PROFILES="native"
-          if [ "${{ matrix.use_musl }}" == "true" ]; then
-            PROFILES="native,static-musl"
-          fi
-          mvn -B -P$PROFILES package --file pom.xml
+          mvn -B -Pnative package -DskipTests
 
       - name: Rename Release Asset
         shell: bash
@@ -101,11 +77,20 @@ jobs:
           path: ${{ matrix.asset_name }}
 
   # ------------------------------------------------------------------
-  # JOB 2: Linux ARM64 Build (Fix: SSL Certificates)
+  # JOB 2: Linux Build
   # ------------------------------------------------------------------
-  build-linux-arm64:
-    name: Build manul-linux-aarch64.tar.gz
-    runs-on: ubuntu-22.04-arm
+  build-linux:
+    name: Build ${{ matrix.asset_name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            asset_name: manul-linux-amd64.tar.gz
+
+          - os: ubuntu-22.04-arm
+            asset_name: manul-linux-aarch64.tar.gz
 
     steps:
       - name: Checkout code
@@ -120,17 +105,16 @@ jobs:
       - name: Create Build Script
         run: |
           cat << 'EOF' > build.sh
-          #!/bin/bash
+          #!/bin/sh
           set -e
 
-          echo ">>> Installing Compiler Dependencies (OL8)..."
-          # We only install the bare minimum needed for linking. 
-          # No wget/ca-certificates needed since we downloaded Maven on the host.
-          microdnf install -y glibc-devel zlib-devel gcc
+          echo ">>> Installing Compiler Dependencies..."
+          apk update
+          apk add zlib-static
 
           echo ">>> Building Native Image..."
           # Run the Maven we mounted from the host
-          ./apache-maven-3.9.9/bin/mvn -B -Pnative package -DskipTests
+          ./apache-maven-3.9.9/bin/mvn -B -Pnative,static-musl,no-pie package -DskipTests
 
           echo ">>> Fixing file permissions..."
           chown -R $HOST_UID:$HOST_GID .
@@ -138,15 +122,15 @@ jobs:
           
           chmod +x build.sh
 
-      - name: Run Build in Docker (OL8)
+      - name: Run Build in Docker
         run: |
           docker run --rm \
-            --entrypoint /bin/bash \
+            --entrypoint /bin/sh \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             -e HOST_UID=$(id -u) \
             -e HOST_GID=$(id -g) \
-            ghcr.io/graalvm/native-image-community:21-ol8 \
+            bellsoft/liberica-native-image-kit-container:jdk-21-nik-23-musl \
             /workspace/build.sh
 
       - name: Rename Asset
@@ -177,16 +161,17 @@ jobs:
       - name: Save Artifact for Gitee
         uses: actions/upload-artifact@v4
         with:
-          name: manul-linux-aarch64.tar.gz
-          path: manul-linux-aarch64.tar.gz
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}
 
   # ------------------------------------------------------------------
   # JOB 3: Sync to Gitee (Wait for both builds)
   # ------------------------------------------------------------------
   gitee-release:
     name: Sync to Gitee
-    needs: [build-standard, build-linux-arm64]
+    needs: [build-mac-win, build-linux]
     runs-on: ubuntu-latest
+    if: github.event_name == 'release'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
