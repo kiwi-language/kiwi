@@ -88,9 +88,11 @@ jobs:
         include:
           - os: ubuntu-22.04
             asset_name: manul-linux-amd64.tar.gz
+            no_pie: false
 
           - os: ubuntu-22.04-arm
             asset_name: manul-linux-aarch64.tar.gz
+            no_pie: true
 
     steps:
       - name: Checkout code
@@ -104,7 +106,12 @@ jobs:
 
       - name: Create Build Script
         run: |
-          cat << 'EOF' > build.sh
+          PROFILES="native,static-musl"
+          if [ "${{ matrix.no_pie }}" == "true" ]; then
+            PROFILES="native,static-musl,no-pie"
+          fi
+          
+          cat << EOF > build.sh
           #!/bin/sh
           set -e
 
@@ -114,10 +121,10 @@ jobs:
 
           echo ">>> Building Native Image..."
           # Run the Maven we mounted from the host
-          ./apache-maven-3.9.9/bin/mvn -B -Pnative,static-musl,no-pie package -DskipTests
+          ./apache-maven-3.9.9/bin/mvn -B -P${PROFILES} package -DskipTests
 
           echo ">>> Fixing file permissions..."
-          chown -R $HOST_UID:$HOST_GID .
+          chown -R \$HOST_UID:\$HOST_GID .
           EOF
           
           chmod +x build.sh
