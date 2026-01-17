@@ -1,9 +1,12 @@
 package org.manul.object.instance.persistence;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.manul.context.Component;
+import org.manul.context.Init;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.SQLException;
 
 @Slf4j
@@ -86,52 +89,14 @@ public class DbInit {
                 data   bytea   not null,
                 status integer not null
             );
-                        
-            create table instance_2
-            (
-                id           bigint                     not null
-                    primary key,
-                app_id       bigint                     not null,
-                data         bytea                      not null,
-                version      bigint default '0'::bigint not null,
-                sync_version bigint default '0'::bigint not null,
-                deleted_at   bigint default '0'::bigint not null,
-                next_node_id bigint default 0           not null
-            );
-                        
-            create table index_entry_2
-            (
-                app_id      bigint not null,
-                index_id    bytea  not null,
-                data        bytea  not null,
-                instance_id bytea  not null,
-                primary key (app_id, index_id, data, instance_id)
-            );
-                        
-            create table instance_1
-            (
-                id           bigint                     not null
-                    primary key,
-                app_id       bigint                     not null,
-                data         bytea                      not null,
-                version      bigint default '0'::bigint not null,
-                sync_version bigint default '0'::bigint not null,
-                deleted_at   bigint default '0'::bigint not null,
-                next_node_id bigint default 0           not null
-            );
-                        
-            create table index_entry_1
-            (
-                app_id      bigint not null,
-                index_id    bytea  not null,
-                data        bytea  not null,
-                instance_id bytea  not null,
-                primary key (app_id, index_id, data, instance_id)
-            );
             """;
 
+    @Init(order = 10)
     public void run() {
         try (var conn = dataSource.getConnection()){
+            if (isInitialized(conn)) {
+                return;
+            }
             conn.setAutoCommit(false);
             conn.createStatement().executeUpdate(DDL);
             conn.commit();
@@ -140,6 +105,23 @@ public class DbInit {
         catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @SneakyThrows
+    private boolean isInitialized(Connection conn) {
+        var meta = conn.getMetaData();
+        var schema = "public";
+        var table = "id_region";
+        var rs = meta.getTables(null, schema, table, new String[] {"TABLE"});
+        while (rs.next()) {
+            var foundTable = rs.getString("TABLE_NAME");
+            // Since "id_region" contains an underscore (which is a wildcard in SQL),
+            // "id_region" could technically match "idxregion".
+            // This Java check ensures it is an EXACT match.
+            if (foundTable.equals(table))
+                return true;
+        }
+        return false;
     }
 
 

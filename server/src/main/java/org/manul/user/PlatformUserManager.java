@@ -118,7 +118,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         try (var context = newPlatformContext()) {
             User user = context.getEntity(User.class, userId);
             if (user == null) {
-                throw BusinessException.userNotFound(userId);
+                throw BusinessException.userIdNotFound(userId);
             }
             user.setState(UserState.DETACHED);
             context.finish();
@@ -208,7 +208,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
             verificationCodeService.checkVerificationCode(request.loginName(), request.verificationCode(), context);
             var user = context.selectFirstByKey(User.IDX_LOGIN_NAME, Instances.stringInstance(request.loginName()));
             if (user == null)
-                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+                throw new BusinessException(ErrorCode.USER_NOT_FOUND, request.loginName());
             user.setPassword(request.password());
             context.finish();
         }

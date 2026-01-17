@@ -1,6 +1,5 @@
 package org.manul.meta.processor;
 
-import com.google.auto.service.AutoService;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
@@ -22,7 +21,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Function;
 
-@AutoService(Processor.class)
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @SupportedAnnotationTypes("org.manul.api.Entity")
 public class MetaProcessor extends AbstractProcessor {

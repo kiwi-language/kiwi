@@ -23,16 +23,13 @@ public class MemMapperRegistry implements MapperRegistry {
     private final Map<TableKey, MemIndexEntryMapper> indexEntryMappers = new ConcurrentHashMap<>();
     private final Set<String> tableNames = new ConcurrentSkipListSet<>();
 
-    public MemMapperRegistry() {
-        createInstanceMapper(1, "instance");
-        createInstanceMapper(2, "instance");
-        createIndexEntryMapper(1, "index_entry");
-        createIndexEntryMapper(2, "index_entry");
-    }
-
     public void createTables(long appId) {
         createInstanceMapper(appId, "instance");
         createIndexEntryMapper(appId, "index_entry");
+    }
+
+    public boolean instanceTableExists(long appId, String table) {
+        return instanceMappers.containsKey(new TableKey(appId, table));
     }
 
     public void createInstanceMapper(long appId, String table) {

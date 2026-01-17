@@ -1,6 +1,5 @@
 package org.manul.jdbc;
 
-import lombok.SneakyThrows;
 import org.manul.context.sql.TransactionIsolation;
 import org.manul.context.sql.TransactionPropagation;
 
@@ -16,12 +15,6 @@ public class TransactionTemplate implements TransactionOperations {
         transactionManager = new TransactionManager(dataSource);
     }
 
-    @SneakyThrows
-    @Override
-    public <T> T execute(Supplier<T> action) {
-        return execute(action, false, TransactionPropagation.REQUIRED);
-    }
-
     @Override
     public <T> T execute(Supplier<T> action, boolean readonly, TransactionPropagation propagation) {
         transactionManager.begin(isolation, propagation, readonly);
@@ -32,6 +25,8 @@ public class TransactionTemplate implements TransactionOperations {
         } catch (Exception e) {
             transactionManager.rollback();
             throw e;
+        } finally {
+            transactionManager.exitScope();
         }
     }
 

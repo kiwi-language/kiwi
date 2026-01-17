@@ -4,6 +4,8 @@ import org.manul.application.rest.dto.*;
 import org.manul.beans.BeanDefinitionRegistry;
 import org.manul.common.ErrorCode;
 import org.manul.common.Page;
+import org.manul.context.Component;
+import org.manul.context.sql.Transactional;
 import org.manul.entity.*;
 import org.manul.message.Message;
 import org.manul.message.MessageKind;
@@ -20,8 +22,6 @@ import org.manul.task.RemoveAppTaskGroup;
 import org.manul.user.*;
 import org.manul.user.rest.dto.*;
 import org.manul.util.*;
-import org.manul.context.Component;
-import org.manul.context.sql.Transactional;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -114,12 +114,12 @@ public class ApplicationManager extends ApplicationStatusAware {
 
     @Transactional
     public CreateAppResult createRoot() {
-        return createBuiltin(ROOT_APP_ID, ApplicationCreateRequest.fromNewUser(ROOT_APP_NAME, ROOT_ADMIN_LOGIN_NAME, ROOT_ADMIN_PASSWORD));
+        return createBuiltin(ROOT_APP_ID, ApplicationCreateRequest.fromNewUser(ROOT_APP_NAME, ROOT_ADMIN_LOGIN_NAME, Utils.randomPassword()));
     }
 
     @Transactional
     public CreateAppResult createPlatform() {
-        return createBuiltin(PLATFORM_APP_ID, ApplicationCreateRequest.fromNewUser(PLATFORM_APP_NAME, PLATFORM_ADMIN_LOGIN_NAME, PLATFORM_ADMIN_PASSWORD));
+        return createBuiltin(PLATFORM_APP_ID, ApplicationCreateRequest.fromNewUser(PLATFORM_APP_NAME, PLATFORM_ADMIN_LOGIN_NAME, Utils.randomPassword()));
     }
 
     @Transactional
@@ -157,10 +157,10 @@ public class ApplicationManager extends ApplicationStatusAware {
         Application application = new Application(PhysicalId.of(id, 0L), name, owner);
         // initIdManually will bind application to context
         platformContext.bind(application);
+        schemaManager.createInstanceTable(id, "instance");
+        schemaManager.createIndexEntryTable(id, "index_entry");
+        platformUserManager.joinApplication(owner, application, platformContext);
         if (id != PLATFORM_APP_ID && id != ROOT_APP_ID) {
-            schemaManager.createInstanceTable(id, "instance");
-            schemaManager.createIndexEntryTable(id, "index_entry");
-            platformUserManager.joinApplication(owner, application, platformContext);
             setupApplication(application.getTreeId(), platformContext);
         }
         instanceSearchService.createIndex(id, false);

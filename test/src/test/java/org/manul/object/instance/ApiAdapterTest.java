@@ -157,7 +157,7 @@ public class ApiAdapterTest extends TestCase {
             fail("Invalid ID should throw an exception");
         } catch (BusinessException e) {
             assertSame(ErrorCode.INVALID_ID, e.getErrorCode());
-            assertEquals("Invalid ID: product", e.getMessage());
+            assertEquals("invalid ID: product", e.getMessage());
         }
     }
 

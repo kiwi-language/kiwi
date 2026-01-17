@@ -9,14 +9,20 @@ import org.manul.context.Component;
 public class DefaultScheduler implements Scheduler {
     @Override
     public void schedule(Runnable run, int delay) {
+        if (delay < 0) {
+            throw new IllegalArgumentException("Delay must be non-negative");
+        }
         Thread.startVirtualThread(() -> {
-            while (!ApplicationContext.isShutdown()) {
+            while (!ApplicationContext.isStopped()) {
                 try {
                     run.run();
                     //noinspection BusyWait
-                    Thread.sleep(delay);
                 } catch (Throwable e) {
                     log.error("Error in scheduled task", e);
+                }
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException ignored) {
                 }
             }
         });

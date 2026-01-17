@@ -1,14 +1,14 @@
 package org.manul.entity;
 
 import org.manul.context.Component;
-import org.manul.context.InitializingBean;
+import org.manul.context.Init;
 import org.manul.context.sql.Transactional;
 import org.manul.object.type.GlobalKlassTagAssigner;
 import org.manul.object.type.StdAllocators;
 import org.manul.task.SchedulerRegistry;
 
 @Component
-public class Bootstrap extends EntityContextFactoryAware implements InitializingBean {
+public class Bootstrap extends EntityContextFactoryAware {
 
     private final StdAllocators stdAllocators;
 
@@ -34,8 +34,8 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
         }
     }
 
-    @Override
-    public void afterPropertiesSet() {
+    @Init
+    public void init() {
         boot();
     }
 }

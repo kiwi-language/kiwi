@@ -1,22 +1,18 @@
 package org.manul.user;
 
 import org.manul.common.ErrorCode;
+import org.manul.context.Component;
 import org.manul.server.Filter;
 import org.manul.server.HttpRequest;
 import org.manul.util.BusinessException;
 import org.manul.util.Constants;
 import org.manul.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.manul.context.Component;
 
 import java.util.Set;
 import java.util.function.Consumer;
 
 @Component
 public class AuthenticateFilter implements Filter  {
-
-    public static final Logger logger = LoggerFactory.getLogger(AuthenticateFilter.class);
 
     private final LoginService loginService;
 
@@ -51,7 +47,8 @@ public class AuthenticateFilter implements Filter  {
             return;
         }
         var token = Tokens.getToken(request);
-        if (token != null &&  loginService.authenticate(new Token(Constants.PLATFORM_APP_ID, token)).isSuccessful()) {
+        if (token != null &&  loginService.authenticate(new Token(Constants.PLATFORM_APP_ID, token)).isSuccessful()
+                || loginService.defaultAuth()) {
             proceed.accept(request);
             return;
         }

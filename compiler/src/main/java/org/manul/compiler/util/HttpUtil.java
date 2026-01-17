@@ -11,7 +11,8 @@ import org.manul.common.Page;
 import org.manul.compiler.HttpTypeClient;
 import org.manul.user.rest.dto.LoginInfo;
 import org.manul.user.rest.dto.LoginRequest;
-import org.manul.util.*;
+import org.manul.util.Constants;
+import org.manul.util.Headers;
 
 import javax.annotation.Nullable;
 import java.net.CookieHandler;
@@ -24,7 +25,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class CompilerHttpUtils {
+public class HttpUtil {
 
     @Getter
     private static String host = Constants.DEFAULT_HOST;
@@ -41,7 +42,7 @@ public class CompilerHttpUtils {
     }
 
     public static void setToken(String token) {
-        CompilerHttpUtils.token = token;
+        HttpUtil.token = token;
     }
 
     public static List<HttpCookie> getCookies() {
@@ -53,22 +54,19 @@ public class CompilerHttpUtils {
         return (CookieManager) client.cookieHandler().get();
     }
 
+    @SneakyThrows
     public static <R> R delete(String path, Class<R> clazz) {
-        try {
-            var uri = new URI(host + path);
-            var builder = HttpRequest.newBuilder()
-                    .uri(uri)
-                    .header("Accept", "application/json")
-                    .header("Content-Type", "application/json")
-                    .header(Headers.X_APP_ID, "2")
-                    .DELETE();
-            if (token != null)
-                builder.header("Authorization", "Bearer " + token);
-            var resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            return processResponse(resp, clazz);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        var uri = new URI(host + path);
+        var builder = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .header(Headers.X_APP_ID, "2")
+                .DELETE();
+        if (token != null)
+            builder.header("Authorization", "Bearer " + token);
+        var resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        return processResponse(resp, clazz);
     }
 
     public static LoginInfo login(String userName, String password) {
@@ -82,44 +80,37 @@ public class CompilerHttpUtils {
         setToken(null);
     }
 
+    @SneakyThrows
     public static <R> R post(String path, @Nullable Object request, Class<R> clazz) {
-        try {
-            var uri = new URI(host + path);
-            var builder = HttpRequest.newBuilder()
-                    .uri(uri)
-                    .header("Accept", "application/json")
-                    .header("Content-Type", "application/json")
-                    .header(Headers.X_APP_ID, "2")
-                    .POST(
-                            request != null ?
-                                    HttpRequest.BodyPublishers.ofString(Jsonk.toJson(request)) :
-                                    HttpRequest.BodyPublishers.noBody()
-                    );
-            if (token != null)
-                builder.header("Authorization", "Bearer " + token);
-            var resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            return processResponse(resp, clazz);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        var uri = new URI(host + path);
+        var builder = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .header(Headers.X_APP_ID, "2")
+                .POST(
+                        request != null ?
+                                HttpRequest.BodyPublishers.ofString(Jsonk.toJson(request)) :
+                                HttpRequest.BodyPublishers.noBody()
+                );
+        if (token != null)
+            builder.header("Authorization", "Bearer " + token);
+        var resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        return processResponse(resp, clazz);
     }
 
+    @SneakyThrows
     public static <R> R upload(String path, String filePath, Class<R> clazz) {
-        try {
-            var builder = HttpRequest.newBuilder()
-                    .uri(new URI(host + path))
-                    .header("Accept", "application/json")
-                    .header("Content-Type", "application/octet-stream")
-                    .header(Headers.X_APP_ID, "2")
-                    .POST(HttpRequest.BodyPublishers.ofFile(Paths.get(filePath)));
-            if (token != null)
-                builder.header("Authorization", "Bearer " + token);
-            var resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            return processResponse(resp, clazz);
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        var builder = HttpRequest.newBuilder()
+                .uri(new URI(host + path))
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/octet-stream")
+                .header(Headers.X_APP_ID, "2")
+                .POST(HttpRequest.BodyPublishers.ofFile(Paths.get(filePath)));
+        if (token != null)
+            builder.header("Authorization", "Bearer " + token);
+        var resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        return processResponse(resp, clazz);
     }
 
     @SneakyThrows
@@ -145,7 +136,8 @@ public class CompilerHttpUtils {
             return null;
         if (resp.statusCode() != 200) {
             var errorResp = Jsonk.fromJson(resp.body(), ErrorResponse.class);
-            throw new BusinessException(ErrorCode.fromCode(errorResp.getCode()), errorResp.getMessage());
+            var errorCode = ErrorCode.fromCode(errorResp.getCode());
+            throw new RequestException(errorResp.getMessage(), errorCode);
         }
         if (type.clazz() == Void.class || type.clazz() == void.class)
             return resp.body();
@@ -165,7 +157,7 @@ public class CompilerHttpUtils {
         var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         if (resp.statusCode() != 200) {
             var errorResp = Jsonk.fromJson(resp.body(), ErrorResponse.class);
-            throw new BusinessException(ErrorCode.DEPLOY_FAILED, errorResp.getMessage());
+            throw new RequestException(errorResp.getMessage(), ErrorCode.DEPLOY_FAILED);
         }
     }
 
@@ -174,31 +166,24 @@ public class CompilerHttpUtils {
         return (R) get(path, Type.from(clazz));
     }
 
+    @SneakyThrows
     public static Object get(String path, Type type) {
-        try {
-            var uri = new URI(host + path);
-            var builder = HttpRequest.newBuilder()
-                    .uri(uri)
-                    .header("Accept", "application/json")
-                    .header("Content-Type", "application/json")
-                    .header(Headers.X_APP_ID, "2")
-                    .GET();
-            if (token != null)
-                builder.header("Authorization", "Bearer " + token);
-            var httpRequest = builder.build();
-            var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            return processResponse(resp, type);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static <R> R processResult(String responseStr, Class<R> clazz) {
-        return Jsonk.fromJson(responseStr, clazz);
+        var uri = new URI(host + path);
+        var builder = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .header(Headers.X_APP_ID, "2")
+                .GET();
+        if (token != null)
+            builder.header("Authorization", "Bearer " + token);
+        var httpRequest = builder.build();
+        var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        return processResponse(resp, type);
     }
 
     public static void setHost(String host) {
-        CompilerHttpUtils.host = host;
+        HttpUtil.host = host;
     }
 
     public static void main(String[] args) {
@@ -210,8 +195,8 @@ public class CompilerHttpUtils {
         var loginName = "demo";
         var password = "123456";
         var loginInfo = login(loginName, password);
-        CompilerHttpUtils.setToken(loginInfo.token());
-        System.out.println(CompilerHttpUtils.getToken());
+        HttpUtil.setToken(loginInfo.token());
+        System.out.println(HttpUtil.getToken());
         //noinspection unchecked
         var apps = (Page<ApplicationDTO>) get("/app", Type.from(Page.class, ApplicationDTO.class));
         System.out.println(apps);
@@ -219,15 +204,8 @@ public class CompilerHttpUtils {
         testAccess();
     }
 
-    private static void testDirectAccess() {
-        var token = "06581877-42f3-43e2-8114-63f02c51a7ef";
-        CompilerHttpUtils.setToken(token);
-        printCookies();
-        testAccess();
-    }
-
     private static void printCookies() {
-        CompilerHttpUtils.getCookies().forEach(c -> System.out.printf("%s = %s%n",
+        HttpUtil.getCookies().forEach(c -> System.out.printf("%s = %s%n",
                 c.getName(), c.getValue()));
     }
 

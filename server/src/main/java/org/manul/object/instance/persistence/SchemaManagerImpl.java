@@ -26,6 +26,21 @@ public class SchemaManagerImpl implements SchemaManager {
 
     @SneakyThrows
     @Override
+    public boolean instanceTableExists(long appId, String table) {
+        var connection = getConnection();
+        var tableName = table + "_" + appId;
+        var meta = connection.getMetaData();
+        var rs = meta.getTables(null, "public", tableName, new String[] { "TABLE" });
+        while (rs.next()) {
+            // _ is treated as wildcard by database, check for exact match
+            if (rs.getString("TABLE_NAME").equals(tableName))
+                return true;
+        }
+        return false;
+    }
+
+    @SneakyThrows
+    @Override
     public void createInstanceTable(long appId, String table) {
         var connection = getConnection();
         try (var stmt = connection.createStatement()) {

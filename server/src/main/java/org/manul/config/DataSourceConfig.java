@@ -26,7 +26,13 @@ public class DataSourceConfig {
     @Bean
     @Primary
     public DataSource primaryDataSource() {
-        return createDataSource(DRIVER_NAME, dbConfig.username(), dbConfig.password(), dbConfig.url(), 10, 0);
+        var ds = createDataSource(DRIVER_NAME, dbConfig.username(), dbConfig.password(), dbConfig.url(), 10, 0);
+        // Force Index Scans to prevent serialization errors.
+        // On small instances, the Postgres planner prefers Sequential Scans.
+        // In SERIALIZABLE isolation, this results in table-level predicate locks,
+        // which leads to frequent serialization errors.
+        ds.setConnectionInitSql("SET enable_seqscan = false");
+        return ds;
     }
 
     @Bean
@@ -34,7 +40,7 @@ public class DataSourceConfig {
         return createDataSource(DRIVER_NAME, dbConfig.username(), dbConfig.password(), dbConfig.url(), 1, 0);
     }
 
-    public DataSource createDataSource(String driverClassName, String userName, String password, String url, int maxPoolSize, int minIdle) {
+    public HikariDataSource createDataSource(String driverClassName, String userName, String password, String url, int maxPoolSize, int minIdle) {
         var dataSource = new HikariDataSource();
         dataSource.setDriverClassName(driverClassName);
         dataSource.setUsername(userName);

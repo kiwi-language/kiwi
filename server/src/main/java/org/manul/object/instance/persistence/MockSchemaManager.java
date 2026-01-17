@@ -15,6 +15,11 @@ public class MockSchemaManager implements SchemaManager  {
     }
 
     @Override
+    public boolean instanceTableExists(long appId, String table) {
+        return mapperRegistry.instanceTableExists(appId, table);
+    }
+
+    @Override
     public void createInstanceTable(long appId, String table) {
         mapperRegistry.createInstanceMapper(appId, table);
         Hooks.DROP_TABLES = this::dropAllTables;

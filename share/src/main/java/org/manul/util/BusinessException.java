@@ -25,8 +25,8 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.TOO_MANY_FIELDS);
     }
 
-    public static BusinessException loginNameNotFound(String loginName) {
-        return new BusinessException(ErrorCode.LOGIN_NAME_NOT_FOUND, loginName);
+    public static BusinessException userNotFound(String userName) {
+        return new BusinessException(ErrorCode.USER_NOT_FOUND, userName);
     }
 
     public static BusinessException invalidName(String name) {
@@ -37,8 +37,8 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.EXPRESSION_INVALID, reason);
     }
 
-    public static BusinessException userNotFound(String id) {
-        throw new BusinessException(ErrorCode.USER_NOT_FOUND, id);
+    public static BusinessException userIdNotFound(String id) {
+        throw new BusinessException(ErrorCode.USER_ID_NOT_FOUND, id);
     }
 
     public ErrorCode getErrorCode() {

@@ -7,7 +7,9 @@ import java.util.function.Supplier;
 
 public interface TransactionOperations {
 
-    <T> T execute(Supplier<T> action);
+    default <T> T execute(Supplier<T> action) {
+        return execute(action, false, TransactionPropagation.REQUIRED);
+    }
 
     default void execute(Runnable run) {
         execute(() -> {

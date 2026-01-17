@@ -12,18 +12,6 @@ import java.util.function.Supplier;
 
 @Component(module = "memory")
 public class MockTransactionOperations implements TransactionOperations {
-    @Override
-    public <T> T execute(Supplier<T> action) {
-        return execute(action, false, TransactionPropagation.REQUIRED);
-    }
-
-    @Override
-    public void execute(Runnable run) {
-        execute(() -> {
-            run.run();
-            return null;
-        });
-    }
 
     @Override
     public <T> T execute(Supplier<T> action, boolean readonly, TransactionPropagation propagation) {

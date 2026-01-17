@@ -1,14 +1,12 @@
 package org.manul.context;
 
-import com.google.auto.service.AutoService;
 import com.sun.source.util.Trees;
 import lombok.SneakyThrows;
 import org.manul.context.http.Controller;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.StandardLocation;
@@ -18,18 +16,19 @@ import java.util.Set;
 
 @SupportedAnnotationTypes({"org.manul.context.Component", "org.manul.context.Configuration", "org.manul.context.http.Controller"})
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
-@AutoService(Processor.class)
 public class ContextProcessor extends AbstractProcessor {
 
     public static final String MAPPING_PATH = "META-INF/services/org.manul.context.BeanDefinition";
 
     private Elements elements;
+    private Messager messager;
     private final Set<TypeElement> classes = new HashSet<>();
     private AppConfig appConfig;
     private final ProxyManager proxyManager = new ProxyManager();
     private StaticBeanReg beanReg;
     private MyTypes myTypes;
     private Trees trees;
+    private static final String BEAN_DEF_SUFFIX = "__BeanDef__";
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -41,6 +40,7 @@ public class ContextProcessor extends AbstractProcessor {
         myTypes = new MyTypes(elements, types);
         beanReg = StaticBeanReg.load(elements, myTypes, processingEnv);
         trees = Trees.instance(processingEnv);
+        messager = processingEnv.getMessager();
     }
 
     private static <T> T jbUnwrap(Class<? extends T> iface, T wrapper) {
@@ -57,6 +57,14 @@ public class ContextProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         var elements = roundEnv.getElementsAnnotatedWithAny(Set.of(Component.class, Configuration.class, Controller.class));
+        boolean checkPassed = true;
+        for (Element element : elements) {
+            var cls = (TypeElement) element;
+            if (!checkBeanType(cls))
+                checkPassed = false;
+        }
+        if (!checkPassed)
+            return false;
         for (Element element : elements) {
             beanReg.addBean((TypeElement) element);
         }
@@ -71,6 +79,26 @@ public class ContextProcessor extends AbstractProcessor {
         return false;
     }
 
+    private boolean checkBeanType(TypeElement type) {
+        if (type.getKind() == ElementKind.ENUM) {
+            printError("bean type cannot be an enum", type, null);
+            return false;
+        }
+        if (type.getModifiers().contains(Modifier.ABSTRACT)) {
+            printError("bean type cannot be abstract", type, null);
+            return false;
+        }
+        if (type.getKind() == ElementKind.INTERFACE) {
+            printError("bean type cannot be an interface", type, null);
+            return false;
+        }
+        if (type.getEnclosingElement().getKind() != ElementKind.PACKAGE) {
+            printError("bean type cannot be an inner/local class", type, null);
+            return false;
+        }
+        return true;
+    }
+
     @SneakyThrows
     private void generateProxy(TypeElement clazz) {
         if (!proxyManager.addProxied(clazz))
@@ -81,8 +109,7 @@ public class ContextProcessor extends AbstractProcessor {
             var text = gen.generate();
             w.write(text);
         } catch (ContextConfigException e) {
-            var path = trees.getPath(e.getElement());
-            trees.printMessage(Diagnostic.Kind.ERROR, e.getMessage(), path.getLeaf(), path.getCompilationUnit());
+            printError(e);
         }
     }
 
@@ -98,13 +125,17 @@ public class ContextProcessor extends AbstractProcessor {
                 w.write(text);
             }
         } catch (ContextConfigException e) {
-            var path = trees.getPath(e.getElement());
-            trees.printMessage(Diagnostic.Kind.ERROR,
-                    e.getMessage(),
-                    path.getLeaf(),
-                    path.getCompilationUnit()
-            );
+            printError(e);
         }
+    }
+
+    private void printError(ContextConfigException e) {
+        printError(e.getMessage(), e.getElement(), e.getAnnotation());
+    }
+
+    private void printError(String msg, Element element, AnnotationMirror at) {
+        var path = at == null ? trees.getPath(element) : trees.getPath(element, at);
+        trees.printMessage(Diagnostic.Kind.ERROR, msg, path.getLeaf(), path.getCompilationUnit());
     }
 
     @SneakyThrows
@@ -117,12 +148,21 @@ public class ContextProcessor extends AbstractProcessor {
         for (String line : lines) {
             line = line.trim();
             if (!line.isEmpty()) {
-                existingClasses.add(line);
-                buf.append(line).append('\n');
+                var cls = elements.getTypeElement(line);
+                if (cls != null) {
+                    if (line.endsWith(BEAN_DEF_SUFFIX)) {
+                        var beanName = line.substring(0, line.length() - BEAN_DEF_SUFFIX.length());
+                        var beanCls = elements.getTypeElement(beanName);
+                        if (beanCls == null)
+                            continue;
+                    }
+                    existingClasses.add(line);
+                    buf.append(line).append('\n');
+                }
             }
         }
         for (var clazz : classes) {
-            var factoryName = clazz.getQualifiedName() + "__BeanDef__";
+            var factoryName = clazz.getQualifiedName() + BEAN_DEF_SUFFIX;
             if (existingClasses.add(factoryName)) {
                 buf.append(factoryName).append('\n');
             }

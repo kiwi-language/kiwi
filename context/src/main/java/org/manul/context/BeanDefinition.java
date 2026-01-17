@@ -1,6 +1,7 @@
 package org.manul.context;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public abstract class BeanDefinition<T> {
 
@@ -24,6 +25,10 @@ public abstract class BeanDefinition<T> {
         creating = false;
         initBean(bean);
         return bean;
+    }
+
+    public List<Initializer> getInitializers() {
+        return List.of();
     }
 
     protected abstract T createBean();
