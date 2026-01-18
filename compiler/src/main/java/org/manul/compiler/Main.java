@@ -7,8 +7,9 @@ import org.manul.application.rest.dto.ApplicationDTO;
 import org.manul.common.Page;
 import org.manul.compiler.apigen.ApiGenerator;
 import org.manul.compiler.util.CompilationException;
-import org.manul.compiler.util.CompilerHttpUtils;
+import org.manul.compiler.util.HttpUtil;
 import org.manul.compiler.util.MockEnter;
+import org.manul.compiler.util.RequestException;
 import org.manul.user.rest.dto.LoginInfo;
 import org.manul.util.Constants;
 import org.manul.util.Utils;
@@ -127,35 +128,43 @@ public class Main {
         var apps = listApps();
         System.out.print("application: ");
         var appName = scanner.nextLine();
-        var appId = Utils.findRequired(apps, app -> app.name().equals(appName)).id();
-        enterApp(appId);
+        var app = Utils.find(apps, a -> a.name().equals(appName));
+        if (app == null) {
+            System.err.println("Error: Application " + appName + " does not exist");
+            System.exit(1);
+        }
+        enterApp(app.id());
         System.out.println("Logged in successfully");
     }
 
     private void doLogin(String username, String password) {
-        CompilerHttpUtils.login(username, password);
+        HttpUtil.login(username, password);
     }
 
     private void enter(String appName) {
         //noinspection unchecked
-        var apps = ((Page<ApplicationDTO>) CompilerHttpUtils.get("/app", Type.from(Page.class, ApplicationDTO.class))).items();
-        var appId = Utils.findRequired(apps, app -> app.name().equals(appName),
-                () -> "Application '" + appName + "' does not exist").id();
-        enterApp(appId);
+        var apps = ((Page<ApplicationDTO>) HttpUtil.get("/app", Type.from(Page.class, ApplicationDTO.class))).items();
+        var app = Utils.find(apps, a -> a.name().equals(appName));
+        if (app == null) {
+            System.err.println("Error: Application " + appName + " does not exist");
+            System.exit(1);
+        }
+        enterApp(app.id());
     }
 
     private void enterApp(long appId) {
         Utils.writeFile(getAppFile(), Long.toString(appId));
-        Utils.writeFile(getTokenFile(), CompilerHttpUtils.getToken());
+        if (HttpUtil.getToken() != null)
+            Utils.writeFile(getTokenFile(), HttpUtil.getToken());
     }
 
     private void createApp(String name) {
-        var appId = CompilerHttpUtils.post("/app", new ApplicationDTO(null, name, null), Long.class);
-        System.out.println("application ID: " + appId);
+        HttpUtil.post("/app", new ApplicationDTO(null, name, null), Long.class);
+        System.out.printf("Application %s created successfully%n", name);
     }
 
     private void printSourceTag(String name) {
-        var tag = CompilerHttpUtils.post("/type/source-tag",
+        var tag = HttpUtil.post("/type/source-tag",
                 Map.of("appId", getAppId(), "name", name), Integer.class);
         System.out.println(tag);
     }
@@ -173,7 +182,7 @@ public class Main {
     }
 
     boolean isLoggedIn() {
-        return CompilerHttpUtils.get("/auth/get-login-info", LoginInfo.class).isSuccessful();
+        return HttpUtil.get("/auth/get-login-info", LoginInfo.class).isSuccessful();
     }
 
     private void ensureHomeCreated() throws IOException {
@@ -186,7 +195,7 @@ public class Main {
     private void createEnv(String name) {
         var path = getEnvPath(name);
         if (path.toFile().exists()) {
-            System.err.println("Env " + name + " already exists");
+            System.err.println("Error: Env " + name + " already exists");
             System.exit(1);
         }
         Utils.createDirectories(path);
@@ -197,7 +206,7 @@ public class Main {
         if (path.toFile().isDirectory()) {
             Utils.clearDirectory(path);
         } else {
-            System.err.println("Env " + name + " does not exist");
+            System.err.println("Error: Env " + name + " does not exist");
             System.exit(1);
         }
     }
@@ -208,7 +217,7 @@ public class Main {
             Files.writeString(envFile, name);
             selectedEnv = path;
         } else {
-            System.err.println("Env " + name + " does not exist");
+            System.err.println("Error: Env " + name + " does not exist");
             System.exit(1);
         }
     }
@@ -253,14 +262,14 @@ public class Main {
             doLogout();
             System.out.println("Logged out successfully");
         } else {
-            System.out.println("Not logged in");
+            System.err.println("Not logged in");
         }
     }
 
     private void deploy(TypeClient typeClient, Path targetDir, boolean printDeployStatus) {
         Utils.ensureDirectoryExists(selectedEnv);
         var deployId = typeClient.deploy(getAppId(), targetDir.resolve("target.mva").toString());
-        System.out.println("Deploy ID: " + deployId);
+        System.out.println("Deployment ID: " + deployId);
         if (printDeployStatus)
             printDeployStatus(typeClient, getAppId(), deployId);
     }
@@ -268,7 +277,7 @@ public class Main {
     private void secretDeploy(TypeClient typeClient, Path targetDir, boolean printDeployStatus) {
         Utils.ensureDirectoryExists(selectedEnv);
         var deployId = typeClient.secretDeploy(getAppId(), targetDir.resolve("target.mva").toString());
-        System.out.println("Deploy is running, ID: " + deployId);
+        System.out.println("Deployment is running, ID: " + deployId);
         if (printDeployStatus)
             printDeployStatus(typeClient, getAppId(), deployId);
     }
@@ -277,7 +286,7 @@ public class Main {
     private void printDeployStatus(TypeClient typeClient, long appId, String deployId) {
         for (;;) {
             var status = typeClient.getDeployStatus(appId, deployId);
-            System.out.print(CARRIAGE_RETURN + ANSI_ERASE_LINE + "Deploy status: " + status);
+            System.out.print(CARRIAGE_RETURN + ANSI_ERASE_LINE + "Status: " + status);
             System.out.flush();
             if (status.equals("COMPLETED") || status.equals("ABORTED")) {
                 System.out.println();
@@ -293,7 +302,7 @@ public class Main {
 
     private List<ApplicationDTO> listApps() {
         //noinspection unchecked
-        var page = (Page<ApplicationDTO>) CompilerHttpUtils.get("/app", Type.from(Page.class, ApplicationDTO.class));
+        var page = (Page<ApplicationDTO>) HttpUtil.get("/app", Type.from(Page.class, ApplicationDTO.class));
         System.out.println("applications:");
         for (ApplicationDTO app : page.items()) {
             if(app.id() > 2)
@@ -306,25 +315,30 @@ public class Main {
         var appFile = new File(getAppFile());
         if (appFile.exists()) {
             if (appFile.isDirectory()) {
-                System.err.println("Corrupted file structure. Use manul clear to reset");
+                System.err.println("Error: Corrupted env files");
+                System.err.println("Run 'manul clear' to reset");
                 System.exit(1);
             }
             return Utils.readLong(appFile);
-        } else
-            return -1;
+        } else {
+            System.err.println("Error: No application selected");
+            System.err.println("Please run 'manul set-app' to select one");
+            System.exit(1);
+            return -1L;
+        }
     }
 
     void initializeHttpClient() {
-        CompilerHttpUtils.setHost(getHost());
+        HttpUtil.setHost(getHost());
         var tokenFile = new File(getTokenFile());
         if (tokenFile.exists()) {
-            CompilerHttpUtils.setToken(Utils.readLine(tokenFile));
+            HttpUtil.setToken(Utils.readLine(tokenFile));
         }
     }
 
     private void doLogout() {
         if (isLoggedIn()) {
-            CompilerHttpUtils.logout();
+            HttpUtil.logout();
             deleteSessionFiles();
         }
     }
@@ -345,8 +359,9 @@ public class Main {
         System.out.println("manul host <host>");
         System.out.println("manul login");
         System.out.println("manul logout");
-        System.out.println("manul app");
         System.out.println("manul create-app <name>");
+        System.out.println("manul set-app <name>");
+        System.out.println("manul app");
         System.out.println("manul env");
         System.out.println("manul create-env <env>");
         System.out.println("manul set-env <env>");
@@ -379,7 +394,7 @@ public class Main {
                 }
                 case "login" -> login();
                 case "logout" -> logout();
-                case "enter" -> {
+                case "set-app" -> {
                     if (args.length < 2) {
                         usage();
                         return;
@@ -433,10 +448,7 @@ public class Main {
                 case "build" -> build(parseOptions(args));
                 case "gen-api" -> generateApi(parseOptions(args));
                 case "revert" -> revert();
-                case "deploy" -> {
-                    ensureLoggedIn();
-                    deploy(parseOptions(args));
-                }
+                case "deploy" -> deploy(parseOptions(args));
                 case "secret-deploy" -> secretDeploy(parseOptions(args));
                 case "deploy-status" -> {
                     if (args.length < 2)
@@ -446,14 +458,11 @@ public class Main {
                 case "--version", "-v" -> printVersion();
                 default -> usage();
             }
-        }
-        catch (InvalidUsageException e) {
-            System.err.println("Error: " + e.getMessage());
+        } catch (InvalidUsageException e) {
+            System.err.printf("Error: %s%n", e.getMessage());
             usage();
-        } catch (CompilationException e) {
-            System.err.println("Error: " + e.getMessage());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (CompilationException | RequestException e) {
+            System.err.printf("Error: %s%n", e.getMessage());
         }
     }
 
@@ -492,7 +501,7 @@ public class Main {
 
         SENSE_LINT(false),
         VERSION(true),
-        STATUS(false),
+        NO_WAIT(false),
 
         ;
 
@@ -505,7 +514,7 @@ public class Main {
 
     @SneakyThrows
     void deploy(List<Option> options) {
-        var printDeployStatus = options.stream().anyMatch(opt -> opt.kind == OptionKind.STATUS);
+        var printDeployStatus = options.stream().noneMatch(opt -> opt.kind == OptionKind.NO_WAIT);
         if (build(options))
             deploy(new HttpTypeClient(), targetRoot, printDeployStatus);
     }
@@ -516,12 +525,12 @@ public class Main {
 
     @SneakyThrows
     void secretDeploy(List<Option> options) {
-        var printDeployStatus = options.stream().anyMatch(opt -> opt.kind == OptionKind.STATUS);
+        var printDeployStatus = options.stream().noneMatch(opt -> opt.kind == OptionKind.NO_WAIT);
         if (build(options))
             secretDeploy(new HttpTypeClient(), targetRoot, printDeployStatus);
     }
 
-    boolean build(List<Option> options) throws IOException {
+    boolean build(List<Option> options) {
         if (!ensureSourceAvailable())
             return false;
         var task = createTask(options);
@@ -540,7 +549,7 @@ public class Main {
         var sourceRoot = "src";
         var f = new File(sourceRoot);
         if (!f.exists() || !f.isDirectory()) {
-            System.err.println("Source directory '" + sourceRoot + "' does not exist.");
+            System.err.println("Error: src directory does not exist");
             return false;
         }
         else

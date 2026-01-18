@@ -20,10 +20,8 @@ public class Constants {
 
     public static final int MAX_INHERITANCE_DEPTH = 8;
 
-    public static final String ROOT_ADMIN_PASSWORD = "123456";
     public static final String ROOT_ADMIN_LOGIN_NAME = "root";
     public static final String PLATFORM_ADMIN_LOGIN_NAME = "platform";
-    public static final String PLATFORM_ADMIN_PASSWORD = "123456";
     public static final String ID_PREFIX = "$$";
     public static final String CONSTANT_TMP_ID_PREFIX = "$_$";
 
@@ -34,6 +32,8 @@ public class Constants {
     public final static long DEFAULT_SESSION_TIMEOUT = 10000L;
     public static long SESSION_TIMEOUT = DEFAULT_SESSION_TIMEOUT;
     public static long DDL_SESSION_TIMEOUT = 64000;
+
+    public static final String DEFAULT_USER = "manul";
 
     public static final String RUN_METHOD_NAME = "__run__";
 

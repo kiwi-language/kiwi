@@ -34,12 +34,17 @@ public class TransactionManager {
     @SneakyThrows
     void commit() {
         var status = statusTl.get();
-        status.currentTx().exitScope(true);
+        status.currentTx().commit();
     }
 
     void rollback() {
         var status = statusTl.get();
-        status.currentTx().exitScope(false);
+        status.currentTx().rollback();
+    }
+
+    void exitScope() {
+        var status = statusTl.get();
+        status.currentTx().exitScope();
     }
 
     private class Status {
@@ -114,20 +119,23 @@ public class TransactionManager {
         }
 
         @SneakyThrows
-        void exitScope(boolean successful) {
-            var scope = scopes.pop();
-            if (successful) {
-                if (scopes.isEmpty()) {
-                    doBeforeCommit();
-                    conn.commit();
-                    doAfterCommit();
-                }
-            } else {
-                conn.rollback();
-                aborted = true;
+        void commit() {
+            if (scopes.size() == 1) {
+                doBeforeCommit();
+                conn.commit();
+                doAfterCommit();
             }
-            // Exit scope after callbacks are fired
-            scope.exit();
+        }
+
+        @SneakyThrows
+        void rollback() {
+            conn.rollback();
+            aborted = true;
+        }
+
+        @SneakyThrows
+        void exitScope() {
+            scopes.pop().exit();
             if (scopes.isEmpty()) {
                 conn.close();
                 var popped = status.transactions.pop();

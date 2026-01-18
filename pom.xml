@@ -162,18 +162,6 @@
             </dependency>
 
             <dependency>
-                <groupId>com.google.auto.service</groupId>
-                <artifactId>auto-service-annotations</artifactId>
-                <version>1.1.1</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.google.auto.service</groupId>
-                <artifactId>auto-service</artifactId>
-                <version>1.1.1</version>
-            </dependency>
-
-            <dependency>
                 <groupId>com.google.testing.compile</groupId>
                 <artifactId>compile-testing</artifactId>
                 <version>0.23.0</version>

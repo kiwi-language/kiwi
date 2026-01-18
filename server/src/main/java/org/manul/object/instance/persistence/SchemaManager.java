@@ -1,6 +1,11 @@
 package org.manul.object.instance.persistence;
 
+import lombok.SneakyThrows;
+
 public interface SchemaManager {
+
+    @SneakyThrows
+    boolean instanceTableExists(long appId, String table);
 
     void createInstanceTable(long appId, String table);
 

@@ -1,37 +1,44 @@
 package org.manul.entity;
 
-import org.manul.application.Application;
+import org.manul.application.ApplicationManager;
 import org.manul.context.Component;
-import org.manul.context.InitializingBean;
-import org.manul.jdbc.MockTransactionUtils;
-import org.manul.object.instance.core.PhysicalId;
+import org.manul.context.Init;
+import org.manul.context.sql.Transactional;
+import org.manul.object.instance.persistence.SchemaManager;
 import org.manul.object.type.GlobalKlassTagAssigner;
 import org.manul.task.SchedulerRegistry;
-import org.manul.user.PlatformUser;
+import org.manul.user.PlatformUserManager;
+import org.manul.user.rest.dto.UserDTO;
 import org.manul.util.Constants;
 
 import java.util.List;
-import java.util.UUID;
 
-@Component(module = "memory")
-public class PlatformInitializer extends EntityContextFactoryAware implements InitializingBean {
+@Component
+public class PlatformInitializer extends EntityContextFactoryAware {
 
-    public PlatformInitializer(EntityContextFactory entityContextFactory) {
+    private final SchemaManager schemaManager;
+    private final PlatformUserManager userManager;
+    private final ApplicationManager applicationManager;
+
+    public PlatformInitializer(EntityContextFactory entityContextFactory, SchemaManager schemaManager, PlatformUserManager userManager, ApplicationManager applicationManager) {
         super(entityContextFactory);
+        this.schemaManager = schemaManager;
+        this.userManager = userManager;
+        this.applicationManager = applicationManager;
     }
 
-    @Override
-    public void afterPropertiesSet() {
-        MockTransactionUtils.doInTransactionWithoutResult(() -> {
-            try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                SchedulerRegistry.initialize(platformContext);
-                GlobalKlassTagAssigner.initialize(platformContext);
-                var platformUser = new PlatformUser(platformContext.allocateRootId(), "platform", UUID.randomUUID().toString(), "platform", List.of());
-                platformContext.bind(platformUser);
-                platformContext.bind(new Application(PhysicalId.of(Constants.PLATFORM_APP_ID, 0), "platform", platformUser));
-                platformContext.finish();
-            }
-        });
-
+    @Init(order = 1000)
+    @Transactional
+    public void init() {
+        if (schemaManager.instanceTableExists(1, "instance"))
+            return;
+        applicationManager.createPlatform();
+        applicationManager.createRoot();
+        try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+            SchedulerRegistry.initialize(platformContext);
+            GlobalKlassTagAssigner.initialize(platformContext);
+            platformContext.finish();
+        }
+        userManager.save(new UserDTO(null, Constants.DEFAULT_USER, Constants.DEFAULT_USER, "", List.of()));
     }
 }

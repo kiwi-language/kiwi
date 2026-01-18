@@ -7,6 +7,7 @@ import javax.annotation.Nullable;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.Elements;
+import java.util.ArrayList;
 
 public class ProxyGenerator extends AbstractGenerator {
 
@@ -32,6 +33,22 @@ public class ProxyGenerator extends AbstractGenerator {
         return clazz.getEnclosedElements().stream().anyMatch(e -> e.getAnnotation(Scheduled.class) != null);
     }
 
+    static Element getScheduledElement(TypeElement clazz) {
+        for (Element member : clazz.getEnclosedElements()) {
+            if (member.getAnnotation(Scheduled.class) != null)
+                return member;
+        }
+        return null;
+    }
+
+    static Element getTransactionalElement(TypeElement clazz) {
+        for (Element member : clazz.getEnclosedElements()) {
+            if (member.getAnnotation(Transactional.class) != null)
+                return member;
+        }
+        return null;
+    }
+
     static boolean isTransactional(TypeElement clazz) {
         return clazz.getEnclosedElements().stream().anyMatch(e -> e.getAnnotation(Transactional.class) != null);
     }
@@ -45,8 +62,11 @@ public class ProxyGenerator extends AbstractGenerator {
         writeImports();
         write("public class ").write(clazz.getSimpleName()).write(ProxyManager.PROXY_SUFFIX).write(" extends ")
                         .write(clazz.getQualifiedName());
+        var interfaces = new ArrayList<String>();
         if (controller != null)
-            write(" implements org.manul.server.Controller");
+            interfaces.add(" org.manul.server.Controller");
+        if (!interfaces.isEmpty())
+            write(" implements ").writeList(interfaces, this::write, ", ");
         writeln(" {");
         indent();
         writeln();
@@ -88,8 +108,15 @@ public class ProxyGenerator extends AbstractGenerator {
     }
 
     private void generateFields() {
-        if (isTransactional(clazz)) {
-            writeln("private final org.manul.jdbc.TransactionOperations __transactionOps__;");
+        var fields = new ArrayList<String>();
+        if (transactional)
+            fields.add("org.manul.jdbc.TransactionOperations __transactionOps__");
+        if (scheduled)
+            fields.add("org.manul.schedule.Scheduler __scheduler__");
+        if (!fields.isEmpty()) {
+            for (var field : fields) {
+                writeln("private final ").write(field).write(";");
+            }
             writeln();
         }
     }
@@ -122,7 +149,7 @@ public class ProxyGenerator extends AbstractGenerator {
         if (transactional)
             writeln("this.__transactionOps__ = __transactionOps__;");
         if (scheduled)
-            generateSchedules();
+            writeln("this.__scheduler__ = __scheduler__;");
         deIndent();
         writeln("}");
         writeln();

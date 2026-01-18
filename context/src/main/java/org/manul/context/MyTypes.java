@@ -12,17 +12,17 @@ import java.io.InputStream;
 public class MyTypes {
 
     final Types types;
-    final DeclaredType initializingBean;
     final DeclaredType controller;
     final DeclaredType string;
     final DeclaredType inputStream;
     final DeclaredType responseEntity;
     final DeclaredType map_string_list_string;
+    final DeclaredType scheduler;
+    final DeclaredType transactionOperations;
 
     public MyTypes(Elements elements, Types types) {
         this.types = types;
         var r = new Resolver(elements, types);
-        initializingBean = r.resolve(InitializingBean.class);
         controller = r.resolve("org.manul.server.Controller");
         string = r.resolve(String.class);
         inputStream = r.resolve(InputStream.class);
@@ -31,6 +31,8 @@ public class MyTypes {
         var listCls = elements.getTypeElement("java.util.List");
         var list_string = types.getDeclaredType(listCls, string);
         map_string_list_string = types.getDeclaredType(mapCls, string, list_string);
+        scheduler = r.resolve("org.manul.schedule.Scheduler");
+        transactionOperations = r.resolve("org.manul.jdbc.TransactionOperations");
     }
 
     boolean isAssignable(TypeMirror from, TypeMirror to) {

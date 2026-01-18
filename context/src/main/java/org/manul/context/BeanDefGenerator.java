@@ -47,6 +47,7 @@ class BeanDefGenerator extends AbstractGenerator {
         generateInitBean();
         generateGetName();
         generateGetSupportedType(clazz);
+        generateGetInitializers();
         generateIsPrimary();
         if (config != null)
             generateCreateInnerDefs();
@@ -168,6 +169,7 @@ class BeanDefGenerator extends AbstractGenerator {
         writeImport("org.manul.context.BeanRegistry");
         writeImport("org.manul.context.BeanDefinition");
         writeImport("javax.annotation.Nullable");
+        writeImport("org.manul.context.Initializer");
         if (clazz.getAnnotation(Configuration.class) != null)
             writeImport("org.manul.context.ConfigBeanDefinition");
         writeln();
@@ -184,16 +186,103 @@ class BeanDefGenerator extends AbstractGenerator {
         write("return new ").write(proxyManager.getProxyName(clazz)).write("(");
         var contr = getContr();
         writeList(contr.getParameters(), this::generateInject, ", ");
-        var transactional = ProxyGenerator.isTransactional(clazz);
-        if (transactional) {
+        var transactional = ProxyGenerator.getTransactionalElement(clazz);
+        if (transactional != null) {
             if (!contr.getParameters().isEmpty())
                 write(", ");
-            write("registry.getBean(org.manul.jdbc.TransactionOperations.class, \"primaryTransactionTemplate\", \"mockTransactionOperations\")");
+            var at = Annotations.getAnnotation(transactional, "org.manul.context.sql.Transactional");
+            var txOps = beanReg.getBeanName(myTypes.transactionOperations, null, module, transactional, at);
+            write("registry.getBean(org.manul.jdbc.TransactionOperations.class");
+            for (String name : txOps) {
+                write(", \"").write(name).write("\"");
+            }
+            write((")"));
         }
-        if (ProxyGenerator.isScheduled(clazz)) {
-            if (!contr.getParameters().isEmpty() || transactional)
+        var scheduled = ProxyGenerator.getScheduledElement(clazz);
+        if (scheduled != null) {
+            if (!contr.getParameters().isEmpty() || transactional != null)
                 write(", ");
-            write("registry.getBean(org.manul.schedule.Scheduler.class, \"defaultScheduler\")");
+            var at = Annotations.getAnnotation(scheduled, "org.manul.context.Scheduled");
+            write("registry.getBean(org.manul.schedule.Scheduler.class");
+            var schedulers = beanReg.getBeanName(myTypes.scheduler, null, module, scheduled, at);
+            for (String name : schedulers) {
+                write(", \"").write(name).write("\"");
+            }
+            write((")"));
+        }
+        writeln(");");
+        deIndent();
+        writeln("}");
+        writeln();
+    }
+
+    private void generateGetInitializers() {
+        writeln("@Override");
+        writeln("public List<Initializer> getInitializers() {");
+        indent();
+        write("return List.of(");
+        var first = true;
+        for (Element member : clazz.getEnclosedElements()) {
+            var initAt = Annotations.findAnnotation(member, "org.manul.context.Init");
+            var scheduledAt = Annotations.findAnnotation(member, "org.manul.context.Scheduled");
+            if (initAt != null || scheduledAt != null) {
+                var meth = (ExecutableElement) member;
+                var atName = initAt != null ? "Init" : "Scheduled";
+                if (!meth.getParameters().isEmpty()) {
+                    throw new ContextConfigException("@" + atName + " method must not have parameters", meth);
+                }
+                if (meth.getModifiers().contains(Modifier.PRIVATE)) {
+                    throw new ContextConfigException("@" + atName + " method must not be private", meth);
+                }
+
+                if (first) {
+                    writeln();
+                    indent();
+                    first = false;
+                } else
+                    writeln(", ");
+                writeln("new Initializer() {");
+                indent();
+                
+                // ----- start run method -----
+                writeln("@Override");
+                writeln("public void run() {");
+                indent();
+                if (initAt != null) {
+                    write("getBean().").write(member.getSimpleName()).writeln("();");
+                } else {
+                    var schedulers = beanReg.getBeanName(myTypes.scheduler, null, module, meth, scheduledAt);
+                    write("var scheduler = registry.getBean(org.manul.schedule.Scheduler.class, ");
+                    writeList(schedulers, this::writeStringLit, ", ");
+                    writeln(");");
+                    write("scheduler.schedule(getBean()::").write(meth.getSimpleName()).write(", ");
+                    var delay = (long) Annotations.getAttribute(scheduledAt, "fixedDelay", -1L);
+                    write(Long.toString(delay)).writeln(");");
+                }
+                deIndent();
+                writeln("}");
+                writeln();
+                // ----- end of run method -----
+                
+                // ----- start of getOrder method -----
+                writeln("@Override");
+                writeln("public int getOrder() {");
+                indent();
+                var order = initAt != null ?
+                    (int) Annotations.getAttribute(initAt, "order", Integer.MAX_VALUE) : Integer.MAX_VALUE;
+                write("return ").write(Integer.toString(order)).writeln(";");
+                deIndent();
+                writeln("}");
+                writeln();
+                deIndent();
+                write("}");
+                // ----- end of getOrder method -----
+
+            }
+        }
+        if (!first) {
+            writeln();
+            deIndent();
         }
         writeln(");");
         deIndent();
@@ -210,8 +299,6 @@ class BeanDefGenerator extends AbstractGenerator {
             generateInject(setter.getParameters().getFirst());
             writeln(");");
         }
-        if (myTypes.isAssignable(clazz.asType(), myTypes.initializingBean))
-            writeln("o.afterPropertiesSet();");
         deIndent();
         writeln("}");
         writeln();
@@ -278,7 +365,7 @@ class BeanDefGenerator extends AbstractGenerator {
             } else {
                 write("registry.getBean(").write(cl.getQualifiedName()).write(".class, ");
                 var qual = param.getAnnotation(Qualifier.class);
-                var names = beanReg.getBeanName(declaredType, qual != null ? qual.value() : null, module, param);
+                var names = beanReg.getBeanName(declaredType, qual != null ? qual.value() : null, module, param, null);
                 writeList(names, this::writeStringLit, ", ");
                 write(")");
             }

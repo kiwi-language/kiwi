@@ -26,6 +26,8 @@ public class LoginService extends EntityContextFactoryAware {
 
     public static final long _15_MINUTES_IN_MILLIS = 15 * 60 * 1000;
 
+    public static final String EMPTY_PASSWD_HAS = EncodingUtils.md5("");
+
     public LoginService(EntityContextFactory entityContextFactory) {
         super(entityContextFactory);
     }
@@ -69,7 +71,7 @@ public class LoginService extends EntityContextFactoryAware {
                     Instances.stringInstance(request.loginName())
             );
             if (Utils.isEmpty(users))
-                throw BusinessException.loginNameNotFound(request.loginName());
+                throw BusinessException.userNotFound(request.loginName());
             User user = users.getFirst();
             Token token;
             if (!user.getPassword().equals(EncodingUtils.md5(request.password())))
@@ -137,6 +139,20 @@ public class LoginService extends EntityContextFactoryAware {
                 return new LoginInfo(appId, session.getUser().getStringId(), session.getToken());
             } else
                 return LoginInfo.failed();
+        }
+    }
+
+    @Transactional(readonly = true)
+    public boolean defaultAuth() {
+        try (var context =  newPlatformContext()) {
+            var defaultUser = context.selectFirstByKey(PlatformUser.IDX_LOGIN_NAME, Instances.stringInstance(Constants.DEFAULT_USER));
+            if (defaultUser != null && defaultUser.getPassword().equals(EMPTY_PASSWD_HAS)) {
+                ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
+                ContextUtil.setUserId(defaultUser.getId());
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 

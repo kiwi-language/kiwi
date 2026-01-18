@@ -128,22 +128,20 @@ public class Scheduler extends EntityContextFactoryAware {
     @Scheduled(fixedDelay = 10000)
     @Transactional
     public void sendHeartbeat() {
-        transactionOperations.execute(() -> {
-            try (var context = newPlatformContext()) {
-                var registry = SchedulerRegistry.getInstance(context);
-                var now = System.currentTimeMillis();
-                if (Objects.equals(NetworkUtils.localIP, registry.getIp())) {
-                    registry.setLastHeartbeat(now);
-                    active = true;
-                } else if (registry.getIp() == null || now - registry.getLastHeartbeat() > timeout) {
-                    registry.setIp(NetworkUtils.localIP);
-                    registry.setLastHeartbeat(now);
-                    active = true;
-                } else
-                    active = false;
-                context.finish();
-            }
-        });
+        try (var context = newPlatformContext()) {
+            var registry = SchedulerRegistry.getInstance(context);
+            var now = System.currentTimeMillis();
+            if (Objects.equals(NetworkUtils.localIP, registry.getIp())) {
+                registry.setLastHeartbeat(now);
+                active = true;
+            } else if (registry.getIp() == null || now - registry.getLastHeartbeat() > timeout) {
+                registry.setIp(NetworkUtils.localIP);
+                registry.setLastHeartbeat(now);
+                active = true;
+            } else
+                active = false;
+            context.finish();
+        }
     }
 
 }

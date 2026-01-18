@@ -1,6 +1,7 @@
 package org.manul.task;
 
 import org.manul.common.ErrorCode;
+import org.manul.context.sql.Transactional;
 import org.manul.entity.*;
 import org.manul.object.instance.core.IInstanceContext;
 import org.manul.object.instance.core.Id;
@@ -36,19 +37,18 @@ public class Worker extends EntityContextFactoryAware {
     }
 
     @Scheduled(fixedDelay = 10000)
+    @Transactional
     public void sendHeartbeat() {
-        transactionOperations.execute(() -> {
-            try (var context = newPlatformContext()) {
-                var executorData = context.selectFirstByKey(ExecutorData.IDX_IP, Instances.stringInstance(NetworkUtils.localIP));
-                if (executorData == null) {
-                    executorData = new ExecutorData(context.allocateRootId(), NetworkUtils.localIP);
-                    context.bind(executorData);
-                }
-                executorData.setAvailable(true);
-                executorData.setLastHeartbeat(System.currentTimeMillis());
-                context.finish();
+        try (var context = newPlatformContext()) {
+            var executorData = context.selectFirstByKey(ExecutorData.IDX_IP, Instances.stringInstance(NetworkUtils.localIP));
+            if (executorData == null) {
+                executorData = new ExecutorData(context.allocateRootId(), NetworkUtils.localIP);
+                context.bind(executorData);
             }
-        });
+            executorData.setAvailable(true);
+            executorData.setLastHeartbeat(System.currentTimeMillis());
+            context.finish();
+        }
     }
 
     @Scheduled(fixedDelay = 100)

@@ -29,11 +29,12 @@ public interface HttpRequest {
     Map<String, List<String>> getHeaders();
 
     default String getClientIP() {
-        String ipAddress = getHeader("X-FORWARDED-FOR");
-        if (ipAddress == null) {
-            ipAddress = getRemoteAddr();
+        var xff = getHeader("X-FORWARDED-FOR");
+        if (xff != null) {
+            var ips = xff.split(",");
+            return ips[ips.length - 1].trim();
         }
-        return ipAddress;
+        return getRemoteAddr();
     }
 
     default String getToken() {

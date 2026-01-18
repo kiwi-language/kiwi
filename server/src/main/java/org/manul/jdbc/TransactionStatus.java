@@ -1,6 +1,8 @@
 package org.manul.jdbc;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.postgresql.PGConnection;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -8,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class TransactionStatus {
 
     private static final ThreadLocal<Status> statusTl = ThreadLocal.withInitial(Status::new);
@@ -56,7 +59,11 @@ public class TransactionStatus {
     @SneakyThrows
     public static Connection getConnection(DataSource dataSource) {
         var ctx = statusTl.get().contextMap.get(dataSource);
-        return ctx != null ? ctx.getConnection() : dataSource.getConnection();
+        var conn = ctx != null ? ctx.getConnection() : dataSource.getConnection();
+        var pgconn = conn.unwrap(PGConnection.class);
+//        var pid = pgconn.getBackendPID();
+//        log.info("Getting connection. PID: {}", pid, new Exception());
+        return conn;
     }
     
     private static class Status {

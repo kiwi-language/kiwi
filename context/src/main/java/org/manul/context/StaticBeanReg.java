@@ -5,6 +5,7 @@ import org.manul.context.http.Controller;
 
 import javax.annotation.Nullable;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -54,14 +55,14 @@ class StaticBeanReg {
         this.types = types;
     }
 
-    Collection<String> getBeanName(DeclaredType type, @Nullable String qualifier, String module, Element context) {
+    Collection<String> getBeanName(DeclaredType type, @Nullable String qualifier, String module, Element context, @Nullable AnnotationMirror annotation) {
         var bds = new ArrayList<BeanDef>();
         for (BeanDef def : defs.values()) {
             if (isBeanApplicable(def.clazz, type, module))
                 bds.add(def);
         }
         if (bds.isEmpty())
-            throw new ContextConfigException("Cannot find bean definition", context);
+            throw beanNotFound(type, qualifier, context, annotation);
         var result = new HashSet<String>();
         var modules = bds.stream().map(BeanDef::module).collect(Collectors.toSet());
         for (String mod : modules) {
@@ -86,9 +87,13 @@ class StaticBeanReg {
             if (matched != null)
                 result.add(matched.name);
             else
-                throw new ContextConfigException("Cannot find bean definition", context);
+                throw beanNotFound(type, qualifier, context, annotation);
         }
         return result;
+    }
+
+    private BeanNotFoundException beanNotFound(DeclaredType type, @Nullable String qualifier, Element context, @Nullable AnnotationMirror annotation) {
+        return new BeanNotFoundException(type.toString() + (qualifier != null ? "/" + qualifier : ""), context, annotation);
     }
 
     List<String> getBeanNames(DeclaredType type, String module) {

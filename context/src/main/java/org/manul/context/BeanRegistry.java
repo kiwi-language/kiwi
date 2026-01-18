@@ -6,6 +6,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
+@SuppressWarnings("rawtypes")
 @Slf4j
 public class BeanRegistry {
 
@@ -16,7 +17,6 @@ public class BeanRegistry {
     private BeanRegistry() {
     }
 
-    /** @noinspection rawtypes*/
     private List<BeanDefinition> addBeanDefs(Iterable<BeanDefinition> beanDefs) {
         for (BeanDefinition<?> beanDef : beanDefs) {
             if (this.beanDefs.containsKey(beanDef.getName()))
@@ -61,19 +61,44 @@ public class BeanRegistry {
         }
     }
 
-    public void initialize(Set<String> modules) {
+    public void initializeModules(Set<String> modules) {
         var beanDefs = ServiceLoader.load(BeanDefinition.class, BeanRegistry.class.getClassLoader()).stream()
                 .map(ServiceLoader.Provider::get)
                 .filter(bd -> bd.getModule() == null || modules.contains(bd.getModule()))
                 .toList();
+        initialize(beanDefs);
+    }
+
+    public void initializeClasses(Set<Class<?>> classes) {
+        var beanDefs = ServiceLoader.load(BeanDefinition.class, BeanRegistry.class.getClassLoader()).stream()
+                .map(ServiceLoader.Provider::get)
+                .filter(bd -> classes.contains(bd.getSupportedType()))
+                .toList();
+        initialize(beanDefs);
+    }
+
+    private void initialize(List<BeanDefinition> beanDefs) {
+        var inits = new ArrayList<Initializer>();
+        for (BeanDefinition beanDef : beanDefs) {
+            //noinspection unchecked
+            inits.addAll(beanDef.getInitializers());
+        }
         for(;;) {
             var newDefs = addBeanDefs(beanDefs);
             if (newDefs.isEmpty())
                 break;
             beanDefs = newDefs;
+            for (BeanDefinition newDef : newDefs) {
+                //noinspection unchecked
+                inits.addAll(newDef.getInitializers());
+            }
         }
         for (BeanDefinition<?> beanDef : this.beanDefs.values()) {
             beanDef.getBean();
+        }
+        inits.sort(Comparator.comparing(Initializer::getOrder));
+        for (Initializer init : inits) {
+            init.run();
         }
     }
 

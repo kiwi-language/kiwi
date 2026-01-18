@@ -1694,3 +1694,31 @@ Content-Type: application/json
   "name": "chat",
   "ownerId": "01d0897a00"
 }
+
+
+####
+POST http://localhost:8080/api/product
+X-App-ID: 1000000014
+Content-Type: application/json
+X-REFRESH-POLICY: none
+
+{
+  "name": "Hat",
+  "price": 100,
+  "stock": 100
+}
+
+###
+GET http://localhost:8080/api/product/01a0c7d6b90700
+X-App-ID: 1000000014
+
+####
+POST http://localhost:8080/api/product/reduce-stock
+X-App-ID: 1000000014
+Content-Type: application/json
+X-REFRESH-POLICY: none
+
+{
+  "productId": "01caa8d6b90700",
+  "amount": 1
+}

@@ -1,6 +1,5 @@
 package org.manul.wire.processor;
 
-import com.google.auto.service.AutoService;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
@@ -23,7 +22,6 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
-@AutoService(Processor.class)
 @SupportedAnnotationTypes("org.manul.wire.Wire")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class WireProcessor extends AbstractProcessor {

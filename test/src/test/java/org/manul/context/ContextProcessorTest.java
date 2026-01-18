@@ -35,7 +35,24 @@ public class ContextProcessorTest extends TestCase {
         var source = """
                 import org.manul.context.Component;
                 import org.manul.context.sql.Transactional;
-                
+                import org.manul.jdbc.TransactionOperations;
+                import org.manul.context.sql.TransactionPropagation;
+                import org.manul.context.sql.TransactionIsolation;
+                import java.util.function.Supplier;
+ 
+                @Component
+                class TransactionTemplate implements TransactionOperations {
+
+                    @Override
+                    public <T> T execute(Supplier<T> action, boolean readonly, TransactionPropagation propagation) {
+                        return action.get();
+                    }
+
+                    @Override
+                    public void setIsolationLevel(TransactionIsolation level) {}
+
+                }
+
                 @Component
                 public class Dummy {
                 
@@ -61,6 +78,17 @@ public class ContextProcessorTest extends TestCase {
         var source = """
                 import org.manul.context.Component;
                 import org.manul.context.Scheduled;
+                import org.manul.schedule.Scheduler;
+                
+                @Component
+                class MyScheduler implements Scheduler {
+                    
+                    @Override
+                    public void schedule(Runnable run, int delay) {
+                        run.run();
+                    }
+                
+                }
                 
                 @Component
                 public class Dummy {
@@ -294,15 +322,16 @@ public class ContextProcessorTest extends TestCase {
     }
 
     @SneakyThrows
-    public void testInitializingBean() {
+    public void testInit() {
         var source = """
                 import org.manul.context.Component;
-                import org.manul.context.InitializingBean;
+                import org.manul.context.Init;
                 
                 @Component
-                public class Dummy implements InitializingBean {
+                public class Dummy {
                 
-                    public void afterPropertiesSet() {}
+                    @Init
+                    public void init() {}
                 
                 }
                 """;
