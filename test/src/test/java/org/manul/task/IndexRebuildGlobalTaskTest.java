@@ -25,7 +25,7 @@ public class IndexRebuildGlobalTaskTest extends IntegrationTestBase {
         assertEquals(0, r.total());
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var platformCtx = newPlatformContext()) {
-                platformCtx.bind(new IndexRebuildGlobalTask(platformCtx.allocateRootId()));
+                platformCtx.bind(new SearchIndexRebuildGlobalTask(platformCtx.allocateRootId()));
                 platformCtx.finish();
             }
         });

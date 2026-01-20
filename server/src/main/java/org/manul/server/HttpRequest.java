@@ -22,7 +22,7 @@ public interface HttpRequest {
 
     HttpMethod getMethod();
 
-    String getRequestURI();
+    String getRequestPath();
 
     String getHeader(String name);
 

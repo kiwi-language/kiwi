@@ -2,8 +2,8 @@ package org.manul.task;
 
 import lombok.extern.slf4j.Slf4j;
 import org.manul.api.Entity;
-import org.manul.wire.Wire;
 import org.manul.object.instance.core.*;
+import org.manul.wire.Wire;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -19,7 +19,7 @@ public abstract class ScanTask extends Task {
 
     private long cursor;
 
-    protected ScanTask(Id id, String title) {
+    public ScanTask(Id id, String title) {
         super(id, title);
     }
 

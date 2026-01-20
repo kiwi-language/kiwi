@@ -18,6 +18,8 @@ public class Hooks {
 
     public static volatile LongConsumer CREATE_INDEX_IF_NOT_EXISTS;
 
+    public static volatile LongConsumer CREATE_REINDEX_TASK;
+
     public static volatile LongConsumer DROP_TABLES;
 
     public static volatile LongConsumer DROP_INDICES;

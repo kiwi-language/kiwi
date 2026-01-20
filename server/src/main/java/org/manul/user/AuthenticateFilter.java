@@ -37,7 +37,7 @@ public class AuthenticateFilter implements Filter  {
     }
 
     private boolean shouldPass(HttpRequest request) {
-        return Utils.anyMatch(PASSING_PREFIXES, p -> request.getRequestURI().startsWith(p));
+        return Utils.anyMatch(PASSING_PREFIXES, p -> request.getRequestPath().startsWith(p));
     }
 
     @Override
@@ -48,7 +48,7 @@ public class AuthenticateFilter implements Filter  {
         }
         var token = Tokens.getToken(request);
         if (token != null &&  loginService.authenticate(new Token(Constants.PLATFORM_APP_ID, token)).isSuccessful()
-                || loginService.defaultAuth()) {
+                || token == null && loginService.defaultAuth()) {
             proceed.accept(request);
             return;
         }

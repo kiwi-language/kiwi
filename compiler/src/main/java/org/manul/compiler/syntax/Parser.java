@@ -1614,6 +1614,10 @@ public class Parser {
                 nextToken();
                 yield new PrimitiveTypeNode(TypeTag.PASSWORD);
             }
+            case CHAR ->  {
+                nextToken();
+                yield new PrimitiveTypeNode(TypeTag.CHAR);
+            }
             case LPAREN -> {
                 nextToken();
                 if (is(RPAREN)) {

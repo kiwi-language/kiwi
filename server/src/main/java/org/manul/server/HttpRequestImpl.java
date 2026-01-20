@@ -50,7 +50,7 @@ public class HttpRequestImpl implements HttpRequest {
     }
 
     @Override
-    public String getRequestURI() {
+    public String getRequestPath() {
         return requestURI;
     }
 

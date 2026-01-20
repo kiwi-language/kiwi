@@ -7,14 +7,14 @@ Welcome to Manul. Follow this guide to install the CLI and deploy your first pro
 Run the following command to download and install the binary:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://manul-lang.org/install.sh | sh
+curl -sSf https://manul-lang.org/install.sh | sh
 ```
 
-### 2. Configure Shell
-Reload your shell configuration to update your path (ensure you use the config file matching your active shell, e.g., `.zshrc` or `.bashrc`):
+### 2. Update Your Path
+Source the environment file to make the `manul` command immediately available in your current shell:
 
 ```bash
-source ~/.zshrc
+source ~/.manul/bin/env
 ```
 
 ### 3. Verify Installation
@@ -25,16 +25,19 @@ manul --version
 ```
 
 ### 4. Quick Start
-Create and deploy a basic "Hello World" project to ensure everything is working.
+Create and deploy a simple project to ensure everything is working.
 
 **Initialize Project:**
 ```bash
-mkdir manul-test
+mkdir -p manul-test/src
 cd manul-test
-mkdir src
+
+# Create an application and select it
+manul create-app quickstart
+manul set-app quickstart
 
 # Create a sample file
-cat << EOF > test.manul
+cat << EOF > product.mnl
 class Product(var name: string)
 EOF
 
@@ -46,7 +49,11 @@ manul deploy
 Send a request to the local instance to create a new product:
 
 ```bash
-curl -H "X-App-ID: {app-id}" \
-     -X POST http://localhost:8080/api/product \
-     --data-raw '{name: "Shoes"}'
+curl -X POST http://localhost:8080/api/quickstart/product --data-raw '{name: "Shoes"}'
+```
+
+Retrieve the created product (replace `<app-id>` with the output from the previous request):
+
+```bash
+curl http://localhost:8080/api/quickstart/product/<app-id>
 ```

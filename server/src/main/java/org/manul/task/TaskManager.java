@@ -21,7 +21,7 @@ public class TaskManager extends EntityContextFactoryAware {
     @Transactional
     public void addIndexRebuildGlobalTask() {
         try (var context = newPlatformContext()) {
-            context.bind(new IndexRebuildGlobalTask(context.allocateRootId()));
+            context.bind(new SearchIndexRebuildGlobalTask(context.allocateRootId()));
             context.finish();
         }
     }

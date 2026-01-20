@@ -166,6 +166,9 @@ public class SchemaManagerImpl implements SchemaManager {
             stmt.addBatch(
                     String.format("alter table index_entry_bak_%d rename to index_entry_%d", appId, appId)
             );
+            stmt.addBatch(
+                    String.format("alter index index_entry_bak_%d_instance_id_idx rename to index_entry_%d_instance_id_idx", appId, appId)
+            );
             stmt.executeBatch();
             connection.commit();
             log.info("Finished rollback");

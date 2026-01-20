@@ -1697,10 +1697,8 @@ Content-Type: application/json
 
 
 ####
-POST http://localhost:8080/api/product
-X-App-ID: 1000000014
+POST http://localhost:8080/api/product/product
 Content-Type: application/json
-X-REFRESH-POLICY: none
 
 {
   "name": "Hat",
@@ -1709,16 +1707,38 @@ X-REFRESH-POLICY: none
 }
 
 ###
-GET http://localhost:8080/api/product/01a0c7d6b90700
-X-App-ID: 1000000014
+GET http://localhost:8080/api/product/product/0180b885ba0700
 
 ####
-POST http://localhost:8080/api/product/reduce-stock
-X-App-ID: 1000000014
+POST http://localhost:8080/api/product/product/reduce-stock
 Content-Type: application/json
-X-REFRESH-POLICY: none
 
 {
-  "productId": "01caa8d6b90700",
+  "productId": "0180b885ba0700",
   "amount": 1
+}
+
+###
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "appId": 2,
+  "loginName": "manul",
+  "password": ""
+}
+
+###
+GET http://localhost:8080/app/?name=New Application
+Authorization: Bearer 113d0d41-575a-46a1-b003-cecfd31a2f69
+
+###
+POST http://localhost:8080/bootstrap/reindex/2
+
+###
+POST http://localhost:8080/api/parse-int/lab/parse-long
+Content-Type: application/json
+
+{
+  "s": "100.0"
 }

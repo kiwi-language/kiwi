@@ -49,15 +49,15 @@ public class ApiAdapterTest extends TestCase {
 
     public void testCreate() {
         deploy("manul/User.mnl");
-        var id = (String) TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/user",
+        var id = (String) post(
+                "/user",
                 Map.of(
                         "loginName", "demo",
                         "password", "123456"
                 ),
                 false, mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         var user = apiClient.getObject(Id.parse(id));
         assertEquals("demo", user.get("loginName"));
     }
@@ -65,15 +65,15 @@ public class ApiAdapterTest extends TestCase {
     public void testUpdate() {
         deploy("manul/User.mnl");
         var id = saveUser();
-        TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/user",
+        post(
+                "/user",
                 Map.of(
                         "id", id,
                         "loginName", "demo1"
                 ),
                 false, mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         var user = apiClient.getObject(Id.parse(id));
         assertEquals("demo1", user.get("loginName"));
     }
@@ -82,11 +82,11 @@ public class ApiAdapterTest extends TestCase {
         deploy("manul/User.mnl");
         var uId = saveInstance("User", Map.of("loginName", "demo", "password", "123456"));
         var appId = saveInstance("Application", Map.of("name", "demo", "owner", Id.parse(uId)));
-        var app = apiAdapter.handleGet("/api/application/" + appId);
+        var app = get("/application/" + appId);
         assertEquals("demo", app.get("ownerLoginName"));
 
-        var r = (SearchResult) apiAdapter.handlePost(
-                "/api/application/_search",
+        var r = (SearchResult) post(
+                "/application/_search",
                 Map.of(
                         "newlyChangedId", appId
                 ),
@@ -110,7 +110,7 @@ public class ApiAdapterTest extends TestCase {
                    )
                 )
         )));
-        var product = apiAdapter.handleGet("/api/product/" + id);
+        var product = get("/product/" + id);
         assertEquals(id.toString(), product.get("id"));
         assertEquals("Shoes", product.get("name"));
         //noinspection unchecked
@@ -127,8 +127,8 @@ public class ApiAdapterTest extends TestCase {
         var productId = saveInstance("Product", Map.of(
                 "name", "Shoes", "price", 100, "stock", 100)
         );
-        var orderId = TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/order-service/place-order",
+        var orderId = post(
+                "/order-service/place-order",
                 Map.of(
                         "productId", productId,
                         "quantity", 1,
@@ -136,7 +136,7 @@ public class ApiAdapterTest extends TestCase {
                 ),
                 false, mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         var order = getObject(orderId.toString());
         assertEquals(100.0, order.getDouble("totalPrice"), 0.01);
     }
@@ -144,8 +144,8 @@ public class ApiAdapterTest extends TestCase {
     public void testIdParsingErrorMsg() {
         deploy("manul/shopping.mnl");
         try {
-            TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                    "/api/order-service/place-order",
+            post(
+                    "/order-service/place-order",
                     Map.of(
                             "productId", "product",
                             "quantity", 1,
@@ -153,7 +153,7 @@ public class ApiAdapterTest extends TestCase {
                     ),
                     false, mockHttpRequest(),
                     mockHttpResponse()
-            ));
+            );
             fail("Invalid ID should throw an exception");
         } catch (BusinessException e) {
             assertSame(ErrorCode.INVALID_ID, e.getErrorCode());
@@ -163,8 +163,8 @@ public class ApiAdapterTest extends TestCase {
 
     public void testAutomaticTypeConversion() {
         deploy("manul/shopping.mnl");
-        var id = (String) TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/product",
+        var id = (String) post(
+                "/product",
                 Map.of(
                         "name", "Shoes",
                         "price", "100",
@@ -172,7 +172,7 @@ public class ApiAdapterTest extends TestCase {
                 ),
                 false, mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         var product = getObject(id);
         assertEquals(100.0, product.getDouble("price"), 0.01);
         assertEquals(100, product.get("stock"));
@@ -180,8 +180,8 @@ public class ApiAdapterTest extends TestCase {
 
     public void testSaveWithChildren() {
         deploy("manul/children.mnl");
-        var id = (String) TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/product",
+        var id = (String) post(
+                "/product",
                 Map.of(
                         "name", "Shoes",
                         "skus", List.of(
@@ -194,7 +194,7 @@ public class ApiAdapterTest extends TestCase {
                 ),
                 false, mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         var product = apiClient.getObject(Id.parse(id));
         assertEquals("Shoes", product.get("name"));
         var skus = product.getChildren("SKU");
@@ -213,15 +213,15 @@ public class ApiAdapterTest extends TestCase {
                         "password", "123456"
                 )
         ));
-        var r = TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/user/verify",
+        var r = post(
+                "/user/verify",
                 Map.of(
                         "userId", id.toString(),
                         "password", "123456"
                 ),
                 false, mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         assertEquals(true, r);
     }
 
@@ -229,8 +229,8 @@ public class ApiAdapterTest extends TestCase {
         deploy("manul/simple_shopping.mnl");
         var id = saveProduct();
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var result = (SearchResult) apiAdapter.handlePost(
-                "/api/product/_search",
+        var result = (SearchResult) post(
+                "/product/_search",
                 Map.of(
                         "name", "MacBook",
                         "price", List.of(10000, 150000)
@@ -245,8 +245,8 @@ public class ApiAdapterTest extends TestCase {
         assertEquals("MacBook Pro", user.get("name"));
         assertNull(user.get("password"));
 
-        var result1 = (SearchResult) apiAdapter.handlePost(
-                "/api/product/_search",
+        var result1 = (SearchResult) post(
+                "/product/_search",
                 Map.of(
                         "name", "MacBook",
                         "page", 2
@@ -264,8 +264,8 @@ public class ApiAdapterTest extends TestCase {
                 )
         );
 
-        var result2 = (SearchResult) apiAdapter.handlePost(
-                "/api/product/_search",
+        var result2 = (SearchResult) post(
+                "/product/_search",
                 Map.of(
                         "name", "MacBook",
                         "page", 1,
@@ -285,8 +285,8 @@ public class ApiAdapterTest extends TestCase {
                 "owner", Id.parse(userId)
         ));
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = (SearchResult) apiAdapter.handlePost(
-                "/api/application/_search",
+        var r = (SearchResult) post(
+                "/application/_search",
                 Map.of(
                         "ownerId", userId
                 ),
@@ -310,8 +310,8 @@ public class ApiAdapterTest extends TestCase {
                         )
                 )
         ));
-        var r = (SearchResult) apiAdapter.handlePost(
-                "/api/product/_search",
+        var r = (SearchResult) post(
+                "/product/_search",
                 Map.of(
                         "includeChildren", true,
                         "newlyChangedId", id
@@ -357,7 +357,7 @@ public class ApiAdapterTest extends TestCase {
     public void testDelete() {
         deploy("manul/User.mnl");
         var id = saveUser();
-        TestUtils.doInTransactionWithoutResult(() -> apiAdapter.handleDelete("/api/user/" + id));
+        delete("/user/" + id);
         try {
             apiClient.getObject(Id.parse(id));
             fail("Object should have been removed");
@@ -369,52 +369,52 @@ public class ApiAdapterTest extends TestCase {
 
     public void testInvokeBeanMethod() {
         deploy("manul/beans/foo_service.mnl");
-        var msg = TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/beans/foo-service/greet",
+        var msg = post(
+                "/beans/foo-service/greet",
                 Map.of(),
                 false, mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         assertEquals("Hello", msg);
     }
 
     public void testRefParamType() {
         deploy("manul/adapter/ref_param_type.mnl");
         var id = saveInstance("adapter.Product", Map.of("name", "Shoes"));
-        TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/adapter/product-service/activate",
+        post(
+                "/adapter/product-service/activate",
                 Map.of(
                         "productId", id
                 ),
                 false, mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         var product = getObject(id);
         assertEquals("ACTIVE", ((ApiNamedObject) product.get("status")).name());
 
-        var found = TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/adapter/product-service/getFirstByStatus",
+        var found = post(
+                "/adapter/product-service/getFirstByStatus",
                 Map.of(
                         "status", "ACTIVE"
                 ),
                 false, mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         assertEquals(id, found);
     }
 
     public void testRefInitArg() {
         deploy("manul/User.mnl");
         var userId = saveUser();
-        var appId = (String) TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/application",
+        var appId = (String) post(
+                "/application",
                 Map.of(
                         "name", "demo",
                         "ownerId", userId
                 ),
                 false, mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         var app = getObject(appId);
         assertEquals(Id.parse(userId), app.get("owner"));
     }
@@ -426,7 +426,7 @@ public class ApiAdapterTest extends TestCase {
                 "name", "demo",
                 "owner", Id.parse(userId)
         ));
-        var app = apiAdapter.handleGet("/api/application/" + appId);
+        var app = get("/application/" + appId);
         assertEquals(List.of(userId), app.get("memberIds"));
     }
 
@@ -442,7 +442,7 @@ public class ApiAdapterTest extends TestCase {
                         )
                 )
         ))).toString();
-        var product = (Map<?, ?>) ((List<?>) apiAdapter.handlePost("/api/product/_multi-get",
+        var product = (Map<?, ?>) ((List<?>) post("/product/_multi-get",
                 Map.of("ids", List.of(productId)),
                 true,
                 mockHttpRequest(),
@@ -484,12 +484,12 @@ public class ApiAdapterTest extends TestCase {
         ContextUtil.setContext(null);
         try {
             ContextUtil.setWaitForSearchSync(true);
-            TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                    "/api/index/blog-service/vote",
+            post(
+                    "/index/blog-service/vote",
                     Map.of("blogId", blogId, "userId", userId),
                     false, mockHttpRequest(),
                     mockHttpResponse()
-            ));
+            );
         } finally {
             ContextUtil.setWaitForSearchSync(false);
         }
@@ -509,8 +509,8 @@ public class ApiAdapterTest extends TestCase {
         deploy("manul/shopping.mnl");
         saveProduct();
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = (SearchResult) apiAdapter.handlePost(
-                "/api/product/_search",
+        var r = (SearchResult) post(
+                "/product/_search",
                 Map.of(
                         "minPrice", 10000,
                         "maxPrice", 15000
@@ -521,8 +521,8 @@ public class ApiAdapterTest extends TestCase {
         );
         assertEquals(1, r.total());
 
-        var r1 = (SearchResult) apiAdapter.handlePost(
-                "/api/product/_search",
+        var r1 = (SearchResult) post(
+                "/product/_search",
                 Map.of(
                         "minPrice", 5000,
                         "maxPrice", 10000
@@ -554,8 +554,8 @@ public class ApiAdapterTest extends TestCase {
                 Arrays.asList(id, 1, null)
         );
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r1 = (SearchResult) apiAdapter.handlePost(
-                "/api/order/_search",
+        var r1 = (SearchResult) post(
+                "/order/_search",
                 Map.of(
                         "status", "PENDING"
                 ),
@@ -564,8 +564,8 @@ public class ApiAdapterTest extends TestCase {
                 mockHttpResponse()
         );
         assertEquals(1, r1.total());
-        var r2 = (SearchResult) apiAdapter.handlePost(
-                "/api/order/_search",
+        var r2 = (SearchResult) post(
+                "/order/_search",
                 Map.of(
                         "status", List.of("PENDING", "CONFIRMED")
                 ),
@@ -584,16 +584,34 @@ public class ApiAdapterTest extends TestCase {
                         "name", "Shoes"
                 )
         );
-        var shoes = (Map<?,?>) TestUtils.doInTransaction(() -> apiAdapter.handlePost(
-                "/api/adapter/lab/find-product",
+        var shoes = (Map<?,?>) post(
+                "/adapter/lab/find-product",
                 Map.of(
                         "name", "Shoes"
                 ),
                 true,
                 mockHttpRequest(),
                 mockHttpResponse()
-        ));
+        );
         assertEquals(id, shoes.get("id"));
+    }
+
+    private Map<String, Object> get(String path) {
+        return apiAdapter.handleGet(completePath(path));
+    }
+
+    private void delete(String path) {
+        apiAdapter.handleDelete(completePath(path));
+    }
+
+    private Object post(String path, Map<String, Object> requestBody, boolean retFullObj, HttpRequest req, HttpResponse resp) {
+        return TestUtils.doInTransaction(() -> apiAdapter.handlePost(
+                completePath(path),
+                requestBody,
+                retFullObj,
+                req,
+                resp
+        ));
     }
 
     private Object callMethod(Object receiver, String methodName, List<Object> args) {
@@ -611,5 +629,9 @@ public class ApiAdapterTest extends TestCase {
     private HttpResponse mockHttpResponse() {
         return new HttpResponseImpl();
     }
-    
+
+    private String completePath(String path) {
+        return "/api/" + TestConstants.APP_NAME + path;
+    }
+
 }

@@ -381,7 +381,7 @@ public class IndexEntryMapperImpl implements IndexEntryMapper {
     }
 
     private void logEvent(String event) {
-//        log.debug("Request URI: {}, event: IndexEntryMapper.{}", ContextUtil.getRequestURI(), event);
+//        log.debug("Request path: {}, event: IndexEntryMapper.{}", ContextUtil.getRequestPath(), event);
     }
 
 }

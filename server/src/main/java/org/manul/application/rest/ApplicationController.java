@@ -19,12 +19,17 @@ public class ApplicationController {
         this.applicationManager = applicationManager;
     }
 
-    @Get
-    public Page<ApplicationDTO> list(@RequestParam(value = "page", defaultValue = "1") int page,
+    @Get("/search")
+    public Page<ApplicationDTO> search(@RequestParam(value = "page", defaultValue = "1") int page,
                                              @RequestParam(value = "pageSize", defaultValue = "20") int pageSize,
-                                             @RequestParam(value = "searchText", required = false) String searchText,
+                                             @RequestParam(value = "name", required = false) String name,
                                              @RequestParam(value = "newlyCreatedId", required = false) Long newlyCreatedId) {
-        return applicationManager.list(page, pageSize, searchText, ContextUtil.getUserId(), newlyCreatedId);
+        return applicationManager.search(page, pageSize, name, ContextUtil.getUserId(), newlyCreatedId);
+    }
+
+    @Get("/")
+    public ApplicationDTO get(@RequestParam("name") String name) {
+        return applicationManager.getByName(name);
     }
 
     @Post

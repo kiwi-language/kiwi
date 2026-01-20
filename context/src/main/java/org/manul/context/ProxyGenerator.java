@@ -318,10 +318,10 @@ public class ProxyGenerator extends AbstractGenerator {
             if (!types.isSame(param.asType(), types.map_string_list_string))
                 throw new ContextConfigException("@Headers parameter must be of type Map<String, List<String>>", param);
             write("r.getHeaders()");
-        } else if(param.getAnnotation(RequestURI.class) != null) {
+        } else if(param.getAnnotation(RequestPath.class) != null) {
             if (!types.isSame(param.asType(), types.string))
-                throw new ContextConfigException("@RequestURI parameter must be of type String", param);
-            write("r.getRequestURI()");
+                throw new ContextConfigException("@RequestPath parameter must be of type String", param);
+            write("r.getRequestPath()");
         } else if (types.isSame(param.asType(), types.inputStream))
             write("r.getBody()");
         else

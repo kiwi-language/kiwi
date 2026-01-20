@@ -36,7 +36,14 @@ public class ApplicationStatusAware extends EntityContextFactoryAware{
         if (ContextUtil.getAppId() != Constants.PLATFORM_APP_ID)
             throw new BusinessException(ErrorCode.ILLEGAL_ACCESS);
         try (var platformCtx = newPlatformContext()) {
-            var app = platformCtx.getEntity(Application.class, PhysicalId.of(appId, 0));
+            Application app;
+            try {
+                app = platformCtx.getEntity(Application.class, PhysicalId.of(appId, 0));
+            } catch (BusinessException e) {
+                if (e.getErrorCode() == ErrorCode.INSTANCE_NOT_FOUND)
+                    throw new BusinessException(ErrorCode.APP_NOT_ACTIVE);
+                throw e;
+            }
             var user = platformCtx.getEntity(PlatformUser.class, userId);
             if (app.getOwner() != user && Utils.noneMatch(user.getApplications(), app1 -> app1.getTreeId() == appId))
                 throw new BusinessException(ErrorCode.ILLEGAL_ACCESS);

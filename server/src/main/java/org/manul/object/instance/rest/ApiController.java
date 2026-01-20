@@ -3,14 +3,12 @@ package org.manul.object.instance.rest;
 import org.manul.api.entity.HttpHeader;
 import org.manul.api.entity.HttpRequest;
 import org.manul.api.entity.HttpResponse;
-import org.manul.common.ErrorCode;
 import org.manul.context.http.*;
 import org.manul.http.HttpHeaderImpl;
 import org.manul.http.HttpRequestImpl;
 import org.manul.http.HttpResponseImpl;
 import org.manul.object.instance.ApiAdapter;
 import org.manul.server.HttpMethod;
-import org.manul.util.BusinessException;
 import org.manul.util.ContextUtil;
 
 import java.util.*;
@@ -19,7 +17,7 @@ import java.util.*;
 @Mapping("/api")
 public class ApiController {
 
-    public static final String REFRESH_POLICY_NONE = "none";
+    public static final String REFRESH_POLICY_WAIT = "wait";
 
     private final ApiAdapter apiAdapter;
 
@@ -28,27 +26,24 @@ public class ApiController {
     }
 
     @Get("/**")
-    public Map<String, Object> get(@Header("X-App-Id") String appId, @RequestURI String uri) {
-        initContextAppId(appId);
-        return apiAdapter.handleGet(uri);
+    public Map<String, Object> get(@RequestPath String path) {
+        return apiAdapter.handleGet(path);
     }
 
     @Post("/**")
     public ResponseEntity<Object> post(@Header("X-Refresh-Policy") String refreshPolicy,
                                        @Header("X-Return-Full-Object") String returnFullObject,
-                                       @Header("X-App-ID") String appId,
-                                       @RequestURI String uri,
+                                       @RequestPath String path,
                                        @Headers Map<String, List<String>> headers,
                                        @RequestBody Map<String, Object> body) {
         try {
-            if (!REFRESH_POLICY_NONE.equalsIgnoreCase(refreshPolicy))
+            if (REFRESH_POLICY_WAIT.equalsIgnoreCase(refreshPolicy))
                 ContextUtil.setWaitForSearchSync(true);
             var callReturnObject = "true".equalsIgnoreCase(returnFullObject);
-            initContextAppId(appId);
-            var httpReq = buildHttpRequest(HttpMethod.POST.name(), uri, headers);
+            var httpReq = buildHttpRequest(HttpMethod.POST.name(), path, headers);
             var httpResp = new HttpResponseImpl();
             var rs = apiAdapter.handlePost(
-                    uri,
+                    path,
                     Objects.requireNonNullElse(body, Map.of()),
                     callReturnObject,
                     httpReq,
@@ -61,17 +56,16 @@ public class ApiController {
     }
 
     @Delete("/**")
-    public void delete(@Header("X-App-ID") String appId, @RequestURI String uri) {
-        initContextAppId(appId);
-        apiAdapter.handleDelete(uri);
+    public void delete(@RequestPath String path) {
+        apiAdapter.handleDelete(path);
     }
 
-    private static HttpRequest buildHttpRequest(String method, String uri, Map<String, List<String>> h) {
+    private static HttpRequest buildHttpRequest(String method, String path, Map<String, List<String>> h) {
         var headers = new ArrayList<HttpHeader>();
         h.forEach((name, value) -> headers.add(new HttpHeaderImpl(name, value.getFirst())));
         return new HttpRequestImpl(
                 method,
-                uri,
+                path,
                 headers,
                 List.of()
         );
@@ -83,18 +77,6 @@ public class ApiController {
             headers.put(header.name(), header.value());
         }
         return new ResponseEntity<>(data, headers);
-    }
-
-    private static void initContextAppId(String appIdStr) {
-        if (appIdStr == null)
-            throw new BusinessException(ErrorCode.MISSING_X_APP_ID);
-        try {
-            ContextUtil.setAppId(Long.parseLong(appIdStr));
-        }
-        catch (NumberFormatException e) {
-            throw new BusinessException(ErrorCode.INVALID_APP_ID);
-        }
-
     }
 
 }

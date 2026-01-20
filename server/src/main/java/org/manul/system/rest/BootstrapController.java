@@ -3,6 +3,7 @@ package org.manul.system.rest;
 import org.manul.application.ApplicationManager;
 import org.manul.context.http.Controller;
 import org.manul.context.http.Mapping;
+import org.manul.context.http.PathVariable;
 import org.manul.context.http.Post;
 import org.manul.entity.Bootstrap;
 import org.manul.task.TaskManager;
@@ -49,5 +50,16 @@ public class BootstrapController {
         applicationManager.createRoot();
         applicationManager.createPlatform();
     }
+
+    @Post("/reindex/{appId}")
+    public void reindexPlatform(@PathVariable("appId") long appId) {
+        applicationManager.reindex(appId);
+    }
+
+    @Post("/reindex-all")
+    public void reindexAll() {
+        applicationManager.reindexAll();
+    }
+
 
 }

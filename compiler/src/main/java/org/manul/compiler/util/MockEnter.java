@@ -124,8 +124,8 @@ public class MockEnter {
         var getMethodMeth = new Method("getMethod", Access.PUBLIC, false, false, false, cls);
         getMethodMeth.setRetType(Types.instance.getStringType());
 
-        var getRequestURIMeth = new Method("getRequestURI", Access.PUBLIC, false, false, false, cls);
-        getRequestURIMeth.setRetType(Types.instance.getStringType());
+        var getRequestPathMeth = new Method("getRequestPath", Access.PUBLIC, false, false, false, cls);
+        getRequestPathMeth.setRetType(Types.instance.getStringType());
 
         var getCookie = new Method("getCookie", Access.PUBLIC, false, false, false, cls);
         new Param("name", Types.instance.getStringType(), getCookie);

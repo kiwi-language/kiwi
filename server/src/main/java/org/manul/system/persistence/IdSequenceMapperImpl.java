@@ -61,7 +61,7 @@ public class IdSequenceMapperImpl implements IdSequenceMapper {
     }
 
     private void logEvent(String event) {
-//        log.debug("Request URI: {}, event: IdSequenceMapper.{}", ContextUtil.getRequestURI(), event);
+//        log.debug("Request path: {}, event: IdSequenceMapper.{}", ContextUtil.getRequestPath(), event);
     }
 
     public static void main(String[] args) {

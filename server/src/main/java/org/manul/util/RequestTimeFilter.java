@@ -22,11 +22,10 @@ public class RequestTimeFilter implements Filter {
     @Override
     public void filter(HttpRequest request, Consumer<HttpRequest> proceed) {
         try (var entry = ContextUtil.getProfiler().enter("Request")) {
-            entry.addMessage("request", request.getMethod() + " " + request.getRequestURI());
+            entry.addMessage("request", request.getMethod() + " " + request.getRequestPath());
             proceed.accept(request);
         }
         var result = ContextUtil.getProfiler().finish(true, true);
-        String requestUri = request.getRequestURI();
         if (result.duration() >= LOG_PROFILE_THRESHOLD) {
             log.info(result.output());
         }

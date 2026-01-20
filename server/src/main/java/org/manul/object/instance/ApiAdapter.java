@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.manul.api.entity.HttpRequest;
 import org.manul.api.entity.HttpResponse;
+import org.manul.application.Application;
 import org.manul.common.ErrorCode;
 import org.manul.entity.AttributeNames;
 import org.manul.entity.EntityContextFactory;
@@ -38,27 +39,29 @@ public class ApiAdapter extends EntityContextFactoryAware {
         this.apiService = apiService;
     }
 
-    public Map<String, Object> handleGet(String uri) {
-        var path = parsePath(uri);
+    public Map<String, Object> handleGet(String path) {
+        path = preprocessPath(path);
+        var instPath = parseInstancePath(path);
         try (var context = newContext()) {
-            return (Map<String, Object>) transformResultObject(apiService.getInstance(path.suffix()), context);
+            return (Map<String, Object>) transformResultObject(apiService.getInstance(instPath.id()), context);
         }
     }
 
     @SneakyThrows
-    public Object handlePost(String uri, Map<String, Object> requestBody, boolean retFullObj, HttpRequest httpRequest, HttpResponse httpResponse) {
+    public Object handlePost(String path, Map<String, Object> requestBody, boolean retFullObj, HttpRequest httpRequest, HttpResponse httpResponse) {
+        path = preprocessPath(path);
         ClassType type;
-        if ((type = parseGetClassType(uri)) != null) {
+        if ((type = parseClassPath(path)) != null) {
             var o = transformRequestObject(requestBody, type);
             return PersistenceUtil.doWithRetries(() ->
                             apiService.saveInstance(o, httpRequest, httpResponse)
                     );
         } else {
-            var path = parsePath(uri);
-            if (path.suffix.equals("_search")) {
-                var searchReq = buildSearchRequest(requestBody, path.classType);
+            var instPath = parseInstancePath(path);
+            if (instPath.id.equals("_search")) {
+                var searchReq = buildSearchRequest(requestBody, instPath.classType);
                 var r = apiService.search(
-                        path.classType.getTypeDesc(),
+                        instPath.classType.getTypeDesc(),
                         searchReq.criteria,
                         searchReq.page,
                         searchReq.pageSize,
@@ -71,7 +74,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
                             r.total()
                     );
                 }
-            } else if (path.suffix.equals("_multi-get")) {
+            } else if (instPath.id.equals("_multi-get")) {
                 if (requestBody.get("ids") instanceof List<?> ids) {
                     List<Map<String, Object>> objects = apiService.multiGet((List) ids, false, false);
                     try (var context = newContext()) {
@@ -80,8 +83,8 @@ public class ApiAdapter extends EntityContextFactoryAware {
                 } else
                     throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
             } else {
-                var methodName = NamingUtils.pathToName(path.suffix);
-                var method = resolveMethod(path.classType, methodName, requestBody);
+                var methodName = NamingUtils.pathToName(instPath.id);
+                var method = resolveMethod(instPath.classType, methodName, requestBody);
                 var invokeReq = buildInvokeRequest(requestBody, method);
                 return PersistenceUtil.doWithRetries(() -> {
                     var r = apiService.handleMethodCall(
@@ -107,9 +110,10 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return method;
     }
 
-    public void handleDelete(String uri) {
-        var path = parsePath(uri);
-        PersistenceUtil.doWithRetries(() -> apiService.delete(path.suffix));
+    public void handleDelete(String path) {
+        path = preprocessPath(path);
+        var instPath = parseInstancePath(path);
+        PersistenceUtil.doWithRetries(() -> apiService.delete(instPath.id));
     }
 
     private record InvokeRequest(
@@ -401,26 +405,46 @@ public class ApiAdapter extends EntityContextFactoryAware {
             throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
     }
 
-    private ClassType parseGetClassType(String uri) {
-        if (!uri.startsWith("/api/"))
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-        var name = NamingUtils.pathToName(uri.substring(5), true);
+    private String preprocessPath(String path) {
+        if (!path.startsWith("/api/"))
+            throw invalidRequestPath();
+        var idx = path.indexOf('/', 5);
+        if (idx == -1)
+            throw invalidRequestPath();
+        var appName = path.substring(5, idx);
+        try (var platformCtx = newPlatformContext()) {
+            var app = platformCtx.selectFirstByKey(Application.IDX_NAME, Instances.stringInstance(appName));
+            if (app == null)
+                throw invalidRequestPath();
+            ContextUtil.setAppId(app.getTreeId());
+        }
+        return path.substring(idx);
+    }
+
+    private ClassType parseClassPath(String path) {
+        if (!path.startsWith("/"))
+            throw invalidRequestPath();
+        var name = NamingUtils.pathToName(path.substring(1), true);
         try (var context = newContext()) {
             var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(name));
             return klass != null ? klass.getType() : null;
         }
     }
 
-    private Path parsePath(String uri) {
-        var idx = uri.lastIndexOf('/');
-        if (idx == -1 || idx == uri.length() - 1)
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-        var clasType = parseGetClassType(uri.substring(0, idx));
-        if (clasType == null)
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-        return new Path(clasType, uri.substring(idx + 1));
+    private BusinessException invalidRequestPath() {
+        return new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
     }
 
-    private record Path(ClassType classType, String suffix) {}
+    private InstancePath parseInstancePath(String path) {
+        var idx = path.lastIndexOf('/');
+        if (idx == -1 || idx == path.length() - 1)
+            throw invalidRequestPath();
+        var clasType = parseClassPath(path.substring(0, idx));
+        if (clasType == null)
+            throw invalidRequestPath();
+        return new InstancePath(clasType, path.substring(idx + 1));
+    }
+
+    private record InstancePath(ClassType classType, String id) {}
 
 }

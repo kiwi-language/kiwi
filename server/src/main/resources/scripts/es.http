@@ -118,3 +118,23 @@ Content-Type: application/json
 ###
 HEAD http://localhost:9200/instance-1000359052-v1
 Authorization: Basic elastic DjgoqCxwI9SOXqLCvotv
+
+###
+GET http://localhost:9200/_cat/aliases/instance-main-2?v
+Authorization: Basic elastic DjgoqCxwI9SOXqLCvotv
+
+###
+POST http://localhost:9200/_aliases
+Content-Type: application/json
+Authorization: Basic elastic DjgoqCxwI9SOXqLCvotv
+
+{
+  "actions": [
+    {
+      "add": {
+        "index": "instance-2-v1",
+        "alias": "instance-main-2"
+      }
+    }
+  ]
+}

@@ -31,7 +31,7 @@ public class ObjectInternalApi {
     }
 
     @Post("/save")
-    public String save(@RequestURI String uri, @Headers Map<String, List<String>> headers, @RequestBody SaveRequest request) {
+    public String save(@RequestPath String uri, @Headers Map<String, List<String>> headers, @RequestBody SaveRequest request) {
         ContextUtil.setAppId(request.appId());
         var httpRequest = createRequest(HttpMethod.POST, uri, headers);
         var response = new HttpResponseImpl();
@@ -76,7 +76,7 @@ public class ObjectInternalApi {
     }
 
     @Post("/invoke")
-    public Object invoke(@RequestURI String uri, @Headers Map<String, List<String>> headers, @RequestBody InvokeRequest request) {
+    public Object invoke(@RequestPath String uri, @Headers Map<String, List<String>> headers, @RequestBody InvokeRequest request) {
         verify(request.appId());
         var httpRequest = createRequest(HttpMethod.POST, uri, headers);
         var response = new HttpResponseImpl();

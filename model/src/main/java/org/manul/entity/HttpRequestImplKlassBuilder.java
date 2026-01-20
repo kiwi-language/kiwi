@@ -34,13 +34,13 @@ public class HttpRequestImplKlassBuilder implements StdKlassBuilder {
                     .build();
         }
         {
-            MethodBuilder.newBuilder(klass, "getRequestURI")
+            MethodBuilder.newBuilder(klass, "getRequestPath")
                     .id(Id.parse("01b0ee0108"))
                     .returnType(registry.getType(java.lang.String.class))
                     .isNative(true)
                     .nativeFunction((self, args, callContext) -> {
                         var r = (HttpRequestImpl) self;
-                        return Instances.stringInstance(r.getRequestURI());
+                        return Instances.stringInstance(r.getRequestPath());
                     })
                     .build();
         }

@@ -9,6 +9,8 @@ import org.manul.common.ErrorCode;
 import org.manul.common.MockEmailService;
 import org.manul.entity.EntityQueryService;
 import org.manul.object.instance.core.Id;
+import org.manul.task.GlobalReindexTask;
+import org.manul.task.ReindexTask;
 import org.manul.user.LoginService;
 import org.manul.user.PlatformUserManager;
 import org.manul.user.RoleManager;
@@ -68,11 +70,11 @@ public class ApplicationManagerTest extends TestCase {
                         "manul", "manul","123456", ContextUtil.getUserId().toString()
         ))).appId();
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
-        var page = applicationManager.list(1, 20, "manul", ContextUtil.getUserId(), null);
+        var page = applicationManager.search(1, 20, "manul", ContextUtil.getUserId(), null);
         Assert.assertEquals(1, page.items().size());
         Assert.assertEquals(id, (long) page.items().getFirst().id());
 
-        var page1 = applicationManager.list(1, 20, null, ContextUtil.getUserId(),null);
+        var page1 = applicationManager.search(1, 20, null, ContextUtil.getUserId(),null);
         Assert.assertEquals(2, page1.items().size());
     }
 
@@ -83,10 +85,10 @@ public class ApplicationManagerTest extends TestCase {
                 applicationManager.save(new ApplicationDTO(null, "manul", ContextUtil.getUserId().toString())));
 //        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = applicationManager.list(1, 20, "manul", ContextUtil.getUserId(),null);
+        var r = applicationManager.search(1, 20, "manul", ContextUtil.getUserId(),null);
         assertEquals(1, r.total());
         TestUtils.doInTransactionWithoutResult(() -> applicationManager.delete(id));
-        var r1 = applicationManager.list(1, 20, "manul", ContextUtil.getUserId(),null);
+        var r1 = applicationManager.search(1, 20, "manul", ContextUtil.getUserId(),null);
         assertEquals(0, r1.total());
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try {
@@ -94,9 +96,9 @@ public class ApplicationManagerTest extends TestCase {
             fail("Should have been removed");
         }
         catch (BusinessException e) {
-            assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+            assertSame(ErrorCode.APP_NOT_ACTIVE, e.getErrorCode());
         }
-        var r2 = applicationManager.list(1, 20, "manul", ContextUtil.getUserId(),null);
+        var r2 = applicationManager.search(1, 20, "manul", ContextUtil.getUserId(),null);
         assertEquals(0, r2.total());
     }
 
@@ -112,7 +114,7 @@ public class ApplicationManagerTest extends TestCase {
                     ));
         }
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = applicationManager.list(1, 2, null, ContextUtil.getUserId(),null);
+        var r = applicationManager.search(1, 2, null, ContextUtil.getUserId(),null);
         assertEquals(2, r.items().size());
     }
 
@@ -128,24 +130,32 @@ public class ApplicationManagerTest extends TestCase {
                     ));
         }
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = applicationManager.list(2, 5, null, ContextUtil.getUserId(),null);
+        var r = applicationManager.search(2, 5, null, ContextUtil.getUserId(),null);
         assertEquals(9, r.total());
+    }
+
+    public void testReindexAll() {
+        TestUtils.doInTransactionWithoutResult(applicationManager::reindexAll);
+        TestUtils.waitForTaskDone(schedulerAndWorker.scheduler(), schedulerAndWorker.worker(),
+                t -> t instanceof GlobalReindexTask);
+        TestUtils.waitForTaskDone(schedulerAndWorker.scheduler(), schedulerAndWorker.worker(),
+                t -> t instanceof ReindexTask);
     }
 
     public void testSearchText() {
         var id = TestUtils.doInTransaction(() ->
                 applicationManager.createBuiltin(new ApplicationCreateRequest(
-                        "Manul App", "manul","123456", getUserId()
+                        "manul-app", "manul","123456", getUserId()
                 ))).appId();
-        var r0 = applicationManager.list(1, 20, "manul", ContextUtil.getUserId(), id);
+        var r0 = applicationManager.search(1, 20, "manul", ContextUtil.getUserId(), id);
         assertEquals(1, r0.total());
 
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = applicationManager.list(1, 20, "manul", ContextUtil.getUserId(),null);
+        var r = applicationManager.search(1, 20, "manul", ContextUtil.getUserId(),null);
         assertEquals(1, r.total());
-        assertEquals("Manul App", r.items().getFirst().name());
+        assertEquals("manul-app", r.items().getFirst().name());
 
-        var r1 = applicationManager.list(1, 20, "manu", ContextUtil.getUserId(),null);
+        var r1 = applicationManager.search(1, 20, "manu", ContextUtil.getUserId(),null);
         assertEquals(1, r1.total());
     }
 
