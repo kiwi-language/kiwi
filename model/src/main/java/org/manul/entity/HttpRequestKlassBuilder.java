@@ -24,7 +24,7 @@ public class HttpRequestKlassBuilder implements StdKlassBuilder {
                     .build();
         }
         {
-            MethodBuilder.newBuilder(klass, "getRequestURI")
+            MethodBuilder.newBuilder(klass, "getRequestPath")
                     .id(Id.parse("01fce90108"))
                     .returnType(registry.getType(java.lang.String.class))
                     .isNative(true)

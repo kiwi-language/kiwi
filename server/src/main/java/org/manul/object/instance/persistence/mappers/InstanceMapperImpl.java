@@ -436,7 +436,7 @@ public class InstanceMapperImpl implements InstanceMapper {
     }
 
     private void logEvent(String event) {
-//       log.debug("Request URI: {}, event: InstanceMapper.{}", ContextUtil.getRequestURI(), event);
+//       log.debug("Request path: {}, event: InstanceMapper.{}", ContextUtil.getRequestPath(), event);
     }
 
 }

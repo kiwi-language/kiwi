@@ -14,9 +14,9 @@ import java.util.function.Consumer;
 @Wire(31)
 @Entity
 @Slf4j
-public class IndexRebuildGlobalTask extends GlobalTask {
+public class SearchIndexRebuildGlobalTask extends GlobalTask {
 
-    public IndexRebuildGlobalTask(Id id) {
+    public SearchIndexRebuildGlobalTask(Id id) {
         super(id, "IndexRebuildGlobalTask");
     }
 

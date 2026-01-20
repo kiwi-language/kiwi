@@ -2,9 +2,11 @@ package org.manul.common;
 
 public enum ErrorCode {
 
+    // general
     SUCCESS(0, "success"),
     EMPTY_REQUEST(102, "request parameters are missing"),
     INVALID_PARAMETERS(103, "invalid request parameters: {}"),
+    OBJECT_NOT_FOUND(404, "Object not found"),
 
     // metadata
     INVALID_TYPE(201, "unable to save class {}: {}"),
@@ -156,6 +158,8 @@ public enum ErrorCode {
     USER_NOT_ADMIN(614, "user {} is not an administrator"),
     INVALID_EMAIL_ADDRESS(615, "invalid email address"),
     APP_NOT_ACTIVE(616, "application is removed or inactive"),
+    ILLEGAL_APP_NAME(617, "Application names are limited to 100 lowercase alphanumeric characters, underscores (_), and hyphens (-). The sequence '---' is prohibited."),
+    CONFLICTING_APP_NAME(618, "application name already exists"),
 
     // Compiler
     RAW_TYPES_NOT_SUPPORTED(1201, "raw types are not supported"),

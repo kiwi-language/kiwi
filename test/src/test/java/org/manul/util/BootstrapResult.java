@@ -1,5 +1,6 @@
 package org.manul.util;
 
+import org.manul.application.ApplicationManager;
 import org.manul.ddl.CommitService;
 import org.manul.entity.*;
 import org.manul.object.instance.ChangeLogManager;
@@ -28,6 +29,7 @@ public record BootstrapResult(
         SchemaManager schemaManager,
         CommitService commitService,
         TypeManager typeManager,
+        ApplicationManager applicationManager,
         Id userId
 
 ) {

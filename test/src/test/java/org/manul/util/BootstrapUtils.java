@@ -76,7 +76,9 @@ public class BootstrapUtils {
         );
         initPlatform(entityContextFactory, schemaManager, userManager, appManager);
         var userId = getDefaultUserId(entityContextFactory);
+        TestConstants.USER_ID = userId;
         TestConstants.APP_ID = appManager.save(new ApplicationDTO(null, "demo", userId.toString()));
+        TestConstants.APP_NAME = "demo";
 
         var typeManager = new TypeManager(entityContextFactory, new BeanManager(), schemaManager, instanceSearchService);
         return new BootstrapResult(
@@ -96,6 +98,7 @@ public class BootstrapUtils {
                 schemaManager,
                 new CommitService(schemaManager, instanceSearchService, entityContextFactory),
                 typeManager,
+                appManager,
                 userId
         );
     }

@@ -81,7 +81,7 @@ public class Server implements DisposableBean {
                         exchange.sendResponseHeaders(HttpStatus.SC_BAD_REQUEST, -1);
                     } catch (Exception e) {
                         var resp = toJsonBytes(ErrorResponse.create(ErrorCode.UNKNOWN));
-                        log.error("Failed handle request " + req.getRequestURI(), e);
+                        log.error("Failed handle request " + req.getRequestPath(), e);
                         exchange.sendResponseHeaders(HttpStatus.SC_INTERNAL_SERVER_ERROR, resp.length);
                         exchange.getResponseBody().write(resp);
                     }

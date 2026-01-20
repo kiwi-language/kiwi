@@ -23,7 +23,7 @@ public class ContextUtil {
         // Add randomness to challenge unit tests
         long nextTmpId = Utils.randomInt(1000000);
         String token;
-        String requestURI;
+        String requestPath;
         private Profiler profiler = new Profiler();
         private final Map<String, Value> userData = new HashMap<>();
         @Getter
@@ -124,12 +124,12 @@ public class ContextUtil {
         getContextInfo().clientId = clientId;
     }
 
-    public static void setRequestUri(String uri) {
-        getContextInfo().requestURI = uri;
+    public static void setRequestUri(String path) {
+        getContextInfo().requestPath = path;
     }
 
-    public static String getRequestURI() {
-        return getContextInfo().requestURI;
+    public static String getRequestPath() {
+        return getContextInfo().requestPath;
     }
 
     public static boolean isLoggedIn() {

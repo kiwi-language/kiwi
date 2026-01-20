@@ -38,6 +38,7 @@ public class WireProcessor extends AbstractProcessor {
     private MyMethods myMethods;
     private Introspects introspects;
     private MyMessenger myMessenger;
+    private Elements elements;
     private final Set<TypeElement> classes = new HashSet<>();
 
     @Override
@@ -45,7 +46,7 @@ public class WireProcessor extends AbstractProcessor {
         super.init(processingEnv);
         processingEnv = jbUnwrap(ProcessingEnvironment.class, processingEnv);
         Types types = processingEnv.getTypeUtils();
-        Elements elements = processingEnv.getElementUtils();
+        elements = processingEnv.getElementUtils();
         var javacEnv = (JavacProcessingEnvironment) processingEnv;
         var ctx = javacEnv.getContext();
         Symtab syms = Symtab.instance(ctx);
@@ -145,7 +146,7 @@ public class WireProcessor extends AbstractProcessor {
         for (TypeElement cl : classes) {
             var customAdapter = getCustomAdapter(cl);
             var adapterName = customAdapter != null ?
-                    customAdapter.getQualifiedName().toString() : getGeneratedAdapterName(cl);
+                    elements.getBinaryName(customAdapter).toString() : getGeneratedAdapterName(cl);
             if (adapterNames.add(adapterName))
                 sb.append(adapterName).append('\n');
         }

@@ -5,7 +5,6 @@ import lombok.SneakyThrows;
 import org.jsonk.Jsonk;
 import org.jsonk.Type;
 import org.manul.application.rest.dto.ApplicationDTO;
-import org.manul.common.ErrorCode;
 import org.manul.common.ErrorResponse;
 import org.manul.common.Page;
 import org.manul.compiler.HttpTypeClient;
@@ -15,15 +14,15 @@ import org.manul.util.Constants;
 import org.manul.util.Headers;
 
 import javax.annotation.Nullable;
-import java.net.CookieHandler;
-import java.net.CookieManager;
-import java.net.HttpCookie;
-import java.net.URI;
+import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class HttpUtil {
 
@@ -136,8 +135,7 @@ public class HttpUtil {
             return null;
         if (resp.statusCode() != 200) {
             var errorResp = Jsonk.fromJson(resp.body(), ErrorResponse.class);
-            var errorCode = ErrorCode.fromCode(errorResp.getCode());
-            throw new RequestException(errorResp.getMessage(), errorCode);
+            throw new RequestException(errorResp.getMessage());
         }
         if (type.clazz() == Void.class || type.clazz() == void.class)
             return resp.body();
@@ -155,20 +153,33 @@ public class HttpUtil {
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
         var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() != 200) {
-            var errorResp = Jsonk.fromJson(resp.body(), ErrorResponse.class);
-            throw new RequestException(errorResp.getMessage(), ErrorCode.DEPLOY_FAILED);
-        }
+        processResponse(resp, Void.class);
     }
 
     public static <R> R get(String path, Class<R> clazz) {
+        return get(path, clazz, Map.of());
+    }
+
+    public static <R> R get(String path, Class<R> clazz, Map<String, String> requestParams) {
         //noinspection unchecked
-        return (R) get(path, Type.from(clazz));
+        return (R) get(path, Type.from(clazz), requestParams);
+    }
+
+    public static Object get(String path, Type type) {
+        return get(path, type, Map.of());
     }
 
     @SneakyThrows
-    public static Object get(String path, Type type) {
-        var uri = new URI(host + path);
+    public static Object get(String path, Type type, Map<String, String> requestParams) {
+        var url = host + path;
+        if (!requestParams.isEmpty()) {
+            var query = requestParams.entrySet().stream()
+                    .map(e -> encode(e.getKey()) + "=" + encode(e.getValue()))
+                    .collect(Collectors.joining("&"));
+            url += "?" + query;
+        }
+        var uri = new URI(url);
+
         var builder = HttpRequest.newBuilder()
                 .uri(uri)
                 .header("Accept", "application/json")
@@ -180,6 +191,10 @@ public class HttpUtil {
         var httpRequest = builder.build();
         var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         return processResponse(resp, type);
+    }
+
+    private static String encode(String s) {
+        return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
     public static void setHost(String host) {
@@ -198,7 +213,7 @@ public class HttpUtil {
         HttpUtil.setToken(loginInfo.token());
         System.out.println(HttpUtil.getToken());
         //noinspection unchecked
-        var apps = (Page<ApplicationDTO>) get("/app", Type.from(Page.class, ApplicationDTO.class));
+        var apps = (Page<ApplicationDTO>) get("/app/search", Type.from(Page.class, ApplicationDTO.class));
         System.out.println(apps);
         printCookies();
         testAccess();

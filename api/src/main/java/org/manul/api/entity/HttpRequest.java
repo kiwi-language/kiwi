@@ -6,7 +6,7 @@ public interface HttpRequest {
 
     String getMethod();
 
-    String getRequestURI();
+    String getRequestPath();
 
     @Nullable String getCookie(String name);
 

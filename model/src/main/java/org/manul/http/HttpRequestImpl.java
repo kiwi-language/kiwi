@@ -28,14 +28,14 @@ public class HttpRequestImpl implements HttpRequest, ValueObject, NativeEphemera
     private final transient InstanceState state = InstanceState.ephemeral(this);
 
     public final String method;
-    public final String requestURI;
+    public final String requestPath;
     private final Map<String, String> headers = new HashMap<>();
     private final Map<String, String> cookies = new HashMap<>();
     private Object currentUser = Instances.nullInstance();
 
-    public HttpRequestImpl(String method, String requestURI, List<HttpHeader> headers, List<HttpCookie> cookies) {
+    public HttpRequestImpl(String method, String requestPath, List<HttpHeader> headers, List<HttpCookie> cookies) {
         this.method = method;
-        this.requestURI = requestURI;
+        this.requestPath = requestPath;
         headers.forEach(h -> this.headers.put(h.name().toLowerCase(), h.value()));
         cookies.forEach(c -> this.cookies.put(c.name(), c.value()));
     }
@@ -48,8 +48,8 @@ public class HttpRequestImpl implements HttpRequest, ValueObject, NativeEphemera
 
     @Override
     @EntityFlow
-    public String getRequestURI() {
-        return requestURI;
+    public String getRequestPath() {
+        return requestPath;
     }
 
     @Nullable

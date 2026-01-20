@@ -9,15 +9,14 @@ import org.manul.context.sql.Transactional;
 import org.manul.entity.*;
 import org.manul.message.Message;
 import org.manul.message.MessageKind;
-import org.manul.object.instance.core.IInstanceContext;
-import org.manul.object.instance.core.Id;
-import org.manul.object.instance.core.PhysicalId;
-import org.manul.object.instance.core.TmpId;
+import org.manul.object.instance.core.*;
 import org.manul.object.instance.persistence.SchemaManager;
 import org.manul.object.instance.search.InstanceSearchService;
 import org.manul.object.type.GlobalKlassTagAssigner;
 import org.manul.object.type.KlassSourceCodeTagAssigner;
 import org.manul.object.type.KlassTagAssigner;
+import org.manul.task.GlobalReindexTask;
+import org.manul.task.ReindexTask;
 import org.manul.task.RemoveAppTaskGroup;
 import org.manul.user.*;
 import org.manul.user.rest.dto.*;
@@ -62,15 +61,16 @@ public class ApplicationManager extends ApplicationStatusAware {
         this.entityQueryService = entityQueryService;
         this.schemaManager = schemaManager;
         this.instanceSearchService = instanceSearchService;
+        Hooks.CREATE_REINDEX_TASK = this::reindex;
     }
 
-    public Page<ApplicationDTO> list(int page, int pageSize, String searchText, Id userId, @Nullable Long newlyCreatedId) {
+    public Page<ApplicationDTO> search(int page, int pageSize, String name, Id userId, @Nullable Long newlyCreatedId) {
         try (var context = newPlatformContext()) {
             var dataPage = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Application.class)
-                            .addFieldMatchIfNotNull(Application.esName, Utils.safeCall(searchText, Instances::stringInstance))
-                            .addFieldNotMatch(Application.esState, Instances.intInstance(ApplicationState.REMOVING.code()))
-                            .addFieldMatch(Application.esOwner, context.createReference(userId))
+                            .addFieldMatchIfNotNull(Application.ES_NAME, Utils.safeCall(name, Instances::stringInstance))
+                            .addFieldNotMatch(Application.ES_STATE, Instances.intInstance(ApplicationState.REMOVING.code()))
+                            .addFieldMatch(Application.ES_OWNER, context.createReference(userId))
                             .newlyCreated(newlyCreatedId != null ? List.of(PhysicalId.of(newlyCreatedId, 0)) : List.of())
                             .page(page)
                             .pageSize(pageSize)
@@ -84,6 +84,19 @@ public class ApplicationManager extends ApplicationStatusAware {
     public ApplicationDTO get(long id) {
         try (var context = newPlatformContext()) {
             return context.getEntity(Application.class, Id.getAppId(id)).toDTO();
+        } catch (BusinessException e) {
+            if (e.getErrorCode() == ErrorCode.INSTANCE_NOT_FOUND)
+                throw new BusinessException(ErrorCode.APP_NOT_ACTIVE);
+            throw e;
+        }
+    }
+
+    public ApplicationDTO getByName(String name) {
+        try (var context = newPlatformContext()) {
+            var app = context.selectFirstByKey(Application.IDX_NAME, Instances.stringInstance(name));
+            if (app == null)
+                throw new BusinessException(ErrorCode.OBJECT_NOT_FOUND);
+            return app.toDTO();
         }
     }
 
@@ -124,17 +137,55 @@ public class ApplicationManager extends ApplicationStatusAware {
 
     @Transactional
     public long save(ApplicationDTO appDTO) {
-        try (var platformCtx = newPlatformContext()) {
+        try (var context = newPlatformContext()) {
             Application app;
             if (appDTO.id() == null || appDTO.id() == 0L) {
-                var owner = platformCtx.getEntity(PlatformUser.class, appDTO.ownerId());
-                app = createApp(platformCtx.allocateTreeId(), appDTO.name(), owner, platformCtx);
+                var owner = context.getEntity(PlatformUser.class, appDTO.ownerId());
+                app = createApp(context.allocateTreeId(), appDTO.name(), owner, false, context);
             } else {
-                app = platformCtx.getEntity(Application.class, Id.getAppId(appDTO.id()));
+                app = context.getEntity(Application.class, Id.getAppId(appDTO.id()));
+                checkAppName(appDTO.name(), app.getName(), context);
                 app.setName(appDTO.name());
             }
-            platformCtx.finish();
+            context.finish();
             return app.getTreeId();
+        }
+    }
+
+    @Transactional
+    public long updateName(UpdateAppNameRequest request) {
+        try (var context = newPlatformContext()) {
+            var app = context.getEntity(Application.class, Id.getAppId(request.id()));
+            checkAppName(request.newName(), app.getName(), context);
+            app.setName(request.newName());
+            context.finish();
+            return app.getTreeId();
+        }
+    }
+
+    // Application names are limited to 100 lowercase alphanumeric characters, underscores (_), and hyphens (-).
+    // The sequence '---' is prohibited.
+    private void checkAppName(String name, String currentName, IInstanceContext content) {
+        if (name.length() > 100)
+            throw new BusinessException(ErrorCode.ILLEGAL_APP_NAME);
+        var hyphens = 0;
+        for (int i = 0; i < name.length(); i++) {
+            switch (name.charAt(i)) {
+                case 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+                        'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+                        'u', 'v', 'w', 'x', 'y', 'z',
+                        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                        '_' -> hyphens = 0;
+                case '-' -> {
+                    if (++hyphens >= 3)
+                        throw new BusinessException(ErrorCode.ILLEGAL_APP_NAME);
+                }
+                default -> throw new BusinessException(ErrorCode.ILLEGAL_APP_NAME);
+            }
+        }
+        if (!Objects.equals(name, currentName)) {
+            if (content.selectFirstByKey(Application.IDX_NAME, Instances.stringInstance(name)) != null)
+                throw new BusinessException(ErrorCode.CONFLICTING_APP_NAME);
         }
     }
 
@@ -153,7 +204,26 @@ public class ApplicationManager extends ApplicationStatusAware {
         }
     }
 
-    private Application createApp(Long id, String name, PlatformUser owner, IInstanceContext platformContext) {
+    @Transactional
+    public void reindex(long appId) {
+        try (var context = newContext(appId)) {
+            context.bind(new ReindexTask(context.allocateRootId(), "Reindex-" + appId));
+            context.finish();
+        }
+    }
+
+    @Transactional
+    public void reindexAll() {
+        try (var context = newPlatformContext()) {
+            context.bind(new GlobalReindexTask(context.allocateRootId(), "Reindex-All"));
+            context.finish();
+        }
+    }
+
+
+    private Application createApp(Long id, String name, PlatformUser owner, boolean skipNameCheck, IInstanceContext platformContext) {
+        if (!skipNameCheck)
+            checkAppName(name, null, platformContext);
         Application application = new Application(PhysicalId.of(id, 0L), name, owner);
         // initIdManually will bind application to context
         platformContext.bind(application);
@@ -185,7 +255,7 @@ public class ApplicationManager extends ApplicationStatusAware {
                         ), platformContext);
             } else
                 owner = platformContext.getEntity(PlatformUser.class, request.creatorId());
-            createApp(appId, request.name(), owner, platformContext);
+            createApp(appId, request.name(), owner, true, platformContext);
             platformContext.finish();
         }
         return new CreateAppResult(appId, owner.getStringId());

@@ -49,7 +49,7 @@ public class Templates {
             let responseBodyForLogging: any;
                 
             try {
-                const headers: HeadersInit = {'X-App-ID': APP_ID + '', 'X-Return-Full-Object': RETURN_FULL_OBJECT + '' };
+                const headers: HeadersInit = {'X-Refresh-Policy': 'WAIT', 'X-Return-Full-Object': RETURN_FULL_OBJECT + '' };
                 
                 if (token) {
                     headers['Authorization'] = `Bearer ${token}`;

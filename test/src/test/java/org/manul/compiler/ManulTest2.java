@@ -337,4 +337,23 @@ public class ManulTest2 extends ManulTestBase {
         assertEquals("Shoes", callMethod(userId, "getFirstProductName", List.of()));
     }
 
+    public void testCharArithmetic() {
+        deploy("manul/prim/char_arithmetic.mnl");
+        var v = callMethod(
+                ApiNamedObject.of("lab"),
+                "digit",
+                List.of('9')
+        );
+        assertEquals(9, v);
+        try {
+            callMethod(
+                    ApiNamedObject.of("lab"),
+                    "digit",
+                    List.of('a')
+            );
+        } catch (BusinessException e) {
+            assertEquals("Invalid digit", e.getMessage());
+        }
+    }
+
 }

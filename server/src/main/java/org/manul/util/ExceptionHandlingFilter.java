@@ -38,6 +38,8 @@ public class ExceptionHandlingFilter implements Filter {
                 var failureResult = ErrorResponse.create(bizExp.getErrorCode(), bizExp.getParams());
                 if(bizExp.getErrorCode() == ErrorCode.VERIFICATION_FAILED)
                     request.setStatus(401);
+                else if (bizExp.getErrorCode() == ErrorCode.OBJECT_NOT_FOUND)
+                    request.setStatus(404);
                 else
                     request.setStatus(400);
                 request.addHeader("content-type","application/json;charset=UTF-8");

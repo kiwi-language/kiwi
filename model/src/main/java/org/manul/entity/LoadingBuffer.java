@@ -1,5 +1,6 @@
 package org.manul.entity;
 
+import lombok.extern.slf4j.Slf4j;
 import org.manul.object.instance.TreeNotFoundException;
 import org.manul.object.instance.TreeSource;
 import org.manul.object.instance.core.IInstanceContext;
@@ -15,6 +16,7 @@ import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 public class LoadingBuffer {
 
     public static final Logger logger = LoggerFactory.getLogger(LoadingBuffer.class);

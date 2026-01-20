@@ -125,31 +125,30 @@ public class Main {
         System.out.print("password: ");
         var password = scanner.nextLine();
         doLogin(name, password);
-        var apps = listApps();
-        System.out.print("application: ");
-        var appName = scanner.nextLine();
-        var app = Utils.find(apps, a -> a.name().equals(appName));
-        if (app == null) {
-            System.err.println("Error: Application " + appName + " does not exist");
-            System.exit(1);
-        }
-        enterApp(app.id());
-        System.out.println("Logged in successfully");
+        Utils.writeFile(getTokenFile(), HttpUtil.getToken());
+//        System.out.println("applications:");
+//        var apps = listApps(1);
+//        System.out.print("application: ");
+//        var appName = scanner.nextLine();
+//        var app = Utils.find(apps, a -> a.name().equals(appName));
+//        if (app == null) {
+//            System.err.println("Error: Application " + appName + " does not exist");
+//            System.exit(1);
+//        }
+//        enterApp(app.id());
+//        System.out.println("Logged in successfully");
     }
 
     private void doLogin(String username, String password) {
         HttpUtil.login(username, password);
     }
 
-    private void enter(String appName) {
-        //noinspection unchecked
-        var apps = ((Page<ApplicationDTO>) HttpUtil.get("/app", Type.from(Page.class, ApplicationDTO.class))).items();
-        var app = Utils.find(apps, a -> a.name().equals(appName));
-        if (app == null) {
-            System.err.println("Error: Application " + appName + " does not exist");
-            System.exit(1);
-        }
-        enterApp(app.id());
+    private ApplicationDTO getApp(String name) {
+        return HttpUtil.get("/app", ApplicationDTO.class, Map.of("name", name));
+    }
+
+    private void enter(String name) {
+        enterApp(getApp(name).id());
     }
 
     private void enterApp(long appId) {
@@ -160,7 +159,11 @@ public class Main {
 
     private void createApp(String name) {
         HttpUtil.post("/app", new ApplicationDTO(null, name, null), Long.class);
-        System.out.printf("Application %s created successfully%n", name);
+    }
+
+    private void deleteApp(String name) {
+        var app = getApp(name);
+        HttpUtil.delete("/app/" + app.id(), Void.class);
     }
 
     private void printSourceTag(String name) {
@@ -258,12 +261,9 @@ public class Main {
     }
 
     private void logout() {
-        if (isLoggedIn()) {
-            doLogout();
-            System.out.println("Logged out successfully");
-        } else {
-            System.err.println("Not logged in");
-        }
+        if (isLoggedIn())
+            HttpUtil.logout();
+        deleteSessionFiles();
     }
 
     private void deploy(TypeClient typeClient, Path targetDir, boolean printDeployStatus) {
@@ -302,11 +302,10 @@ public class Main {
 
     private List<ApplicationDTO> listApps() {
         //noinspection unchecked
-        var page = (Page<ApplicationDTO>) HttpUtil.get("/app", Type.from(Page.class, ApplicationDTO.class));
-        System.out.println("applications:");
+        var page = (Page<ApplicationDTO>) HttpUtil.get("/app/search", Type.from(Page.class, ApplicationDTO.class));
         for (ApplicationDTO app : page.items()) {
             if(app.id() > 2)
-                System.out.printf("\t%s%n", app.name());
+                System.out.printf("%s%n", app.name());
         }
         return page.items();
     }
@@ -328,18 +327,17 @@ public class Main {
         }
     }
 
+    public void printAppName() {
+        var appId = getAppId();
+        var app = HttpUtil.get("/app/" + appId, ApplicationDTO.class);
+        System.out.println(app.name());
+    }
+
     void initializeHttpClient() {
         HttpUtil.setHost(getHost());
         var tokenFile = new File(getTokenFile());
         if (tokenFile.exists()) {
             HttpUtil.setToken(Utils.readLine(tokenFile));
-        }
-    }
-
-    private void doLogout() {
-        if (isLoggedIn()) {
-            HttpUtil.logout();
-            deleteSessionFiles();
         }
     }
 
@@ -361,6 +359,7 @@ public class Main {
         System.out.println("manul logout");
         System.out.println("manul create-app <name>");
         System.out.println("manul set-app <name>");
+        System.out.println("manul delete-app <name>");
         System.out.println("manul app");
         System.out.println("manul env");
         System.out.println("manul create-env <env>");
@@ -401,7 +400,7 @@ public class Main {
                     }
                     enter(args[1]);
                 }
-                case "app" -> System.out.println(getAppId());
+                case "app" -> printAppName();
                 case "create-app" -> {
                     if (args.length < 2) {
                         usage();
@@ -409,6 +408,14 @@ public class Main {
                     }
                     createApp(args[1]);
                 }
+                case "delete-app" -> {
+                    if (args.length < 2) {
+                        usage();
+                        return;
+                    }
+                    deleteApp(args[1]);
+                }
+                case "list-apps" -> listApps();
                 case "tag" -> {
                     if (args.length < 2) {
                         usage();
