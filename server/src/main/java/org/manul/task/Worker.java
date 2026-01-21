@@ -1,6 +1,7 @@
 package org.manul.task;
 
 import org.manul.common.ErrorCode;
+import org.manul.context.sql.TransactionPropagation;
 import org.manul.context.sql.Transactional;
 import org.manul.entity.*;
 import org.manul.object.instance.core.IInstanceContext;
@@ -200,8 +201,10 @@ public class Worker extends EntityContextFactoryAware {
     }
 
     private boolean runTask0(Task appTask, IInstanceContext executionContext, IInstanceContext taskContext) {
-        appTask.run(executionContext, taskContext);
-        return appTask.isTerminated();
+        return transactionOperations.execute(() -> {
+            appTask.run(executionContext, taskContext);
+            return appTask.isTerminated();
+        }, false, TransactionPropagation.NESTED);
     }
 
 }
