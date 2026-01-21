@@ -60,7 +60,7 @@ public class TransactionStatus {
     public static Connection getConnection(DataSource dataSource) {
         var ctx = statusTl.get().contextMap.get(dataSource);
         var conn = ctx != null ? ctx.getConnection() : dataSource.getConnection();
-        var pgconn = conn.unwrap(PGConnection.class);
+//        var pgconn = conn.unwrap(PGConnection.class);
 //        var pid = pgconn.getBackendPID();
 //        log.info("Getting connection. PID: {}", pid, new Exception());
         return conn;

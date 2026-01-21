@@ -4,10 +4,14 @@ import lombok.SneakyThrows;
 import org.manul.context.sql.TransactionIsolation;
 import org.manul.context.sql.TransactionPropagation;
 
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.*;
+
+import static java.util.Objects.requireNonNull;
 
 public class TransactionManager {
     private final ThreadLocal<Status> statusTl = ThreadLocal.withInitial(Status::new);
@@ -20,7 +24,7 @@ public class TransactionManager {
     void begin(TransactionIsolation isolation, TransactionPropagation propagation, boolean readonly) {
         var status = statusTl.get();
         var tx = switch (propagation) {
-            case REQUIRED -> {
+            case REQUIRED, NESTED -> {
                 if (status.transactions.isEmpty())
                     yield status.enterTx(readonly, isolation);
                 else
@@ -28,7 +32,7 @@ public class TransactionManager {
             }
             case REQUIRES_NEW -> status.enterTx(readonly, isolation);
         };
-        tx.enterScope();
+        tx.enterScope(propagation == TransactionPropagation.NESTED);
     }
 
     @SneakyThrows
@@ -57,7 +61,7 @@ public class TransactionManager {
         }
 
         Transaction currentTx() {
-            return Objects.requireNonNull(transactions.peek());
+            return requireNonNull(transactions.peek());
         }
 
     }
@@ -109,17 +113,23 @@ public class TransactionManager {
         @SneakyThrows
         @Override
         public Connection getConnection() {
-            if (aborted)
-                throw new SQLException("Transaction has been aborted");
+            ensureNotAborted();
             return conn;
         }
 
-        void enterScope() {
-            scopes.push(new Scope(this));
+        @SneakyThrows
+        private void ensureNotAborted() {
+            if (aborted)
+                throw new SQLException("Transaction has been aborted");
+        }
+
+        void enterScope(boolean createSavePoint) {
+            scopes.push(new Scope(this, createSavePoint));
         }
 
         @SneakyThrows
         void commit() {
+            ensureNotAborted();
             if (scopes.size() == 1) {
                 doBeforeCommit();
                 conn.commit();
@@ -129,8 +139,14 @@ public class TransactionManager {
 
         @SneakyThrows
         void rollback() {
-            conn.rollback();
-            aborted = true;
+            ensureNotAborted();
+            Savepoint savePoint;
+            if (scopes.size() == 1) {
+                aborted = true;
+                conn.rollback();
+            } else if ((savePoint = requireNonNull(scopes.peek()).savePoint) != null) {
+                conn.rollback(savePoint);
+            }
         }
 
         @SneakyThrows
@@ -163,14 +179,16 @@ public class TransactionManager {
     }
 
     private class Scope {
+        final @Nullable Savepoint savePoint;
         final TransactionContext suspendedCtx;
         final Transaction tx;
 
         @SneakyThrows
-        Scope(Transaction tx) {
+        Scope(Transaction tx, boolean createSavePoint) {
             suspendedCtx = TransactionStatus.getContext();
             TransactionStatus.setContext(tx);
             this.tx = tx;
+            savePoint = !tx.scopes.isEmpty() && createSavePoint ? tx.getConnection().setSavepoint() : null;
         }
 
         private void exit() {

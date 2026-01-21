@@ -1742,3 +1742,18 @@ Content-Type: application/json
 {
   "s": "100.0"
 }
+
+###
+POST http://localhost:7003/api/1000011008/user-service/login
+Content-Type: application/json
+
+{
+  "userName": "demo",
+  "password": "123456"
+}
+
+###
+POST http://localhost:7003/api/1000011008/exchange-service/fail-expired-exchanges
+
+###
+POST http://localhost:7003/bootstrap/reindex-all
