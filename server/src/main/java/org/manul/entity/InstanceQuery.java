@@ -13,6 +13,7 @@ public record InstanceQuery(
         Klass klass,
         @Nullable String searchText,
         @Nullable String expression,
+        List<Id> ids,
         List<Field> searchFields,
         boolean includeBuiltin,
         boolean includeSubTypes,

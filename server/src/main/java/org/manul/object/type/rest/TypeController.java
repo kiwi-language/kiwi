@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Controller
-@Mapping("/type")
+@Mapping("/manul-system/type")
 public class TypeController {
 
     private final TypeManager typeManager;

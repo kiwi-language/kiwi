@@ -16,20 +16,22 @@ public class AuthenticateFilter implements Filter  {
 
     private final LoginService loginService;
 
-    public static final Set<String> PASSING_PREFIXES = Set.of(
-            "/ping",
-            "/auth/login",
-            "/auth/login-with-token",
-            "/auth/get-login-info",
-            "/internal-api",
-            "/bootstrap",
-            "/system",
-            "/lab",
-            "/register",
-            "/platform-user/change-password",
-            "/object",
-            "/schema",
-            "/api"
+    public static Set<String> PREFIX_WHITELIST = Set.of(
+            "/manul-system/"
+    );
+
+    public static final Set<String> PREFIX_BLACKLIST = Set.of(
+            "/manul-system/ping",
+            "/manul-system/auth/login",
+            "/manul-system/auth/login-with-token",
+            "/manul-system/auth/get-login-info",
+            "/manul-system/bootstrap",
+            "/manul-system/system",
+            "/manul-system/lab",
+            "/manul-system/register",
+            "/manul-system/platform-user/change-password",
+            "/manul-system/object",
+            "/manul-system/schema"
     );
 
     public AuthenticateFilter(LoginService loginService) {
@@ -37,7 +39,8 @@ public class AuthenticateFilter implements Filter  {
     }
 
     private boolean shouldPass(HttpRequest request) {
-        return Utils.anyMatch(PASSING_PREFIXES, p -> request.getRequestPath().startsWith(p));
+        return Utils.noneMatch(PREFIX_WHITELIST, p -> request.getRequestPath().startsWith(p)) ||
+                Utils.anyMatch(PREFIX_BLACKLIST, p -> request.getRequestPath().startsWith(p));
     }
 
     @Override

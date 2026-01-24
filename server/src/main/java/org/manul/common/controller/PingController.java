@@ -5,7 +5,7 @@ import org.manul.context.http.Get;
 import org.manul.context.http.Mapping;
 
 @Controller
-@Mapping("/ping")
+@Mapping("/manul-system/ping")
 public class PingController {
 
     @Get

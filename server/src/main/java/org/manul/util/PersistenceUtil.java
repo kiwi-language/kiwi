@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.manul.common.ErrorCode;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
 
@@ -57,6 +58,21 @@ public class PersistenceUtil {
             ex = ex.getCause();
         } while (ex != null);
         return false;
+    }
+
+    @SneakyThrows
+    public static int getPid(Connection conn) {
+        try {
+            var stmt = conn.createStatement();
+            var rs = stmt.executeQuery("SELECT pg_backend_pid()");
+            if (rs.next()) {
+                int pid = rs.getInt(1);
+                return pid;
+            }
+            return -1;
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
 }

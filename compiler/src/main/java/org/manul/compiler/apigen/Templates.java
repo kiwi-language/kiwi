@@ -119,24 +119,34 @@ public class Templates {
         """;
 
     public static final String UPLOAD_API = """
-            upload: async (file: File): Promise<UploadResult> => {
-                let formData = new FormData()
-                formData.append('file', file)
-                const response = await fetch('/files/v2', {
-                    method: 'POST',
-                    headers: {
-                        'X-App-ID': APP_ID + '',
-                    },
-                    body: formData,
-                });
-    
-                if (!response.ok) {
-                    const errorBody: ErrorResponse = await response.json();
-                    throw new ApiError(response, errorBody);
+            export const systemApi = { 
+            
+                upload: async (file: File): Promise<UploadResult> => {
+                    let formData = new FormData()
+                    formData.append('file', file)
+                    const response = await fetch('/files/v2', {
+                        method: 'POST',
+                        headers: {
+                            'X-App-ID': APP_ID + '',
+                        },
+                        body: formData,
+                    });
+        
+                    if (!response.ok) {
+                        const errorBody: ErrorResponse = await response.json();
+                        throw new ApiError(response, errorBody);
+                    }
+                    
+                    return await response.json() as UploadResult;
                 }
                 
-                return await response.json() as UploadResult;
-            },
+            }""";
+
+    public static final String EXAMPLE_MNL = """
+            class Book(
+                var title: string,
+                var author: string
+            )
             """;
 
 }

@@ -10,7 +10,7 @@ import org.manul.user.rest.dto.AppMemberDTO;
 import org.manul.util.ContextUtil;
 
 @Controller
-@Mapping("/app")
+@Mapping("/manul-system/app")
 public class ApplicationController {
 
     private final ApplicationManager applicationManager;

@@ -5,16 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.manul.api.entity.HttpRequest;
 import org.manul.api.entity.HttpResponse;
 import org.manul.application.Application;
+import org.manul.beans.BeanDefinitionRegistry;
 import org.manul.common.ErrorCode;
-import org.manul.entity.AttributeNames;
+import org.manul.context.Component;
 import org.manul.entity.EntityContextFactory;
 import org.manul.entity.EntityContextFactoryAware;
 import org.manul.flow.MethodRef;
 import org.manul.object.instance.core.IInstanceContext;
+import org.manul.object.instance.core.Id;
 import org.manul.object.instance.rest.SearchResult;
 import org.manul.object.type.*;
 import org.manul.util.*;
-import org.manul.context.Component;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -28,8 +29,8 @@ public class ApiAdapter extends EntityContextFactoryAware {
 
     private static final String KEY_ID = "id";
     private static final String KEY_INCLUDE_CHILDREN = "includeChildren";
-    private static final String KEY_PAGE = "page";
-    private static final String KEY_PAGE_SIZE = "pageSize";
+    private static final String KEY_PAGE = "_page";
+    private static final String KEY_PAGE_SIZE = "_pageSize";
     private static final String KEY_NEWLY_CHANGED_ID = "newlyChangedId";
 
     private final ApiService apiService;
@@ -39,11 +40,44 @@ public class ApiAdapter extends EntityContextFactoryAware {
         this.apiService = apiService;
     }
 
-    public Map<String, Object> handleGet(String path) {
+    public Object handleGet(String path, Map<String, List<String>> params) {
         path = preprocessPath(path);
-        var instPath = parseInstancePath(path);
-        try (var context = newContext()) {
-            return (Map<String, Object>) transformResultObject(apiService.getInstance(instPath.id()), context);
+        var lastSlashIdx = path.lastIndexOf('/');
+        if (lastSlashIdx != -1 && isId(path.substring(lastSlashIdx + 1))) {
+            // Request path ends with an ID
+            var instPath = parseInstancePath(path);
+            try (var context = newContext()) {
+                return transformResultObject(apiService.getInstance(instPath.id()), context);
+            }
+        } else {
+            var type = parseClassPath(path);
+            if (type == null)
+                throw invalidRequestPath();
+            var queryParams = new QueryParams(params);
+            var searchReq = buildSearchRequest(queryParams, type);
+            if (searchReq.ids != null && searchReq.criteria.isEmpty()) {
+                // Pure ID query - optimize
+                var objects = apiService.multiGet(searchReq.ids, false, false);
+                try (var context = newContext()) {
+                    var items = Utils.map(objects, m -> transformResultObject(m, context));
+                    return new SearchResult(items, items.size());
+                }
+            }
+            var r = apiService.search(
+                    type.getTypeDesc(),
+                    Utils.safeCall(searchReq.ids, _ids -> Utils.map(_ids, Id::parse)),
+                    searchReq.criteria,
+                    searchReq.page,
+                    searchReq.pageSize,
+                    "true".equals(queryParams.getFirst(KEY_INCLUDE_CHILDREN)),
+                    searchReq.newlyCreated
+            );
+            try (var context = newContext()) {
+                return new SearchResult(
+                        Utils.map(r.items(), i -> transformResultValue(i, context)),
+                        r.total()
+                );
+            }
         }
     }
 
@@ -52,61 +86,45 @@ public class ApiAdapter extends EntityContextFactoryAware {
         path = preprocessPath(path);
         ClassType type;
         if ((type = parseClassPath(path)) != null) {
-            var o = transformRequestObject(requestBody, type);
+            var o = transformRequestObject(requestBody, type, false);
             return PersistenceUtil.doWithRetries(() ->
                             apiService.saveInstance(o, httpRequest, httpResponse)
                     );
         } else {
-            var instPath = parseInstancePath(path);
-            if (instPath.id.equals("_search")) {
-                var searchReq = buildSearchRequest(requestBody, instPath.classType);
-                var r = apiService.search(
-                        instPath.classType.getTypeDesc(),
-                        searchReq.criteria,
-                        searchReq.page,
-                        searchReq.pageSize,
-                        Boolean.TRUE.equals(requestBody.get(KEY_INCLUDE_CHILDREN)),
-                        searchReq.newlyCreated
+            var methPath = parseMethodPath(path);
+            var methodName = methPath.methodName;
+            var method = resolveMethod(methPath.type, methodName, requestBody);
+            var invokeReq = buildInvokeRequest(methPath.receiver, requestBody, method);
+            return PersistenceUtil.doWithRetries(() -> {
+                var r = apiService.handleMethodCall(
+                        invokeReq.receiver,
+                        methodName,
+                        invokeReq.arguments,
+                        retFullObj,
+                        httpRequest,
+                        httpResponse
                 );
                 try (var context = newContext()) {
-                    return new SearchResult(
-                            Utils.map(r.items(), i -> transformResultValue(i, context)),
-                            r.total()
-                    );
+                    return transformResultValue(r, context);
                 }
-            } else if (instPath.id.equals("_multi-get")) {
-                if (requestBody.get("ids") instanceof List<?> ids) {
-                    List<Map<String, Object>> objects = apiService.multiGet((List) ids, false, false);
-                    try (var context = newContext()) {
-                        return Utils.map(objects, m -> transformResultObject(m, context));
-                    }
-                } else
-                    throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
-            } else {
-                var methodName = NamingUtils.pathToName(instPath.id);
-                var method = resolveMethod(instPath.classType, methodName, requestBody);
-                var invokeReq = buildInvokeRequest(requestBody, method);
-                return PersistenceUtil.doWithRetries(() -> {
-                    var r = apiService.handleMethodCall(
-                            invokeReq.receiver,
-                            methodName,
-                            invokeReq.arguments,
-                            retFullObj,
-                            httpRequest,
-                            httpResponse
-                    );
-                    try (var context = newContext()) {
-                        return transformResultValue(r, context);
-                    }
-                });
-            }
+            });
         }
+    }
+
+    public void handlePatch(String path, Map<String, Object> requestBody, HttpRequest httpRequest, HttpResponse httpResponse) {
+        path = preprocessPath(path);
+        var instPath = parseInstancePath(path);
+        var o = transformRequestObject(requestBody, instPath.type, true);
+        o.put(KEY_ID, instPath.id);
+        PersistenceUtil.doWithRetries(() ->
+                apiService.saveInstance(o, httpRequest, httpResponse)
+        );
     }
 
     private MethodRef resolveMethod(ClassType type, String name, Map<String, Object> requestBody) {
         var method = type.findMethod(m -> m.isPublic() && !m.isStatic() && m.getName().equals(name));
         if (method == null)
-            throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, name, requestBody);
+            throw new BusinessException(ErrorCode.METHOD_NOT_FOUND, name, requestBody);
         return method;
     }
 
@@ -121,20 +139,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
             Map<String, Object> arguments
     ) {}
 
-    private InvokeRequest buildInvokeRequest(Map<String, Object> requestBody, MethodRef method) {
-        Map<String, Object> receiver;
-        if (method.getDeclaringType().isBean()) {
-            receiver = Map.of(
-                    "name",
-                    Objects.requireNonNull(method.getDeclaringType().getKlass().getAttribute(AttributeNames.BEAN_NAME))
-            );
-        } else {
-            var idField = firstCharsToLowerCase(method.getDeclaringType().getKlass().getName()) + "Id";
-            if (requestBody.get(idField) instanceof String id)
-                receiver = Map.of("id", id);
-            else
-                throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "Missing receiver ID in request body");
-        }
+    private InvokeRequest buildInvokeRequest(Map<String, Object> receiver, Map<String, Object> requestBody, MethodRef method) {
         var args = new HashMap<String, Object>();
         method.getParameters().forEach(param -> {
             var arg = requestBody.get(transformFieldName(param.getName(), param.getType()));
@@ -156,7 +161,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return switch (value) {
             case Map map -> {
                 if (type instanceof ClassType ct)
-                    yield transformRequestObject(map, ct);
+                    yield transformRequestObject(map, ct, map.containsKey(KEY_ID));
                 else
                     throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
             }
@@ -211,9 +216,8 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return Utils.map(list, item -> transformRequestValue(item, type.getElementType()));
     }
 
-    private Map<String, Object> transformRequestObject(Map<String, Object> map, ClassType type) {
-        var id = map.get(KEY_ID) instanceof String s ? s : null;
-        var fields = id == null ? transformRequestObjectArgs(map, type) : transformRequestObjectFields(map, type, false);
+    private Map<String, Object> transformRequestObject(Map<String, Object> map, ClassType type, boolean forUpdate) {
+        var fields = forUpdate ? transformUpdateFields(map, type) : transformRequestObjectArgs(map, type);
         var children = new HashMap<String, Object>();
         for (ClassType ik : type.getInnerClassTypes()) {
             var childFieldName = getChildFieldName(ik.getName());
@@ -221,7 +225,7 @@ public class ApiAdapter extends EntityContextFactoryAware {
                 var list1 = new ArrayList<Map<String, Object>>();
                 for (var item : list) {
                     if (item instanceof Map map1)
-                        list1.add(transformRequestObject(map1, ik));
+                        list1.add(transformRequestObject(map1, ik, map1.containsKey(KEY_ID)));
                     else
                         throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
                 }
@@ -229,8 +233,6 @@ public class ApiAdapter extends EntityContextFactoryAware {
             }
         }
         var result = new HashMap<String, Object>();
-        if (id != null)
-            result.put("id", id);
         result.put("type", type.getTypeDesc());
         result.put("fields", fields);
         result.put("children", children);
@@ -292,18 +294,20 @@ public class ApiAdapter extends EntityContextFactoryAware {
     }
 
     private record SearchRequest(
+            List<String> ids,
             Map<String, Object> criteria,
             int page,
             int pageSize,
             @Nullable String newlyCreated
     ) {}
 
-    private SearchRequest buildSearchRequest(Map<String, Object> requestBody, ClassType type) {
-        var criteria = transformRequestObjectFields(requestBody, type, true);
-        var page = requestBody.get(KEY_PAGE) instanceof Integer p ? p : 1;
-        var pageSize = requestBody.get(KEY_PAGE_SIZE) instanceof Integer p ? p : 20;
-        var newlyCreated = requestBody.get(KEY_NEWLY_CHANGED_ID) instanceof String s ? s : null;
-        return new SearchRequest(criteria, page, pageSize, newlyCreated);
+    private SearchRequest buildSearchRequest(QueryParams queryParams, ClassType type) {
+        var criteria = transformSearchRequest(queryParams, type);
+        var page = queryParams.getInt(KEY_PAGE, 1);
+        var pageSize = queryParams.getInt(KEY_PAGE_SIZE, 20);
+        var newlyCreated = queryParams.getFirst(KEY_NEWLY_CHANGED_ID);
+        var ids = queryParams.get("id");
+        return new SearchRequest(ids, criteria, page, pageSize, newlyCreated);
     }
 
     private Map<String, Object> transformRequestObjectArgs(Map<String, Object> map, ClassType type) {
@@ -314,6 +318,19 @@ public class ApiAdapter extends EntityContextFactoryAware {
             var value = map.get(fName);
             if (value != null)
                 fields.put(param.getName(), transformRequestValue(value, param.getType()));
+        });
+        return fields;
+    }
+
+    private Map<String, Object> transformUpdateFields(Map<String, Object> map, ClassType type) {
+        var fields = new HashMap<String, Object>();
+        type.foreachField(field -> {
+            if (!field.isPublic() && !field.isStatic())
+                return;
+            var fName = transformFieldName(field.getName(), field.getPropertyType());
+            var value = map.get(fName);
+            if (value != null)
+                fields.put(field.getName(), transformRequestValue(value, field.getPropertyType()));
         });
         return fields;
     }
@@ -339,30 +356,27 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return InflectUtil.pluralize(firstCharsToLowerCase(childTypeName));
     }
 
-    private Map<String, Object> transformRequestObjectFields(Map<String, Object> map, ClassType type, boolean forSearch) {
+    private Map<String, Object> transformSearchRequest(QueryParams queryParams, ClassType type) {
         var fields = new HashMap<String, Object>();
         type.forEachField(field -> {
             if (field.isPublic()) {
-                var value = map.get(transformFieldName(field.getName(), field.getPropertyType()));
+                var value = queryParams.getAll(transformFieldName(field.getName(), field.getPropertyType()));
                 var concreteFieldType = field.getPropertyType().getUnderlyingType();
-                if (value != null) {
-                    var t = concreteFieldType instanceof ClassType && value instanceof List ?
-                            Types.getArrayType(field.getPropertyType()) : field.getPropertyType();
-                    fields.put(field.getName(), transformRequestValue(value, t));
-                } else if (forSearch && concreteFieldType.isNumber()) {
-                    var minFieldName = "min" + NamingUtils.firstCharToUpperCase(field.getName());
-                    var maxFieldName = "max" + NamingUtils.firstCharToUpperCase(field.getName());
-                    if (map.containsKey(minFieldName) || map.containsKey(maxFieldName)) {
-                        var min = map.get(minFieldName);
-                        if (min == null)
-                            min = getMinValue((PrimitiveType) concreteFieldType);
-                        else if (!(min instanceof Number))
-                            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
-                        var max = map.get(maxFieldName);
-                        if (max == null)
-                            max = getMaxValue((PrimitiveType) concreteFieldType);
-                        else if (!(max instanceof Number))
-                            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+                if (!value.isEmpty()) {
+                    if (value.size() == 1) {
+                        fields.put(field.getName(), transformRequestValue(value.getFirst(), field.getPropertyType()));
+                    } else {
+                        fields.put(field.getName(), transformRequestValue(value, Types.getArrayType(field.getPropertyType())));
+                    }
+                } else if (concreteFieldType.isNumber()) {
+                    var minFieldName = field.getName() + ".ge";
+                    var maxFieldName = field.getName() + ".le";
+                    var hasMin = queryParams.contains(minFieldName);
+                    var hasMax = queryParams.contains(maxFieldName);
+                    if (hasMin || hasMax) {
+                        var numberType = (PrimitiveType) concreteFieldType;
+                        var min = hasMin ? queryParams.getNumber(minFieldName) : getMinValue(numberType);
+                        var max = hasMax ? queryParams.getNumber(maxFieldName) : getMaxValue(numberType);
                         fields.put(field.getName(), List.of(min, max));
                     }
                 }
@@ -406,12 +420,10 @@ public class ApiAdapter extends EntityContextFactoryAware {
     }
 
     private String preprocessPath(String path) {
-        if (!path.startsWith("/api/"))
-            throw invalidRequestPath();
-        var idx = path.indexOf('/', 5);
+        var idx = path.indexOf('/', 1);
         if (idx == -1)
             throw invalidRequestPath();
-        var appName = path.substring(5, idx);
+        var appName = path.substring(1, idx);
         try (var platformCtx = newPlatformContext()) {
             var app = platformCtx.selectFirstByKey(Application.IDX_NAME, Instances.stringInstance(appName));
             if (app == null)
@@ -421,18 +433,57 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return path.substring(idx);
     }
 
+    private BeanPath parseBeanPath(String path) {
+        if (path.contains("/"))
+            throw invalidRequestPath();
+        var beanName = NamingUtils.hyphenToCamel(path);
+        try (var context = newContext()) {
+            var bean = BeanDefinitionRegistry.getInstance(context).tryGetBean(beanName);
+            if (bean != null)
+                return new BeanPath(bean.getInstanceType(), beanName);
+            else
+                throw invalidRequestPath();
+        }
+    }
+
     private ClassType parseClassPath(String path) {
         if (!path.startsWith("/"))
             throw invalidRequestPath();
         var name = NamingUtils.pathToName(path.substring(1), true);
         try (var context = newContext()) {
             var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(name));
-            return klass != null ? klass.getType() : null;
+            return klass != null && getClassPath(klass).equals(path) ? klass.getType() : null;
         }
+    }
+
+    private String getClassPath(Klass klass) {
+        return "/" + NamingUtils.nameToPath(klass.getQualifiedName(), true);
     }
 
     private BusinessException invalidRequestPath() {
         return new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
+    }
+
+    private MethodPath parseMethodPath(String path) {
+        var idx = path.lastIndexOf('/');
+        if (idx == -1)
+            throw invalidRequestPath();
+        var prefix = path.substring(0 , idx);
+        var idx2 = prefix.lastIndexOf('/');
+        ClassType type;
+        Map<String, Object> receiver;
+        if (idx2 != -1 && prefix.substring(idx2 + 1).startsWith("0")) {
+            // starting with 0 indicating an ID
+            var instance = parseInstancePath(prefix);
+            type = instance.type;
+            receiver = Map.of("id", instance.id);
+        } else {
+            var bean = parseBeanPath(prefix.substring(1));
+            type = bean.type;
+            receiver = Map.of("name", bean.name);
+        }
+        var methodName = NamingUtils.hyphenToCamel(path.substring(idx + 1));
+        return new MethodPath(type, receiver, methodName);
     }
 
     private InstancePath parseInstancePath(String path) {
@@ -445,6 +496,65 @@ public class ApiAdapter extends EntityContextFactoryAware {
         return new InstancePath(clasType, path.substring(idx + 1));
     }
 
-    private record InstancePath(ClassType classType, String id) {}
+    private boolean isId(String s) {
+        return s.startsWith("0");
+    }
+
+    private record MethodPath(ClassType type, Map<String, Object> receiver, String methodName) {}
+
+    private record InstancePath(ClassType type, String id) {}
+
+    private record BeanPath(ClassType type, String name) {}
+
+    private record QueryParams(Map<String, List<String>> queryParams) {
+
+        public List<String> getAll(String name) {
+            return queryParams.getOrDefault(name, List.of());
+        }
+
+        public List<String> get(String name) {
+            var values = queryParams.get(name);
+            return values != null && !values.isEmpty() ? values : null;
+        }
+
+        public @Nullable String getFirst(String name) {
+            var values = getAll(name);
+            return values.isEmpty() ? null : values.getFirst();
+        }
+
+        public int getInt(String name, int defaultValue) {
+            var value = getFirst(name);
+            if (value == null)
+                return defaultValue;
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                return defaultValue;
+            }
+        }
+
+        public boolean contains(String name) {
+            return !getAll(name).isEmpty();
+        }
+
+        public Number getNumber(String name) {
+            var value = getFirst(name);
+            if (value == null)
+                throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "Missing query parameter " + name);
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException ignored) {
+                try {
+                    return Long.parseLong(value);
+                } catch (NumberFormatException ignored1) {
+                    try {
+                        return Double.parseDouble(value);
+                    } catch (NumberFormatException ignored2) {
+                        throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "Invalid query parameter " + name + ", expecting a number");
+                    }
+                }
+            }
+        }
+    }
 
 }

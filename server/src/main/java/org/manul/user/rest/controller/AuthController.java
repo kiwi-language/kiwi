@@ -12,7 +12,7 @@ import org.manul.util.Constants;
 import org.manul.util.ContextUtil;
 
 @Controller
-@Mapping("/auth")
+@Mapping("/manul-system/auth")
 public class AuthController {
 
     private final LoginService loginService;
@@ -37,10 +37,12 @@ public class AuthController {
     @Get("/get-login-info")
     public LoginInfo getLoginInfo(@Header("Authorization") String auth) {
         var token = Tokens.getToken(auth);
-        if (token != null && loginService.authenticate(new Token(Constants.PLATFORM_APP_ID, token)).isSuccessful())
+        if (token != null && loginService.authenticate(new Token(Constants.PLATFORM_APP_ID, token)).isSuccessful()
+                || loginService.defaultAuth()) {
             return new LoginInfo(ContextUtil.getAppId(), ContextUtil.getUserId().toString(), token);
-        else
+        } else {
             return new LoginInfo(-1L, null, null);
+        }
     }
 
 }

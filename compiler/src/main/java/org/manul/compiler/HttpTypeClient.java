@@ -6,7 +6,7 @@ public class HttpTypeClient implements TypeClient {
 
     @Override
     public String deploy(long appId, String mvaPath) {
-        return HttpUtil.upload("/type/deploy/" + appId, mvaPath, String.class);
+        return HttpUtil.upload("/manul-system/type/deploy/" + appId, mvaPath, String.class);
     }
 
     @Override

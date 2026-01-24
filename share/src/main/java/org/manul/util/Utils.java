@@ -29,7 +29,19 @@ public class Utils {
     private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH::mm:ss");
 
     public static void writeFile(String path, String content) {
-        writeFile(new File(path), content);
+        writeFile(Path.of(path), content);
+    }
+
+    /**
+     * Write a string to a file, creating the directories if missing.
+     *
+     * @param path the path to the file
+     * @param content the content to write
+     */
+    @SneakyThrows
+    public static void writeFile(Path path, String content) {
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, content);
     }
 
     public static void deleteFile(String path) {

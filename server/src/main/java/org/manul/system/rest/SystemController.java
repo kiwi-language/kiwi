@@ -18,7 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 @Controller(module = "persistent")
-@Mapping("/system")
+@Mapping("/manul-system/system")
 public class SystemController {
 
     public static final String DEFAULT_HOME = System.getProperty("user.home") + File.separator + ".manul";

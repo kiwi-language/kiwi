@@ -16,7 +16,7 @@ public class ManulConfig {
 
     public static String CONFIG_PATH;
     private final DbConfig dbConfig;
-    private final EsConfig esConfig;
+    private final SearchConfig searchConfig;
     private final ServerConfig serverConfig;
 
     /** @noinspection unchecked*/
@@ -24,17 +24,17 @@ public class ManulConfig {
         var config = getConfig();
         dbConfig = buildDbConfig((Map<String, Object>) config.get("datasource"));
         serverConfig = buildServerConfig((Map<String, Object>) config.get("server"));
-        esConfig = buildEsConfig((Map<String, Object>) config.get("es"));
+        searchConfig = buildSearchConfig((Map<String, Object>) config.get("opensearch"));
     }
 
-    private EsConfig buildEsConfig(Map<String, Object> config) {
+    private SearchConfig buildSearchConfig(Map<String, Object> config) {
         if (config == null)
             return null;
         var host = (String) config.get("host");
         var port = (int) config.get("port");
         var user = (String) config.get("user");
         var password = Objects.toString(config.get("password"));
-        return new EsConfig(host, port, user, password);
+        return new SearchConfig(host, port, user, password);
     }
 
     private ServerConfig buildServerConfig(Map<String, Object> config) {
@@ -73,7 +73,7 @@ public class ManulConfig {
 
     public record ServerConfig(int port) {}
 
-    public record EsConfig(String host, int port, String user, String password) {
+    public record SearchConfig(String host, int port, String user, String password) {
     }
 
 

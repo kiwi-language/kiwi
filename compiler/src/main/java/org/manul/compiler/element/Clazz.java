@@ -498,4 +498,14 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
     public boolean isBean() {
         return attributes.anyMatch(attr -> attr.name().equals(AttributeNames.BEAN_NAME));
     }
+
+    public @Nullable String getAttribute(String name) {
+        for (Attribute attribute : attributes) {
+            if (attribute.name().equals(name)) {
+                return attribute.value();
+            }
+        }
+        return null;
+    }
+
 }

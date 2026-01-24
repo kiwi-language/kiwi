@@ -121,51 +121,74 @@ public class NamingUtils {
         var splits = path.split("/");
         var buf = new StringBuilder();
         for (int i = 0; i < splits.length - 1; i++) {
-            buf.append(hyphenToCamel(splits[i], false)).append('.');
+            buf.append(hyphenToCamel(splits[i], false, false)).append('.');
         }
-        buf.append(hyphenToCamel(splits[splits.length - 1], className || splits.length > 1));
+        buf.append(hyphenToCamel(splits[splits.length - 1], className || splits.length > 1, className));
         return buf.toString();
     }
 
     public static String nameToPath(String name) {
+        return nameToPath(name, false);
+    }
+
+    public static String nameToPath(String name, boolean pluralizeLastWord) {
         var splits = name.split("\\.");
         var sb = new StringBuilder();
-        sb.append(camelToHyphen(splits[0]));
+        sb.append(camelToHyphen(splits[0], pluralizeLastWord && splits.length == 1));
         for (int i = 1; i < splits.length; i++) {
-            sb.append('/').append(camelToHyphen(splits[i]));
+            sb.append('/').append(camelToHyphen(splits[i], pluralizeLastWord && i == splits.length - 1));
         }
         return sb.toString();
     }
 
     public static String camelToHyphen(String str) {
+        return camelToHyphen(str, false);
+    }
+
+    public static String camelToHyphen(String str, boolean pluralizeLastWord) {
         var sb = new StringBuilder();
+        var wordStart = 0;
         for (int i = 0; i < str.length(); i++) {
             var ch = str.charAt(i);
             if (Character.isUpperCase(ch)) {
-                if (i > 0)
+                if (i > 0) {
                     sb.append('-');
+                    wordStart = sb.length();
+                }
                 sb.append(Character.toLowerCase(ch));
             } else {
                 sb.append(ch);
             }
         }
+        if (pluralizeLastWord) {
+            var lastWord = sb.substring(wordStart);
+            sb.setLength(wordStart);
+            sb.append(InflectUtil.pluralize(lastWord));
+        }
         return sb.toString();
     }
 
     public static String hyphenToCamel(String str) {
-        return hyphenToCamel(str, false);
+        return hyphenToCamel(str, false, false);
     }
 
-    public static String hyphenToCamel(String str, boolean firstUpper) {
+    public static String hyphenToCamel(String str, boolean firstUpper, boolean singularizeLastWord) {
         var sb = new StringBuilder();
         var upper = firstUpper;
+        var wordStart = 0;
         for (var ch : str.toCharArray()) {
             if (ch == '-') {
                 upper = true;
+                wordStart = sb.length();
             } else {
-                sb.append(upper ? Character.toUpperCase(ch) : ch);
+                sb.append(upper ? Character.toUpperCase(ch) : Character.toLowerCase(ch));
                 upper = false;
             }
+        }
+        if (singularizeLastWord) {
+            var lastWord = sb.substring(wordStart);
+            sb.setLength(wordStart);
+            sb.append(InflectUtil.singularize(lastWord));
         }
         return sb.toString();
     }

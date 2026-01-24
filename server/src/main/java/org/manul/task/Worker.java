@@ -202,6 +202,8 @@ public class Worker extends EntityContextFactoryAware {
 
     private boolean runTask0(Task appTask, IInstanceContext executionContext, IInstanceContext taskContext) {
         return transactionOperations.execute(() -> {
+//            logger.info("Running task {}, postgresql PID: {}", appTask.getTitle(),
+//                    TransactionStatus.getPid());
             appTask.run(executionContext, taskContext);
             return appTask.isTerminated();
         }, false, TransactionPropagation.NESTED);

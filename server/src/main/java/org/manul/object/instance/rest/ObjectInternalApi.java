@@ -62,7 +62,7 @@ public class ObjectInternalApi {
             if (pageSize <= 0)
                 pageSize = 20;
             var newlyCreatedId = request.newlyCreatedId();
-            return apiService.search(request.type(), criteria, page, pageSize, false, newlyCreatedId);
+            return apiService.search(request.type(), null, criteria, page, pageSize, false, newlyCreatedId);
         }
         catch (ClassCastException e) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "bad search request");

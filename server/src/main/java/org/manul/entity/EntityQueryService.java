@@ -37,7 +37,7 @@ public class EntityQueryService {
             if (idSet.contains(id))
                 continue;
             var item = context.getEntity(query.entityType(), id);
-            if (cond == null || cond.evaluate(item.buildSource())) {
+            if (cond == null || cond.evaluate(id, item.buildSource())) {
                 if (items.size() < query.pageSize())
                     items.add(item);
                 total++;
@@ -46,7 +46,7 @@ public class EntityQueryService {
         for (Id id : ids) {
             if (aliveIds.contains(id)) {
                 var item = context.getEntity(query.entityType(), id);
-                if (cond == null || cond.evaluate(item.buildSource())) {
+                if (cond == null || cond.evaluate(id, item.buildSource())) {
                     if (items.size() < query.pageSize())
                         items.add(item);
                 } else

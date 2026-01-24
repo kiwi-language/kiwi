@@ -7,9 +7,7 @@ import org.manul.entity.InstanceQuery;
 import org.manul.entity.InstanceQueryField;
 import org.manul.expression.*;
 import org.manul.object.instance.core.*;
-import org.manul.object.instance.search.InstanceSearchService;
-import org.manul.object.instance.search.SearchBuilder;
-import org.manul.object.instance.search.SearchQuery;
+import org.manul.object.instance.search.*;
 import org.manul.object.type.*;
 import org.manul.util.BusinessException;
 import org.manul.util.ContextUtil;
@@ -36,10 +34,18 @@ public class InstanceQueryService {
         Set<String> typeExpressions = (type instanceof KlassType classType) ?
                 Utils.mapToSet(classType.getKlass().getDescendantTypes(), k -> k.getType().toExpression()) :
                 Set.of(type.toExpression());
+        var cond = Utils.safeCall(condition, SearchBuilder::buildSearchCondition);
+        if (!query.ids().isEmpty()) {
+            var idCond = new IdSearchCondition(new HashSet<>(query.ids()));
+            if (cond == null)
+                cond = idCond;
+            else
+                cond = new AndSearchCondition(List.of(idCond, cond));
+        }
         return new SearchQuery(
                 ContextUtil.getAppId(),
                 typeExpressions,
-                Utils.safeCall(condition, SearchBuilder::buildSearchCondition),
+                cond,
                 query.includeBuiltin(),
                 query.page(),
                 query.pageSize(),
@@ -74,7 +80,7 @@ public class InstanceQueryService {
 
     private boolean match(ClassInstance instance, SearchQuery query) {
         return query.types().contains(instance.getInstanceType().toExpression()) &&
-                (query.condition() == null || query.condition().evaluate(instance.buildSource()));
+                (query.condition() == null || query.condition().evaluate(instance.getId(), instance.buildSource()));
     }
 
     public long count(InstanceQuery query, IInstanceContext context) {

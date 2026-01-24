@@ -4,6 +4,8 @@ import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import junit.framework.TestCase;
 import lombok.SneakyThrows;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 
 import javax.tools.StandardLocation;
 import java.io.IOException;
@@ -364,6 +366,73 @@ public class ContextProcessorTest extends TestCase {
         var c = compile(source);
         var file = c.generatedSourceFile("Foo__BeanDef__").orElseThrow();
         System.out.println(file.getCharContent(true));
+    }
+
+    @SneakyThrows
+    public void testRequestParams() {
+        var source = """
+                import org.manul.context.http.Controller;
+                import org.manul.context.Component;
+                import org.manul.context.http.Get;
+                import org.manul.context.http.Mapping;
+                import org.manul.context.http.RequestParams;
+                
+                import java.util.List;
+                import java.util.Map;
+                
+                @Controller
+                @Mapping("/")
+                class Dummy {
+                
+                    @Get
+                    public void get(@RequestParams Map<String, List<String>> requestParams) {
+                    }
+                
+                }
+                """;
+        var c = compile(source);
+        var proxyFile = c.generatedSourceFile("Dummy__Proxy__").orElseThrow();
+        System.out.println(proxyFile.getCharContent(true));
+        var file = c.generatedSourceFile("Dummy__BeanDef__").orElseThrow();
+        System.out.println(file.getCharContent(true));
+    }
+
+    @SneakyThrows
+    public void testPutAndPatch() {
+        var source = """
+                import org.manul.context.http.Controller;
+                import org.manul.context.Component;
+                import org.manul.context.http.Patch;
+                import org.manul.context.http.Put;
+                import org.manul.context.http.RequestBody;
+                import org.manul.context.http.Mapping;
+                
+                import java.util.List;
+                import java.util.Map;
+                
+                @Controller
+                @Mapping("/")
+                class Dummy {
+                
+                    @Patch
+                    public void modify(@RequestBody Map<String, Object> o) {
+                    }
+ 
+                    @Put
+                    public void replace(@RequestBody Map<String, Object> o) {
+                    }
+                
+                }
+                """;
+        var c = compile(source);
+        var proxyFile = c.generatedSourceFile("Dummy__Proxy__").orElseThrow()
+                .getCharContent(true).toString();
+        MatcherAssert.assertThat(proxyFile, CoreMatchers.containsString("HttpMethod.PUT"));
+        MatcherAssert.assertThat(proxyFile, CoreMatchers.containsString("HttpMethod.PATCH"));
+        System.out.println(proxyFile);
+        var file = c.generatedSourceFile("Dummy__BeanDef__").orElseThrow()
+                        .getCharContent(true).toString();
+        System.out.println(file);
     }
 
     private Compilation compile(String source) {

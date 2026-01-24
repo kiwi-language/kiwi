@@ -14,7 +14,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
-import static org.manul.compiler.apigen.ApiGenUtils.*;
+import static org.manul.compiler.apigen.ApiGenUtils.getApiClass;
+import static org.manul.compiler.apigen.ApiGenUtils.getApiType;
 import static org.manul.util.NamingUtils.firstCharToUpperCase;
 import static org.manul.util.NamingUtils.firstCharsToLowerCase;
 
@@ -25,11 +26,19 @@ public class ApiGeneratorV3 implements ApiGenerator {
     private final ApiWriter apiWriter = new ApiWriter();
 
     public String generate(List<Clazz> rootClasses) {
+        var buf = List.<Clazz>builder();
+        rootClasses.forEach(cl -> collectAllClasses(cl, buf));
+        var allClasses = buf.build();
         writeComments();
         generateImports();
-        generateTypes(rootClasses);
-        generateFuncs(rootClasses);
+        generateTypes(allClasses);
+        generateFuncs(allClasses);
         return apiWriter.toString();
+    }
+
+    private void collectAllClasses(Clazz clazz, List.Builder<Clazz> result) {
+        result.append(clazz);
+        clazz.forEachClass(cl -> collectAllClasses(cl, result));
     }
 
     private void writeComments() {
@@ -44,14 +53,11 @@ public class ApiGeneratorV3 implements ApiGenerator {
     private void generateFuncs(List<Clazz> rootClasses) {
         apiWriter.writeln("const RETURN_FULL_OBJECT = true");
         apiWriter.writeln(Templates.CALL_API);
-        apiWriter.writeln("export const api = {\n");
-        apiWriter.indent();
         apiWriter.writeln(Templates.UPLOAD_API);
         for (var cls : rootClasses) {
             generateFuncs(cls);
         }
         apiWriter.deIndent();
-        apiWriter.write("}");
     }
 
     public void generateTypes(List<Clazz> classes) {
@@ -117,9 +123,6 @@ public class ApiGeneratorV3 implements ApiGenerator {
         if (cls.isTopLevel() && !cls.isBean()) {
             generateSearchRequest(cls);
             generateListView(cls);
-        }
-        for (Clazz innerCls : cls.getClasses()) {
-            generateTypes(innerCls);
         }
     }
 
@@ -231,111 +234,93 @@ public class ApiGeneratorV3 implements ApiGenerator {
     }
 
     public void generateFuncs(Clazz clazz) {
-        if (clazz.isEnum() || clazz.isInterface() || clazz.isValue() || !clazz.isPublic())
+        if (clazz.isEnum() || clazz.isInterface() || clazz.isValue() || !clazz.isPublic() || !clazz.isTopLevel())
             return;
-        if (clazz.isTopLevel() && !clazz.isBean()) {
+        var beanName = clazz.getAttribute(AttributeNames.BEAN_NAME);
+        var apiName = beanName != null ? NamingUtils.firstCharsToLowerCase(beanName) :
+                NamingUtils.firstCharsToLowerCase(clazz.getName().toString()) + "Api";
+        apiWriter.writeln().writeln("export const " + apiName + " = {").writeln();
+        apiWriter.indent();
+        if (clazz.isTopLevel() && beanName == null) {
             generateSave(clazz);
             generateGet(clazz);
             generateMultiGet(clazz);
             generateDelete(clazz);
             generateSearch(clazz);
         }
-        clazz.forEachClass(this::generateFuncs);
-        if (clazz.isBean()) {
+        if (beanName != null) {
             clazz.getMethods().forEach(m -> {
                 if (m.isPublic() && !m.isAbstract() && !m.isStatic() && !m.isInit())
-                    generateInvoke(m);
+                    generateInvoke(m, beanName);
             });
         }
-    }
-
-    private String toPath(Name name) {
-        return NamingUtils.nameToPath(name.toString());
+        apiWriter.deIndent();
+        apiWriter.writeln("}");
     }
 
     private void generateGet(Clazz clazz) {
-        var funcName = "get" + getApiClass(clazz);
-        if (generatedFuncs.add(funcName)) {
-            apiWriter.writeln(String.format(
-                    """
-                            %s: (id: string): Promise<%s> => {
-                                return callApi<%s>(`/api/%s/${id}`, 'GET')
-                            },
-                            """,
-                    funcName,
-                    getApiClass(clazz),
-                    getApiClass(clazz),
-                    toPath(clazz.getQualName())
-            ));
-        }
+        apiWriter.writeln(String.format(
+                """
+                        get: (id: string): Promise<%s> => {
+                            return callApi<%s>(`/%s/${id}`, 'GET')
+                        },
+                        """,
+                getApiClass(clazz),
+                getApiClass(clazz),
+                getClassPath(clazz)
+        ));
     }
 
     private void generateMultiGet(Clazz clazz) {
-        var funcName = "multiGet" + getApiClass(clazz);
-        if (generatedFuncs.add(funcName)) {
-            apiWriter.writeln(String.format(
-                    """
-                            %s: (ids: string[]): Promise<%s[]> => {
-                                return callApi<%s[]>('/api/%s/_multi-get', 'POST', {ids})
-                            },
-                            """,
-                    funcName,
-                    getApiClass(clazz),
-                    getApiClass(clazz),
-                    toPath(clazz.getQualName())
-            ));
-        }
+        apiWriter.writeln(String.format(
+                """
+                        getAll: (ids: string[]): Promise<%s[]> => {
+                            return callApi<%s[]>('/%s/_multi-get', 'POST', {ids})
+                        },
+                        """,
+                getApiClass(clazz),
+                getApiClass(clazz),
+                getClassPath(clazz)
+        ));
     }
 
     private void generateSave(Clazz clazz) {
-        var funcName = "save" + getApiClass(clazz);
-        if (generatedFuncs.add(funcName)) {
-            apiWriter.writeln(String.format("""
-                            %s: (%s: %s): Promise<string> => {
-                                return callApi<string>('/api/%s', 'POST', %s)
-                            },
-                            """,
-                    funcName,
-                    firstCharsToLowerCase(getApiClass(clazz)),
-                    getApiClass(clazz),
-                    NamingUtils.nameToPath(clazz.getQualName().toString()),
-                    firstCharsToLowerCase(getApiClass(clazz))
-            ));
-        }
+        apiWriter.writeln(String.format("""
+                        save: (%s: %s): Promise<string> => {
+                            return callApi<string>('/%s', 'POST', %s)
+                        },
+                        """,
+                firstCharsToLowerCase(getApiClass(clazz)),
+                getApiClass(clazz),
+                getClassPath(clazz),
+                firstCharsToLowerCase(getApiClass(clazz))
+        ));
     }
 
     private void generateDelete(Clazz clazz) {
-        var funcName = "delete" + getApiClass(clazz);
-        if (generatedFuncs.add(funcName)) {
-            apiWriter.writeln(String.format("""
-                            %s: (id: string): Promise<undefined> => {
-                                return callApi<undefined>(`/api/%s/${id}`, 'DELETE')
-                            },
-                            """,
-                    funcName,
-                    toPath(clazz.getQualName())
-            ));
-        }
+        apiWriter.writeln(String.format("""
+                        delete: (id: string): Promise<undefined> => {
+                            return callApi<undefined>(`/%s/${id}`, 'DELETE')
+                        },
+                        """,
+                getClassPath(clazz)
+        ));
     }
 
     private void generateSearch(Clazz clazz) {
-        var funcName = "search" + getApiClass(clazz);
-        if (generatedFuncs.add(funcName)) {
-            apiWriter.writeln(String.format("""
-                            %s: (request: Search%sRequest): Promise<SearchResult<%sListView>> => {
-                                return callApi<SearchResult<%sListView>>('/api/%s/_search', 'POST', request)
-                            },
-                            """,
-                    funcName,
-                    getApiClass(clazz),
-                    getApiClass(clazz),
-                    getApiClass(clazz),
-                    toPath(clazz.getQualName())
-            ));
-        }
+        apiWriter.writeln(String.format("""
+                        search: (request: Search%sRequest): Promise<SearchResult<%sListView>> => {
+                            return callApi<SearchResult<%sListView>>('/%s/_search', 'POST', request)
+                        },
+                        """,
+                getApiClass(clazz),
+                getApiClass(clazz),
+                getApiClass(clazz),
+                getClassPath(clazz)
+        ));
     }
 
-    private void generateInvoke(Method method) {
+    private void generateInvoke(Method method, String beanName) {
         var funcName = method.getName().toString();
         if (!generatedFuncs.add(funcName))
             return;
@@ -360,16 +345,20 @@ public class ApiGeneratorV3 implements ApiGenerator {
         apiWriter.writeln(String.format(
                 """
                         %s: (%s): Promise<%s> => {
-                            return callApi<%s>('/api/%s', 'POST', %s)
+                            return callApi<%s>('/%s', 'POST', %s)
                         },
                         """,
                 funcName,
                 paramBuf,
                 getApiType(method.getRetType(), true),
                 getApiType(method.getRetType(), true),
-                toPath(method.getQualName()),
+                NamingUtils.camelToHyphen(beanName) + "/" + NamingUtils.camelToHyphen(method.getName().toString()),
                 paramNameBuf
         ));
+    }
+
+    private String getClassPath(Clazz clazz) {
+        return NamingUtils.nameToPath(clazz.getQualName().toString(), true);
     }
 
 }

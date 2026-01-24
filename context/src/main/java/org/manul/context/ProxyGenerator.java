@@ -207,6 +207,12 @@ public class ProxyGenerator extends AbstractGenerator {
                 } else if (member.getAnnotation(Post.class) != null) {
                     write("HttpMethod.POST");
                     path = member.getAnnotation(Post.class).value();
+                } else if (member.getAnnotation(Put.class) != null) {
+                    write("HttpMethod.PUT");
+                    path = member.getAnnotation(Put.class).value();
+                } else if (member.getAnnotation(Patch.class) != null) {
+                    write("HttpMethod.PATCH");
+                    path = member.getAnnotation(Patch.class).value();
                 } else if (member.getAnnotation(Delete.class) != null) {
                     write("HttpMethod.DELETE");
                     path = member.getAnnotation(Delete.class).value();
@@ -290,14 +296,19 @@ public class ProxyGenerator extends AbstractGenerator {
     }
 
     private boolean isMapped(ExecutableElement meth) {
-        return meth.getAnnotation(Get.class) != null || meth.getAnnotation(Post.class) != null ||
-                meth.getAnnotation(Delete.class) != null;
+        return meth.getAnnotation(Get.class) != null || meth.getAnnotation(Post.class) != null
+                || meth.getAnnotation(Put.class) != null || meth.getAnnotation(Patch.class) != null
+                || meth.getAnnotation(Delete.class) != null;
     }
 
     private void writeParam(VariableElement param) {
         RequestParam requestParam;
         PathVariable pathVar;
-        if ((requestParam = param.getAnnotation(RequestParam.class)) != null)
+        if (param.getAnnotation(RequestParams.class) != null) {
+            if (!types.isSame(types.map_string_list_string, param.asType()))
+                throw new ContextConfigException("@RequestParams parameter must be of type Map<String, List<String>>", param);
+            writeGetAllQueryParams();
+        } else if ((requestParam = param.getAnnotation(RequestParam.class)) != null)
             writeParse(param, () -> writeGetQueryParam(requestParam));
         else if ((pathVar = param.getAnnotation(PathVariable.class)) != null)
             writeParse(param, () -> writeGetPathVar(pathVar));
@@ -363,6 +374,11 @@ public class ProxyGenerator extends AbstractGenerator {
         write("(");
         writeValue.run();
         write(")");
+
+    }
+
+    private void writeGetAllQueryParams() {
+        write("r.getQueryParameters()");
     }
 
     private void writeGetQueryParam(RequestParam requestParam) {

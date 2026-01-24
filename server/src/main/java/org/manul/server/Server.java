@@ -45,13 +45,14 @@ public class Server implements DisposableBean {
         var routes = Utils.map(controller.getRoutes(), c -> createRoute(c, filters));
         return exchange -> {
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,X-App-ID,X-Refresh-Policy,X-Return-Full-Object,Authorization");
             if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
-                exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-                exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,X-App-ID,X-Refresh-Policy,Authorization");
                 exchange.sendResponseHeaders(HttpStatus.SC_NO_CONTENT, -1);
-                return;
             }
-            var subPath = exchange.getRequestURI().getPath().substring(controller.getPath().length());
+            var subPath = controller.getPath().equals("/") ?
+                    exchange.getRequestURI().getPath() :
+                    exchange.getRequestURI().getPath().substring(controller.getPath().length());
             for (var route : routes) {
                 if (!exchange.getRequestMethod().equals(route.getMethod().name()))
                     continue;

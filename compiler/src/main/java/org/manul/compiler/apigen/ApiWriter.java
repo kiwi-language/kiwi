@@ -16,9 +16,10 @@ public class ApiWriter {
         indents--;
     }
 
-    void writeln(String s) {
+    ApiWriter writeln(String s) {
         write(s);
         writeln();
+        return this;
     }
 
     public void write(Name name) {
@@ -48,9 +49,10 @@ public class ApiWriter {
         sb.append("    ".repeat(Math.max(0, indents)));
     }
 
-    void writeln() {
+    ApiWriter writeln() {
         sb.append('\n');
         newLine = true;
+        return this;
     }
 
     @Override

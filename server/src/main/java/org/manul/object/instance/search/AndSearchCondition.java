@@ -1,5 +1,6 @@
 package org.manul.object.instance.search;
 
+import org.manul.object.instance.core.Id;
 import org.manul.object.instance.core.Value;
 import org.manul.util.Utils;
 
@@ -15,7 +16,7 @@ public record AndSearchCondition(
     }
 
     @Override
-    public boolean evaluate(Map<String, Value> source) {
-        return Utils.allMatch(items, item -> item.evaluate(source));
+    public boolean evaluate(Id id, Map<String, Value> source) {
+        return Utils.allMatch(items, item -> item.evaluate(id, source));
     }
 }

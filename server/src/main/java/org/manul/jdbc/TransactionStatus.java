@@ -2,7 +2,7 @@ package org.manul.jdbc;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.postgresql.PGConnection;
+import org.manul.util.PersistenceUtil;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -50,6 +50,15 @@ public class TransactionStatus {
 
     public static List<TransactionCallback> getCallbacks() {
         return context().getCallbacks();
+    }
+
+    @SneakyThrows
+    public static int getPid() {
+        try {
+            return PersistenceUtil.getPid(statusTl.get().context.getConnection());
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
     public static void clear() {

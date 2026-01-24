@@ -51,4 +51,15 @@ public class NamingUtilsTest extends TestCase {
         assertEquals("skulist", NamingUtils.firstCharsToLowerCase("SKUList"));
     }
 
+    public void testHyphenToCamelWithSingularize() {
+        var name = NamingUtils.hyphenToCamel("annul-salaries", true, true);
+        assertEquals("AnnulSalary", name);
+
+        var name1 = NamingUtils.hyphenToCamel("product", true, true);
+        assertEquals("Product", name1);
+
+        var name2 = NamingUtils.hyphenToCamel("", true, true);
+        assertEquals("", name2);
+    }
+
 }
