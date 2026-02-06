@@ -4,6 +4,8 @@ class User (
     priv var password: string
 ) {
 
+    var credits = 0
+
     fn verify(password: string) -> bool {
         return password == this.password
     }

@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import org.jsonk.Jsonk;
 import org.jsonk.Type;
 import org.manul.application.rest.dto.ApplicationDTO;
+import org.manul.common.ErrorCode;
 import org.manul.common.ErrorResponse;
 import org.manul.common.Page;
 import org.manul.compiler.HttpTypeClient;
@@ -69,13 +70,13 @@ public class HttpUtil {
     }
 
     public static LoginInfo login(String userName, String password) {
-        var loginInfo = post("/auth/login", new LoginRequest(Constants.PLATFORM_APP_ID, userName, password), LoginInfo.class);
+        var loginInfo = post("/manul-system/auth/login", new LoginRequest(Constants.PLATFORM_APP_ID, userName, password), LoginInfo.class);
         setToken(loginInfo.token());
         return loginInfo;
     }
 
     public static void logout() {
-        post("/auth/logout", null, void.class);
+        post("/manul-system/auth/logout", null, void.class);
         setToken(null);
     }
 
@@ -135,7 +136,7 @@ public class HttpUtil {
             return null;
         if (resp.statusCode() != 200) {
             var errorResp = Jsonk.fromJson(resp.body(), ErrorResponse.class);
-            throw new RequestException(errorResp.getMessage());
+            throw new RequestException(ErrorCode.fromName(errorResp.code()), errorResp.message());
         }
         if (type.clazz() == Void.class || type.clazz() == void.class)
             return resp.body();
@@ -213,7 +214,7 @@ public class HttpUtil {
         HttpUtil.setToken(loginInfo.token());
         System.out.println(HttpUtil.getToken());
         //noinspection unchecked
-        var apps = (Page<ApplicationDTO>) get("/app/search", Type.from(Page.class, ApplicationDTO.class));
+        var apps = (Page<ApplicationDTO>) get("/manul-system/app/search", Type.from(Page.class, ApplicationDTO.class));
         System.out.println(apps);
         printCookies();
         testAccess();

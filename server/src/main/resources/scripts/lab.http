@@ -1697,29 +1697,42 @@ Content-Type: application/json
 
 
 ####
-POST http://localhost:8080/api/product/product
+POST http://localhost:8080/test1/products
 Content-Type: application/json
 
 {
+  "id": "018ec486ba0700",
   "name": "Hat",
   "price": 100,
   "stock": 100
 }
 
-###
-GET http://localhost:8080/api/product/product/0180b885ba0700
-
 ####
-POST http://localhost:8080/api/product/product/reduce-stock
+PATCH http://localhost:8080/test1/products/018ec486ba0700
 Content-Type: application/json
 
 {
-  "productId": "0180b885ba0700",
+  "name": "Hat",
+  "price": 150,
+  "stock": 100
+}
+
+###
+GET http://localhost:8080/test1/products
+
+###
+GET http://localhost:8080/test1/products?stock.le=101&_page=2&_pageSize=1
+
+####
+POST http://localhost:8080/test1/products/0190e685ba0700/reduce-stock
+Content-Type: application/json
+
+{
   "amount": 1
 }
 
 ###
-POST http://localhost:8080/auth/login
+POST http://localhost:8080/manul-system/auth/login
 Content-Type: application/json
 
 {
@@ -1757,3 +1770,11 @@ POST http://localhost:7003/api/1000011008/exchange-service/fail-expired-exchange
 
 ###
 POST http://localhost:7003/bootstrap/reindex-all
+
+###
+POST http://localhost:8080/test1/product-service/find-by-name
+Content-Type: application/json
+
+{
+  "name": "Hat"
+}

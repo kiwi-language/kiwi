@@ -1,7 +1,7 @@
 package org.manul.object.instance.search;
 
 import lombok.extern.slf4j.Slf4j;
-import org.manul.entity.EntityQueryOp;
+import org.manul.object.instance.core.Id;
 import org.manul.object.instance.core.StringReference;
 import org.manul.object.instance.core.Value;
 
@@ -20,7 +20,7 @@ public record MatchSearchCondition(
     }
 
     @Override
-    public boolean evaluate(Map<String, Value> source) {
+    public boolean evaluate(Id id, Map<String, Value> source) {
         var first = source.get(field);
         if (Objects.equals(value, first)) return true;
         else if (first instanceof StringReference s1 && value instanceof StringReference s2) {

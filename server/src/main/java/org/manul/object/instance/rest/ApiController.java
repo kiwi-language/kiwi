@@ -12,9 +12,10 @@ import org.manul.server.HttpMethod;
 import org.manul.util.ContextUtil;
 
 import java.util.*;
+import java.util.List;
 
 @Controller
-@Mapping("/api")
+@Mapping("/")
 public class ApiController {
 
     public static final String REFRESH_POLICY_WAIT = "wait";
@@ -26,8 +27,8 @@ public class ApiController {
     }
 
     @Get("/**")
-    public Map<String, Object> get(@RequestPath String path) {
-        return apiAdapter.handleGet(path);
+    public Object get(@RequestPath String path, @RequestParams Map<String, List<String>> params) {
+        return apiAdapter.handleGet(path, params);
     }
 
     @Post("/**")
@@ -54,6 +55,19 @@ public class ApiController {
             ContextUtil.setWaitForSearchSync(false);
         }
     }
+
+    @Patch("/**")
+    public void patch(@Header("X-Refresh-Policy") String refreshPolicy,
+                      @RequestPath String path,
+                      @Headers Map<String, List<String>> headers,
+                      @RequestBody Map<String, Object> body) {
+        if (REFRESH_POLICY_WAIT.equalsIgnoreCase(refreshPolicy))
+            ContextUtil.setWaitForSearchSync(true);
+        var httpReq = buildHttpRequest(HttpMethod.POST.name(), path, headers);
+        var httpResp = new HttpResponseImpl();
+        apiAdapter.handlePatch(path, body, httpReq, httpResp);
+    }
+
 
     @Delete("/**")
     public void delete(@RequestPath String path) {

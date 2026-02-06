@@ -266,7 +266,7 @@ public class ApiService extends ApplicationStatusAware {
         }
     }
 
-    public SearchResult search(String type, Map<String, Object> criteria, int page, int pageSize, boolean includeChildren, @Nullable String newlyCreateId) {
+    public SearchResult search(String type, @Nullable List<Id> ids, Map<String, Object> criteria, int page, int pageSize, boolean includeChildren, @Nullable String newlyCreateId) {
         ensureApplicationActive();
         try (var entityContext = newContext()) {
             var klass = entityContext.getKlassByQualifiedName(type);
@@ -290,15 +290,17 @@ public class ApiService extends ApplicationStatusAware {
                     }
                 }
             });
-            var internalQuery = InstanceQueryBuilder.newBuilder(classType.getKlass())
+            var queryBuilder = InstanceQueryBuilder.newBuilder(classType.getKlass())
 //                    .searchText(searchText)
                     .newlyCreated(newlyCreateId != null ? List.of(Id.parse(newlyCreateId)) : List.of())
                     .fields(fields)
 //                    .expression(query.expression())
                     .page(page)
-                    .pageSize(pageSize)
-                    .build();
-            var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
+                    .pageSize(pageSize);
+            if (ids != null) {
+                queryBuilder.ids(ids);
+            }
+            var dataPage1 = instanceQueryService.query(queryBuilder.build(), entityContext);
             return new SearchResult(
                     Utils.map(dataPage1.items(), i -> formatValue(i, true, includeChildren)),
                     dataPage1.total()

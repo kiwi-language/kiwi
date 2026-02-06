@@ -113,6 +113,24 @@ public class InstanceQueryServiceTest extends TestCase {
         Assert.assertEquals(foo.tryGetTreeId(), ((EntityReference) page.items().getFirst()).tryGetTreeId());
     }
 
+    public void testQueryByIds() {
+        var fooTypes = MockUtils.createFooTypes(true);
+        var fooKlas = fooTypes.fooType();
+        var foo = addInstance(MockUtils.createFoo(fooTypes, this::nextRootId));
+        var foo2 = addInstance(MockUtils.createFoo(fooTypes, this::nextRootId));
+        addInstance(MockUtils.createFoo(fooTypes, this::nextRootId));
+
+        var page = instanceQueryService.query(
+                InstanceQueryBuilder.newBuilder(fooKlas)
+                        .ids(List.of(foo.getId(), foo2.getId()))
+                        .build(),
+                instanceRepository,
+                typeRepository
+        );
+        Assert.assertEquals(2, page.total());
+        Assert.assertEquals(foo2.tryGetTreeId(), ((EntityReference) page.items().getFirst()).tryGetTreeId());
+    }
+
     private Id nextRootId() {
         return PhysicalId.of(nextTreeId++, 0);
     }

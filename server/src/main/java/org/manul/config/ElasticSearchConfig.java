@@ -22,7 +22,7 @@ public class ElasticSearchConfig {
 
     @Bean
     public RestClient restClient() {
-        var esConfig = manulConfig.getEsConfig();
+        var esConfig = manulConfig.getSearchConfig();
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         if (esConfig.user() != null) {
             credentialsProvider.setCredentials(AuthScope.ANY,

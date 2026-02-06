@@ -7,6 +7,7 @@ import org.manul.object.type.Klass;
 import org.manul.util.Utils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class InstanceQueryBuilder {
@@ -25,6 +26,7 @@ public class InstanceQueryBuilder {
     private boolean includeBuiltin;
     private boolean includeSubtypes = true;
     private List<Field> searchFields = List.of();
+    private List<Id> ids = new ArrayList<>();
     private List<InstanceQueryField> fields = List.of();
     @NotNull
     private List<Id> createdIds = List.of();
@@ -68,6 +70,11 @@ public class InstanceQueryBuilder {
         return fields(List.of(fields));
     }
 
+    public InstanceQueryBuilder ids(List<Id> ids) {
+        this.ids = ids;
+        return this;
+    }
+
     public InstanceQueryBuilder fields(List<InstanceQueryField> fields) {
         this.fields = fields;
         return this;
@@ -93,6 +100,7 @@ public class InstanceQueryBuilder {
                 klass,
                 searchText,
                 expression,
+                ids,
                 searchFields,
                 includeBuiltin,
                 includeSubtypes,

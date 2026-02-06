@@ -100,4 +100,5 @@ public interface HttpRequest {
         }
     }
 
+    Map<String, List<String>> getQueryParameters();
 }

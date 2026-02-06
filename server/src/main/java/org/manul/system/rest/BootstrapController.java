@@ -9,7 +9,7 @@ import org.manul.entity.Bootstrap;
 import org.manul.task.TaskManager;
 
 @Controller
-@Mapping("/bootstrap")
+@Mapping("/manul-system/bootstrap")
 public class BootstrapController {
 
     private final Bootstrap bootstrap;

@@ -1,5 +1,6 @@
 package org.manul.application;
 
+import lombok.extern.slf4j.Slf4j;
 import org.manul.application.rest.dto.*;
 import org.manul.beans.BeanDefinitionRegistry;
 import org.manul.common.ErrorCode;
@@ -26,11 +27,17 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static org.manul.util.Constants.*;
 
+@Slf4j
 @Component
 public class ApplicationManager extends ApplicationStatusAware {
+
+    private static final Set<String> RESERVED_NAMES = Set.of(
+            "manul-system", "internal-api"
+    );
 
     public static final int APP_SECRET_LEN = 32;
 
@@ -138,6 +145,7 @@ public class ApplicationManager extends ApplicationStatusAware {
     @Transactional
     public long save(ApplicationDTO appDTO) {
         try (var context = newPlatformContext()) {
+//            log.info("Creating application. PID: {}", TransactionStatus.getPid());
             Application app;
             if (appDTO.id() == null || appDTO.id() == 0L) {
                 var owner = context.getEntity(PlatformUser.class, appDTO.ownerId());
@@ -166,6 +174,8 @@ public class ApplicationManager extends ApplicationStatusAware {
     // Application names are limited to 100 lowercase alphanumeric characters, underscores (_), and hyphens (-).
     // The sequence '---' is prohibited.
     private void checkAppName(String name, String currentName, IInstanceContext content) {
+        if (RESERVED_NAMES.contains(name))
+            throw new BusinessException(ErrorCode.CONFLICTING_APP_NAME);
         if (name.length() > 100)
             throw new BusinessException(ErrorCode.ILLEGAL_APP_NAME);
         var hyphens = 0;

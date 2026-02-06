@@ -17,6 +17,7 @@ public class MyTypes {
     final DeclaredType inputStream;
     final DeclaredType responseEntity;
     final DeclaredType map_string_list_string;
+    final DeclaredType map_string_object;
     final DeclaredType scheduler;
     final DeclaredType transactionOperations;
 
@@ -31,6 +32,9 @@ public class MyTypes {
         var listCls = elements.getTypeElement("java.util.List");
         var list_string = types.getDeclaredType(listCls, string);
         map_string_list_string = types.getDeclaredType(mapCls, string, list_string);
+        var objectCls = elements.getTypeElement("java.lang.Object");
+        var objectType = types.getDeclaredType(objectCls);
+        map_string_object = types.getDeclaredType(mapCls, string, objectType);
         scheduler = r.resolve("org.manul.schedule.Scheduler");
         transactionOperations = r.resolve("org.manul.jdbc.TransactionOperations");
     }

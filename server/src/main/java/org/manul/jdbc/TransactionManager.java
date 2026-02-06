@@ -1,6 +1,7 @@
 package org.manul.jdbc;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.manul.context.sql.TransactionIsolation;
 import org.manul.context.sql.TransactionPropagation;
 
@@ -13,6 +14,7 @@ import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 public class TransactionManager {
     private final ThreadLocal<Status> statusTl = ThreadLocal.withInitial(Status::new);
     private final DataSource dataSource;
@@ -32,6 +34,8 @@ public class TransactionManager {
             }
             case REQUIRES_NEW -> status.enterTx(readonly, isolation);
         };
+//        if (tx.scopes.isEmpty())
+//            log.info("Beginning transaction. pid: {}", PersistenceUtil.getPid(tx.conn), new Exception());
         tx.enterScope(propagation == TransactionPropagation.NESTED);
     }
 

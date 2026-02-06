@@ -119,6 +119,11 @@ public class HttpRequestImpl implements HttpRequest {
         return status;
     }
 
+    @Override
+    public Map<String, List<String>> getQueryParameters() {
+        return queryParameters;
+    }
+
     public byte[] getResponseBody() {
         return out.toByteArray();
     }

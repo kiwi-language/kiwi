@@ -41,7 +41,7 @@ public class MemSearchIndex {
     private boolean match(Source source, SearchQuery query) {
         if (!query.types().contains(source.typeKey().toTypeExpression()))
             return false;
-        return query.condition() == null || query.condition().evaluate(source.fields());
+        return query.condition() == null || query.condition().evaluate(source.id(), source.fields());
     }
 
     public boolean contains(String id) {

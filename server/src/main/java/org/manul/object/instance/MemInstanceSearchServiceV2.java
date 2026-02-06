@@ -173,12 +173,6 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
         return result.stream().sorted(Comparator.reverseOrder()).skip(start).limit(end - start + 1).toList();
     }
 
-    private boolean match(Source source, SearchQuery query) {
-        if (!query.types().contains(source.typeKey().toTypeExpression()))
-            return false;
-        return query.condition() == null || query.condition().evaluate(source.fields());
-    }
-
 
     public boolean contains(long id) {
         return getIndex(MAIN_ALIAS_PREFIX, getAppId()).contains(id + "")

@@ -1,5 +1,6 @@
 package org.manul.object.instance.search;
 
+import org.manul.object.instance.core.Id;
 import org.manul.object.instance.core.Value;
 
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ public record InSearchCondition(
     }
 
     @Override
-    public boolean evaluate(Map<String, Value> source) {
+    public boolean evaluate(Id id, Map<String, Value> source) {
         var value = source.get(field);
         return value != null && values.contains(value);
     }

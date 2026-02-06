@@ -1,6 +1,7 @@
 package org.manul.object.instance.search;
 
 import lombok.extern.slf4j.Slf4j;
+import org.manul.object.instance.core.Id;
 import org.manul.object.instance.core.Value;
 import org.manul.util.Utils;
 
@@ -16,7 +17,7 @@ public record OrSearchCondition(List<SearchCondition> items) implements SearchCo
     }
 
     @Override
-    public boolean evaluate(Map<String, Value> source) {
-        return Utils.anyMatch(items, item -> item.evaluate(source));
+    public boolean evaluate(Id id, Map<String, Value> source) {
+        return Utils.anyMatch(items, item -> item.evaluate(id, source));
     }
 }

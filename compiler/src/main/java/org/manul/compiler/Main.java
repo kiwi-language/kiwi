@@ -4,8 +4,10 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jsonk.Type;
 import org.manul.application.rest.dto.ApplicationDTO;
+import org.manul.common.ErrorCode;
 import org.manul.common.Page;
 import org.manul.compiler.apigen.ApiGenerator;
+import org.manul.compiler.apigen.Templates;
 import org.manul.compiler.util.CompilationException;
 import org.manul.compiler.util.HttpUtil;
 import org.manul.compiler.util.MockEnter;
@@ -119,55 +121,58 @@ public class Main {
     }
 
     void login() {
+        doLogin();
+        Utils.writeFile(getTokenFile(), HttpUtil.getToken());
+    }
+
+    private void doLogin() {
         var scanner = new Scanner(System.in);
         System.out.print("username: ");
         var name = scanner.nextLine();
         System.out.print("password: ");
         var password = scanner.nextLine();
-        doLogin(name, password);
-        Utils.writeFile(getTokenFile(), HttpUtil.getToken());
-//        System.out.println("applications:");
-//        var apps = listApps(1);
-//        System.out.print("application: ");
-//        var appName = scanner.nextLine();
-//        var app = Utils.find(apps, a -> a.name().equals(appName));
-//        if (app == null) {
-//            System.err.println("Error: Application " + appName + " does not exist");
-//            System.exit(1);
-//        }
-//        enterApp(app.id());
-//        System.out.println("Logged in successfully");
+        HttpUtil.login(name, password);
     }
 
-    private void doLogin(String username, String password) {
-        HttpUtil.login(username, password);
+    @SneakyThrows
+    private void restart() {
+        try {
+            var pb = new ProcessBuilder("manul-restart");
+            pb.inheritIO();
+            pb.start().waitFor();
+        } catch (IOException e) {
+            System.err.println("Error: the restart subcommand is only available when manul is installed using the installer");
+        }
     }
 
     private ApplicationDTO getApp(String name) {
-        return HttpUtil.get("/app", ApplicationDTO.class, Map.of("name", name));
+        return HttpUtil.get("/manul-system/app", ApplicationDTO.class, Map.of("name", name));
     }
 
     private void enter(String name) {
         enterApp(getApp(name).id());
     }
 
+    @SneakyThrows
     private void enterApp(long appId) {
-        Utils.writeFile(getAppFile(), Long.toString(appId));
+        var filePath = Path.of(getAppFile());
+        Files.createDirectories(filePath.getParent());
+        Files.writeString(filePath, Long.toString(appId));
         if (HttpUtil.getToken() != null)
             Utils.writeFile(getTokenFile(), HttpUtil.getToken());
     }
 
-    private void createApp(String name) {
-        HttpUtil.post("/app", new ApplicationDTO(null, name, null), Long.class);
+    private long createApp(String name) {
+        return HttpUtil.post("/manul-system/app", new ApplicationDTO(null, name, null), Long.class);
     }
 
     private void deleteApp(String name) {
         var app = getApp(name);
-        HttpUtil.delete("/app/" + app.id(), Void.class);
+        HttpUtil.delete("/manul-system/app/" + app.id(), Void.class);
     }
 
     private void printSourceTag(String name) {
-        var tag = HttpUtil.post("/type/source-tag",
+        var tag = HttpUtil.post("/manul-system/type/source-tag",
                 Map.of("appId", getAppId(), "name", name), Integer.class);
         System.out.println(tag);
     }
@@ -185,7 +190,7 @@ public class Main {
     }
 
     boolean isLoggedIn() {
-        return HttpUtil.get("/auth/get-login-info", LoginInfo.class).isSuccessful();
+        return HttpUtil.get("/manul-system/auth/get-login-info", LoginInfo.class).isSuccessful();
     }
 
     private void ensureHomeCreated() throws IOException {
@@ -302,7 +307,7 @@ public class Main {
 
     private List<ApplicationDTO> listApps() {
         //noinspection unchecked
-        var page = (Page<ApplicationDTO>) HttpUtil.get("/app/search", Type.from(Page.class, ApplicationDTO.class));
+        var page = (Page<ApplicationDTO>) HttpUtil.get("/manul-system/app/search", Type.from(Page.class, ApplicationDTO.class));
         for (ApplicationDTO app : page.items()) {
             if(app.id() > 2)
                 System.out.printf("%s%n", app.name());
@@ -329,7 +334,7 @@ public class Main {
 
     public void printAppName() {
         var appId = getAppId();
-        var app = HttpUtil.get("/app/" + appId, ApplicationDTO.class);
+        var app = HttpUtil.get("/manul-system/app/" + appId, ApplicationDTO.class);
         System.out.println(app.name());
     }
 
@@ -401,6 +406,13 @@ public class Main {
                     enter(args[1]);
                 }
                 case "app" -> printAppName();
+                case "new" -> {
+                    if (args.length < 2) {
+                        usage();
+                        return;
+                    }
+                    newProject(args[1]);
+                }
                 case "create-app" -> {
                     if (args.length < 2) {
                         usage();
@@ -415,6 +427,7 @@ public class Main {
                     }
                     deleteApp(args[1]);
                 }
+                case "restart" -> restart();
                 case "list-apps" -> listApps();
                 case "tag" -> {
                     if (args.length < 2) {
@@ -535,6 +548,37 @@ public class Main {
         var printDeployStatus = options.stream().noneMatch(opt -> opt.kind == OptionKind.NO_WAIT);
         if (build(options))
             secretDeploy(new HttpTypeClient(), targetRoot, printDeployStatus);
+    }
+
+    @SneakyThrows
+    private void newProject(String name) {
+        var root = Path.of(name);
+        if (Files.exists(root)) {
+            System.err.println("Error: Directory " + name + " already exists");
+            System.exit(1);
+        }
+        if (!isLoggedIn()) {
+            doLogin();
+        }
+        var examplePath = root.resolve("src").resolve("example.mnl");
+        Utils.writeFile(examplePath, Templates.EXAMPLE_MNL);
+        try {
+            // TODO investigate why serialize error occurs and removes the sleep
+            Thread.sleep(500);
+            var appId = createApp(name);
+            var appFile = root.resolve(getAppFile());
+            Utils.writeFile(appFile, Long.toString(appId));
+            if (HttpUtil.getToken() != null) {
+                var tokenFile = root.resolve(getTokenFile());
+                Utils.writeFile(tokenFile, HttpUtil.getToken());
+}
+        } catch (RequestException e) {
+            if (e.getErrorCode() == ErrorCode.CONFLICTING_APP_NAME) {
+                System.err.println("Error: Application name " + name + " already exists");
+                System.exit(1);
+            }
+            throw e;
+        }
     }
 
     boolean build(List<Option> options) {
