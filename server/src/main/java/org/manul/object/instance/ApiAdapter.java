@@ -233,6 +233,8 @@ public class ApiAdapter extends EntityContextFactoryAware {
             }
         }
         var result = new HashMap<String, Object>();
+        if (map.containsKey(KEY_ID))
+            result.put(KEY_ID, map.get(KEY_ID));
         result.put("type", type.getTypeDesc());
         result.put("fields", fields);
         result.put("children", children);

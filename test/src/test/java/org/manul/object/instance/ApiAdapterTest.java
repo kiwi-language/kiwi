@@ -73,6 +73,49 @@ public class ApiAdapterTest extends TestCase {
         assertEquals(100, user.get("credits"));
     }
 
+    public void testUpdateChild() {
+        deploy("manul/children.mnl");
+        var id = (String) post(
+                "/products",
+                Map.of(
+                        "name", "Shoes",
+                        "skus", List.of(
+                                Map.of(
+                                        "variant", "40",
+                                        "price", 100,
+                                        "stock", 100
+                                )
+                        )
+                ),
+                false, mockHttpRequest(),
+                mockHttpResponse()
+        );
+        var product = getObject(id);
+        var skuId = product.getChildren("SKU").getFirst().id();
+        patch(
+                "/products",
+                id,
+                Map.of(
+                        "name", "Shoes",
+                        "skus", List.of(
+                                Map.of(
+                                        "id", skuId.toString(),
+                                        "variant", "40",
+                                        "price", 200,
+                                        "stock", 100
+                                )
+                        )
+                ),
+                mockHttpRequest(),
+                mockHttpResponse()
+        );
+
+        var product1 = getObject(id);
+        var sku = Utils.find(product1.getChildren("SKU"), c -> c.id().equals(skuId));
+        assertNotNull(sku);
+        assertEquals(200.0, sku.get("price"));
+    }
+
     public void testRefSummary() {
         deploy("manul/User.mnl");
         var uId = saveInstance("User", Map.of("loginName", "demo", "password", "123456"));

@@ -47,49 +47,70 @@ public class Templates {
             let errorOccurred: any;
             // NEW: Variable to hold the response body for logging
             let responseBodyForLogging: any;
-                
+            // Capture original body for logging before potential modification
+            const requestBodyForLogging = body;
+
             try {
                 const headers: HeadersInit = {'X-Refresh-Policy': 'WAIT', 'X-Return-Full-Object': RETURN_FULL_OBJECT + '' };
-                
+
                 if (token) {
                     headers['Authorization'] = `Bearer ${token}`;
                 }
-                
-                if (body !== undefined) {
+
+                let url = `${API_BASE_URL}${endpoint}`;
+
+                if (method === 'GET' && body !== undefined) {
+                    const params = new URLSearchParams();
+                    Object.keys(body).forEach(key => {
+                        const value = body[key];
+                        if (value !== undefined && value !== null && value != '') {
+                            if (Array.isArray(value)) {
+                                value.forEach((item: any) => params.append(key, item.toString()));
+                            } else {
+                                params.append(key, value.toString());
+                            }
+                        }
+                    });
+                    const queryString = params.toString();
+                    if (queryString) {
+                        url += (url.includes('?') ? '&' : '?') + queryString;
+                    }
+                    body = undefined;
+                } else if (body !== undefined) {
                     headers['Content-Type'] = 'application/json';
                 }
-                
-                response = await fetch(`${API_BASE_URL}${endpoint}`, {
+
+                response = await fetch(url, {
                     method,
                     headers,
                     body: body !== undefined ? JSON.stringify(body) : undefined
                 });
-                
+
                 if (!response.ok) {
                     const errorBody: ErrorResponse = await response.json();
                     // NEW: Capture the error body for logging
                     responseBodyForLogging = errorBody;
                     throw new ApiError(response, errorBody);
                 }
-                
+
                 if (response.status === 204) {
                     return undefined as T;
                 }
-                
+
                 const contentType = response.headers.get('content-type');
-                
+
                 if (contentType && contentType.includes('application/json')) {
                     // NEW: Capture the JSON body before returning
                     const data = await response.json();
                     responseBodyForLogging = data;
                     return data as T;
                 }
-                
+
                 // NEW: Capture the text body before returning
                 const textData = await response.text();
                 responseBodyForLogging = textData;
                 return textData as T;
-                
+
             } catch (error) {
                 errorOccurred = error;
                 // Re-throw the error so the calling function can handle it
@@ -99,17 +120,17 @@ public class Templates {
                 const duration = endTime.getTime() - startTime.getTime();
                 const status = response ? response.status : 'FETCH_FAILED';
                 const outcome = errorOccurred ? `Error: ${errorOccurred.message}` : `Status: ${status}`;
-                
+
                 console.log(
                     `API Call: ${method} ${endpoint} | ` +
                     `Outcome: ${outcome} | ` +
                     `Duration: ${duration}ms | ` +
                     `Timestamps: ${startTime.toISOString()} -> ${endTime.toISOString()}`
                 );
-                
+
                 // NEW: Log the request and response bodies
-                if (body !== undefined) {
-                    console.log('Request Body:', body);
+                if (requestBodyForLogging !== undefined) {
+                    console.log('Request Body:', requestBodyForLogging);
                 }
                 if (responseBodyForLogging !== undefined) {
                     console.log('Response Body:', responseBodyForLogging);
@@ -119,7 +140,7 @@ public class Templates {
         """;
 
     public static final String UPLOAD_API = """
-            export const systemApi = { 
+            export const systemApi = {
             
                 upload: async (file: File): Promise<UploadResult> => {
                     let formData = new FormData()

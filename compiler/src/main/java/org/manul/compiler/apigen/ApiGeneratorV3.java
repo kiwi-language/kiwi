@@ -274,8 +274,8 @@ public class ApiGeneratorV3 implements ApiGenerator {
     private void generateMultiGet(Clazz clazz) {
         apiWriter.writeln(String.format(
                 """
-                        getAll: (ids: string[]): Promise<%s[]> => {
-                            return callApi<%s[]>('/%s/_multi-get', 'POST', {ids})
+                        getAll: (ids: string[]): Promise<SearchResult<%sListView>> => {
+                            return callApi<SearchResult<%sListView>>('/%s', 'GET', {id: ids})
                         },
                         """,
                 getApiClass(clazz),
@@ -286,14 +286,18 @@ public class ApiGeneratorV3 implements ApiGenerator {
 
     private void generateSave(Clazz clazz) {
         apiWriter.writeln(String.format("""
-                        save: (%s: %s): Promise<string> => {
-                            return callApi<string>('/%s', 'POST', %s)
+                        save: async (%1$s: %2$s): Promise<string> => {
+                            if (%1$s.id) {
+                                await callApi(`/%3$s/${%1$s.id}`, 'PATCH', %1$s)
+                                return %1$s.id
+                            } else {
+                                return callApi<string>('/%3$s', 'POST', %1$s)
+                            }
                         },
                         """,
                 firstCharsToLowerCase(getApiClass(clazz)),
                 getApiClass(clazz),
-                getClassPath(clazz),
-                firstCharsToLowerCase(getApiClass(clazz))
+                getClassPath(clazz)
         ));
     }
 
@@ -310,7 +314,7 @@ public class ApiGeneratorV3 implements ApiGenerator {
     private void generateSearch(Clazz clazz) {
         apiWriter.writeln(String.format("""
                         search: (request: Search%sRequest): Promise<SearchResult<%sListView>> => {
-                            return callApi<SearchResult<%sListView>>('/%s/_search', 'POST', request)
+                            return callApi<SearchResult<%sListView>>('/%s', 'GET', request)
                         },
                         """,
                 getApiClass(clazz),
@@ -352,13 +356,13 @@ public class ApiGeneratorV3 implements ApiGenerator {
                 paramBuf,
                 getApiType(method.getRetType(), true),
                 getApiType(method.getRetType(), true),
-                NamingUtils.camelToHyphen(beanName) + "/" + NamingUtils.camelToHyphen(method.getName().toString()),
+                "api/" + NamingUtils.camelToHyphen(beanName) + "/" + NamingUtils.camelToHyphen(method.getName().toString()),
                 paramNameBuf
         ));
     }
 
     private String getClassPath(Clazz clazz) {
-        return NamingUtils.nameToPath(clazz.getQualName().toString(), true);
+        return "api/" + NamingUtils.nameToPath(clazz.getQualName().toString(), true);
     }
 
 }
