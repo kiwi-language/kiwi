@@ -333,9 +333,13 @@ public class Main {
     }
 
     public void printAppName() {
+        System.out.println(getAppName());
+    }
+
+    private String getAppName() {
         var appId = getAppId();
         var app = HttpUtil.get("/manul-system/app/" + appId, ApplicationDTO.class);
-        System.out.println(app.name());
+        return app.name();
     }
 
     void initializeHttpClient() {
