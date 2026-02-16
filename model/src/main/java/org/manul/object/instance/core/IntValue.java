@@ -9,11 +9,27 @@ import org.manul.util.WireTypes;
 @Slf4j
 public class IntValue extends NumberValue {
 
-    public static final IntValue zero = new IntValue(0);
+    private static final int CACHE_LOW = -128;
+    private static final int CACHE_HIGH = 128;
+    private static final IntValue[] CACHE = new IntValue[CACHE_HIGH - CACHE_LOW + 1];
 
-    public static final IntValue one = new IntValue(1);
+    static {
+        for (int i = 0; i < CACHE.length; i++) {
+            CACHE[i] = new IntValue(i + CACHE_LOW);
+        }
+    }
 
-    public static final IntValue minusOne = new IntValue(-1);
+    public static IntValue of(int value) {
+        if (value >= CACHE_LOW && value <= CACHE_HIGH)
+            return CACHE[value - CACHE_LOW];
+        return new IntValue(value);
+    }
+
+    public static final IntValue zero = CACHE[-CACHE_LOW];
+
+    public static final IntValue one = CACHE[1 - CACHE_LOW];
+
+    public static final IntValue minusOne = CACHE[-1 - CACHE_LOW];
 
     public final int value;
 
