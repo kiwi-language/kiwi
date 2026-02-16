@@ -1,0 +1,20 @@
+@Bean
+class VmStackPoolBugLab {
+
+    fn intHeavy(a: int, b: int) -> int {
+        var c = a + b
+        var d = c * a
+        var e = d - b
+        var f = e + c
+        var g = f + d
+        var h = g + e
+        var i = h + f
+        var j = i + g
+        return j
+    }
+
+    fn returnString(s: string) -> string {
+        return s
+    }
+
+}

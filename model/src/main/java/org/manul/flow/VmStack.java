@@ -178,16 +178,26 @@ public class VmStack {
                                 Value retRef = stack[retSlot];
 
                                 Arrays.fill(stack, base, base + code.getFrameSize(), null);
+                                Arrays.fill(tStack, base, base + code.getFrameSize(), (byte) 0);
+
+                                // Materialize from saved values (arrays are cleared)
+                                Value retValue = switch (retTag) {
+                                    case T_REF -> retRef;
+                                    case T_INT -> IntValue.of((int) retPrim);
+                                    case T_LONG -> new LongValue(retPrim);
+                                    case T_DOUBLE -> new DoubleValue(Double.longBitsToDouble(retPrim));
+                                    case T_FLOAT -> new FloatValue(Float.intBitsToFloat((int) retPrim));
+                                    default -> throw new IllegalStateException("Invalid type tag: " + retTag);
+                                };
 
                                 if (fp == 0) {
-                                    Value v = retTag != T_REF ? ensureValue(retSlot) : retRef;
-                                    return FlowExecResult.of(v);
+                                    return FlowExecResult.of(retValue);
                                 }
                                 var frame = frames[--fp];
                                 frames[fp] = null;
 
                                 // Place return value at caller's expected position
-                                stack[frame.top] = retTag != T_REF ? ensureValue(retSlot) : retRef;
+                                stack[frame.top] = retValue;
                                 pStack[frame.top] = retPrim;
                                 tStack[frame.top] = retTag;
 
@@ -1303,6 +1313,7 @@ public class VmStack {
                                     callContext.instanceRepository().updateMemoryIndex(obj);
                                 }
                                 Arrays.fill(stack, base, base + code.getFrameSize(), null);
+                                Arrays.fill(tStack, base, base + code.getFrameSize(), (byte) 0);
                                 if (fp == 0)
                                     return FlowExecResult.of(null);
                                 var frame = frames[--fp];
@@ -1470,6 +1481,7 @@ public class VmStack {
                         else {
                             var f = frames[h.fp];
                             Arrays.fill(stack, f.base + f.callableRef.getCode().getFrameSize(), base + code.getFrameSize(), null);
+                            Arrays.fill(tStack, f.base + f.callableRef.getCode().getFrameSize(), base + code.getFrameSize(), (byte) 0);
                             fp = h.fp;
                             base = f.base;
                             top = f.top;
@@ -1486,6 +1498,7 @@ public class VmStack {
                     }
                     else {
                         Arrays.fill(stack, 0, base + code.getFrameSize(), null);
+                        Arrays.fill(tStack, 0, base + code.getFrameSize(), (byte) 0);
                         return FlowExecResult.ofException(exception);
                     }
 
