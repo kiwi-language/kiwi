@@ -115,7 +115,72 @@ Type (interface)
 
 **CFG**: Directed graph of `Node` objects. `BranchNode` (true/false), `GotoNode`, `ReturnNode`.
 
-**Execution**: Stack-based VM, ~10x slower than JIT-compiled JVM, fast startup.
+**Execution**: Stack-based VM with dual-stack optimization (see below), ~10x slower than JIT-compiled JVM, fast startup.
+
+#### VmStack — Dual Stack VM Interpreter (`org.manul.flow.VmStack`)
+
+The bytecode interpreter is a single giant `switch` inside an infinite `for(;;)` loop, processing one bytecode per iteration. VmStack instances are **pooled** via `ObjectPool<VmStack>` (max 1024) to avoid reallocating the large internal arrays.
+
+**Dual Stack Architecture**: The VM uses three parallel arrays per stack slot instead of a single `Value[]`:
+
+```java
+Value[] stack  = new Value[1M];   // object references (strings, entities, arrays, etc.)
+long[]  pstack = new long[1M];    // primitive bits (int/long/float/double stored as raw bits)
+byte[]  ptag   = new byte[1M];    // type tag per slot: TAG_OBJ=0, TAG_INT=1, TAG_LONG=2, TAG_FLOAT=3, TAG_DOUBLE=4
+```
+
+Each slot `i` is typed by `ptag[i]`. When `TAG_OBJ`, the value is in `stack[i]`. When `TAG_INT/LONG/FLOAT/DOUBLE`, the value is in `pstack[i]` as raw bits (float/double via `Float.floatToRawIntBits`/`Double.doubleToRawLongBits`), and `stack[i]` is null.
+
+**Purpose**: Eliminates boxing overhead. Before this, every `INT_ADD` allocated a `new IntValue(...)` on the heap. With the dual stack, pure-primitive loops (arithmetic, comparisons, variable load/store) produce zero garbage.
+
+**Three bridge methods** handle the boundary between primitive and object worlds:
+- `unboxTo(i, Value v)` — Object→Primitive: pattern-matches on IntValue/LongValue/FloatValue/DoubleValue, stores raw bits in `pstack[i]`, sets `ptag[i]`, nulls `stack[i]`. Non-primitive values go into `stack[i]` with `TAG_OBJ`.
+- `ensureBoxed(i)` — Primitive→Object: if `ptag[i] != TAG_OBJ`, materializes the boxed Value into `stack[i]` via `boxFromTag()`.
+- `boxFromTag(tag, bits)` — Static factory: `TAG_INT → new IntValue((int)bits)`, `TAG_FLOAT → new FloatValue(Float.intBitsToFloat((int)bits))`, etc.
+
+**When boxing is required** (calls to `ensureBoxed`/`ensureBoxedRange`):
+- Before passing args to native methods (they expect `Value[]`)
+- Before storing into entity fields (`SET_FIELD`, `SET_STATIC`, `SET_ELEMENT`, `ADD_ELEMENT`)
+- Before capturing closure context (`NEW`, `NEW_CHILD`, `LAMBDA` with local types)
+- Before storing into `ClosureContext` (`STORE_CONTEXT_SLOT`)
+- Before `CAST` and `INSTANCE_OF` (need to inspect Value type)
+- Before `REF_COMPARE_EQ`/`REF_COMPARE_NE` (need `.equals()`)
+
+**When unboxing happens** (calls to `unboxTo`):
+- At entry: arguments are unboxed into the initial frame
+- `LOAD_CONSTANT` — constants from the pool are unboxed
+- `LOAD_CONTEXT_SLOT` — closure values unboxed on read
+- `GET_FIELD`, `GET_STATIC_FIELD` — field values unboxed after `.toStackValue()`
+- `GET_ELEMENT` — array element unboxed after `.toStackValue()`
+- Native method return values unboxed
+- `CAST` result re-unboxed after type check
+
+**Bytecode transformation patterns**:
+
+1. *Pure arithmetic* (INT/LONG/FLOAT/DOUBLE_ADD/SUB/MUL/DIV/REM/NEG): Read/write `pstack` directly, zero allocation.
+2. *Variable access* (LOAD/STORE): Copy all three components (`stack[i]`, `pstack[i]`, `ptag[i]`) since slot type is unknown statically. Same for DUP/DUP2/DUP_X1/DUP_X2.
+3. *Comparisons* (EQ/NE/LT/LE/GT/GE, INT/LONG/FLOAT/DOUBLE_COMPARE): Read from `pstack`, push int result (0 or 1, or -1/0/1) to `pstack` with `TAG_INT`.
+4. *Branches* (IF_EQ/IF_NE): Read `(int) pstack[--top]`, branch on 0.
+5. *RETURN*: Saves retTag/retPrim/retObj before `Arrays.fill` cleanup; restores all three into caller frame. At top-level (`fp==0`), boxes via `boxFromTag` for the `FlowExecResult`.
+6. *VOID_RETURN*: Now also `Arrays.fill(ptag, base, ..., TAG_OBJ)` to reset tags.
+7. *Method invocation* (INVOKE_VIRTUAL/SPECIAL/STATIC/FUNCTION, FUNC): For bytecode callees, adds `Arrays.fill(ptag, argsEnd, top, TAG_OBJ)` to initialize new frame's unused local tags. For native callees, `ensureBoxed` before call, `unboxTo` after return.
+8. *Exception handling*: Cross-frame unwind now also cleans `ptag[]`. Exception ref pushed as `TAG_OBJ`.
+9. *NON_NULL optimization*: Short-circuits when `ptag[top-1] != TAG_OBJ` (primitives can never be null).
+
+**Frame record**: `Frame(int pc, int base, int top, CallableRef callableRef, ClosureContext closureContext)` — unchanged by dual stack (primitive state is already in the shared arrays, indexed by base/top).
+
+**Memory footprint**: Each VmStack instance uses ~17MB (8MB `long[1M]` + 1MB `byte[1M]` + 8MB `Value[1M]`). With pooling, only active concurrent executions consume memory.
+
+#### Value Type Hierarchy (`org.manul.object.instance.core.*`)
+
+The `toStackValue()` / `fromStackValue()` methods bridge between storage representation and stack representation:
+
+- **IntValue, LongValue, FloatValue, DoubleValue**: `toStackValue()` returns `this`. These are the four types that get unboxed into `pstack`.
+- **BooleanValue**: `toStackValue()` → `IntValue(1)` or `IntValue(0)`. Booleans are ints on the stack.
+- **ByteValue, ShortValue, CharValue**: `toStackValue()` → `IntValue(value)`. Sub-int types promote to int on the stack (like JVM).
+- **Non-primitives** (StringReference, EntityReference, ArrayInstance, NullValue, etc.): Stay as `Value` objects with `TAG_OBJ`.
+
+`fromStackValue()` does the reverse for field storage: `PrimitiveKind.BOOLEAN` converts `IntValue(0/1)` back to `BooleanValue`, `CHAR` converts `IntValue` back to `CharValue`, etc.
 
 #### Entity/Persistence Layer
 

@@ -1,0 +1,289 @@
+package dualstack
+
+@Bean
+class Lab {
+
+    // --- Group A: Tight integer arithmetic loops ---
+
+    fn fibonacci(n: int) -> int {
+        if (n <= 1) return n
+        var a = 0
+        var b = 1
+        for (i in 2...(n + 1)) {
+            var tmp = a + b
+            a = b
+            b = tmp
+        }
+        return b
+    }
+
+    fn sumOfSquares(n: int) -> int {
+        var sum = 0
+        for (i in 1...(n + 1)) {
+            sum += i * i
+        }
+        return sum
+    }
+
+    fn gcd(a: int, b: int) -> int {
+        while (b != 0) {
+            var t = b
+            b = a % t
+            a = t
+        }
+        return a
+    }
+
+    // --- Group B: Long arithmetic ---
+
+    fn longFibonacci(n: int) -> long {
+        if (n <= 1) return n as long
+        var a: long = 0
+        var b: long = 1
+        for (i in 2...(n + 1)) {
+            var tmp = a + b
+            a = b
+            b = tmp
+        }
+        return b
+    }
+
+    fn longBitwiseOps(a: long, b: long) -> long {
+        var x = a | b
+        var y = a & b
+        var z = a ^ b
+        return (x + y) * z
+    }
+
+    fn longShifts(v: long, shift: int) -> long {
+        return (v << shift) + (v >> shift) + (v >>> shift)
+    }
+
+    // --- Group C: Double arithmetic ---
+
+    fn newtonsSquareRoot(n: double, iterations: int) -> double {
+        var guess = n / 2.0
+        for (i in 0...iterations) {
+            guess = (guess + n / guess) / 2.0
+        }
+        return guess
+    }
+
+    fn dotProduct(a1: double, b1: double, a2: double, b2: double) -> double {
+        return a1 * a2 + b1 * b2
+    }
+
+    // --- Group D: Float arithmetic ---
+
+    fn floatAccumulate(n: int) -> float {
+        var sum: float = 0.0f
+        for (i in 1...(n + 1)) {
+            sum += (i as float) * 0.5f
+        }
+        return sum
+    }
+
+    // --- Group E: Type conversions ---
+
+    fn intToLongToDouble(v: int) -> double {
+        var l: long = v as long
+        var d: double = l as double
+        return d + 0.5
+    }
+
+    fn doubleToFloatToInt(v: double) -> int {
+        var f: float = v as float
+        return f as int
+    }
+
+    fn roundTrip(v: int) -> int {
+        var l: long = v as long
+        var d: double = l as double
+        var f: float = d as float
+        var l2: long = f as long
+        return l2 as int
+    }
+
+    // --- Group F: Comparisons producing int results ---
+
+    fn intCompareChain(a: int, b: int, c: int) -> int {
+        var r1 = a < b ? 1 : 0
+        var r2 = b < c ? 1 : 0
+        var r3 = a < c ? 1 : 0
+        return r1 + r2 + r3
+    }
+
+    fn longCompare(a: long, b: long) -> int {
+        return a < b ? -1 : a == b ? 0 : 1
+    }
+
+    fn doubleCompare(a: double, b: double) -> int {
+        return a < b ? -1 : a == b ? 0 : 1
+    }
+
+    fn floatCompare(a: float, b: float) -> int {
+        return a < b ? -1 : a == b ? 0 : 1
+    }
+
+    // --- Group G: Negate operations ---
+
+    fn negateInt(v: int) -> int { return -v }
+    fn negateLong(v: long) -> long { return -v }
+    fn negateDouble(v: double) -> double { return -v }
+    fn negateFloat(v: float) -> float { return -v }
+
+    // --- Group H: Boolean tests from comparison results ---
+
+    fn allComparisons(a: int, b: int) -> int {
+        var score = 0
+        if (a == b) score += 1
+        if (a != b) score += 2
+        if (a < b) score += 4
+        if (a <= b) score += 8
+        if (a > b) score += 16
+        if (a >= b) score += 32
+        return score
+    }
+
+    // --- Group I: Closures capturing primitives ---
+
+    priv fn makeAdder(base: int) -> (int) -> int {
+        return x -> x + base
+    }
+
+    fn testClosureCapture() -> int {
+        var adder = makeAdder(10)
+        return adder(5) + adder(20)
+    }
+
+    // --- Group J: Array operations with primitive index/values ---
+
+    fn arrayIntSum(arr: int[]) -> int {
+        var sum = 0
+        for (i in 0...arr.length) {
+            sum += arr[i]
+        }
+        return sum
+    }
+
+    priv fn arraySwap(arr: int[], i: int, j: int) {
+        var tmp = arr[i]
+        arr[i] = arr[j]
+        arr[j] = tmp
+    }
+
+    fn bubbleSortAndSum(arr: int[]) -> int {
+        var n = arr.length
+        for (i in 0...n) {
+            for (j in 0...(n - i - 1)) {
+                if (arr[j] > arr[j + 1]) {
+                    arraySwap(arr, j, j + 1)
+                }
+            }
+        }
+        var sum = 0
+        for (i in 0...n) {
+            sum += arr[i] * (i + 1)
+        }
+        return sum
+    }
+
+    // --- Group K: Nested calls passing primitives through frames ---
+
+    priv fn add(a: int, b: int) -> int { return a + b }
+    priv fn mul(a: int, b: int) -> int { return a * b }
+    priv fn square(n: int) -> int { return mul(n, n) }
+
+    fn nestedArithmetic(a: int, b: int, c: int) -> int {
+        return add(mul(a, b), square(c))
+    }
+
+    fn power(base: int, exp: int) -> int {
+        if (exp == 0) return 1
+        if (exp == 1) return base
+        return base * power(base, exp - 1)
+    }
+
+    // --- Group L: Try/catch with primitives on stack ---
+
+    fn divideWithCatch(a: int, b: int) -> int {
+        try {
+            return a / b
+        } catch (e: Exception) {
+            return -1
+        }
+    }
+
+    fn loopWithException(n: int) -> int {
+        var sum = 0
+        for (i in 0...n) {
+            try {
+                sum += 100 / (i - 5)
+            } catch (e: Exception) {
+                sum += 999
+            }
+        }
+        return sum
+    }
+
+    // --- Group M: DUP patterns with primitives ---
+
+    fn testDupPattern(n: int) -> int {
+        var arr: int[] = new int[] {1, 2, 3, 4, 5}
+        var sum = 0
+        for (i in 0...n) {
+            arr[i % 5] = arr[i % 5] + i
+            sum += arr[i % 5]
+        }
+        return sum
+    }
+
+    // --- Group N: Mixed primitive/object operations ---
+
+    fn stringLengthSum(strings: string[]) -> int {
+        var total = 0
+        for (s in strings) {
+            total += s.length()
+        }
+        return total
+    }
+
+    fn intToString(v: int) -> string {
+        return "" + v
+    }
+
+    // --- Group O: Complex control flow with primitives ---
+
+    fn collatz(n: int) -> int {
+        var steps = 0
+        var v = n
+        while (v != 1) {
+            if (v % 2 == 0) {
+                v = v / 2
+            } else {
+                v = v * 3 + 1
+            }
+            steps++
+        }
+        return steps
+    }
+
+    priv fn isPrime(n: int) -> bool {
+        if (n < 2) return false
+        var d = 2
+        while (d * d <= n) {
+            if (n % d == 0) return false
+            d++
+        }
+        return true
+    }
+
+    fn countPrimes(limit: int) -> int {
+        var count = 0
+        for (n in 2...(limit + 1)) {
+            if (isPrime(n)) count++
+        }
+        return count
+    }
+
+}

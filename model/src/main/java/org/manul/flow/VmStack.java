@@ -18,8 +18,6 @@ import org.manul.util.*;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
-import static org.manul.object.instance.core.IntValue.one;
-import static org.manul.object.instance.core.IntValue.zero;
 
 @Slf4j
 public class VmStack {
@@ -41,9 +39,52 @@ public class VmStack {
 
     private final ExceptionHandler[] exceptionHandlers = new ExceptionHandler[1024];
     private final Value[] stack = new Value[1024 * 1024];
+    private final long[] pstack = new long[1024 * 1024];
+    private final byte[] ptag = new byte[1024 * 1024];
     private final Frame[] frames = new Frame[1024];
 
+    private static final byte TAG_OBJ = 0;
+    private static final byte TAG_INT = 1;
+    private static final byte TAG_LONG = 2;
+    private static final byte TAG_FLOAT = 3;
+    private static final byte TAG_DOUBLE = 4;
+
     private VmStack() {
+    }
+
+    private void ensureBoxed(int i) {
+        if (ptag[i] != TAG_OBJ) {
+            stack[i] = boxFromTag(ptag[i], pstack[i]);
+            ptag[i] = TAG_OBJ;
+        }
+    }
+
+    private void ensureBoxedRange(int from, int to) {
+        for (int i = from; i < to; i++) ensureBoxed(i);
+    }
+
+    private static Value boxFromTag(byte tag, long bits) {
+        return switch (tag) {
+            case TAG_INT -> new IntValue((int) bits);
+            case TAG_LONG -> new LongValue(bits);
+            case TAG_FLOAT -> new FloatValue(Float.intBitsToFloat((int) bits));
+            case TAG_DOUBLE -> new DoubleValue(Double.longBitsToDouble(bits));
+            default -> throw new IllegalStateException();
+        };
+    }
+
+    private void unboxTo(int i, Value v) {
+        if (v instanceof IntValue iv) {
+            pstack[i] = iv.value; ptag[i] = TAG_INT; stack[i] = null;
+        } else if (v instanceof LongValue lv) {
+            pstack[i] = lv.value; ptag[i] = TAG_LONG; stack[i] = null;
+        } else if (v instanceof FloatValue fv) {
+            pstack[i] = Float.floatToRawIntBits(fv.value); ptag[i] = TAG_FLOAT; stack[i] = null;
+        } else if (v instanceof DoubleValue dv) {
+            pstack[i] = Double.doubleToRawLongBits(dv.value); ptag[i] = TAG_DOUBLE; stack[i] = null;
+        } else {
+            stack[i] = v; ptag[i] = TAG_OBJ;
+        }
     }
 
     @SuppressWarnings({"DuplicatedCode", "UseCompareMethod", "DataFlowIssue", "ExtractMethodRecommender"})
@@ -63,10 +104,14 @@ public class VmStack {
             var constants = callableRef.getTypeMetadata().getValues();
             System.arraycopy(arguments, 0, stack, 0, arguments.length);
             var stack = this.stack;
+            var pstack = this.pstack;
+            var ptag = this.ptag;
             var frames = this.frames;
             int base = 0;
             var code = callableRef.getCode();
             int top = code.getMaxLocals();
+            for (int i = 0; i < arguments.length; i++) unboxTo(i, arguments[i]);
+            Arrays.fill(ptag, arguments.length, top, TAG_OBJ);
             int handlerTop = 0;
             int pc = 0;
             var bytes = code.getCode();
@@ -91,31 +136,34 @@ public class VmStack {
                                 var fieldValues = new LinkedList<Value>();
                                 var fields = type.getKlass().getAllFields();
                                 int numFields = fields.size();
+                                ensureBoxedRange(top - numFields, top);
                                 for (int i = 0; i < numFields; i++) {
                                     fieldValues.addFirst(stack[--top]);
                                 }
                                 Utils.biForEach(fields, fieldValues, (f, v) -> instance.initField(f, f.getType().fromStackValue(v)));
                                 if (!instance.isEphemeral())
                                     callContext.instanceRepository().bind(instance);
-                                stack[top++] = instance.getReference();
+                                stack[top] = instance.getReference(); ptag[top++] = TAG_OBJ;
                                 pc += 4;
                             }
                             case Bytecodes.SET_FIELD -> {
                                 int fieldIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var field = (FieldRef) constants[fieldIndex];
+                                ensureBoxed(top - 1);
                                 var value = stack[--top];
                                 var instance = stack[--top].resolveMvObject();
                                 instance.fields[field.getRawField().offset].value = field.getPropertyType().fromStackValue(value);
                                 pc += 3;
                             }
                             case Bytecodes.RETURN -> {
-                                var v = stack[top - 1];
+                                var retTag = ptag[top - 1]; var retPrim = pstack[top - 1]; var retObj = stack[top - 1];
                                 Arrays.fill(stack, base, base + code.getFrameSize(), null);
+                                Arrays.fill(ptag, base, base + code.getFrameSize(), TAG_OBJ);
                                 if (fp == 0)
-                                    return FlowExecResult.of(v);
+                                    return FlowExecResult.of(retTag != TAG_OBJ ? boxFromTag(retTag, retPrim) : retObj);
                                 var frame = frames[--fp];
                                 frames[fp] = null;
-                                stack[frame.top] = v;
+                                stack[frame.top] = retObj; pstack[frame.top] = retPrim; ptag[frame.top] = retTag;
                                 pc = frame.pc;
                                 top = frame.top + 1;
                                 base = frame.base;
@@ -138,6 +186,7 @@ public class VmStack {
                                     method = ((ClassType) requireNonNull(self).getValueType()).getOverride(method);
                                 if (method.isNative()) {
                                     var paramCount = method.getParameterCount();
+                                    for (int i = top - paramCount; i < top; i++) ensureBoxed(i);
                                     var args = new Value[paramCount];
                                     for (int i = paramCount - 1; i >= 0; i--) {
                                         args[i] = stack[--top];
@@ -147,12 +196,16 @@ public class VmStack {
                                     if (r.exception() != null) {
                                         exception = r.exception();
                                         break except;
-                                    } else if (!method.getReturnType().isVoid())
-                                        stack[top++] = r.ret();
+                                    } else if (!method.getReturnType().isVoid()) {
+                                        unboxTo(top, r.ret());
+                                        top++;
+                                    }
                                 } else {
                                     int prevBase = base;
+                                    int argsEnd = top;
                                     base = top - method.getParameterCount() - 1;
                                     top = base + method.getRawFlow().getCode().getMaxLocals();
+                                    if (argsEnd < top) Arrays.fill(ptag, argsEnd, top, TAG_OBJ);
                                     frames[fp++] = new Frame(pc, prevBase, base, callableRef, closureContext);
                                     callableRef = method;
                                     code = method.getRawFlow().getCode();
@@ -178,6 +231,7 @@ public class VmStack {
                                     method = ((ClassType) requireNonNull(self).getValueType()).getOverride(method);
                                 if (method.isNative()) {
                                     var paramCount = method.getParameterCount();
+                                    for (int i = top - paramCount; i < top; i++) ensureBoxed(i);
                                     var args = new Value[paramCount];
                                     for (int i = paramCount - 1; i >= 0; i--) {
                                         args[i] = stack[--top];
@@ -187,12 +241,16 @@ public class VmStack {
                                     if (r.exception() != null) {
                                         exception = r.exception();
                                         break except;
-                                    } else if (!method.getReturnType().isVoid())
-                                        stack[top++] = r.ret();
+                                    } else if (!method.getReturnType().isVoid()) {
+                                        unboxTo(top, r.ret());
+                                        top++;
+                                    }
                                 } else {
                                     int prevBase = base;
+                                    int argsEnd = top;
                                     base = top - method.getParameterCount() - 1;
                                     top = base + method.getRawFlow().getCode().getMaxLocals();
+                                    if (argsEnd < top) Arrays.fill(ptag, argsEnd, top, TAG_OBJ);
                                     frames[fp++] = new Frame(pc, prevBase, base, callableRef, closureContext);
                                     callableRef = method;
                                     code = method.getRawFlow().getCode();
@@ -209,6 +267,7 @@ public class VmStack {
                                 var self = stack[top - method.getParameterCount() - 1];
                                 if (method.isNative()) {
                                     var paramCount = method.getParameterCount();
+                                    for (int i = top - paramCount; i < top; i++) ensureBoxed(i);
                                     var args = new Value[paramCount];
                                     for (int i = paramCount - 1; i >= 0; i--) {
                                         args[i] = stack[--top];
@@ -218,12 +277,16 @@ public class VmStack {
                                     if (r.exception() != null) {
                                         exception = r.exception();
                                         break except;
-                                    } else if (!method.getReturnType().isVoid())
-                                        stack[top++] = r.ret();
+                                    } else if (!method.getReturnType().isVoid()) {
+                                        unboxTo(top, r.ret());
+                                        top++;
+                                    }
                                 } else {
                                     int prevBase = base;
+                                    int argsEnd = top;
                                     base = top - method.getParameterCount() - 1;
                                     top = base + method.getRawFlow().getCode().getMaxLocals();
+                                    if (argsEnd < top) Arrays.fill(ptag, argsEnd, top, TAG_OBJ);
                                     frames[fp++] = new Frame(pc, prevBase, base, callableRef, closureContext);
                                     callableRef = method;
                                     code = method.getRawFlow().getCode();
@@ -247,6 +310,7 @@ public class VmStack {
                                 var self = stack[top - method.getParameterCount() - 1];
                                 if (method.isNative()) {
                                     var paramCount = method.getParameterCount();
+                                    for (int i = top - paramCount; i < top; i++) ensureBoxed(i);
                                     var args = new Value[paramCount];
                                     for (int i = paramCount - 1; i >= 0; i--) {
                                         args[i] = stack[--top];
@@ -256,12 +320,16 @@ public class VmStack {
                                     if (r.exception() != null) {
                                         exception = r.exception();
                                         break except;
-                                    } else if (!method.getReturnType().isVoid())
-                                        stack[top++] = r.ret();
+                                    } else if (!method.getReturnType().isVoid()) {
+                                        unboxTo(top, r.ret());
+                                        top++;
+                                    }
                                 } else {
                                     int prevBase = base;
+                                    int argsEnd = top;
                                     base = top - method.getParameterCount() - 1;
                                     top = base + method.getRawFlow().getCode().getMaxLocals();
+                                    if (argsEnd < top) Arrays.fill(ptag, argsEnd, top, TAG_OBJ);
                                     frames[fp++] = new Frame(pc, prevBase, base, callableRef, closureContext);
                                     callableRef = method;
                                     code = method.getRawFlow().getCode();
@@ -277,6 +345,7 @@ public class VmStack {
                                 pc += 3;
                                 if (method.isNative()) {
                                     var paramCount = method.getParameterCount();
+                                    for (int i = top - paramCount; i < top; i++) ensureBoxed(i);
                                     var args = new Value[paramCount];
                                     for (int i = paramCount - 1; i >= 0; i--) {
                                         args[i] = stack[--top];
@@ -285,12 +354,16 @@ public class VmStack {
                                     if (r.exception() != null) {
                                         exception = r.exception();
                                         break except;
-                                    } else if (!method.getReturnType().isVoid())
-                                        stack[top++] = r.ret();
+                                    } else if (!method.getReturnType().isVoid()) {
+                                        unboxTo(top, r.ret());
+                                        top++;
+                                    }
                                 } else {
                                     int prevBase = base;
+                                    int argsEnd = top;
                                     base = top - method.getParameterCount();
                                     top = base + method.getRawFlow().getCode().getMaxLocals();
+                                    if (argsEnd < top) Arrays.fill(ptag, argsEnd, top, TAG_OBJ);
                                     frames[fp++] = new Frame(pc, prevBase, base, callableRef, closureContext);
                                     callableRef = method;
                                     code = method.getRawFlow().getCode();
@@ -313,6 +386,7 @@ public class VmStack {
                                 var method = new MethodRef(declaringType, m, List.of(typeArgs));
                                 if (method.isNative()) {
                                     var paramCount = method.getParameterCount();
+                                    for (int i = top - paramCount; i < top; i++) ensureBoxed(i);
                                     var args = new Value[paramCount];
                                     for (int i = paramCount - 1; i >= 0; i--) {
                                         args[i] = stack[--top];
@@ -321,12 +395,16 @@ public class VmStack {
                                     if (r.exception() != null) {
                                         exception = r.exception();
                                         break except;
-                                    } else if (!method.getReturnType().isVoid())
-                                        stack[top++] = r.ret();
+                                    } else if (!method.getReturnType().isVoid()) {
+                                        unboxTo(top, r.ret());
+                                        top++;
+                                    }
                                 } else {
                                     int prevBase = base;
+                                    int argsEnd = top;
                                     base = top - method.getParameterCount();
                                     top = base + method.getRawFlow().getCode().getMaxLocals();
+                                    if (argsEnd < top) Arrays.fill(ptag, argsEnd, top, TAG_OBJ);
                                     frames[fp++] = new Frame(pc, prevBase, base, callableRef, closureContext);
                                     callableRef = method;
                                     code = method.getRawFlow().getCode();
@@ -341,7 +419,7 @@ public class VmStack {
                                 Value result = callContext.instanceRepository().selectFirstByKey(loadIndexKey(index, stack[--top]));
                                 if (result == null)
                                     result = new NullValue();
-                                stack[top++] = result;
+                                stack[top] = result; ptag[top++] = TAG_OBJ;
                                 pc += 3;
                             }
                             case Bytecodes.NEW -> {
@@ -349,28 +427,31 @@ public class VmStack {
                                 var type = (ClassType) constants[typeIndex];
                                 var ephemeral = bytes[pc + 3] == 1;
                                 var unbound = bytes[pc + 4] == 1;
+                                if (type.isLocal()) ensureBoxedRange(base, top);
                                 var self = ClassInstanceBuilder.newBuilder(type, repository.allocateRootId(type))
                                         .ephemeral(ephemeral)
                                         .closureContext(type.isLocal() ? new ClosureContext(closureContext, Arrays.copyOfRange(stack, base, top)) : null)
                                         .build();
                                 if (!self.isEphemeral() && !unbound)
                                     callContext.instanceRepository().bind(self);
-                                stack[top++] = self.getReference();
+                                stack[top] = self.getReference(); ptag[top++] = TAG_OBJ;
                                 pc += 5;
                             }
                             case Bytecodes.NEW_CHILD -> {
                                 var typeIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var type = (ClassType) constants[typeIndex];
                                 var parent = stack[--top].resolveObject();
+                                if (type.isLocal()) ensureBoxedRange(base, top + 1);
                                 var self = ClassInstanceBuilder.newBuilder(type, parent.getRoot().nextChildId())
                                         .parent(parent)
                                         .closureContext(type.isLocal() ? new ClosureContext(closureContext, Arrays.copyOfRange(stack, base, top + 1)) : null)
                                         .build();
-                                stack[top++] = self.getReference();
+                                stack[top] = self.getReference(); ptag[top++] = TAG_OBJ;
                                 pc += 3;
                             }
                             case Bytecodes.SET_STATIC -> {
                                 var field = (FieldRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                                ensureBoxed(top - 1);
                                 var sft = StaticFieldTable.getInstance(field.getDeclaringType(), ContextUtil.getEntityContext());
                                 sft.set(field.getRawField(), stack[--top]);
                                 pc += 3;
@@ -378,7 +459,7 @@ public class VmStack {
                             case Bytecodes.NEW_ARRAY -> {
                                 // TODO support ephemeral
                                 var array = new ArrayInstance((ArrayType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]);
-                                stack[top++] = array.getReference();
+                                stack[top] = array.getReference(); ptag[top++] = TAG_OBJ;
                                 pc += 3;
                             }
                             case Bytecodes.TRY_ENTER -> {
@@ -394,6 +475,7 @@ public class VmStack {
                                 var functionType = (FunctionType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                                 pc += 3;
                                 int prevBase = base;
+                                int savedTop = top;
                                 int prevTop = top - functionType.getParameterTypes().size() - 1;
                                 var funcInst = (FunctionValue) stack[prevTop];
                                 var self = funcInst.getSelf();
@@ -402,6 +484,7 @@ public class VmStack {
                                 else
                                     base = prevTop + 1;
                                 top = base + funcInst.getCode().getMaxLocals();
+                                if (savedTop < top) Arrays.fill(ptag, savedTop, top, TAG_OBJ);
                                 frames[fp++] = new Frame(pc, prevBase, prevTop, callableRef, closureContext);
                                 callableRef = funcInst;
                                 code = funcInst.getCode();
@@ -412,9 +495,10 @@ public class VmStack {
                             }
                             case Bytecodes.LAMBDA -> {
                                 var lambda = (LambdaRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                                ensureBoxedRange(base, top);
                                 var func = new LambdaValue(lambda, new ClosureContext(closureContext, Arrays.copyOfRange(stack, base, top)));
                                 if (bytes[pc + 3] == 0) {
-                                    stack[top++] = func;
+                                    stack[top] = func; ptag[top++] = TAG_OBJ;
                                     pc += 4;
                                 } else {
                                     var functionalInterface = (ClassType) constants[bytes[pc + 4] | bytes[pc + 5]];
@@ -422,28 +506,31 @@ public class VmStack {
                                     var functionInterfaceImpl = Types.createFunctionalClass(functionalInterface);
                                     var funcImplKlass = functionInterfaceImpl.getKlass();
                                     var funcField = funcImplKlass.getFieldByName("func");
-                                    stack[top++] = ClassInstance.create(TmpId.random(), Map.of(funcField, func), functionInterfaceImpl).getReference();
+                                    stack[top] = ClassInstance.create(TmpId.random(), Map.of(funcField, func), functionInterfaceImpl).getReference(); ptag[top++] = TAG_OBJ;
                                     pc += 6;
                                 }
                             }
                             case Bytecodes.ADD_ELEMENT -> {
+                                ensureBoxed(top - 1);
                                 var e = stack[--top];
                                 var a = stack[--top].resolveArray();
                                 a.addElement(a.getInstanceType().getElementType().fromStackValue(e));
                                 pc++;
                             }
                             case Bytecodes.DELETE_ELEMENT -> {
+                                ensureBoxed(top - 1);
                                 var elem = stack[--top];
                                 var array = stack[--top].resolveArray();
                                 var r = array.remove(elem);
-                                stack[top++] = Instances.intInstance(r);
+                                stack[top] = null; pstack[top] = r ? 1 : 0; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.GET_ELEMENT -> {
-                                var index = ((IntValue) stack[--top]).value;
+                                var index = (int) pstack[--top];
                                 var arrayInst = stack[--top].resolveArray();
                                 if (index < arrayInst.size()) {
-                                    stack[top++] = arrayInst.get(index).toStackValue();
+                                    unboxTo(top, arrayInst.get(index).toStackValue());
+                                    top++;
                                     pc++;
                                 } else {
                                     exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
@@ -457,6 +544,7 @@ public class VmStack {
                                 pc += 3;
                                 if (func.isNative()) {
                                     var paramCount = func.getParameterCount();
+                                    for (int i = top - paramCount; i < top; i++) ensureBoxed(i);
                                     var args = new Value[paramCount];
                                     for (int i = paramCount - 1; i >= 0; i--) {
                                         args[i] = stack[--top];
@@ -466,12 +554,16 @@ public class VmStack {
                                     if (r.exception() != null) {
                                         exception = r.exception();
                                         break except;
-                                    } else if (!func.getReturnType().isVoid())
-                                        stack[top++] = r.ret();
+                                    } else if (!func.getReturnType().isVoid()) {
+                                        unboxTo(top, r.ret());
+                                        top++;
+                                    }
                                 } else {
                                     int prevBase = base;
+                                    int argsEnd = top;
                                     base = top - func.getParameterCount();
                                     top = base + func.getRawFlow().getCode().getMaxLocals();
+                                    if (argsEnd < top) Arrays.fill(ptag, argsEnd, top, TAG_OBJ);
                                     frames[fp++] = new Frame(pc, prevBase, base, callableRef, closureContext);
                                     callableRef = func;
                                     code = func.getRawFlow().getCode();
@@ -493,6 +585,7 @@ public class VmStack {
                                 var func = new FunctionRef(f, List.of(typeArgs));
                                 if (func.isNative()) {
                                     var paramCount = func.getParameterCount();
+                                    for (int i = top - paramCount; i < top; i++) ensureBoxed(i);
                                     var args = new Value[paramCount];
                                     for (int i = paramCount - 1; i >= 0; i--) {
                                         args[i] = stack[--top];
@@ -502,12 +595,16 @@ public class VmStack {
                                     if (r.exception() != null) {
                                         exception = r.exception();
                                         break except;
-                                    } else if (!func.getReturnType().isVoid())
-                                        stack[top++] = r.ret();
+                                    } else if (!func.getReturnType().isVoid()) {
+                                        unboxTo(top, r.ret());
+                                        top++;
+                                    }
                                 } else {
                                     int prevBase = base;
+                                    int argsEnd = top;
                                     base = top - func.getParameterCount();
                                     top = base + func.getRawFlow().getCode().getMaxLocals();
+                                    if (argsEnd < top) Arrays.fill(ptag, argsEnd, top, TAG_OBJ);
                                     frames[fp++] = new Frame(pc, prevBase, base, callableRef, closureContext);
                                     callableRef = func;
                                     code = func.getRawFlow().getCode();
@@ -518,13 +615,16 @@ public class VmStack {
                                 }
                             }
                             case Bytecodes.CAST -> {
+                                ensureBoxed(top - 1);
                                 var inst = stack[--top];
                                 var type = (Type) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                                 if (type.isInstance(inst)) {
-                                    stack[top++] = inst;
+                                    unboxTo(top, inst);
+                                    top++;
                                     pc += 3;
                                 } else if (type.isAssignableFrom(inst.getValueType())) {
-                                    stack[top++] = inst;
+                                    unboxTo(top, inst);
+                                    top++;
                                     pc += 3;
                                 } else {
                                     exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.get().getType());
@@ -542,7 +642,7 @@ public class VmStack {
                             case Bytecodes.COPY -> {
                                 var sourceInst = stack[--top];
                                 var copy = sourceInst.resolveMv().copy(repository::allocateRootId);
-                                stack[top++] = copy.getReference();
+                                stack[top] = copy.getReference(); ptag[top++] = TAG_OBJ;
                                 pc++;
                             }
                             case Bytecodes.INDEX_SCAN -> {
@@ -552,7 +652,7 @@ public class VmStack {
                                 var from = loadIndexKey(index, stack[--top]);
                                 var result = callContext.instanceRepository().indexScan(from, to);
                                 var type = new ArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
-                                stack[top++] = new ArrayInstance(type, result).getReference();
+                                stack[top] = new ArrayInstance(type, result).getReference(); ptag[top++] = TAG_OBJ;
                                 pc += 3;
                             }
                             case Bytecodes.INDEX_COUNT -> {
@@ -561,7 +661,7 @@ public class VmStack {
                                 var to = loadIndexKey(index, stack[--top]);
                                 var from = loadIndexKey(index, stack[--top]);
                                 var count = callContext.instanceRepository().indexCount(from, to);
-                                stack[top++] = new LongValue(count);
+                                stack[top] = null; pstack[top] = count; ptag[top++] = TAG_LONG;
                                 pc += 3;
                             }
                             case Bytecodes.INDEX_SELECT -> {
@@ -569,18 +669,19 @@ public class VmStack {
                                 var result = callContext.instanceRepository().indexSelect(loadIndexKey(index, stack[--top]));
                                 var type = Types.getArrayType(index.getDeclaringType());
                                 var list = Instances.createArray(type, result);
-                                stack[top++] = list.getReference();
+                                stack[top] = list.getReference(); ptag[top++] = TAG_OBJ;
                                 pc += 3;
                             }
                             case Bytecodes.INDEX_SELECT_FIRST -> {
                                 var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                                 var result = callContext.instanceRepository().selectFirstByKey(loadIndexKey(index, stack[--top]));
-                                stack[top++] = Utils.orElse(result, new NullValue());
+                                stack[top] = Utils.orElse(result, new NullValue()); ptag[top++] = TAG_OBJ;
                                 pc += 3;
                             }
                             case Bytecodes.NON_NULL -> {
-                                var inst = stack[top - 1];
-                                if (inst.isNull()) {
+                                if (ptag[top - 1] != TAG_OBJ) {
+                                    pc++;
+                                } else if (stack[top - 1].isNull()) {
                                     exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
                                     ExceptionNative.Exception(exception, Instances.stringInstance("Null pointer"));
                                     break except;
@@ -588,467 +689,461 @@ public class VmStack {
                                     pc++;
                             }
                             case Bytecodes.SET_ELEMENT -> {
+                                ensureBoxed(top - 1);
                                 var e = stack[--top];
-                                var i = ((IntValue) stack[--top]).value;
+                                var i = (int) pstack[--top];
                                 var a = stack[--top].resolveArray();
                                 a.setElement(i, a.getInstanceType().getElementType().fromStackValue(e));
                                 pc++;
                             }
                             case Bytecodes.IF_EQ -> {
-                                if (((IntValue) stack[--top]).value == 0)
+                                if ((int) pstack[--top] == 0)
                                     pc += (short) ((bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff);
                                 else
                                     pc += 3;
                             }
                             case Bytecodes.IF_NE -> {
-                                if (((IntValue) stack[--top]).value != 0)
+                                if ((int) pstack[--top] != 0)
                                     pc += (short) ((bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff);
                                 else
                                     pc += 3;
                             }
                             case Bytecodes.GOTO -> pc += (short) ((bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff);
                             case Bytecodes.INT_ADD -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value + v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
+                                pstack[top] = v1 + v2; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.INT_SUB -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value - v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
+                                pstack[top] = v1 - v2; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.INT_MUL -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value * v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
+                                pstack[top] = v1 * v2; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.INT_DIV -> {
-                                var v2 = ((IntValue) stack[--top]).value;
-                                var v1 = ((IntValue) stack[--top]).value;
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
                                 if (v2 == 0) {
                                     exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
                                     ExceptionNative.Exception(exception, Instances.stringInstance("/ by zero"));
                                     break except;
                                 } else {
-                                    stack[top++] = new IntValue(v1 / v2);
+                                    pstack[top] = v1 / v2; ptag[top++] = TAG_INT;
                                     pc++;
                                 }
                             }
                             case Bytecodes.INT_REM -> {
-                                var v2 = ((IntValue) stack[--top]).value;
-                                var v1 = ((IntValue) stack[--top]).value;
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
                                 if (v2 == 0) {
                                     exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
                                     ExceptionNative.Exception(exception, Instances.stringInstance("/ by zero"));
                                     break except;
                                 } else {
-                                    stack[top++] = new IntValue(v1 % v2);
+                                    pstack[top] = v1 % v2; ptag[top++] = TAG_INT;
                                     pc++;
                                 }
                             }
                             case Bytecodes.LONG_ADD -> {
-                                var v2 = (LongValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value + v2.value);
+                                var v2 = pstack[--top];
+                                var v1 = pstack[--top];
+                                pstack[top] = v1 + v2; ptag[top++] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.LONG_SUB -> {
-                                var v2 = (LongValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value - v2.value);
+                                var v2 = pstack[--top];
+                                var v1 = pstack[--top];
+                                pstack[top] = v1 - v2; ptag[top++] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.LONG_MUL -> {
-                                var v2 = (LongValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value * v2.value);
+                                var v2 = pstack[--top];
+                                var v1 = pstack[--top];
+                                pstack[top] = v1 * v2; ptag[top++] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.LONG_DIV -> {
-                                var v2 = ((LongValue) stack[--top]).value;
-                                var v1 = ((LongValue) stack[--top]).value;
+                                var v2 = pstack[--top];
+                                var v1 = pstack[--top];
                                 if (v2 == 0) {
                                     exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
                                     ExceptionNative.Exception(exception, Instances.stringInstance("/ by zero"));
                                     break except;
                                 } else {
-                                    stack[top++] = new LongValue(v1 / v2);
+                                    pstack[top] = v1 / v2; ptag[top++] = TAG_LONG;
                                     pc++;
                                 }
                             }
                             case Bytecodes.LONG_REM -> {
-                                var v2 = ((LongValue) stack[--top]).value;
-                                var v1 = ((LongValue) stack[--top]).value;
+                                var v2 = pstack[--top];
+                                var v1 = pstack[--top];
                                 if (v2 == 0) {
                                     exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.type());
                                     ExceptionNative.Exception(exception, Instances.stringInstance("/ by zero"));
                                     break except;
                                 } else {
-                                    stack[top++] = new LongValue(v1 % v2);
+                                    pstack[top] = v1 % v2; ptag[top++] = TAG_LONG;
                                     pc++;
                                 }
                             }
                             case Bytecodes.DOUBLE_ADD -> {
-                                var v2 = (DoubleValue) stack[--top];
-                                var v0 = stack[--top];
-                                var v1 = (DoubleValue) v0;
-                                stack[top++] = new DoubleValue(v1.value + v2.value);
+                                var v2 = Double.longBitsToDouble(pstack[--top]);
+                                var v1 = Double.longBitsToDouble(pstack[--top]);
+                                pstack[top] = Double.doubleToRawLongBits(v1 + v2); ptag[top++] = TAG_DOUBLE;
                                 pc++;
                             }
                             case Bytecodes.DOUBLE_SUB -> {
-                                var v2 = (DoubleValue) stack[--top];
-                                var v1 = (DoubleValue) stack[--top];
-                                stack[top++] = new DoubleValue(v1.value - v2.value);
+                                var v2 = Double.longBitsToDouble(pstack[--top]);
+                                var v1 = Double.longBitsToDouble(pstack[--top]);
+                                pstack[top] = Double.doubleToRawLongBits(v1 - v2); ptag[top++] = TAG_DOUBLE;
                                 pc++;
                             }
                             case Bytecodes.DOUBLE_MUL -> {
-                                var v2 = (DoubleValue) stack[--top];
-                                var v1 = (DoubleValue) stack[--top];
-                                stack[top++] = new DoubleValue(v1.value * v2.value);
+                                var v2 = Double.longBitsToDouble(pstack[--top]);
+                                var v1 = Double.longBitsToDouble(pstack[--top]);
+                                pstack[top] = Double.doubleToRawLongBits(v1 * v2); ptag[top++] = TAG_DOUBLE;
                                 pc++;
                             }
                             case Bytecodes.DOUBLE_DIV -> {
-                                var v2 = (DoubleValue) stack[--top];
-                                var v1 = (DoubleValue) stack[--top];
-                                stack[top++] = new DoubleValue(v1.value / v2.value);
+                                var v2 = Double.longBitsToDouble(pstack[--top]);
+                                var v1 = Double.longBitsToDouble(pstack[--top]);
+                                pstack[top] = Double.doubleToRawLongBits(v1 / v2); ptag[top++] = TAG_DOUBLE;
                                 pc++;
                             }
                             case Bytecodes.DOUBLE_REM -> {
-                                var v2 = (DoubleValue) stack[--top];
-                                var v1 = (DoubleValue) stack[--top];
-                                stack[top++] = new DoubleValue(v1.value % v2.value);
+                                var v2 = Double.longBitsToDouble(pstack[--top]);
+                                var v1 = Double.longBitsToDouble(pstack[--top]);
+                                pstack[top] = Double.doubleToRawLongBits(v1 % v2); ptag[top++] = TAG_DOUBLE;
                                 pc++;
                             }
                             case Bytecodes.FLOAT_ADD -> {
-                                var v2 = (FloatValue) stack[--top];
-                                var v1 = (FloatValue) stack[--top];
-                                stack[top++] = new FloatValue(v1.value + v2.value);
+                                var v2 = Float.intBitsToFloat((int) pstack[--top]);
+                                var v1 = Float.intBitsToFloat((int) pstack[--top]);
+                                pstack[top] = Float.floatToRawIntBits(v1 + v2); ptag[top++] = TAG_FLOAT;
                                 pc++;
                             }
                             case Bytecodes.FLOAT_SUB -> {
-                                var v2 = (FloatValue) stack[--top];
-                                var v1 = (FloatValue) stack[--top];
-                                stack[top++] = new FloatValue(v1.value - v2.value);
+                                var v2 = Float.intBitsToFloat((int) pstack[--top]);
+                                var v1 = Float.intBitsToFloat((int) pstack[--top]);
+                                pstack[top] = Float.floatToRawIntBits(v1 - v2); ptag[top++] = TAG_FLOAT;
                                 pc++;
                             }
                             case Bytecodes.FLOAT_MUL -> {
-                                var v2 = (FloatValue) stack[--top];
-                                var v1 = (FloatValue) stack[--top];
-                                stack[top++] = new FloatValue(v1.value * v2.value);
+                                var v2 = Float.intBitsToFloat((int) pstack[--top]);
+                                var v1 = Float.intBitsToFloat((int) pstack[--top]);
+                                pstack[top] = Float.floatToRawIntBits(v1 * v2); ptag[top++] = TAG_FLOAT;
                                 pc++;
                             }
                             case Bytecodes.FLOAT_DIV -> {
-                                var v2 = (FloatValue) stack[--top];
-                                var v1 = (FloatValue) stack[--top];
-                                stack[top++] = new FloatValue(v1.value / v2.value);
+                                var v2 = Float.intBitsToFloat((int) pstack[--top]);
+                                var v1 = Float.intBitsToFloat((int) pstack[--top]);
+                                pstack[top] = Float.floatToRawIntBits(v1 / v2); ptag[top++] = TAG_FLOAT;
                                 pc++;
                             }
                             case Bytecodes.FLOAT_REM -> {
-                                var v2 = (FloatValue) stack[--top];
-                                var v1 = (FloatValue) stack[--top];
-                                stack[top++] = new FloatValue(v1.value % v2.value);
+                                var v2 = Float.intBitsToFloat((int) pstack[--top]);
+                                var v1 = Float.intBitsToFloat((int) pstack[--top]);
+                                pstack[top] = Float.floatToRawIntBits(v1 % v2); ptag[top++] = TAG_FLOAT;
                                 pc++;
                             }
                             case Bytecodes.INT_SHIFT_LEFT -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value << v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
+                                pstack[top] = v1 << v2; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.INT_SHIFT_RIGHT -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value >> v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
+                                pstack[top] = v1 >> v2; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.INT_UNSIGNED_SHIFT_RIGHT -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value >>> v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
+                                pstack[top] = v1 >>> v2; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.LONG_SHIFT_LEFT -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value << v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = pstack[--top];
+                                pstack[top] = v1 << v2; ptag[top++] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.LONG_SHIFT_RIGHT -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value >> v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = pstack[--top];
+                                pstack[top] = v1 >> v2; ptag[top++] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.LONG_UNSIGNED_SHIFT_RIGHT -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value >>> v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = pstack[--top];
+                                pstack[top] = v1 >>> v2; ptag[top++] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.INT_BIT_OR -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value | v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
+                                pstack[top] = v1 | v2; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.INT_BIT_AND -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value & v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
+                                pstack[top] = v1 & v2; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.INT_BIT_XOR -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value ^ v2.value);
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
+                                pstack[top] = v1 ^ v2; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.LONG_BIT_OR -> {
-                                var v2 = (LongValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value | v2.value);
+                                var v2 = pstack[--top];
+                                var v1 = pstack[--top];
+                                pstack[top] = v1 | v2; ptag[top++] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.LONG_BIT_AND -> {
-                                var v2 = (LongValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value & v2.value);
+                                var v2 = pstack[--top];
+                                var v1 = pstack[--top];
+                                pstack[top] = v1 & v2; ptag[top++] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.LONG_BIT_XOR -> {
-                                var v2 = (LongValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value ^ v2.value);
+                                var v2 = pstack[--top];
+                                var v1 = pstack[--top];
+                                pstack[top] = v1 ^ v2; ptag[top++] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.INT_NEG -> {
-                                var v = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(-v.value);
+                                pstack[top - 1] = -(int) pstack[top - 1];
                                 pc++;
                             }
                             case Bytecodes.LONG_NEG -> {
-                                var v = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(-v.value);
+                                pstack[top - 1] = -pstack[top - 1];
                                 pc++;
                             }
                             case Bytecodes.DOUBLE_NEG -> {
-                                var v = (DoubleValue) stack[--top];
-                                stack[top++] = new DoubleValue(-v.value);
+                                pstack[top - 1] = Double.doubleToRawLongBits(-Double.longBitsToDouble(pstack[top - 1]));
                                 pc++;
                             }
                             case Bytecodes.FLOAT_NEG -> {
-                                var v = (FloatValue) stack[--top];
-                                stack[top++] = new FloatValue(-v.value);
+                                pstack[top - 1] = Float.floatToRawIntBits(-Float.intBitsToFloat((int) pstack[top - 1]));
                                 pc++;
                             }
                             case Bytecodes.LONG_TO_DOUBLE -> {
-                                var v = (LongValue) stack[--top];
-                                stack[top++] = new DoubleValue(v.value);
+                                pstack[top - 1] = Double.doubleToRawLongBits((double) pstack[top - 1]);
+                                ptag[top - 1] = TAG_DOUBLE;
                                 pc++;
                             }
                             case Bytecodes.DOUBLE_TO_LONG -> {
-                                var v = (DoubleValue) stack[--top];
-                                stack[top++] = new LongValue((long) v.value);
+                                pstack[top - 1] = (long) Double.longBitsToDouble(pstack[top - 1]);
+                                ptag[top - 1] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.INT_TO_LONG -> {
-                                var v = (IntValue) stack[--top];
-                                stack[top++] = new LongValue(v.value);
+                                pstack[top - 1] = (int) pstack[top - 1];
+                                ptag[top - 1] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.INT_TO_CHAR -> {
-                                var v = (IntValue) stack[--top];
-                                stack[top++] = new IntValue((char) v.value);
+                                pstack[top - 1] = (char) (int) pstack[top - 1];
                                 pc++;
                             }
                             case Bytecodes.INT_TO_SHORT -> {
-                                var v = (IntValue) stack[--top];
-                                stack[top++] = new IntValue((short) v.value);
+                                pstack[top - 1] = (short) (int) pstack[top - 1];
                                 pc++;
                             }
                             case Bytecodes.INT_TO_BYTE -> {
-                                var v = (IntValue) stack[--top];
-                                stack[top++] = new IntValue((byte) v.value);
+                                pstack[top - 1] = (byte) (int) pstack[top - 1];
                                 pc++;
                             }
                             case Bytecodes.LONG_TO_INT -> {
-                                var v = (LongValue) stack[--top];
-                                stack[top++] = new IntValue((int) v.value);
+                                pstack[top - 1] = (int) pstack[top - 1];
+                                ptag[top - 1] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.INT_TO_DOUBLE -> {
-                                var v = (IntValue) stack[--top];
-                                stack[top++] = new DoubleValue(v.value);
+                                pstack[top - 1] = Double.doubleToRawLongBits((double) (int) pstack[top - 1]);
+                                ptag[top - 1] = TAG_DOUBLE;
                                 pc++;
                             }
                             case Bytecodes.DOUBLE_TO_INT -> {
-                                var v = (DoubleValue) stack[--top];
-                                stack[top++] = new IntValue((int) v.value);
+                                pstack[top - 1] = (int) Double.longBitsToDouble(pstack[top - 1]);
+                                ptag[top - 1] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.INT_TO_FLOAT -> {
-                                var v = (IntValue) stack[--top];
-                                stack[top++] = new FloatValue((float) v.value);
+                                pstack[top - 1] = Float.floatToRawIntBits((float) (int) pstack[top - 1]);
+                                ptag[top - 1] = TAG_FLOAT;
                                 pc++;
                             }
                             case Bytecodes.LONG_TO_FLOAT -> {
-                                var v = (LongValue) stack[--top];
-                                stack[top++] = new FloatValue((float) v.value);
+                                pstack[top - 1] = Float.floatToRawIntBits((float) pstack[top - 1]);
+                                ptag[top - 1] = TAG_FLOAT;
                                 pc++;
                             }
                             case Bytecodes.DOUBLE_TO_FLOAT -> {
-                                var v = (DoubleValue) stack[--top];
-                                stack[top++] = new FloatValue((float) v.value);
+                                pstack[top - 1] = Float.floatToRawIntBits((float) Double.longBitsToDouble(pstack[top - 1]));
+                                ptag[top - 1] = TAG_FLOAT;
                                 pc++;
                             }
                             case Bytecodes.FLOAT_TO_INT -> {
-                                var v = (FloatValue) stack[--top];
-                                stack[top++] = new IntValue((int) v.value);
+                                pstack[top - 1] = (int) Float.intBitsToFloat((int) pstack[top - 1]);
+                                ptag[top - 1] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.FLOAT_TO_LONG -> {
-                                var v = (FloatValue) stack[--top];
-                                stack[top++] = new LongValue((long) v.value);
+                                pstack[top - 1] = (long) Float.intBitsToFloat((int) pstack[top - 1]);
+                                ptag[top - 1] = TAG_LONG;
                                 pc++;
                             }
                             case Bytecodes.FLOAT_TO_DOUBLE -> {
-                                var v = (FloatValue) stack[--top];
-                                stack[top++] = new DoubleValue(v.value);
+                                pstack[top - 1] = Double.doubleToRawLongBits((double) Float.intBitsToFloat((int) pstack[top - 1]));
+                                ptag[top - 1] = TAG_DOUBLE;
                                 pc++;
                             }
                             case Bytecodes.EQ -> {
-                                var v = ((IntValue) stack[--top]).value;
-                                stack[top++] = v == 0 ? one : zero;
+                                pstack[top - 1] = (int) pstack[top - 1] == 0 ? 1 : 0;
                                 pc++;
                             }
                             case Bytecodes.NE -> {
-                                var v = ((IntValue) stack[--top]).value;
-                                stack[top++] = v != 0 ? one : zero;
+                                pstack[top - 1] = (int) pstack[top - 1] != 0 ? 1 : 0;
                                 pc++;
                             }
                             case Bytecodes.GE -> {
-                                var v = ((IntValue) stack[--top]).value;
-                                stack[top++] = v >= 0 ? one : zero;
+                                pstack[top - 1] = (int) pstack[top - 1] >= 0 ? 1 : 0;
                                 pc++;
                             }
                             case Bytecodes.GT -> {
-                                var v = ((IntValue) stack[--top]).value;
-                                stack[top++] = v > 0 ? one : zero;
+                                pstack[top - 1] = (int) pstack[top - 1] > 0 ? 1 : 0;
                                 pc++;
                             }
                             case Bytecodes.LT -> {
-                                var v = ((IntValue) stack[--top]).value;
-                                stack[top++] = v < 0 ? one : zero;
+                                pstack[top - 1] = (int) pstack[top - 1] < 0 ? 1 : 0;
                                 pc++;
                             }
                             case Bytecodes.LE -> {
-                                var v = ((IntValue) stack[--top]).value;
-                                stack[top++] = v <= 0 ? one : zero;
+                                pstack[top - 1] = (int) pstack[top - 1] <= 0 ? 1 : 0;
                                 pc++;
                             }
                             case Bytecodes.INT_COMPARE -> {
-                                var v2 = ((IntValue) stack[--top]).value;
-                                var v1 = ((IntValue) stack[--top]).value;
-                                var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
-                                stack[top++] = new IntValue(r);
+                                var v2 = (int) pstack[--top];
+                                var v1 = (int) pstack[--top];
+                                pstack[top] = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1); ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.LONG_COMPARE -> {
-                                var v2 = ((LongValue) stack[--top]).value;
-                                var v1 = ((LongValue) stack[--top]).value;
-                                var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
-                                stack[top++] = new IntValue(r);
+                                var v2 = pstack[--top];
+                                var v1 = pstack[--top];
+                                pstack[top] = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1); ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.DOUBLE_COMPARE -> {
-                                var v2 = ((DoubleValue) stack[--top]).value;
-                                var v1 = ((DoubleValue) stack[--top]).value;
-                                var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
-                                stack[top++] = new IntValue(r);
+                                var v2 = Double.longBitsToDouble(pstack[--top]);
+                                var v1 = Double.longBitsToDouble(pstack[--top]);
+                                pstack[top] = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1); ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.FLOAT_COMPARE -> {
-                                var v2 = ((FloatValue) stack[--top]).value;
-                                var v1 = ((FloatValue) stack[--top]).value;
-                                var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
-                                stack[top++] = new IntValue(r);
+                                var v2 = Float.intBitsToFloat((int) pstack[--top]);
+                                var v1 = Float.intBitsToFloat((int) pstack[--top]);
+                                pstack[top] = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1); ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.REF_COMPARE_EQ -> {
-                                var v2 = (Value) stack[--top];
-                                var v1 = (Value) stack[--top];
-                                stack[top++] = v1.equals(v2) ? one : zero;
+                                ensureBoxed(top - 1); ensureBoxed(top - 2);
+                                var v2 = stack[--top];
+                                var v1 = stack[--top];
+                                stack[top] = null; pstack[top] = v1.equals(v2) ? 1 : 0; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.REF_COMPARE_NE -> {
-                                var v2 = (Value) stack[--top];
-                                var v1 = (Value) stack[--top];
-                                stack[top++] = !v1.equals(v2) ? one : zero;
+                                ensureBoxed(top - 1); ensureBoxed(top - 2);
+                                var v2 = stack[--top];
+                                var v1 = stack[--top];
+                                stack[top] = null; pstack[top] = !v1.equals(v2) ? 1 : 0; ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.GET_FIELD -> {
                                 var i = stack[--top].resolveMvObject();
                                 var p = (FieldRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                                stack[top++] = i.fields[p.getRawField().offset].value.toStackValue();
+                                unboxTo(top, i.fields[p.getRawField().offset].value.toStackValue());
+                                top++;
                                 pc += 3;
                             }
                             case Bytecodes.GET_METHOD -> {
                                 var i = stack[--top].resolveObject();
                                 var methodRef = (MethodRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                                stack[top++] = i.getFunction(methodRef);
+                                stack[top] = i.getFunction(methodRef); ptag[top++] = TAG_OBJ;
                                 pc += 3;
                             }
                             case Bytecodes.GET_STATIC_FIELD -> {
                                 var fieldRef = (FieldRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                                 var staticFieldTable = StaticFieldTable.getInstance(fieldRef.getDeclaringType(), ContextUtil.getEntityContext());
-                                stack[top++] = staticFieldTable.get(fieldRef.getRawField()).toStackValue();
+                                unboxTo(top, staticFieldTable.get(fieldRef.getRawField()).toStackValue());
+                                top++;
                                 pc += 3;
                             }
                             case Bytecodes.GET_STATIC_METHOD -> {
                                 var methodRef = (MethodRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                                stack[top++] = new FlowValue(methodRef, null);
+                                stack[top] = new FlowValue(methodRef, null); ptag[top++] = TAG_OBJ;
                                 pc += 3;
                             }
                             case Bytecodes.INSTANCE_OF -> {
+                                ensureBoxed(top - 1);
                                 var v = stack[--top];
                                 var targetType = (Type) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                                stack[top++] = targetType.isInstance(v) ? one : zero;
+                                stack[top] = null; pstack[top] = targetType.isInstance(v) ? 1 : 0; ptag[top++] = TAG_INT;
                                 pc += 3;
                             }
                             case Bytecodes.ARRAY_LENGTH -> {
                                 var a = stack[--top].resolveArray();
-                                stack[top++] = new IntValue(a.length());
+                                stack[top] = null; pstack[top] = a.length(); ptag[top++] = TAG_INT;
                                 pc++;
                             }
                             case Bytecodes.STORE -> {
                                 var index = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                var v = stack[--top];
-                                stack[base + index] = v;
+                                --top;
+                                var dst = base + index;
+                                stack[dst] = stack[top]; pstack[dst] = pstack[top]; ptag[dst] = ptag[top];
                                 pc += 3;
                             }
                             case Bytecodes.LOAD -> {
                                 var index = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                stack[top++] = stack[base + index];
+                                var src = base + index;
+                                stack[top] = stack[src]; pstack[top] = pstack[src]; ptag[top] = ptag[src];
+                                top++;
                                 pc += 3;
                             }
                             case Bytecodes.LOAD_CONTEXT_SLOT -> {
                                 var contextIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var slotIndex = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
-                                stack[top++] = Objects.requireNonNull(closureContext).get(contextIndex, slotIndex);
+                                unboxTo(top, Objects.requireNonNull(closureContext).get(contextIndex, slotIndex));
+                                top++;
                                 pc += 5;
                             }
                             case Bytecodes.STORE_CONTEXT_SLOT -> {
                                 var contextIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var slotIndex = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
+                                ensureBoxed(top - 1);
                                 Objects.requireNonNull(closureContext).set(contextIndex, slotIndex, stack[--top]);
                                 pc += 5;
                             }
                             case Bytecodes.LOAD_CONSTANT -> {
                                 var value = (Value) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                                stack[top++] = value;
+                                unboxTo(top, value);
+                                top++;
                                 pc += 3;
                             }
                             case Bytecodes.NEW_ARRAY_WITH_DIMS -> {
@@ -1057,10 +1152,10 @@ public class VmStack {
                                 var dimensions = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
                                 var dims = new int[dimensions];
                                 for (int i = dimensions - 1; i >= 0; i--) {
-                                    dims[i] = ((IntValue) stack[--top]).value;
+                                    dims[i] = (int) pstack[--top];
                                 }
                                 Instances.initArray(array, dims, 0);
-                                stack[top++] = array.getReference();
+                                stack[top] = array.getReference(); ptag[top++] = TAG_OBJ;
                                 pc += 5;
                             }
                             case Bytecodes.VOID_RETURN -> {
@@ -1070,6 +1165,7 @@ public class VmStack {
                                     callContext.instanceRepository().updateMemoryIndex(obj);
                                 }
                                 Arrays.fill(stack, base, base + code.getFrameSize(), null);
+                                Arrays.fill(ptag, base, base + code.getFrameSize(), TAG_OBJ);
                                 if (fp == 0)
                                     return FlowExecResult.of(null);
                                 var frame = frames[--fp];
@@ -1084,14 +1180,14 @@ public class VmStack {
                                 closureContext = frame.closureContext;
                             }
                             case Bytecodes.DUP -> {
-                                stack[top] = stack[top++ - 1];
+                                stack[top] = stack[top - 1]; pstack[top] = pstack[top - 1]; ptag[top] = ptag[top - 1];
+                                top++;
                                 pc++;
                             }
                             case Bytecodes.DUP2 -> {
-                                var v1 = stack[top - 2];
-                                var v2 = stack[top - 1];
-                                stack[top++] = v1;
-                                stack[top++] = v2;
+                                stack[top] = stack[top - 2]; pstack[top] = pstack[top - 2]; ptag[top] = ptag[top - 2];
+                                stack[top + 1] = stack[top - 1]; pstack[top + 1] = pstack[top - 1]; ptag[top + 1] = ptag[top - 1];
+                                top += 2;
                                 pc++;
                             }
                             case Bytecodes.POP -> {
@@ -1099,38 +1195,38 @@ public class VmStack {
                                 pc++;
                             }
                             case Bytecodes.DUP_X1 -> {
-                                var v = stack[top] = stack[top - 1];
-                                stack[top - 1] = stack[top - 2];
-                                stack[top - 2] = v;
+                                stack[top] = stack[top - 1]; pstack[top] = pstack[top - 1]; ptag[top] = ptag[top - 1];
+                                stack[top - 1] = stack[top - 2]; pstack[top - 1] = pstack[top - 2]; ptag[top - 1] = ptag[top - 2];
+                                stack[top - 2] = stack[top]; pstack[top - 2] = pstack[top]; ptag[top - 2] = ptag[top];
                                 top++;
                                 pc++;
                             }
                             case Bytecodes.DUP_X2 -> {
-                                var v = stack[top] = stack[top - 1];
-                                stack[top - 1] = stack[top - 2];
-                                stack[top - 2] = stack[top - 3];
-                                stack[top - 3] = v;
+                                stack[top] = stack[top - 1]; pstack[top] = pstack[top - 1]; ptag[top] = ptag[top - 1];
+                                stack[top - 1] = stack[top - 2]; pstack[top - 1] = pstack[top - 2]; ptag[top - 1] = ptag[top - 2];
+                                stack[top - 2] = stack[top - 3]; pstack[top - 2] = pstack[top - 3]; ptag[top - 2] = ptag[top - 3];
+                                stack[top - 3] = stack[top]; pstack[top - 3] = pstack[top]; ptag[top - 3] = ptag[top];
                                 top++;
                                 pc++;
                             }
                             case Bytecodes.LOAD_PARENT -> {
                                 var v = stack[--top];
                                 var idx = (bytes[pc + 1] & 0xff) << 8 | (bytes[pc + 2] & 0xff);
-                                stack[top++] = requireNonNull(v.resolveMvObject().getParent(idx)).getReference();
+                                stack[top] = requireNonNull(v.resolveMvObject().getParent(idx)).getReference(); ptag[top++] = TAG_OBJ;
                                 pc += 3;
                             }
                             case Bytecodes.LOAD_CHILDREN -> {
                                 var v = stack[--top];
-                                stack[top++] = Instances.arrayValue(Utils.map(v.resolveMvObject().getChildren(), Instance::getReference));
+                                stack[top] = Instances.arrayValue(Utils.map(v.resolveMvObject().getChildren(), Instance::getReference)); ptag[top++] = TAG_OBJ;
                                 pc++;
                             }
                             case Bytecodes.ID -> {
                                 var v = stack[--top];
-                                stack[top++] = Instances.stringInstance(v.resolveMvObject().getStringId());
+                                stack[top] = Instances.stringInstance(v.resolveMvObject().getStringId()); ptag[top++] = TAG_OBJ;
                                 pc++;
                             }
                             case Bytecodes.TABLE_SWITCH -> {
-                                var k = ((IntValue) stack[--top]).value;
+                                var k = (int) pstack[--top];
                                 int p = pc + 4 & 0xfffffffc;
                                 int defaultOffset = (bytes[p] & 0xff) << 24 | (bytes[p + 1] & 0xff) << 16
                                         | (bytes[p + 2] & 0xff) << 8 | bytes[p + 3] & 0xff;
@@ -1149,7 +1245,7 @@ public class VmStack {
                                 pc += offset;
                             }
                             case Bytecodes.LOOKUP_SWITCH -> {
-                                var k = ((IntValue) stack[--top]).value;
+                                var k = (int) pstack[--top];
                                 int p = pc + 4 & 0xfffffffc;
                                 int offset = (bytes[p] & 0xff) << 24 | (bytes[p + 1] & 0xff) << 16
                                         | (bytes[p + 2] & 0xff) << 8 | bytes[p + 3] & 0xff;
@@ -1180,6 +1276,7 @@ public class VmStack {
                             case Bytecodes.SET_FIELD_REFRESH -> {
                                 int fieldIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var field = (FieldRef) constants[fieldIndex];
+                                ensureBoxed(top - 1);
                                 var value = stack[--top];
                                 var instance = stack[--top].resolveMvObject();
                                 instance.fields[field.getRawField().offset].value = field.getPropertyType().fromStackValue(value);
@@ -1199,7 +1296,10 @@ public class VmStack {
                             pc = h.pc;
                         else {
                             var f = frames[h.fp];
-                            Arrays.fill(stack, f.base + f.callableRef.getCode().getFrameSize(), base + code.getFrameSize(), null);
+                            int cleanFrom = f.base + f.callableRef.getCode().getFrameSize();
+                            int cleanTo = base + code.getFrameSize();
+                            Arrays.fill(stack, cleanFrom, cleanTo, null);
+                            Arrays.fill(ptag, cleanFrom, cleanTo, TAG_OBJ);
                             fp = h.fp;
                             base = f.base;
                             top = f.top;
@@ -1210,10 +1310,11 @@ public class VmStack {
                             constants = callableRef.getTypeMetadata().getValues();
                             closureContext = f.closureContext;
                         }
-                        stack[top++] = exception.getReference();
+                        stack[top] = exception.getReference(); ptag[top++] = TAG_OBJ;
                     }
                     else {
                         Arrays.fill(stack, 0, base + code.getFrameSize(), null);
+                        Arrays.fill(ptag, 0, base + code.getFrameSize(), TAG_OBJ);
                         return FlowExecResult.ofException(exception);
                     }
 
