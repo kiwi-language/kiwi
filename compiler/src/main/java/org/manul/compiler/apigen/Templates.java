@@ -30,12 +30,10 @@ public class Templates {
             """;
 
     public static final String CALL_API = """
-        const API_BASE_URL = '';
-
         let auth: string | undefined
-        
+
         let token: string | undefined;
-        
+
         export function setToken(newToken: string | undefined) {
             token = newToken;
         }

@@ -1412,19 +1412,19 @@ curl -X DELETE -u elastic:PASSWORD http://localhost:9200/{index_name}
 # See recovery session for Python script example
 ```
 
-### Deployment Process
+### Local Installation Process
 
-**Proper Code Deployment** (updated Feb 2026):
+**Local Installation** (updated Feb 2026):
 
 ```bash
 # 1. Build distribution
 mvn clean install -DskipTests -pl dist -am
 
-# 2. Run deploy script
-./deploy.sh
+# 2. Run install script
+./install.sh
 ```
 
-**What deploy.sh does**:
+**What install.sh does**:
 1. Stops the LaunchAgent service
 2. Removes old `~/.manul` installation
 3. Unpacks `dist/target/manul.zip` to `~/.manul`
@@ -1432,7 +1432,7 @@ mvn clean install -DskipTests -pl dist -am
 5. Starts service via LaunchAgent
 6. Verifies server is running on port 8080
 
-**Manual Deployment** (if script fails):
+**Manual Installation** (if script fails):
 ```bash
 launchctl stop com.manul.server
 launchctl unload ~/Library/LaunchAgents/com.manul.server.plist
@@ -1443,11 +1443,223 @@ cp -f /etc/manul/manul.yml ~/.manul/conf
 launchctl load ~/Library/LaunchAgents/com.manul.server.plist
 ```
 
-**Important**: Simply running `mvn clean install` does NOT deploy code to the running server. You must:
+**Important**: Simply running `mvn clean install` does NOT update the running server. You must:
 1. Build the distribution package
 2. Stop the service
 3. Replace `~/.manul` with new build
 4. Restart the service
+
+**Note**: This is LOCAL INSTALLATION only. For production deployment, see the deployment section below.
+
+---
+
+## Production Deployment Process
+
+### Overview
+
+**Deployment Architecture**:
+- Code merged to `main` branch does NOT automatically deploy
+- Deployment triggered by recreating the `0.0.1-alpha` release tag
+- GitHub Actions builds native images for all platforms (Mac, Linux, Windows, Alpine)
+- Release artifacts uploaded to GitHub Releases and Gitee
+
+**Git Workflow Requirements**:
+- Feature branches must be rebased against `origin/main` before creating PR
+- All commits must be squashed into a **single commit** per PR
+- This ensures clean, linear git history on main branch
+
+**CI/CD Pipeline**:
+1. **Pull Request** → Triggers `.github/workflows/ci.yml` (runs `mvn -B verify`)
+2. **Release Creation** → Triggers `.github/workflows/release-asset-upload.yml` (builds native images)
+
+### Automated MR and Deployment Script
+
+**Full MR + Deployment** (`./mr-and-deploy.sh`):
+
+Automates the entire process from feature branch to production deployment.
+
+```bash
+# Full workflow with tests
+./mr-and-deploy.sh feat/new-feature
+
+# Skip local tests (CI will run them)
+./mr-and-deploy.sh fix/bug-123 --skip-tests
+
+# Only create PR, skip deployment
+./mr-and-deploy.sh refactor/cleanup --skip-deploy
+```
+
+**What it does**:
+1. Runs `mvn clean install` with tests locally (unless `--skip-tests`)
+2. Creates feature branch with given name
+3. Rebases against `origin/main` to ensure branch is up-to-date
+4. Squashes all commits into a single commit for clean history
+5. Force-pushes branch to GitHub
+6. Creates Pull Request
+7. Waits for GitHub Actions CI to complete
+8. Merges PR if all checks pass
+9. Recreates `0.0.1-alpha` release to trigger deployment
+
+**Flags**:
+- `--skip-tests` - Skip local test run (GitHub Actions will still run tests)
+- `--skip-pr` - Skip PR creation/merge (use if PR already exists)
+- `--skip-deploy` - Skip deployment step (only do MR)
+
+### Deploy-Only Script
+
+**Deploy without MR** (`./deploy.sh`):
+
+For when code is already merged and you just want to trigger deployment.
+
+```bash
+./deploy.sh
+```
+
+**What it does**:
+1. Ensures you're on `main` branch with clean working directory
+2. Pulls latest changes
+3. Deletes `0.0.1-alpha` tag locally and remotely
+4. Recreates tag at current HEAD
+5. Pushes tag to trigger GitHub Actions release build
+
+**Requirements**:
+- Must be on `main` branch
+- Working directory must be clean
+- GitHub CLI (`gh`) must be installed and authenticated
+
+### Manual Process
+
+If scripts fail or you prefer manual control:
+
+**1. Create and Merge PR:**
+```bash
+# Ensure tests pass
+mvn clean install
+
+# Create branch
+git checkout -b feat/my-feature
+
+# Make changes, commit them
+git add .
+git commit -m "feat: my feature description"
+
+# Rebase against origin/main
+git fetch origin main
+git rebase origin/main
+
+# Squash commits into one (if multiple commits)
+git rebase -i origin/main
+# In editor: change 'pick' to 'squash' for all except first commit
+
+# Push with force (due to rebase)
+git push -u origin feat/my-feature --force-with-lease
+
+# Create PR via GitHub UI or:
+gh pr create --base main --head feat/my-feature --fill
+
+# Wait for CI, then merge
+gh pr merge feat/my-feature --squash --delete-branch
+```
+
+**2. Deploy (Recreate Release):**
+```bash
+# Switch to main and pull
+git checkout main
+git pull origin main
+
+# Delete old tag
+git tag -d 0.0.1-alpha
+git push origin :refs/tags/0.0.1-alpha
+
+# Create and push new tag
+git tag -a 0.0.1-alpha -m "Release 0.0.1-alpha - $(date +%Y-%m-%d)"
+git push origin 0.0.1-alpha
+```
+
+**3. Monitor Build:**
+- GitHub Actions: https://github.com/YOUR_REPO/actions
+- Release: https://github.com/YOUR_REPO/releases/tag/0.0.1-alpha
+
+### GitHub Actions Workflows
+
+**ci.yml** - Continuous Integration
+- Triggered on: PR to `main`, push to `main`
+- Runs: `mvn -B verify`
+- JDK: 21 (Temurin)
+
+**release-asset-upload.yml** - Release Build
+- Triggered on: Release created, tag push
+- Builds native images for:
+  - macOS (aarch64, amd64)
+  - Windows (amd64)
+  - Linux (amd64, aarch64)
+  - Alpine Linux (amd64, aarch64)
+- Uses GraalVM native-image
+- Uploads artifacts to:
+  - GitHub Releases (for GitHub users)
+  - Aliyun OSS at `pkg.metavm.tech` (faster international downloads)
+- **Build time**: ~4 minutes (previously 32+ minutes with Gitee)
+
+### Deployment Checklist
+
+Before deploying:
+- [ ] All tests pass locally
+- [ ] Code reviewed and approved
+- [ ] Changes documented
+- [ ] Breaking changes communicated
+- [ ] Database migrations prepared (if needed)
+
+After deploying:
+- [ ] Verify release build completes successfully (~4 minutes)
+- [ ] Verify GitHub Release created with artifacts
+- [ ] Verify artifacts uploaded to OSS (`https://pkg.metavm.tech/releases/0.0.1-alpha/`)
+- [ ] Test download from OSS
+- [ ] Update documentation if needed
+- [ ] Announce release if significant changes
+
+---
+
+## Aliyun OSS Infrastructure
+
+### Package Distribution
+
+**Purpose**: Fast, global distribution of Manul release binaries
+
+**Bucket Details**:
+- Bucket: `manul-packages`
+- Region: `oss-cn-hongkong` (Hong Kong)
+- Domain: `pkg.metavm.tech`
+- Access: Public read
+
+**Download URLs**:
+```
+# Versioned
+https://pkg.metavm.tech/releases/0.0.1-alpha/manul-macos-aarch64.tar.gz
+https://pkg.metavm.tech/releases/0.0.1-alpha/manul-linux-amd64.tar.gz
+
+# Latest
+https://pkg.metavm.tech/releases/latest/manul-macos-aarch64.tar.gz
+https://pkg.metavm.tech/releases/latest/manul-linux-amd64.tar.gz
+```
+
+**GitHub Secrets Required**:
+- `ALIYUN_ACCESS_KEY_ID`
+- `ALIYUN_ACCESS_KEY_SECRET`
+
+**Performance**:
+- GitHub Actions → OSS upload: ~2 minutes ✅
+- GitHub Actions → Gitee upload: ~30+ minutes ❌
+- **Speed improvement**: ~15x faster
+
+**Setup Script**: `./setup-aliyun-oss.py`
+- Creates bucket
+- Configures DNS
+- Sets CORS policy
+- Creates directory structure
+
+**Full Documentation**: See `ALIYUN_OSS_SETUP.md`
+
+---
 
 ### Elasticsearch Recovery Case Study (Feb 2026)
 

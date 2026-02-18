@@ -4,3 +4,55 @@
 /server/src/test/resources/bytes/1250705063
 /server/src/test/resources/bytes/1256205279
 /server/src/test/resources/bytes/1258405178
+
+# Build artifacts
+target/
+*.class
+*.jar
+!**/src/**/lib/*.jar
+*.war
+*.ear
+*.mva
+*.mvclass
+dependency-reduced-pom.xml
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# Manul runtime
+.manul/
+.metavm/
+manul.yml
+!**/src/**/manul.yml
+
+# Logs
+logs/
+*.log
+
+# Test resources
+test/src/test/resources/.metavm/
+test/src/test/resources/bugfix/
+test/src/test/resources/initializers/
+test/src/test/resources/target/
+test/src/test/resources/user/.manul/
+test/src/test/resources/user/target/
+
+# Stdlib
+stdlib/.metavm/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Scripts (local only)
+build.sh
+test.sh
+*.txt
+!README*.txt
