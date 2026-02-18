@@ -231,17 +231,12 @@ jobs:
           merge-multiple: true
 
       - name: Install ossutil
-        run: |
-          wget -q https://gosspublic.alicdn.com/ossutil/1.7.19/ossutil64
-          chmod +x ossutil64
-          sudo mv ossutil64 /usr/local/bin/
+        run: curl -sL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
 
       - name: Upload to OSS
         env:
-          ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
-          ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
-          ALIYUN_OSS_ENDPOINT: https://oss-cn-hongkong.aliyuncs.com
-          ALIYUN_OSS_BUCKET: manul-packages
+          OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
         run: |
           # Get release version (fallback to 'test' for non-tag triggers)
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
@@ -251,30 +246,25 @@ jobs:
           fi
           echo "Uploading release $TAG_NAME to Aliyun OSS..."
 
-          # Configure ossutil
-          ossutil64 config -e "$ALIYUN_OSS_ENDPOINT" \
-            -i "$ALIYUN_ACCESS_KEY_ID" \
-            -k "$ALIYUN_ACCESS_KEY_SECRET" \
-            -L CH
+          OSS_BUCKET="manul-packages"
+          OSS_ENDPOINT="https://oss-cn-hongkong.aliyuncs.com"
 
-          # Upload all artifacts to OSS
-          # Upload to versioned directory
           for file in manul-*; do
             if [ -f "$file" ]; then
               echo "Uploading $file..."
-              ossutil64 cp "$file" \
-                "oss://$ALIYUN_OSS_BUCKET/releases/$TAG_NAME/$file" \
-                --meta "Content-Type:application/octet-stream" \
-                -f
-
+              # Upload to versioned directory
+              ossutil cp "$file" \
+                "oss://$OSS_BUCKET/releases/$TAG_NAME/$file" \
+                --endpoint "$OSS_ENDPOINT" \
+                --force
               # Also upload to 'latest' directory
-              ossutil64 cp "$file" \
-                "oss://$ALIYUN_OSS_BUCKET/releases/latest/$file" \
-                --meta "Content-Type:application/octet-stream" \
-                -f
+              ossutil cp "$file" \
+                "oss://$OSS_BUCKET/releases/latest/$file" \
+                --endpoint "$OSS_ENDPOINT" \
+                --force
             fi
           done
 
-          echo "✓ All artifacts uploaded to OSS"
+          echo "All artifacts uploaded to OSS"
           echo "Download URL: https://pkg.metavm.tech/releases/$TAG_NAME/"
           echo "Latest URL: https://pkg.metavm.tech/releases/latest/"
