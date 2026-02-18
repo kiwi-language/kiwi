@@ -221,7 +221,26 @@ public class ClassFileReader {
         var type = field.getType().getUnderlyingType();
         if (type instanceof ClassType classType && classType.getKlass() == StdKlass.index.get()) {
             var initializer = Objects.requireNonNull(field.getInitializer());
-            var keyType = classType.getTypeArguments().getFirst();
+            var typeArgs = classType.getTypeArguments();
+            if (typeArgs.isEmpty()) {
+                log.error("IndexDef field '{}' in class '{}' has no type arguments! " +
+                    "ClassType: {}, Klass: {}, Type: {}",
+                    field.getName(), field.getDeclaringType().getName(),
+                    classType, classType.getKlass(), type);
+                throw new IllegalStateException(
+                    String.format("IndexDef field '%s' has no type arguments", field.getName())
+                );
+            }
+            var keyType = typeArgs.getFirst();
+            if (keyType == null) {
+                log.error("IndexDef field '{}' in class '{}' has null type argument! " +
+                    "TypeArgs: {}, ClassType: {}",
+                    field.getName(), field.getDeclaringType().getName(),
+                    typeArgs, classType);
+                throw new IllegalStateException(
+                    String.format("IndexDef field '%s' has null type argument", field.getName())
+                );
+            }
             if(initializer.getCode().getNodes().isEmpty())
                 initializer.getCode().rebuildNodes();
             var nodes = initializer.getCode().getNodes();
