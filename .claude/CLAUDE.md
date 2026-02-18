@@ -150,10 +150,18 @@ The `meta` module runs annotation processors during Java compilation that transf
 
 ## Recent Changes
 
-**Circular static init fix** (Feb 2026):
-- Fixed `__klass__` field in EntityTransformer from eager to lazy initialization
-- Root cause: circular `<clinit>` chain between Type, Klass, AnyType classes
-- Manifested only on Temurin JDK 21 (CI), not GraalVM (local)
+**Dual Stack VM** (Feb 2026, uncommitted):
+- Added parallel `long[] pstack` + `byte[] ptag` arrays to `VmStack` alongside `Value[] stack`
+- Primitives (int/long/float/double) stored as raw bits, eliminating boxing in arithmetic/comparison/load/store ops
+- Bridge methods: `unboxTo()` (Value→pstack), `ensureBoxed()` (pstack→Value), `boxFromTag()` (factory)
+- Boxing only at boundaries: native method calls, field access, closure capture, type checks
+- All bytecode handlers converted; 595 tests pass with zero regressions
+- See `.claude/docs/architecture.md` "VmStack — Dual Stack VM Interpreter" for full details
+
+**PR #120**: Aliyun OSS release uploads + circular static init fix (Feb 2026)
+- Replaced Gitee uploads with Aliyun OSS (37s vs 30+ min)
+- Fixed `__klass__` lazy init in EntityTransformer (circular `<clinit>` between Type/Klass/AnyType)
+- Added ES rebuild-index endpoint, deployment scripts, .claude docs
 
 **PR #117**: Fix API child object updates
 **PR #116**: REST-Compliant API (removed `/api` prefix, plural nouns, PATCH with ID)

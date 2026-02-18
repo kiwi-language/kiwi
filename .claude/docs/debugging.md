@@ -80,6 +80,15 @@ Types.getAnyType() → AnyType extends Type
 - Malformed bytecode can crash VM
 - Compiler guarantees correctness
 
+### 14. Dual Stack Tag Consistency
+- Every stack slot has three components: `stack[i]`, `pstack[i]`, `ptag[i]`
+- When `ptag[i] == TAG_OBJ`, the value is in `stack[i]` and `pstack[i]` is garbage
+- When `ptag[i] != TAG_OBJ`, the value is in `pstack[i]` and `stack[i]` MUST be null (to avoid retaining dead object references in the pooled VmStack)
+- Any operation that moves values of unknown type (LOAD, STORE, DUP, DUP_X1, DUP_X2, DUP2, RETURN) must copy all three components
+- Forgetting to `ensureBoxed()` before passing to native methods or field stores will cause ClassCastException or wrong values
+- Forgetting `Arrays.fill(ptag, ..., TAG_OBJ)` when initializing new frame locals or cleaning up on return will leave stale tags from previous executions (VmStack is pooled)
+- `ensureBoxedRange(base, top)` is required before closure capture since `ClosureContext` stores `Value[]`
+
 ### 9. Exception Handling Overhead
 - `TRY_ENTER`/`TRY_EXIT` bytecodes add stack frame overhead
 - Nested try blocks compound the cost
@@ -129,3 +138,13 @@ Types.getAnyType() → AnyType extends Type
 **Docker testing** (for CI reproduction):
 - `Dockerfile.test` exists for running tests in ubuntu+JDK21 environment
 - Requires Docker daemon running: `docker build -f Dockerfile.test -t manul-test . && docker run manul-test`
+
+**workflow_dispatch won't trigger from feature branches**:
+- GitHub only allows `workflow_dispatch` for workflows registered on the default branch
+- Workaround: add test jobs (with `if: github.event_name == 'workflow_dispatch'`) to the existing workflow file instead of creating new workflow files on feature branches
+
+**Release workflow not triggering after tag push**:
+- `release-asset-upload.yml` triggers on `release: types: [created]`, NOT on tag push
+- Pushing a tag alone does nothing — must create a GitHub Release via `gh release create` or the GitHub UI
+- If an old release exists for the same tag, delete it first: `gh release delete TAG --yes`
+- Stale draft releases become "untagged" when their tag is deleted; they must be explicitly deleted

@@ -81,9 +81,10 @@ launchctl load ~/Library/LaunchAgents/com.manul.server.plist
 
 **Architecture**:
 - Merge to `main` does NOT auto-deploy
-- Deployment triggered by recreating `0.0.1-alpha` release tag
+- Deployment triggered by recreating `0.0.1-alpha` **GitHub Release** (not just a tag!)
 - GitHub Actions builds native images (Mac, Linux, Windows, Alpine)
 - Artifacts uploaded to GitHub Releases and Aliyun OSS
+- **Critical**: The release workflow triggers on `release: types: [created]`, NOT on tag push. Must use `gh release create` or create via GitHub UI.
 
 **Git Workflow**:
 - Feature branches rebased against `origin/main`
@@ -110,6 +111,12 @@ Flags: `--skip-tests`, `--skip-pr`, `--skip-deploy`
 
 Steps: verify main + clean → pull latest → delete `0.0.1-alpha` tag → recreate at HEAD → push.
 
+**Important**: `deploy.sh` only pushes the tag. You must also create a GitHub Release to trigger the build workflow:
+```bash
+gh release delete 0.0.1-alpha --yes 2>/dev/null
+gh release create 0.0.1-alpha --title "0.0.1-alpha" --notes "Release 0.0.1-alpha" --prerelease
+```
+
 ### Manual Process
 
 ```bash
@@ -121,23 +128,27 @@ git push -u origin feat/my-feature --force-with-lease
 gh pr create --base main --head feat/my-feature --fill
 gh pr merge feat/my-feature --squash --delete-branch
 
-# 2. Deploy
+# 2. Deploy (must create release, not just tag)
 git checkout main && git pull origin main
 git tag -d 0.0.1-alpha && git push origin :refs/tags/0.0.1-alpha
 git tag -a 0.0.1-alpha -m "Release 0.0.1-alpha - $(date +%Y-%m-%d)"
 git push origin 0.0.1-alpha
+gh release delete 0.0.1-alpha --yes 2>/dev/null
+gh release create 0.0.1-alpha --title "0.0.1-alpha" --notes "Release 0.0.1-alpha - $(date +%Y-%m-%d)" --prerelease
 ```
 
 ### GitHub Actions Workflows
 
 **ci.yml**: PR/push to main → `mvn -B verify` → Temurin JDK 21
 
-**release-asset-upload.yml**: Release/tag → native images (macOS aarch64/amd64, Windows amd64, Linux amd64/aarch64, Alpine amd64/aarch64) → GraalVM native-image → upload to GitHub Releases + Aliyun OSS. Build time: ~4 minutes.
+**release-asset-upload.yml**: `release: types: [created]` → native images (macOS aarch64/amd64, Windows amd64, Linux amd64/aarch64, Alpine amd64/aarch64) → GraalVM native-image → upload to GitHub Releases + Aliyun OSS. Build time: ~12 min (macOS slowest). Also triggers on `workflow_dispatch` and push to `working` branch (for testing).
+
+**Gotcha**: `workflow_dispatch` can only trigger workflows registered on the default branch. To test workflow changes, add test jobs to the existing workflow file rather than creating new workflow files on feature branches.
 
 ### Deployment Checklist
 
 Before: tests pass, code reviewed, changes documented, migrations prepared.
-After: verify build (~4 min), check GitHub Release, verify OSS artifacts, test download.
+After: verify build (~12 min), check GitHub Release, verify OSS artifacts, test download.
 
 ---
 
@@ -205,11 +216,20 @@ Problem: Accidentally cleared ES data for app 1000061024. Resolution: data intac
 **URLs**:
 ```
 https://pkg.metavm.tech/releases/0.0.1-alpha/manul-{platform}.tar.gz
-https://pkg.metavm.tech/releases/latest/manul-{platform}.tar.gz
 ```
+Note: No `/latest/` path currently — only tag-versioned paths are uploaded.
 
 **GitHub Secrets**: `ALIYUN_ACCESS_KEY_ID`, `ALIYUN_ACCESS_KEY_SECRET`
 
-**Performance**: OSS upload ~2 min (vs Gitee ~30+ min, 15x faster).
+**Performance** (measured Feb 2026 with real native images):
+- Upload speed: ~7.5-9 MB/s per file from GitHub Actions runners
+- Total: ~37 seconds for 7 artifacts (~244 MB) — vs Gitee ~30+ min (30x faster)
+- Artifact sizes: Linux/Alpine ~29-30 MB, macOS ~38 MB, Windows ~39 MB
+
+**ossutil notes**:
+- Installed via: `curl -sL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash` (installs v1.7.19)
+- Auth: `ossutil config -e ENDPOINT -i KEY_ID -k KEY_SECRET -L CH` (v1 syntax, NOT env vars)
+- Upload: `ossutil cp FILE oss://BUCKET/PATH -f`
+- The `ossutil64` direct binary URL is dead; always use the install script
 
 **Setup**: `./setup-aliyun-oss.py` — creates bucket, configures DNS, sets CORS, creates directories.
