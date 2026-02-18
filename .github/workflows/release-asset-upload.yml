@@ -234,9 +234,6 @@ jobs:
         run: curl -sL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
 
       - name: Upload to OSS
-        env:
-          OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
-          OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
         run: |
           # Get release version (fallback to 'test' for non-tag triggers)
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
@@ -249,19 +246,17 @@ jobs:
           OSS_BUCKET="manul-packages"
           OSS_ENDPOINT="https://oss-cn-hongkong.aliyuncs.com"
 
+          ossutil config \
+            -e "$OSS_ENDPOINT" \
+            -i "${{ secrets.ALIYUN_ACCESS_KEY_ID }}" \
+            -k "${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}" \
+            -L CH
+
           for file in manul-*; do
             if [ -f "$file" ]; then
               echo "Uploading $file..."
-              # Upload to versioned directory
-              ossutil cp "$file" \
-                "oss://$OSS_BUCKET/releases/$TAG_NAME/$file" \
-                --endpoint "$OSS_ENDPOINT" \
-                --force
-              # Also upload to 'latest' directory
-              ossutil cp "$file" \
-                "oss://$OSS_BUCKET/releases/latest/$file" \
-                --endpoint "$OSS_ENDPOINT" \
-                --force
+              ossutil cp "$file" "oss://$OSS_BUCKET/releases/$TAG_NAME/$file" -f
+              ossutil cp "$file" "oss://$OSS_BUCKET/releases/latest/$file" -f
             fi
           done
 
@@ -287,27 +282,23 @@ jobs:
       - name: Install ossutil
         run: curl -sL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
 
-      - name: Verify ossutil
-        run: ossutil version
-
       - name: Upload to OSS
-        env:
-          OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
-          OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
         run: |
           OSS_BUCKET="manul-packages"
           OSS_ENDPOINT="https://oss-cn-hongkong.aliyuncs.com"
 
+          ossutil config \
+            -e "$OSS_ENDPOINT" \
+            -i "${{ secrets.ALIYUN_ACCESS_KEY_ID }}" \
+            -k "${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}" \
+            -L CH
+
           for file in manul-*; do
             if [ -f "$file" ]; then
               echo "Uploading $file..."
-              ossutil cp "$file" \
-                "oss://$OSS_BUCKET/releases/test/$file" \
-                --endpoint "$OSS_ENDPOINT" \
-                --force
+              ossutil cp "$file" "oss://$OSS_BUCKET/releases/test/$file" -f
             fi
           done
 
           echo "Listing uploaded files:"
-          ossutil ls "oss://$OSS_BUCKET/releases/test/" \
-            --endpoint "$OSS_ENDPOINT"
+          ossutil ls "oss://$OSS_BUCKET/releases/test/"
