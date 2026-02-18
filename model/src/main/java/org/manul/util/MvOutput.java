@@ -40,6 +40,12 @@ public abstract class MvOutput extends DefaultWireOutput {
     }
 
     public void writeValue(Value value) {
+        if (value == null) {
+            throw new IllegalArgumentException(
+                "Attempted to write null Value. This indicates a bug in constant pool initialization. " +
+                "Stack trace will show which ConstantPool entry is null."
+            );
+        }
         value.write(this);
     }
 

@@ -73,6 +73,12 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
     }
 
     public int addEntry(Value value) {
+        if (value == null) {
+            log.error("Attempting to add null value to ConstantPool! Scope: {}, Current entries: {}",
+                scope, entries.size());
+            log.error("Stack trace:", new RuntimeException("Null value added to ConstantPool"));
+            throw new IllegalArgumentException("Cannot add null value to ConstantPool");
+        }
         version++;
         int i = entries.size();
         entries.add(value);
@@ -80,6 +86,7 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
         while (values.length < entries.size())
             values = Arrays.copyOf(values, values.length << 1);
         values[i] = value;
+        log.trace("Added entry {} to ConstantPool, total entries: {}", value.getClass().getSimpleName(), entries.size());
         return i;
     }
 
@@ -157,9 +164,18 @@ public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey,
         value2entry = new HashMap<>();
         int i = 0;
         for (var entry : entries) {
+            if (entry == null) {
+                log.error("Found null entry at index {} in ConstantPool after deserialization! " +
+                    "Scope: {}, Total entries: {}", i, scope, entries.size());
+                log.error("All entries: {}", entries);
+                throw new IllegalStateException(
+                    String.format("ConstantPool contains null entry at index %d (scope: %s)", i, scope)
+                );
+            }
             value2entry.put(entry, i);
             values[i++] = entry;
         }
+        log.debug("ConstantPool loaded {} entries successfully", entries.size());
     }
 
     @Override
