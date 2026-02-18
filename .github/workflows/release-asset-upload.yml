@@ -268,3 +268,46 @@ jobs:
           echo "All artifacts uploaded to OSS"
           echo "Download URL: https://pkg.metavm.tech/releases/$TAG_NAME/"
           echo "Latest URL: https://pkg.metavm.tech/releases/latest/"
+
+  # ------------------------------------------------------------------
+  # TEMPORARY: Quick OSS upload test with dummy files (no build deps)
+  # Remove this job after testing is complete.
+  # ------------------------------------------------------------------
+  test-oss-upload:
+    name: Test OSS Upload (dummy)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Create dummy artifacts
+        run: |
+          echo "dummy-macos-aarch64" > manul-macos-aarch64.tar.gz
+          echo "dummy-linux-amd64" > manul-linux-amd64.tar.gz
+          ls -la manul-*
+
+      - name: Install ossutil
+        run: curl -sL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+
+      - name: Verify ossutil
+        run: ossutil version
+
+      - name: Upload to OSS
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+        run: |
+          OSS_BUCKET="manul-packages"
+          OSS_ENDPOINT="https://oss-cn-hongkong.aliyuncs.com"
+
+          for file in manul-*; do
+            if [ -f "$file" ]; then
+              echo "Uploading $file..."
+              ossutil cp "$file" \
+                "oss://$OSS_BUCKET/releases/test/$file" \
+                --endpoint "$OSS_ENDPOINT" \
+                --force
+            fi
+          done
+
+          echo "Listing uploaded files:"
+          ossutil ls "oss://$OSS_BUCKET/releases/test/" \
+            --endpoint "$OSS_ENDPOINT"
