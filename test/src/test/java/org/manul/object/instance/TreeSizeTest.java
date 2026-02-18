@@ -23,8 +23,20 @@ public class TreeSizeTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        var bootResult = BootstrapUtils.bootstrap();
-        entityContextFactory = bootResult.entityContextFactory();
+        try {
+            logger.info("TreeSizeTest setUp - starting bootstrap");
+            var bootResult = BootstrapUtils.bootstrap();
+            logger.info("TreeSizeTest setUp - bootstrap completed successfully");
+            entityContextFactory = bootResult.entityContextFactory();
+            logger.info("TreeSizeTest setUp - context factory created successfully");
+        } catch (Throwable t) {
+            logger.error("TreeSizeTest setUp - FAILED during bootstrap", t);
+            // Try to get more details about class initialization failures
+            if (t.getCause() != null) {
+                logger.error("TreeSizeTest setUp - Root cause:", t.getCause());
+            }
+            throw t;
+        }
     }
 
     @Override
