@@ -56,7 +56,7 @@ jobs:
           else
             EXTENSION="tar.gz"
           fi
-          
+
           SOURCE_FILE=$(find ./dist/target -name "*.$EXTENSION" -type f | head -n 1)
           if [ -z "$SOURCE_FILE" ]; then
             echo "Error: Could not find a .$EXTENSION file in ./dist/target"
@@ -141,25 +141,25 @@ jobs:
           #!/bin/sh
           set -e
           EOF
-          
+
           if [[ "${{ matrix.alpine_zlib }}" == "true"  ]]; then
             cat << 'EOF' >> build.sh
           echo ">>> Installing Compiler Dependencies..."
           apk update
           apk add zlib-static
-          
+
           EOF
           fi
-          
+
           cat << 'EOF' >> build.sh
           echo ">>> Building Native Image..."
           # Run the Maven we mounted from the host
           ./apache-maven-3.9.9/bin/mvn -B -P${{ matrix.profiles }} package -DskipTests
-          
+
           echo ">>> Fixing file permissions..."
           chown -R $HOST_UID:$HOST_GID .
           EOF
-  
+
           chmod +x build.sh
 
       - name: Run Build in Docker
@@ -182,13 +182,13 @@ jobs:
           fi
 
           SOURCE_FILE=$(find "$TARGET_DIR" -maxdepth 1 -name "*.tar.gz" -type f | head -n 1)
-          
+
           if [ -z "$SOURCE_FILE" ]; then
              echo "FATAL: No .tar.gz file found in $TARGET_DIR"
              ls -la "$TARGET_DIR"
              exit 1
           fi
-          
+
           echo "Found artifact: $SOURCE_FILE"
           mv "$SOURCE_FILE" ${{ matrix.asset_name }}
 
@@ -218,12 +218,13 @@ jobs:
           path: ${{ matrix.asset_name }}
 
   # ------------------------------------------------------------------
-  # JOB 3: Upload to Aliyun OSS (Wait for both builds)
+  # JOB 3: Upload to Aliyun OSS
   # ------------------------------------------------------------------
   aliyun-oss-upload:
     name: Upload to Aliyun OSS
     needs: [build-mac-win, build-linux]
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -235,12 +236,7 @@ jobs:
 
       - name: Upload to OSS
         run: |
-          # Get release version (fallback to 'test' for non-tag triggers)
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            TAG_NAME=${GITHUB_REF#refs/tags/}
-          else
-            TAG_NAME="test"
-          fi
+          TAG_NAME=${GITHUB_REF#refs/tags/}
           echo "Uploading release $TAG_NAME to Aliyun OSS..."
 
           OSS_BUCKET="manul-packages"
@@ -263,42 +259,3 @@ jobs:
           echo "All artifacts uploaded to OSS"
           echo "Download URL: https://pkg.metavm.tech/releases/$TAG_NAME/"
           echo "Latest URL: https://pkg.metavm.tech/releases/latest/"
-
-  # ------------------------------------------------------------------
-  # TEMPORARY: Quick OSS upload test with dummy files (no build deps)
-  # Remove this job after testing is complete.
-  # ------------------------------------------------------------------
-  test-oss-upload:
-    name: Test OSS Upload (dummy)
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    steps:
-      - name: Create dummy artifacts
-        run: |
-          echo "dummy-macos-aarch64" > manul-macos-aarch64.tar.gz
-          echo "dummy-linux-amd64" > manul-linux-amd64.tar.gz
-          ls -la manul-*
-
-      - name: Install ossutil
-        run: curl -sL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
-
-      - name: Upload to OSS
-        run: |
-          OSS_BUCKET="manul-packages"
-          OSS_ENDPOINT="https://oss-cn-hongkong.aliyuncs.com"
-
-          ossutil config \
-            -e "$OSS_ENDPOINT" \
-            -i "${{ secrets.ALIYUN_ACCESS_KEY_ID }}" \
-            -k "${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}" \
-            -L CH
-
-          for file in manul-*; do
-            if [ -f "$file" ]; then
-              echo "Uploading $file..."
-              ossutil cp "$file" "oss://$OSS_BUCKET/releases/test/$file" -f
-            fi
-          done
-
-          echo "Listing uploaded files:"
-          ossutil ls "oss://$OSS_BUCKET/releases/test/"
