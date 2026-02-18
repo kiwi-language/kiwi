@@ -61,5 +61,10 @@ public class BootstrapController {
         applicationManager.reindexAll();
     }
 
+    @Post("/rebuild-index/{appId}")
+    public void rebuildIndexForApp(@PathVariable("appId") long appId) {
+        jobManager.addIndexRebuildTask(appId);
+    }
+
 
 }

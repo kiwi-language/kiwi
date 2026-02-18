@@ -27,6 +27,14 @@ public class TaskManager extends EntityContextFactoryAware {
     }
 
     @Transactional
+    public void addIndexRebuildTask(long appId) {
+        try (var context = newContext(appId)) {
+            context.bind(new IndexRebuildTask(context.allocateRootId()));
+            context.finish();
+        }
+    }
+
+    @Transactional
     public void createShadowTasks(long appId, List<Task> created) {
         try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID, builder -> builder.skipPostProcessing(true));
         var ignored = ContextUtil.getProfiler().enter("createShadowTasks")) {

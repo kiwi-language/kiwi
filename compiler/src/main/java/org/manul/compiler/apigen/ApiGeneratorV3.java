@@ -46,7 +46,9 @@ public class ApiGeneratorV3 implements ApiGenerator {
     }
 
     private void generateImports() {
-        apiWriter.writeln("import { APP_ID } from './env'");
+        apiWriter.writeln("const APP_ID = import.meta.env.VITE_APP_ID as string;");
+        apiWriter.writeln("const API_HOST = import.meta.env.VITE_API_HOST as string;");
+        apiWriter.writeln("const API_BASE_URL = `${API_HOST}/${APP_ID}`;");
         apiWriter.writeln();
     }
 
@@ -356,13 +358,13 @@ public class ApiGeneratorV3 implements ApiGenerator {
                 paramBuf,
                 getApiType(method.getRetType(), true),
                 getApiType(method.getRetType(), true),
-                "api/" + NamingUtils.camelToHyphen(beanName) + "/" + NamingUtils.camelToHyphen(method.getName().toString()),
+                NamingUtils.camelToHyphen(beanName) + "/" + NamingUtils.camelToHyphen(method.getName().toString()),
                 paramNameBuf
         ));
     }
 
     private String getClassPath(Clazz clazz) {
-        return "api/" + NamingUtils.nameToPath(clazz.getQualName().toString(), true);
+        return NamingUtils.nameToPath(clazz.getQualName().toString(), true);
     }
 
 }
